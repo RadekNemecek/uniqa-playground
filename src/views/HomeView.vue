@@ -380,7 +380,12 @@ const packLabel = computed(() =>
   aspect-ratio: 1;
   translate: -50% -50%;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(150, 175, 255, 0.55) 0%, rgba(120, 140, 255, 0.18) 45%, transparent 70%);
+  background: radial-gradient(
+    circle,
+    color-mix(in oklab, var(--c-light) 55%, transparent) 0%,
+    color-mix(in oklab, var(--c-light) 18%, transparent) 45%,
+    transparent 70%
+  );
   filter: blur(30px);
   transition: left 1.5s var(--ease-out), top 1.5s var(--ease-out);
 }

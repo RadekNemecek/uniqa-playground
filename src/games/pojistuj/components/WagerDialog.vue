@@ -65,7 +65,7 @@ function confirm() {
   display: grid;
   place-items: center;
   padding: var(--sp-5);
-  background: rgba(3, 6, 18, 0.85);
+  background: var(--c-scrim);
   backdrop-filter: blur(8px);
   animation: fade var(--dur-base) var(--ease-out) both;
 }

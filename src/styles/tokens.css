@@ -100,6 +100,10 @@
   --c-tile-bottom: #063764;
   --c-tile-edge:   #01182E;
   --c-tile-sheen:  rgba(255, 255, 255, 0.16);
+  /* Studiové světlo nad deskou a reflektor na rozcestníku. Ředí se přes
+     color-mix, aby každé místo mohlo mít vlastní sílu, ale odstín zůstal
+     jeden. Dřív to byly tři různé indigové rgba() zapsané natvrdo. */
+  --c-light:       #5AAAF5;
   --c-value:       #FFFFFF;  /* hodnota na dlaždici, 7,5:1 na --c-tile-top */
   --c-value-glow:  rgba(255, 255, 255, 0.22);
 

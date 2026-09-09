@@ -141,7 +141,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
   height: 60%;
   z-index: -1;
   pointer-events: none;
-  background: radial-gradient(60% 100% at 50% 0%, rgba(120, 142, 255, 0.16), transparent 70%);
+  background: radial-gradient(60% 100% at 50% 0%, color-mix(in oklab, var(--c-light) 16%, transparent), transparent 70%);
 }
 
 .board__grid {
