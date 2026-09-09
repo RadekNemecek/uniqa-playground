@@ -19,7 +19,13 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
 - **Tým se nikdy nerozlišuje jen barvou.** Vždy je vedle ní i písmeno.
 - **Deska se vejde na jednu obrazovku.** Na projektoru se nescrolluje.
 - **Hra přežije obnovení stránky.** Stav se ukládá po každé akci.
-- **Texty česky, bez dlouhých pomlček.**
+- **Texty česky, bez dlouhých pomlček.** A bez řeči o tom, jak je aplikace
+  postavená. Uživatelku zajímá, co s tím může dělat, ne architektura.
+- **Hravost patří do hry a na rozcestník, ne do správy otázek.** Tam se
+  pracuje, ozdoby by překážely. Ve hře je hmota dlaždic, pohyb a jiskra
+  vítaná, protože z tabulky dělá herní desku.
+- **`--c-spark` je vyhrazená pro bonusové pole Riskuj!** Je to jediný divoký
+  okamžik hry. Jakmile se ta barva objeví i jinde, přestane fungovat.
 
 ## Data
 

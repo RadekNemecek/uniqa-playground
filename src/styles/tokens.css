@@ -26,6 +26,22 @@
   --c-gold-deep:    #D9A22F;
   --c-gold-glow:    rgba(245, 196, 81, 0.28);
 
+  /* --- Jiskra ------------------------------------------------------------ */
+  /* Třetí barva celého systému. Používá se výhradně pro bonusové pole
+     Riskuj!, protože je to jediný okamžik hry, který má být divoký.
+     Jakmile se objeví jinde, přestane fungovat. */
+  --c-spark:      #FF8A76;
+  --c-spark-deep: #E24F3B;
+  --c-spark-glow: rgba(255, 138, 118, 0.30);
+
+  /* --- Dlaždice desky ----------------------------------------------------- */
+  /* Dlaždice má působit jako fyzický panel: světlo shora, hrana zespodu.
+     Právě tahle hmotnost dělá z tabulky herní desku. */
+  --c-tile-top:    #2E3C8C;
+  --c-tile-bottom: #171F4E;
+  --c-tile-edge:   #080C22;
+  --c-tile-sheen:  rgba(255, 255, 255, 0.14);
+
   /* --- Stavy ------------------------------------------------------------- */
   --c-ok:           #4ADE80;
   --c-ok-deep:      #16A34A;
@@ -45,7 +61,9 @@
 
   /* --- Typografie -------------------------------------------------------- */
   --font-ui:      'Inter Variable', 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-display: 'Archivo Variable', 'Archivo', var(--font-ui);
+  /* Bricolage má charakter, ale nechová se jako klaun. Nese nadpisy,
+     bodové hodnoty a otázky, tedy všechno, co se promítá. */
+  --font-display: 'Bricolage Grotesque Variable', 'Bricolage Grotesque', var(--font-ui);
 
   /* Škála se odvíjí od --scale, které mění nastavení velikosti pro projektor. */
   --scale: 1;

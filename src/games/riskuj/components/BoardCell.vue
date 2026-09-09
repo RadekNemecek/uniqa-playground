@@ -63,15 +63,22 @@ function open(e: MouseEvent) {
   height: 100%;
   min-height: 2.75rem;
   padding: var(--sp-2);
-  border: 1px solid var(--c-surface-3);
+  border: 0;
   border-radius: var(--r-lg);
-  background: linear-gradient(165deg, var(--c-surface-2) 0%, var(--c-surface) 100%);
+  background: linear-gradient(178deg, var(--c-tile-top) 0%, var(--c-tile-bottom) 100%);
   color: var(--c-gold);
   overflow: hidden;
+  /* Světlo shora, hrana zespodu. Dlaždice se má dát zmáčknout. */
+  box-shadow:
+    inset 0 1.5px 0 var(--c-tile-sheen),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.4),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 4px 0 var(--c-tile-edge),
+    0 10px 18px -8px rgba(0, 0, 0, 0.7);
   transition:
     transform var(--dur-fast) var(--ease-out),
-    border-color var(--dur-fast) var(--ease-out),
-    box-shadow var(--dur-fast) var(--ease-out);
+    box-shadow var(--dur-fast) var(--ease-out),
+    filter var(--dur-fast) var(--ease-out);
   animation: dealIn var(--dur-slow) var(--ease-out) calc(var(--i) * 22ms) both;
 }
 
@@ -87,19 +94,35 @@ function open(e: MouseEvent) {
 
 .cell--open:hover {
   transform: translateY(-3px);
-  border-color: var(--c-gold);
-  box-shadow: 0 12px 30px -14px var(--c-gold-glow);
+  filter: brightness(1.08);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 0 0 1px color-mix(in oklab, var(--c-gold) 55%, transparent),
+    0 6px 0 var(--c-tile-edge),
+    0 16px 32px -12px var(--c-gold-glow);
 }
 .cell--open:hover::after { translate: 120% 0; }
-.cell--open:active { transform: translateY(-1px) scale(0.99); }
+
+/* Stisk: dlaždice dosedne na hranu, jako by šla opravdu zmáčknout. */
+.cell--open:active {
+  transform: translateY(3px);
+  box-shadow:
+    inset 0 2px 6px rgba(0, 0, 0, 0.5),
+    0 0 0 var(--c-tile-edge);
+}
 
 .cell__value {
   font-family: var(--font-display);
   font-size: var(--fs-value);
   font-weight: 800;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
   line-height: 1;
-  text-shadow: 0 2px 14px var(--c-gold-glow);
+  /* Ražba: tenké světlo nahoře, stín dolů. Číslo pak sedí v ploše,
+     místo aby na ní leželo. */
+  text-shadow:
+    0 -1px 0 rgba(255, 255, 255, 0.18),
+    0 2px 0 rgba(0, 0, 0, 0.45),
+    0 4px 22px var(--c-gold-glow);
 }
 
 /* Vyřešená políčka ------------------------------------------------------- */
@@ -110,10 +133,13 @@ function open(e: MouseEvent) {
 }
 
 .cell--won {
-  border-color: color-mix(in oklab, var(--team) 60%, transparent);
   /* Barva týmu musí zůstat dost světlá, aby na ní tmavý text držel kontrast. */
-  background: linear-gradient(165deg, var(--team) 0%, color-mix(in oklab, var(--team) 76%, black) 100%);
+  background: linear-gradient(178deg, var(--team) 0%, color-mix(in oklab, var(--team) 76%, black) 100%);
   color: var(--c-text-ink);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 3px 0 color-mix(in oklab, var(--team) 35%, black),
+    0 8px 18px -8px color-mix(in oklab, var(--team) 50%, transparent);
 }
 .cell__won { display: grid; justify-items: center; gap: 2px; }
 .cell__badge {
@@ -125,10 +151,12 @@ function open(e: MouseEvent) {
 .cell__points { font-size: var(--fs-xs); font-weight: 700; opacity: 0.85; }
 
 .cell--lost {
-  border-color: #12172B;
   background: var(--c-dead);
   color: #2A3252;
-  box-shadow: inset 0 2px 20px rgba(0, 0, 0, 0.8);
+  /* Zhasnuté políčko je zapadlé dovnitř, ne vystouplé. */
+  box-shadow:
+    inset 0 2px 14px rgba(0, 0, 0, 0.9),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03);
 }
 
 @keyframes dealIn {
@@ -137,7 +165,14 @@ function open(e: MouseEvent) {
 }
 @keyframes settle {
   0% { transform: scale(1.06); }
+  60% { transform: scale(0.99); }
   100% { transform: none; }
+}
+/* Po dosednutí přes políčko jednou přejede lesk. */
+.cell--won::after { animation: sweep var(--dur-slow) var(--ease-out) var(--dur-fast) both; }
+@keyframes sweep {
+  from { translate: -120% 0; }
+  to { translate: 120% 0; }
 }
 @media (prefers-reduced-motion: reduce) {
   .cell { animation: none; }

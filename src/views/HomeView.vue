@@ -4,6 +4,7 @@ import { GAMES } from '@/games/registry'
 import { hasGame, game } from '@/stores/game'
 import { packs } from '@/stores/packs'
 import { count } from '@/lib/format'
+
 </script>
 
 <template>
@@ -12,6 +13,10 @@ import { count } from '@/lib/format'
 
     <main class="page">
       <section class="hero">
+        <div class="motif" aria-hidden="true">
+          <span v-for="i in 6" :key="i" class="motif__t" :class="{ 'motif__t--gold': i === 3 }" />
+        </div>
+
         <p class="eyebrow">Interaktivní hry pro školení</p>
         <h1 class="hero__title">
           Playground
@@ -69,7 +74,49 @@ import { count } from '@/lib/format'
 .home { min-height: 100dvh; display: flex; flex-direction: column; }
 main { flex: 1; padding-block: var(--sp-7) var(--sp-8); }
 
-.hero { max-width: 46rem; margin-bottom: var(--sp-8); }
+.hero { position: relative; max-width: 46rem; margin-bottom: var(--sp-8); }
+
+/* Útržek herní desky ------------------------------------------------------
+   Stojí vedle textu, ne za ním. Za písmem by z něj byla jen špína.
+   Na užší obrazovce mizí, tam není místo na ozdoby. */
+.motif {
+  position: absolute;
+  top: -1rem;
+  left: 30rem;
+  display: grid;
+  grid-template-columns: repeat(3, 7rem);
+  gap: var(--sp-3);
+  rotate: -9deg;
+  opacity: 0.55;
+  pointer-events: none;
+  animation: float 14s var(--ease-both) infinite;
+}
+.motif__t {
+  aspect-ratio: 16 / 10;
+  border-radius: var(--r-lg);
+  background: linear-gradient(178deg, var(--c-tile-top) 0%, var(--c-tile-bottom) 100%);
+  box-shadow:
+    inset 0 1.5px 0 var(--c-tile-sheen),
+    0 4px 0 var(--c-tile-edge),
+    0 10px 20px -10px rgba(0, 0, 0, 0.7);
+}
+.motif__t--gold {
+  background: linear-gradient(178deg, var(--c-gold) 0%, var(--c-gold-deep) 100%);
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.35),
+    0 4px 0 rgba(0, 0, 0, 0.45),
+    0 12px 26px -10px var(--c-gold-glow);
+}
+
+@keyframes float {
+  0%, 100% { translate: 0 0; }
+  50% { translate: 0 -14px; }
+}
+
+@media (max-width: 1180px) {
+  .motif { display: none; }
+}
+
 .hero__title {
   font-size: var(--fs-hero);
   font-weight: 800;
@@ -142,8 +189,9 @@ main { flex: 1; padding-block: var(--sp-7) var(--sp-8); }
 .card:hover {
   transform: translateY(-4px);
   border-color: color-mix(in oklab, var(--c-gold) 45%, var(--c-line));
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 8px 0 var(--c-tile-edge), 0 22px 40px -18px rgba(0, 0, 0, 0.8);
 }
+.card:active { transform: translateY(-1px); box-shadow: 0 3px 0 var(--c-tile-edge); }
 .card:hover .card__arrow { transform: translateX(4px); color: var(--c-gold); }
 
 .card__top { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); }
@@ -167,6 +215,6 @@ main { flex: 1; padding-block: var(--sp-7) var(--sp-8); }
   to { opacity: 1; transform: none; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .hero__title, .hero__lead, .resume, .card { animation: none; }
+  .hero__title, .hero__lead, .resume, .card, .motif { animation: none; }
 }
 </style>

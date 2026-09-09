@@ -81,10 +81,25 @@ async function toggleFullscreen() {
 .brand__mark span {
   border-radius: 2px;
   background: var(--c-surface-3);
-  transition: background-color var(--dur-slow) var(--ease-out);
+  /* Zlatá dlaždice pomalu obchází mřížku dokola. Je to jediná ozdoba
+     v hlavičce a je schválně tak pomalá, aby si jí člověk všiml až
+     napodruhé a nerušila ho. */
+  animation: hop 9s steps(1, end) infinite;
 }
-.brand__mark span:nth-child(1) { background: var(--c-gold); }
-.brand:hover .brand__mark span:nth-child(4) { background: var(--c-gold); }
+.brand__mark span:nth-child(1) { animation-delay: 0s; }
+.brand__mark span:nth-child(2) { animation-delay: 2.25s; }
+.brand__mark span:nth-child(4) { animation-delay: 4.5s; }
+.brand__mark span:nth-child(3) { animation-delay: 6.75s; }
+
+@keyframes hop {
+  0%, 25% { background: var(--c-gold); }
+  25.01%, 100% { background: var(--c-surface-3); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand__mark span { animation: none; }
+  .brand__mark span:nth-child(1) { background: var(--c-gold); }
+}
 .brand__name {
   font-family: var(--font-display);
   font-weight: 700;

@@ -51,7 +51,7 @@ function confirm() {
 
       <div class="wager__actions">
         <UiButton variant="ghost" @click="emit('cancel')">Zpět na desku</UiButton>
-        <UiButton variant="gold" size="lg" @click="confirm">Vsadit a zobrazit otázku</UiButton>
+        <UiButton variant="spark" size="lg" @click="confirm">Vsadit a zobrazit otázku</UiButton>
       </div>
     </div>
   </div>
@@ -76,9 +76,9 @@ function confirm() {
   width: min(100%, 34rem);
   padding: var(--sp-7) var(--sp-6);
   text-align: center;
-  border: 1px solid color-mix(in oklab, var(--c-gold) 40%, transparent);
+  border: 1px solid color-mix(in oklab, var(--c-spark) 42%, transparent);
   border-radius: var(--r-xl);
-  background: radial-gradient(120% 90% at 50% 0%, color-mix(in oklab, var(--c-gold) 14%, transparent), transparent 60%), var(--c-surface);
+  background: radial-gradient(120% 90% at 50% 0%, color-mix(in oklab, var(--c-spark) 16%, transparent), transparent 60%), var(--c-surface);
   box-shadow: var(--shadow-lg);
   animation: pop var(--dur-slow) var(--ease-back) both;
 }
@@ -93,8 +93,8 @@ function confirm() {
   font-size: var(--fs-3xl);
   font-weight: 800;
   letter-spacing: -0.03em;
-  color: var(--c-gold);
-  text-shadow: 0 4px 30px var(--c-gold-glow);
+  color: var(--c-spark);
+  text-shadow: 0 4px 30px var(--c-spark-glow);
 }
 .wager__lead { color: var(--c-text-muted); font-size: var(--fs-sm); max-width: 34ch; line-height: var(--lh-body); }
 .wager__badge {
@@ -118,13 +118,13 @@ function confirm() {
   font-size: clamp(3rem, 9vw, 5rem);
   font-weight: 800;
   line-height: 1;
-  color: var(--c-gold);
+  color: var(--c-spark);
   font-variant-numeric: tabular-nums;
 }
 
 .wager__slider {
   width: 100%;
-  accent-color: var(--c-gold);
+  accent-color: var(--c-spark);
 }
 .wager__steps { display: flex; gap: var(--sp-2); flex-wrap: wrap; justify-content: center; }
 .wager__steps button {
@@ -137,7 +137,7 @@ function confirm() {
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
-.wager__steps button:hover { color: var(--c-text); border-color: var(--c-gold); }
+.wager__steps button:hover { color: var(--c-text); border-color: var(--c-spark); }
 
 .wager__actions { display: flex; gap: var(--sp-3); flex-wrap: wrap; justify-content: center; margin-top: var(--sp-2); }
 

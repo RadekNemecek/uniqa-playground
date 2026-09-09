@@ -229,12 +229,21 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 .stage__wagerTag {
   padding: 2px var(--sp-3);
   border-radius: var(--r-full);
-  background: var(--c-gold);
+  background: linear-gradient(180deg, var(--c-spark) 0%, var(--c-spark-deep) 100%);
   color: var(--c-text-ink);
   font-size: var(--fs-xs);
   font-weight: 800;
   letter-spacing: var(--tracking-caps);
   text-transform: uppercase;
+  box-shadow: 0 0 18px -2px var(--c-spark-glow);
+  animation: sparkle 2.4s var(--ease-both) infinite;
+}
+@keyframes sparkle {
+  0%, 100% { box-shadow: 0 0 14px -4px var(--c-spark-glow); }
+  50% { box-shadow: 0 0 26px 0 var(--c-spark-glow); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stage__wagerTag { animation: none; }
 }
 .stage__value {
   font-family: var(--font-display);

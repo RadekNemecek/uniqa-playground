@@ -1,7 +1,7 @@
 <script setup lang="ts">
 withDefaults(
   defineProps<{
-    variant?: 'primary' | 'gold' | 'ghost' | 'quiet' | 'danger' | 'ok'
+    variant?: 'primary' | 'gold' | 'spark' | 'ghost' | 'quiet' | 'danger' | 'ok'
     size?: 'sm' | 'md' | 'lg' | 'xl'
     block?: boolean
     disabled?: boolean
@@ -62,6 +62,13 @@ withDefaults(
   --btn-fg: var(--c-text-ink);
   --btn-line: transparent;
   box-shadow: 0 6px 20px -8px var(--c-gold-glow);
+}
+
+.btn--spark {
+  --btn-bg: linear-gradient(180deg, var(--c-spark) 0%, var(--c-spark-deep) 100%);
+  --btn-fg: var(--c-text-ink);
+  --btn-line: transparent;
+  box-shadow: 0 6px 22px -8px var(--c-spark-glow);
 }
 
 .btn--ok {

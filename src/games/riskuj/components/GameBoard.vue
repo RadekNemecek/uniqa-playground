@@ -114,6 +114,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 
 <style scoped>
 .board {
+  position: relative;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   gap: var(--sp-4);
@@ -131,7 +132,20 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
   gap: var(--sp-3);
 }
 
+/* Studiové světlo nad deskou. Nesmí být vidět jako efekt, jen bere
+   ploše plochost. */
+.board__grid::before {
+  content: '';
+  position: absolute;
+  inset: -12% -6% auto;
+  height: 60%;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(60% 100% at 50% 0%, rgba(120, 142, 255, 0.16), transparent 70%);
+}
+
 .board__grid {
+  position: relative;
   display: grid;
   grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
   grid-template-rows: auto repeat(var(--rows), minmax(0, 1fr));
@@ -141,15 +155,31 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 }
 
 .board__cat {
+  position: relative;
   display: grid;
   place-items: center;
   min-height: 2.75rem;
   padding: var(--sp-2) var(--sp-3);
   border-radius: var(--r-md);
   background: linear-gradient(180deg, var(--c-surface-3) 0%, var(--c-surface-2) 100%);
-  border: 1px solid var(--c-line);
+  border: 0;
+  box-shadow:
+    inset 0 1px 0 var(--c-tile-sheen),
+    0 2px 0 var(--c-tile-edge);
+  color: var(--c-text);
   text-align: center;
   animation: dropIn var(--dur-slow) var(--ease-out) both;
+}
+/* Tenká zlatá linka pod hlavičkou drží sloupec pohromadě. */
+.board__cat::after {
+  content: '';
+  position: absolute;
+  left: 18%;
+  right: 18%;
+  bottom: 4px;
+  height: 2px;
+  border-radius: var(--r-full);
+  background: linear-gradient(90deg, transparent, color-mix(in oklab, var(--c-gold) 60%, transparent), transparent);
 }
 .board__cat span {
   font-family: var(--font-display);
