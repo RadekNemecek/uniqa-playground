@@ -12,10 +12,10 @@ import { prefersReducedMotion } from '@/lib/motion'
    pomalu hraje a světlo chodí za políčkem, se kterým se zrovna něco děje.
    Uprostřed ji tlumí vinětace, aby text držel kontrast. */
 
-const COLS = 8
-const ROWS = [200, 400, 600, 800, 1000]
+const COLS = 9
+const ROWS = [200, 400, 600, 800, 1000, 1200]
 const TEAMS = 3
-const BONUS_ID = 19
+const BONUS_ID = 16
 
 interface Tile {
   id: number
@@ -65,7 +65,7 @@ function tick(): void {
   const free = playable.value.filter((t) => t.team === null)
 
   // Stěna nesmí zčernat celá, jinak přestane být čitelná jako deska.
-  const shouldClaim = claimed.length < 8 && free.length > 0
+  const shouldClaim = claimed.length < 12 && free.length > 0
   const pool = shouldClaim ? free : claimed
   const tile = pool[Math.floor(Math.random() * pool.length)]
   if (!tile) return
@@ -119,6 +119,9 @@ function onVisibility(): void {
 }
 
 onMounted(() => {
+  // Až po načtení písma, jinak by odskoky písmen seděly na náhradní řez.
+  void document.fonts.ready.then(paintWordmark)
+  window.addEventListener('resize', repaintWordmark)
   window.setTimeout(() => {
     started.value = true
     start()
@@ -130,12 +133,44 @@ onMounted(() => {
 onBeforeUnmount(() => {
   stop()
   cancelAnimationFrame(raf)
+  window.clearTimeout(paintTimer)
+  window.removeEventListener('resize', repaintWordmark)
   document.removeEventListener('visibilitychange', onVisibility)
   window.removeEventListener('pointermove', onPointer)
 })
 
 /** Titulek se skládá po písmenech, každé se otočí jako dlaždice na desce. */
 const letters = [...'Riskuj']
+
+/**
+ * Přechod přes celé slovo, ne přes každé písmeno.
+ *
+ * Písmena musí být samostatné prvky kvůli otáčení, takže každé z nich má
+ * vlastní pozadí. Aby dohromady daly jeden spojitý přechod, dostane každé
+ * pozadí šířku celého nápisu a posune se o svůj vlastní odskok. Přechod
+ * na rodiči by kvůli transformaci písmen nesedl.
+ */
+const wordmark = ref<HTMLElement | null>(null)
+const gradientReady = ref(false)
+
+function paintWordmark(): void {
+  const el = wordmark.value
+  if (!el || el.offsetWidth === 0) return
+  // offsetLeft, ne getBoundingClientRect: písmena se při nástupu otáčejí
+  // a jejich vykreslený obdélník je kvůli perspektivě posunutý. Odskok
+  // musí vycházet z rozvržení, ne z toho, kde zrovna jsou.
+  for (const letter of el.querySelectorAll<HTMLElement>('.wordmark__l')) {
+    letter.style.setProperty('--gw', `${el.offsetWidth}px`)
+    letter.style.setProperty('--gx', `${el.offsetLeft - letter.offsetLeft}px`)
+  }
+  gradientReady.value = true
+}
+
+let paintTimer = 0
+function repaintWordmark(): void {
+  window.clearTimeout(paintTimer)
+  paintTimer = window.setTimeout(paintWordmark, 120)
+}
 
 const packLabel = computed(() =>
   packs.packs.length
@@ -183,7 +218,7 @@ const packLabel = computed(() =>
       <!-- Titulek --------------------------------------------------------- -->
       <div class="title">
         <p class="title__kicker">Vědomostní hra pro školení</p>
-        <h1 class="wordmark" aria-label="Riskuj">
+        <h1 ref="wordmark" class="wordmark" :class="{ 'wordmark--painted': gradientReady }" aria-label="Riskuj">
           <span
             v-for="(ch, i) in letters"
             :key="i"
@@ -234,54 +269,33 @@ const packLabel = computed(() =>
   justify-items: center;
   padding: var(--sp-4) var(--sp-5) var(--sp-6);
   isolation: isolate;
-  /* Stěna schválně přetéká za okraje. Clip ji zadrží, aniž by vznikl
-     scroll kontejner, a maska ji stejně dřív rozpustí. */
-  overflow: clip;
 }
 
 /* Stěna --------------------------------------------------------------------
-   Vyplňuje celou plochu a přetéká za okraje okna, aby neměla viditelný
-   konec. Okraje neztmavuje překryv, ale maska: nic nedobarvuje, jen nechá
-   stěnu zmizet, takže nevzniká hrana ani tam, kde ji natočení posune.
-   Vodorovná a svislá maska jsou ve dvou vrstvách, protože složit je do
-   jedné by vyžadovalo mask-composite, který starší prohlížeče neumí. */
+   Vyplňuje celou obrazovku včetně plochy pod záhlavím. Je fixovaná, takže
+   nezasahuje do rozvržení. Mřížka schválně přesahuje přes okraje okna, aby
+   po natočení do prostoru nikde nezbyl prázdný pruh. Okraje se nemaskují,
+   deska má obrazovku pokrýt celou, tmu na text dělá vinětace. */
 .wall {
-  position: absolute;
-  inset: 0 -3rem;
+  position: fixed;
+  inset: 0;
   z-index: -2;
   pointer-events: none;
-  opacity: 0.62;
-  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 17%, #000 83%, transparent 100%);
-  mask-image: linear-gradient(180deg, transparent 0%, #000 17%, #000 83%, transparent 100%);
-  -webkit-mask-size: 100% 100%;
-  mask-size: 100% 100%;
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-}
-.wall__x {
-  position: absolute;
-  inset: 0;
-  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 14%, #000 86%, transparent 100%);
-  mask-image: linear-gradient(90deg, transparent 0%, #000 14%, #000 86%, transparent 100%);
-  -webkit-mask-size: 100% 100%;
-  mask-size: 100% 100%;
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
+  opacity: 0.6;
 }
 
-/* Odsazení dovnitř, aby se natočená mřížka vešla do maskované plochy. */
 .wall__space {
   position: absolute;
-  inset: 11% 9%;
-  perspective: 1600px;
-  perspective-origin: 50% 40%;
+  inset: -16% -12%;
+  perspective: 1700px;
+  perspective-origin: 50% 42%;
 }
 
 .wall__grid {
   position: absolute;
   inset: 0;
   display: grid;
-  grid-template-columns: repeat(8, minmax(0, 1fr));
+  grid-template-columns: repeat(9, minmax(0, 1fr));
   grid-auto-rows: minmax(0, 1fr);
   gap: clamp(8px, 0.8vw, 16px);
   transform-style: preserve-3d;
@@ -345,20 +359,21 @@ const packLabel = computed(() =>
     beacon 3s var(--ease-both) 2s infinite;
 }
 
-/* Vinětace: tma pod titulkem, aby text držel kontrast. Gradient končí
-   průhledně uvnitř své plochy, takže nemá viditelný okraj. */
+/* Vinětace: tma pod titulkem a pod záhlavím, aby text držel kontrast.
+   Gradienty končí průhledně uvnitř své plochy, takže nemají viditelný okraj. */
 .vignette {
-  position: absolute;
+  position: fixed;
   inset: 0;
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(62% 58% at 50% 42%, var(--c-abyss) 0%, color-mix(in oklab, var(--c-abyss) 82%, transparent) 42%, transparent 74%),
-    radial-gradient(80% 46% at 50% 100%, var(--c-abyss) 0%, transparent 70%);
+    radial-gradient(58% 54% at 50% 46%, var(--c-abyss) 0%, color-mix(in oklab, var(--c-abyss) 84%, transparent) 40%, transparent 72%),
+    linear-gradient(180deg, var(--c-abyss) 0%, color-mix(in oklab, var(--c-abyss) 55%, transparent) 9%, transparent 20%),
+    linear-gradient(0deg, var(--c-abyss) 0%, transparent 26%);
 }
 
 /* Titulek ------------------------------------------------------------------- */
-.title { align-self: center; display: grid; justify-items: center; text-align: center; }
+.title { position: relative; z-index: 1; align-self: center; display: grid; justify-items: center; text-align: center; }
 
 .title__kicker {
   font-size: var(--fs-sm);
@@ -399,6 +414,23 @@ const packLabel = computed(() =>
   animation: letterIn 760ms var(--ease-back) calc(240ms + var(--n) * 85ms) both;
 }
 
+/* Přechod se nasadí, až když jsou změřené odskoky písmen. Do té doby drží
+   plná barva, aby nebyl vidět přechod opakovaný na každém písmenu. */
+.wordmark--painted .wordmark__l {
+  background-image: linear-gradient(
+    96deg,
+    color-mix(in oklab, var(--c-text) 88%, var(--c-team-6)) 0%,
+    var(--c-text) 38%,
+    color-mix(in oklab, var(--c-gold) 44%, var(--c-text)) 100%
+  );
+  background-size: var(--gw, 100%) 100%;
+  background-position: var(--gx, 0) 0;
+  background-repeat: no-repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
 .title__lead {
   max-width: 46ch;
   font-size: clamp(var(--fs-md), 0.9rem + 0.5vw, var(--fs-xl));
@@ -409,6 +441,8 @@ const packLabel = computed(() =>
 
 /* Spodní lišta -------------------------------------------------------------- */
 .bottom {
+  position: relative;
+  z-index: 1;
   align-self: end;
   display: grid;
   justify-items: center;
