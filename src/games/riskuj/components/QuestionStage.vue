@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { GameState, Question } from '@/types'
 import TimerBar from './TimerBar.vue'
 import UiButton from '@/components/ui/UiButton.vue'
@@ -33,14 +33,31 @@ const active = computed(() => props.game.teams[props.game.activeTeamIndex] ?? nu
 const others = computed(() => props.game.teams.filter((t) => t.id !== active.value?.id))
 const canSteal = computed(() => props.game.rules.steal && others.value.length > 0)
 
-const promptSize = computed(() => {
-  // Delší otázka se musí vejít, aniž by ji musel někdo scrollovat.
-  const n = props.question.prompt.length
-  if (n > 220) return 'stage__prompt--xs'
-  if (n > 140) return 'stage__prompt--sm'
-  if (n > 70) return 'stage__prompt--md'
-  return ''
-})
+/**
+ * Otázka a odpověď se musí vejít na jednu obrazovku, protože moderátorka
+ * na projektoru nescrolluje. Odhad podle počtu znaků byl vždycky buď moc
+ * opatrný, nebo o kus vedle, tak se to prostě změří: začneme na plné
+ * velikosti a ubíráme, dokud se obsah nevejde. Vyjde tím největší písmo,
+ * které se do dané obrazovky vejde, ať je otázka jakkoli dlouhá.
+ */
+const body = ref<HTMLElement | null>(null)
+const FIT_MIN = 0.42
+const FIT_STEP = 0.04
+
+async function fitToScreen(): Promise<void> {
+  await nextTick()
+  const el = body.value
+  if (!el) return
+
+  let fit = 1
+  el.style.setProperty('--fit', String(fit))
+  while (el.scrollHeight > el.clientHeight + 1 && fit > FIT_MIN) {
+    fit = Math.round((fit - FIT_STEP) * 100) / 100
+    el.style.setProperty('--fit', String(fit))
+  }
+}
+
+watch(() => [props.question.id, props.game.phase], fitToScreen)
 
 function reveal() {
   if (revealed.value) return
@@ -88,13 +105,25 @@ function onKey(e: KeyboardEvent) {
   }
 }
 
+let resizeTimer = 0
+function onResize() {
+  window.clearTimeout(resizeTimer)
+  resizeTimer = window.setTimeout(fitToScreen, 120)
+}
+
 onMounted(async () => {
   if (settings.sound) sfx.open()
   await nextTick()
   if (stage.value && props.origin) flipFrom(stage.value, props.origin)
+  void fitToScreen()
   window.addEventListener('keydown', onKey)
+  window.addEventListener('resize', onResize)
 })
-onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onKey)
+  window.removeEventListener('resize', onResize)
+  window.clearTimeout(resizeTimer)
+})
 </script>
 
 <template>
@@ -110,8 +139,8 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
       </button>
     </header>
 
-    <div class="stage__body">
-      <p class="stage__prompt" :class="promptSize">{{ question.prompt }}</p>
+    <div ref="body" class="stage__body">
+      <p class="stage__prompt">{{ question.prompt }}</p>
 
       <Transition name="curtain">
         <div v-if="revealed" class="stage__answerWrap">
@@ -265,34 +294,38 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 
 /* Tělo -------------------------------------------------------------------- */
 .stage__body {
+  /* --fit zmenšuje otázku i odpověď najednou. Nastavuje ho fitToScreen().
+     Šířka se dělí toutéž mírou, takže menší písmo dostane delší řádek,
+     místo aby se text lámal do úzkého sloupce. */
+  --fit: 1;
+
   display: grid;
   align-content: center;
   justify-items: center;
-  gap: var(--sp-6);
-  padding: var(--sp-6);
+  gap: clamp(var(--sp-4), 4vh, var(--sp-6));
+  padding: var(--sp-5) var(--sp-6);
   text-align: center;
+  min-height: 0;
   overflow-y: auto;
 }
 .stage__prompt {
-  max-width: 24ch;
+  max-width: min(100%, calc(24ch / var(--fit)));
   font-family: var(--font-display);
-  font-size: var(--fs-prompt);
+  font-size: calc(var(--fs-prompt) * var(--fit));
   font-weight: 700;
   line-height: var(--lh-tight);
   letter-spacing: -0.02em;
   text-wrap: balance;
   animation: rise var(--dur-slow) var(--ease-out) 120ms both;
 }
-.stage__prompt--md { max-width: 28ch; font-size: calc(var(--fs-prompt) * 0.82); }
-.stage__prompt--sm { max-width: 34ch; font-size: calc(var(--fs-prompt) * 0.66); }
-.stage__prompt--xs { max-width: 42ch; font-size: calc(var(--fs-prompt) * 0.5); line-height: var(--lh-snug); }
 
 .stage__answerWrap {
   display: grid;
   gap: var(--sp-2);
   justify-items: center;
-  max-width: 42ch;
-  padding: var(--sp-5) var(--sp-6);
+  width: fit-content;
+  max-width: min(100%, calc(46ch / var(--fit)));
+  padding: clamp(var(--sp-3), 2.5vh, var(--sp-5)) var(--sp-6);
   border: 1px solid color-mix(in oklab, var(--c-ok) 40%, transparent);
   border-radius: var(--r-xl);
   background: color-mix(in oklab, var(--c-ok) 9%, var(--c-abyss));
@@ -305,11 +338,14 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
   color: var(--c-ok);
 }
 .stage__answer {
+  /* Odpověď smí být širší než otázka. Když se láme do úzkého sloupce,
+     roste do výšky a přestane se vejít. */
+  max-width: min(100%, calc(38ch / var(--fit)));
   font-family: var(--font-display);
-  font-size: calc(var(--fs-answer) * 0.62);
+  font-size: calc(var(--fs-answer) * var(--fit));
   font-weight: 700;
   line-height: var(--lh-snug);
-  text-wrap: balance;
+  text-wrap: pretty;
 }
 .stage__note {
   margin-top: var(--sp-2);

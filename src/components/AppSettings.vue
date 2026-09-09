@@ -21,8 +21,8 @@ function toggleSound() {
   <UiModal :open="open" title="Nastavení" size="sm" @close="emit('close')">
     <div class="stack">
       <section>
-        <h3 class="head">Velikost písma</h3>
-        <p class="note">Zvětši, když promítáš do větší místnosti.</p>
+        <h3 class="head">Velikost písma ve hře</h3>
+        <p class="note">Zvětši, když promítáš do větší místnosti. Ovládání aplikace zůstane stejné.</p>
         <div class="steps">
           <button
             v-for="s in SCALE_STEPS"

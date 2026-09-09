@@ -30,6 +30,7 @@ import {
 import { confirmAction, toast } from '@/stores/ui'
 import { flyTo } from '@/lib/motion'
 import { teamColor, formatScore } from '@/lib/teams'
+import { settings } from '@/stores/settings'
 import { plural } from '@/lib/format'
 
 /** Obdélník dlaždice, ze které se otázka roztahuje. */
@@ -147,16 +148,19 @@ async function onAgain() {
         </template>
       </AppHeader>
 
-      <p class="status">
-        <span>{{ game.packName }}</span>
-        <span aria-hidden="true">&middot;</span>
-        <span>zbývá {{ remainingCells }} z {{ Object.keys(game.cells).length }} {{ plural(Object.keys(game.cells).length, 'políčka', 'políček', 'políček') }}</span>
-      </p>
+      <!-- Herní plocha. Jen tady platí nastavení velikosti písma, protože
+           tohle je to, co se promítá na plátno. -->
+      <div class="surface game-surface" :style="{ '--scale': String(settings.scale) }">
+        <p class="status">
+          <span>{{ game.packName }}</span>
+          <span aria-hidden="true">&middot;</span>
+          <span>zbývá {{ remainingCells }} z {{ Object.keys(game.cells).length }} {{ plural(Object.keys(game.cells).length, 'políčka', 'políček', 'políček') }}</span>
+        </p>
 
-      <GameBoard :game="game" @open="onOpenCell" />
+        <GameBoard :game="game" @open="onOpenCell" />
 
-      <!-- Bonusové pole: nejdřív sázka ---------------------------------- -->
-      <WagerDialog
+        <!-- Bonusové pole: nejdřív sázka -------------------------------- -->
+        <WagerDialog
         v-if="pendingWager && activeTeam"
         :team="activeTeam"
         :team-index="game.activeTeamIndex"
@@ -166,8 +170,8 @@ async function onAgain() {
         @cancel="cancelWager"
       />
 
-      <!-- Otázka a vyhodnocení ------------------------------------------ -->
-      <QuestionStage
+        <!-- Otázka a vyhodnocení ---------------------------------------- -->
+        <QuestionStage
         v-if="openQuestion && (game.phase === 'question' || game.phase === 'reveal')"
         :key="game.openCell ?? ''"
         :game="game"
@@ -181,12 +185,13 @@ async function onAgain() {
         @cancel="onCancelQuestion"
       />
 
-      <!-- Výsledky ------------------------------------------------------- -->
-      <Transition name="fade">
-        <div v-if="game.phase === 'results'" class="results-layer">
-          <ResultsScreen :game="game" @again="onAgain" @board="backToBoard" />
-        </div>
-      </Transition>
+        <!-- Výsledky ----------------------------------------------------- -->
+        <Transition name="fade">
+          <div v-if="game.phase === 'results'" class="results-layer">
+            <ResultsScreen :game="game" @again="onAgain" @board="backToBoard" />
+          </div>
+        </Transition>
+      </div>
     </template>
   </div>
 </template>
@@ -196,7 +201,9 @@ async function onAgain() {
 
 /* Rozehraná hra drží celou desku na jedné obrazovce. */
 .riskuj--playing { height: 100dvh; overflow: hidden; }
-.riskuj--playing > :deep(.board) { flex: 1; min-height: 0; }
+
+.surface { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.riskuj--playing .surface :deep(.board) { flex: 1; min-height: 0; }
 
 @media (max-height: 560px), (max-width: 560px) {
   .riskuj--playing { height: auto; overflow: visible; }

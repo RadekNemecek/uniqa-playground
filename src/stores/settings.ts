@@ -28,7 +28,8 @@ function load(): Settings {
 export const settings = reactive<Settings>(load())
 
 export function applySettings(): void {
-  document.documentElement.style.setProperty('--scale', String(settings.scale))
+  // Velikost písma se nastavuje až na herní ploše, viz `.game-surface`
+  // v tokens.css. Rozhraní zůstává pevné.
   setSoundEnabled(settings.sound)
 }
 

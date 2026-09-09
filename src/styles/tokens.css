@@ -61,27 +61,29 @@
 
   /* --- Typografie -------------------------------------------------------- */
   --font-ui:      'Inter Variable', 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  /* Bricolage má charakter, ale nechová se jako klaun. Nese nadpisy,
-     bodové hodnoty a otázky, tedy všechno, co se promítá. */
-  --font-display: 'Bricolage Grotesque Variable', 'Bricolage Grotesque', var(--font-ui);
+  /* Displejové písmo je záměrně to samé. Otázky se čtou z druhého konce
+     místnosti, tam vyhrává čitelnost nad charakterem. Token zůstává, aby
+     se dal případný displejový řez nasadit na jednom místě. */
+  --font-display: var(--font-ui);
 
-  /* Škála se odvíjí od --scale, které mění nastavení velikosti pro projektor. */
+  /* Rozhraní má pevné velikosti. Nastavení „velikost písma" mění jen
+     herní plochu, kde jde o čitelnost z druhého konce místnosti. */
+  --fs-xs:   0.75rem;
+  --fs-sm:   0.875rem;
+  --fs-md:   1rem;
+  --fs-lg:   1.125rem;
+  --fs-xl:   1.375rem;
+  --fs-2xl:  1.75rem;
+  --fs-3xl:  2.25rem;
+
+  /* Fluidní stupně herní plochy, kalibrované na projekci. */
+  --fs-value:  clamp(1.25rem, 0.5rem + 1.3vw + 1.4vh, 3.5rem);
+  --fs-prompt: clamp(1.5rem, 0.9rem + 1.4vw + 1.4vh, 4rem);
+  --fs-answer: clamp(1.25rem, 0.7rem + 1vw + 1.2vh, 2.75rem);
+  --fs-hero:   clamp(2.5rem, 1.5rem + 4.5vw, 6rem);
+
+  /* Násobič velikosti písma. Mimo herní plochu zůstává na jedné. */
   --scale: 1;
-
-  --fs-xs:   calc(0.75rem  * var(--scale));
-  --fs-sm:   calc(0.875rem * var(--scale));
-  --fs-md:   calc(1rem     * var(--scale));
-  --fs-lg:   calc(1.125rem * var(--scale));
-  --fs-xl:   calc(1.375rem * var(--scale));
-  --fs-2xl:  calc(1.75rem  * var(--scale));
-  --fs-3xl:  calc(2.25rem  * var(--scale));
-
-  /* Fluidní stupně pro herní plochu, kalibrované na projekci */
-  /* Hodnota na dlaždici roste s šířkou i výškou, aby deska padla na obrazovku. */
-  --fs-value:    calc(clamp(1.25rem, 0.5rem + 1.3vw + 1.4vh, 3.5rem) * var(--scale));
-  --fs-prompt:   calc(clamp(1.5rem, 0.9rem + 2.6vw, 4rem) * var(--scale));
-  --fs-answer:   calc(clamp(1.75rem, 1rem + 3vw, 4.75rem) * var(--scale));
-  --fs-hero:     calc(clamp(2.5rem, 1.5rem + 4.5vw, 6rem) * var(--scale));
 
   --lh-tight: 1.08;
   --lh-snug:  1.25;
@@ -135,6 +137,29 @@
   --z-stage: 60;
   --z-modal: 80;
   --z-toast: 100;
+}
+
+/* ---------------------------------------------------------------------------
+   Herní plocha
+
+   Nastavení velikosti písma se projeví jen tady. Tokeny se musí přepsat
+   celé, protože var() uvnitř custom property se dosazuje tam, kde je
+   property deklarovaná, ne tam, kde se používá. Přepsat samotné --scale
+   na potomkovi by tedy s hodnotami z :root nehnulo.
+--------------------------------------------------------------------------- */
+.game-surface {
+  --fs-xs:   calc(0.75rem  * var(--scale));
+  --fs-sm:   calc(0.875rem * var(--scale));
+  --fs-md:   calc(1rem     * var(--scale));
+  --fs-lg:   calc(1.125rem * var(--scale));
+  --fs-xl:   calc(1.375rem * var(--scale));
+  --fs-2xl:  calc(1.75rem  * var(--scale));
+  --fs-3xl:  calc(2.25rem  * var(--scale));
+
+  --fs-value:  calc(clamp(1.25rem, 0.5rem + 1.3vw + 1.4vh, 3.5rem) * var(--scale));
+  --fs-prompt: calc(clamp(1.5rem, 0.9rem + 1.4vw + 1.4vh, 4rem) * var(--scale));
+  --fs-answer: calc(clamp(1.25rem, 0.7rem + 1vw + 1.2vh, 2.75rem) * var(--scale));
+  --fs-hero:   calc(clamp(2.5rem, 1.5rem + 4.5vw, 6rem) * var(--scale));
 }
 
 /* Uživatel, který nechce pohyb, ho nedostane. Trvání jdou na nulu, takže

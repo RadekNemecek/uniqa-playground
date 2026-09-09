@@ -17,7 +17,17 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
 - **Kontrast textu nejméně 4,5:1.** Týkalo se to hlavně barev týmů, ty jsou
   volené tak, aby na nich držel tmavý text `--c-text-ink`.
 - **Tým se nikdy nerozlišuje jen barvou.** Vždy je vedle ní i písmeno.
-- **Deska se vejde na jednu obrazovku.** Na projektoru se nescrolluje.
+- **Deska i otázka se vejdou na jednu obrazovku.** Na projektoru se
+  nescrolluje. Velikost otázky a odpovědi neodhaduj z počtu znaků, měř ji:
+  `fitToScreen()` v `QuestionStage.vue` ubírá, dokud se obsah nevejde.
+- **Nastavení velikosti písma platí jen na herní ploše.** Nese ji třída
+  `.game-surface`, která přepisuje celou škálu `--fs-*`. Rozhraní, hlavička
+  ani správa otázek se nezvětšují. `var()` uvnitř custom property se dosazuje
+  tam, kde je property deklarovaná, takže samotné přepsání `--scale` na
+  potomkovi by nestačilo.
+- **Jedno písmo, Inter.** Otázky se čtou z druhého konce místnosti, tam
+  vyhrává čitelnost nad charakterem. Token `--font-display` zůstává jako
+  jediné místo, kde by šel displejový řez nasadit.
 - **Hra přežije obnovení stránky.** Stav se ukládá po každé akci.
 - **Texty česky, bez dlouhých pomlček.** A bez řeči o tom, jak je aplikace
   postavená. Uživatelku zajímá, co s tím může dělat, ne architektura.
