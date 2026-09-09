@@ -1,0 +1,226 @@
+<script setup lang="ts">
+import { computed, nextTick, ref } from 'vue'
+import type { GameSetup as Setup, Pack } from '@/types'
+import AppHeader from '@/components/AppHeader.vue'
+import UiButton from '@/components/ui/UiButton.vue'
+import GameSetup from '@/games/riskuj/components/GameSetup.vue'
+import GameBoard from '@/games/riskuj/components/GameBoard.vue'
+import QuestionStage from '@/games/riskuj/components/QuestionStage.vue'
+import WagerDialog from '@/games/riskuj/components/WagerDialog.vue'
+import ResultsScreen from '@/games/riskuj/components/ResultsScreen.vue'
+import {
+  activeTeam,
+  backToBoard,
+  canUndo,
+  cancelQuestion,
+  endGame,
+  game,
+  isWagerCell,
+  maxWager,
+  openQuestion,
+  remainingCells,
+  resolveQuestion,
+  revealAnswer,
+  selectCell,
+  setWager,
+  showResults,
+  startGame,
+  undo,
+} from '@/stores/game'
+import { confirmAction, toast } from '@/stores/ui'
+import { flyTo } from '@/lib/motion'
+import { teamColor, formatScore } from '@/lib/teams'
+import { plural } from '@/lib/format'
+
+/** Obdélník dlaždice, ze které se otázka roztahuje. */
+const origin = ref<DOMRect | null>(null)
+/** Políčko Riskuj! čeká na potvrzení sázky. */
+const pendingWager = ref<string | null>(null)
+
+const openCategoryName = computed(() => {
+  const g = game.value
+  if (!g?.openCell) return ''
+  const catId = g.openCell.split(':')[0]
+  return g.categories.find((c) => c.id === catId)?.name ?? ''
+})
+
+const openPoints = computed(() => {
+  const g = game.value
+  if (!g?.openCell) return 0
+  return g.wager !== null ? g.wager : Number(g.openCell.split(':')[1])
+})
+
+const openIsWager = computed(() => game.value?.wager !== null)
+
+function onStart(pack: Pack, setup: Setup) {
+  startGame(pack, setup)
+}
+
+function onOpenCell(key: string, el: HTMLElement) {
+  origin.value = el.getBoundingClientRect()
+  if (isWagerCell(key)) {
+    pendingWager.value = key
+    return
+  }
+  selectCell(key)
+}
+
+function confirmWager(amount: number) {
+  const key = pendingWager.value
+  pendingWager.value = null
+  if (!key) return
+  selectCell(key)
+  setWager(amount)
+}
+
+function cancelWager() {
+  pendingWager.value = null
+  origin.value = null
+}
+
+function onResolve(teamId: string | null) {
+  const g = game.value
+  if (!g) return
+
+  // Hodnotu i výchozí bod letu je nutné změřit ještě před vyhodnocením,
+  // protože obrazovka s otázkou hned zmizí.
+  const points = openPoints.value
+  const from = document.querySelector<HTMLElement>('[data-stage-value]')?.getBoundingClientRect() ?? null
+  const team = teamId ? g.teams.find((t) => t.id === teamId) : undefined
+  const hex = team ? teamColor(team.color).hex : ''
+
+  resolveQuestion(teamId)
+  origin.value = null
+
+  if (team && from) {
+    void nextTick(() => {
+      const card = document.querySelector<HTMLElement>(`[data-team-id="${team.id}"]`)
+      if (card) void flyTo(from, card.getBoundingClientRect(), `+${formatScore(points)}`, hex)
+    })
+  }
+}
+
+function onCancelQuestion() {
+  cancelQuestion()
+  origin.value = null
+}
+
+function onUndo() {
+  undo()
+  toast('Poslední bodování vráceno.', 'info')
+}
+
+async function onEnd() {
+  const ok = await confirmAction({
+    title: 'Ukončit hru',
+    text: 'Rozehraná hra se smaže včetně skóre. Tuhle akci nejde vrátit.',
+    confirmLabel: 'Ukončit hru',
+    danger: true,
+  })
+  if (ok) endGame()
+}
+
+async function onAgain() {
+  const ok = await confirmAction({
+    title: 'Nová hra',
+    text: 'Výsledky současné hry se zahodí a vrátíš se k nastavení.',
+    confirmLabel: 'Založit novou',
+  })
+  if (ok) endGame()
+}
+</script>
+
+<template>
+  <div class="riskuj" :class="{ 'riskuj--playing': !!game }">
+    <!-- Bez rozehrané hry nabídneme nastavení ---------------------------- -->
+    <template v-if="!game">
+      <AppHeader />
+      <GameSetup @start="onStart" />
+    </template>
+
+    <template v-else>
+      <AppHeader compact>
+        <template #tools>
+          <UiButton size="sm" variant="quiet" :disabled="!canUndo" @click="onUndo">Zpět</UiButton>
+          <UiButton size="sm" variant="quiet" @click="showResults">Výsledky</UiButton>
+          <UiButton size="sm" variant="quiet" @click="onEnd">Konec</UiButton>
+        </template>
+      </AppHeader>
+
+      <p class="status">
+        <span>{{ game.packName }}</span>
+        <span aria-hidden="true">&middot;</span>
+        <span>zbývá {{ remainingCells }} z {{ Object.keys(game.cells).length }} {{ plural(Object.keys(game.cells).length, 'políčka', 'políček', 'políček') }}</span>
+      </p>
+
+      <GameBoard :game="game" @open="onOpenCell" />
+
+      <!-- Bonusové pole: nejdřív sázka ---------------------------------- -->
+      <WagerDialog
+        v-if="pendingWager && activeTeam"
+        :team="activeTeam"
+        :team-index="game.activeTeamIndex"
+        :max="maxWager()"
+        :base="Number(pendingWager.split(':')[1])"
+        @confirm="confirmWager"
+        @cancel="cancelWager"
+      />
+
+      <!-- Otázka a vyhodnocení ------------------------------------------ -->
+      <QuestionStage
+        v-if="openQuestion && (game.phase === 'question' || game.phase === 'reveal')"
+        :key="game.openCell ?? ''"
+        :game="game"
+        :question="openQuestion"
+        :category-name="openCategoryName"
+        :points="openPoints"
+        :is-wager="openIsWager"
+        :origin="origin"
+        @reveal="revealAnswer"
+        @resolve="onResolve"
+        @cancel="onCancelQuestion"
+      />
+
+      <!-- Výsledky ------------------------------------------------------- -->
+      <Transition name="fade">
+        <div v-if="game.phase === 'results'" class="results-layer">
+          <ResultsScreen :game="game" @again="onAgain" @board="backToBoard" />
+        </div>
+      </Transition>
+    </template>
+  </div>
+</template>
+
+<style scoped>
+.riskuj { min-height: 100dvh; display: flex; flex-direction: column; }
+
+/* Rozehraná hra drží celou desku na jedné obrazovce. */
+.riskuj--playing { height: 100dvh; overflow: hidden; }
+.riskuj--playing > :deep(.board) { flex: 1; min-height: 0; }
+
+@media (max-height: 560px), (max-width: 560px) {
+  .riskuj--playing { height: auto; overflow: visible; }
+}
+
+.status {
+  display: flex;
+  gap: var(--sp-2);
+  justify-content: center;
+  flex-wrap: wrap;
+  padding: 0 var(--sp-5) var(--sp-4);
+  font-size: var(--fs-xs);
+  color: var(--c-text-faint);
+  letter-spacing: 0.02em;
+}
+
+.results-layer {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-stage);
+  overflow-y: auto;
+  background: linear-gradient(180deg, var(--c-surface) 0%, var(--c-abyss) 100%);
+}
+
+.fade-enter-active, .fade-leave-active { transition: opacity var(--dur-slow) var(--ease-out); }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
+</style>

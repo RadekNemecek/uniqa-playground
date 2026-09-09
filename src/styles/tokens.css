@@ -1,0 +1,134 @@
+/* ---------------------------------------------------------------------------
+   Playground: designové tokeny
+   Pravidlo projektu: v komponentách se nepoužívají syrové hodnoty barvy,
+   mezery, velikosti písma, poloměru ani trvání animace. Vždy var(--token).
+   Novou hodnotu nejdřív přidej sem.
+--------------------------------------------------------------------------- */
+
+:root {
+  /* --- Plocha ------------------------------------------------------------ */
+  --c-abyss:        #070B1C;  /* nejhlubší vrstva, pozadí za vším */
+  --c-base:         #0B1026;  /* základní plocha aplikace */
+  --c-surface:      #141B3D;  /* karty, dlaždice */
+  --c-surface-2:    #1D2650;  /* vyvýšené plochy, hover */
+  --c-surface-3:    #27336B;  /* aktivní stav, ohraničení dlaždic */
+  --c-line:         #2E3A70;  /* dělítka */
+  --c-line-soft:    #202A57;
+
+  /* --- Text -------------------------------------------------------------- */
+  --c-text:         #F2F4FF;  /* 17:1 na --c-base */
+  --c-text-muted:   #A8B2D8;  /* 9:1 na --c-base */
+  --c-text-faint:   #949FCB;  /* nejméně 4,5:1 i na nejsvětlejší ploše --c-surface-3 */
+  --c-text-ink:     #0B1026;  /* text na světlých plochách */
+
+  /* --- Akcent ------------------------------------------------------------ */
+  --c-gold:         #F5C451;  /* hodnoty, tým na tahu */
+  --c-gold-deep:    #D9A22F;
+  --c-gold-glow:    rgba(245, 196, 81, 0.28);
+
+  /* --- Stavy ------------------------------------------------------------- */
+  --c-ok:           #4ADE80;
+  --c-ok-deep:      #16A34A;
+  --c-bad:          #F87171;
+  --c-bad-deep:     #B91C1C;
+  --c-dead:         #05070F;  /* políčko, které nikdo neuhodl */
+
+  /* --- Barvy týmů -------------------------------------------------------- */
+  /* Všechny mají kontrast >= 4,5:1 vůči --c-text-ink, takže na nich může
+     být tmavý text. Tým se nikdy nerozlišuje jen barvou, vždy i písmenem. */
+  --c-team-1: #A78BFA;  /* ametyst */
+  --c-team-2: #22D3EE;  /* tyrkys  */
+  --c-team-3: #FB7185;  /* korál   */
+  --c-team-4: #A3E635;  /* limeta  */
+  --c-team-5: #FBBF24;  /* jantar  */
+  --c-team-6: #60A5FA;  /* azur    */
+
+  /* --- Typografie -------------------------------------------------------- */
+  --font-ui:      'Inter Variable', 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Archivo Variable', 'Archivo', var(--font-ui);
+
+  /* Škála se odvíjí od --scale, které mění nastavení velikosti pro projektor. */
+  --scale: 1;
+
+  --fs-xs:   calc(0.75rem  * var(--scale));
+  --fs-sm:   calc(0.875rem * var(--scale));
+  --fs-md:   calc(1rem     * var(--scale));
+  --fs-lg:   calc(1.125rem * var(--scale));
+  --fs-xl:   calc(1.375rem * var(--scale));
+  --fs-2xl:  calc(1.75rem  * var(--scale));
+  --fs-3xl:  calc(2.25rem  * var(--scale));
+
+  /* Fluidní stupně pro herní plochu, kalibrované na projekci */
+  /* Hodnota na dlaždici roste s šířkou i výškou, aby deska padla na obrazovku. */
+  --fs-value:    calc(clamp(1.25rem, 0.5rem + 1.3vw + 1.4vh, 3.5rem) * var(--scale));
+  --fs-prompt:   calc(clamp(1.5rem, 0.9rem + 2.6vw, 4rem) * var(--scale));
+  --fs-answer:   calc(clamp(1.75rem, 1rem + 3vw, 4.75rem) * var(--scale));
+  --fs-hero:     calc(clamp(2.5rem, 1.5rem + 4.5vw, 6rem) * var(--scale));
+
+  --lh-tight: 1.08;
+  --lh-snug:  1.25;
+  --lh-body:  1.55;
+
+  --tracking-wide: 0.08em;
+  --tracking-caps: 0.14em;
+
+  /* --- Mezery ------------------------------------------------------------ */
+  --sp-1:  0.25rem;
+  --sp-2:  0.5rem;
+  --sp-3:  0.75rem;
+  --sp-4:  1rem;
+  --sp-5:  1.5rem;
+  --sp-6:  2rem;
+  --sp-7:  3rem;
+  --sp-8:  4rem;
+  --sp-9:  6rem;
+
+  /* --- Poloměry ---------------------------------------------------------- */
+  --r-sm:   6px;
+  --r-md:   10px;
+  --r-lg:   16px;
+  --r-xl:   24px;
+  --r-full: 999px;
+
+  /* --- Stíny ------------------------------------------------------------- */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 8px 24px -8px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 24px 64px -16px rgba(0, 0, 0, 0.7);
+  --shadow-glow: 0 0 0 1px var(--c-gold), 0 0 32px -4px var(--c-gold-glow);
+
+  /* --- Pohyb ------------------------------------------------------------- */
+  --dur-instant: 90ms;
+  --dur-fast:    180ms;
+  --dur-base:    280ms;
+  --dur-slow:    460ms;
+  --dur-stage:   620ms;   /* dlaždice -> celá obrazovka */
+  --dur-reveal:  720ms;   /* setření závěsem */
+  --dur-count:   900ms;   /* odpočet skóre */
+
+  --ease-out:  cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in:   cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-both: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-back: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* --- Rozvržení --------------------------------------------------------- */
+  --page-max: 1440px;
+  --z-board: 1;
+  --z-header: 20;
+  --z-stage: 60;
+  --z-modal: 80;
+  --z-toast: 100;
+}
+
+/* Uživatel, který nechce pohyb, ho nedostane. Trvání jdou na nulu, takže
+   všechny přechody i WAAPI animace (čtou tokeny) skončí okamžitě. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-instant: 1ms;
+    --dur-fast:    1ms;
+    --dur-base:    1ms;
+    --dur-slow:    1ms;
+    --dur-stage:   1ms;
+    --dur-reveal:  1ms;
+    --dur-count:   1ms;
+  }
+}

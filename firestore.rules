@@ -1,0 +1,65 @@
+rules_version = '2';
+
+// Pravidla pro Playground.
+//
+// Hrát a promítat může kdokoli, kdo má odkaz. Upravovat otázky smí jen ten,
+// kdo zná heslo do správy. Heslo samo se v čitelné podobě nikdy nikam
+// nedostane: v databázi je jen jeho otisk a ten není pro klienty čitelný.
+// Pravidla ho ale přečíst umí, a to je celý trik.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function adminHash() {
+      return get(/databases/$(database)/documents/config/admin).data.keyHash;
+    }
+
+    function isUnlocked() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/unlocks/$(request.auth.uid));
+    }
+
+    // Otisk hesla. Nikdo ho nepřečte ani nepřepíše, kromě prvního nastavení
+    // hned po nasazení a pozdější změny z odemčené správy.
+    match /config/admin {
+      allow read: if false;
+      allow create: if !exists(/databases/$(database)/documents/config/admin)
+                    && request.resource.data.keys().hasOnly(['keyHash']);
+      allow update: if isUnlocked() && request.resource.data.keys().hasOnly(['keyHash']);
+      allow delete: if false;
+    }
+
+    // Veřejný příznak, že heslo už někdo nastavil. Rozhoduje o tom, jestli
+    // správa nabídne „Nastav heslo", nebo „Zadej heslo".
+    match /config/public {
+      allow read: if true;
+      allow write: if !exists(/databases/$(database)/documents/config/admin) || isUnlocked();
+    }
+
+    // Doklad o znalosti hesla. Zapsat ho jde jen se správným otiskem,
+    // přečíst ho nesmí nikdo.
+    match /unlocks/{uid} {
+      allow read: if false;
+      allow create, update: if request.auth != null
+                            && request.auth.uid == uid
+                            && request.resource.data.keyHash == adminHash();
+      allow delete: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // Balíčky otázek. Čte je každý, kdo hraje. Mění je jen odemčená správa.
+    match /packs/{packId} {
+      allow read: if true;
+      allow write: if isUnlocked();
+    }
+
+    // Připraveno pro budoucí moderátorský druhý pohled.
+    match /games/{gameId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
