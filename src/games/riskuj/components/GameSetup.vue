@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { GameRules, GameSetup, Pack } from '@/types'
 import { packs, packProgress, playableCategories } from '@/stores/packs'
 import { TEAM_COLORS, teamBadge, teamColor } from '@/lib/teams'
@@ -19,11 +19,15 @@ const teams = ref([
 ])
 const rules = ref<GameRules>({
   timerSeconds: 30,
-  penalty: false,
+  penalty: true,
   steal: true,
   wagerCells: 0,
   sound: true,
 })
+
+/** Dokud si počet bonusových polí nezvolí moderátorka sama, drží se na
+ *  maximu, které deska unese. */
+const wagerPicked = ref(false)
 
 const pack = computed<Pack | undefined>(() => packs.packs.find((p) => p.id === packId.value))
 const usable = computed(() => (pack.value ? playableCategories(pack.value) : []))
@@ -72,19 +76,61 @@ function removeTeam(i: number) {
   teams.value.splice(i, 1)
 }
 
-function cycleColor(i: number) {
-  const team = teams.value[i]
-  if (team) team.color = (team.color + 1) % TEAM_COLORS.length
+/** Otevřená nabídka barev, index týmu. */
+const picker = ref<number | null>(null)
+
+function togglePicker(i: number) {
+  picker.value = picker.value === i ? null : i
 }
+
+function chooseColor(i: number, color: number) {
+  const team = teams.value[i]
+  if (team) team.color = color
+  picker.value = null
+}
+
+/** Barvu, kterou už má jiný tým, nabízet nemá smysl. */
+function colorTakenBy(color: number, exceptIndex: number): number {
+  return teams.value.findIndex((t, i) => i !== exceptIndex && t.color === color)
+}
+
+function onDocumentClick(e: MouseEvent) {
+  if (picker.value === null) return
+  const target = e.target as HTMLElement
+  if (!target.closest('.team__color')) picker.value = null
+}
+
+function onEscape(e: KeyboardEvent) {
+  if (e.key === 'Escape') picker.value = null
+}
+
+onMounted(() => {
+  document.addEventListener('click', onDocumentClick)
+  document.addEventListener('keydown', onEscape)
+})
+onBeforeUnmount(() => {
+  document.removeEventListener('click', onDocumentClick)
+  document.removeEventListener('keydown', onEscape)
+})
 
 const maxWagerCells = computed(() => {
   const cells = selected.value.size * (pack.value?.ladder.length ?? 0)
   return Math.min(4, Math.max(0, Math.floor(cells / 6)))
 })
 
-watch(maxWagerCells, (max) => {
-  if (rules.value.wagerCells > max) rules.value.wagerCells = max
-})
+watch(
+  maxWagerCells,
+  (max) => {
+    if (!wagerPicked.value) rules.value.wagerCells = max
+    else if (rules.value.wagerCells > max) rules.value.wagerCells = max
+  },
+  { immediate: true },
+)
+
+function pickWagerCells(n: number) {
+  wagerPicked.value = true
+  rules.value.wagerCells = n
+}
 
 const problems = computed<string[]>(() => {
   const out: string[] = []
@@ -175,15 +221,35 @@ function start() {
 
         <ul class="teams">
           <li v-for="(t, i) in teams" :key="i" class="team">
-            <button
-              type="button"
-              class="team__dot"
-              :style="{ background: `var(${teamColor(t.color).cssVar})` }"
-              :aria-label="`Barva týmu ${i + 1}: ${teamColor(t.color).label}, změnit`"
-              @click="cycleColor(i)"
-            >
-              {{ teamBadge(i) }}
-            </button>
+            <span class="team__color">
+              <button
+                type="button"
+                class="team__dot"
+                :style="{ background: `var(${teamColor(t.color).cssVar})` }"
+                :aria-label="`Barva týmu ${t.name || i + 1}: ${teamColor(t.color).label}, vybrat jinou`"
+                :aria-expanded="picker === i"
+                aria-haspopup="true"
+                @click.stop="togglePicker(i)"
+              >
+                {{ teamBadge(i) }}
+              </button>
+
+              <span v-if="picker === i" class="swatches" role="group" aria-label="Barva týmu">
+                <button
+                  v-for="(c, ci) in TEAM_COLORS"
+                  :key="ci"
+                  type="button"
+                  class="swatch"
+                  :class="{ 'swatch--on': t.color === ci }"
+                  :style="{ background: `var(${c.cssVar})` }"
+                  :disabled="colorTakenBy(ci, i) >= 0"
+                  :aria-pressed="t.color === ci"
+                  :title="colorTakenBy(ci, i) >= 0 ? `${c.label}, už má jiný tým` : c.label"
+                  :aria-label="colorTakenBy(ci, i) >= 0 ? `${c.label}, už má jiný tým` : c.label"
+                  @click.stop="chooseColor(i, ci)"
+                />
+              </span>
+            </span>
             <input
               v-model="t.name"
               class="team__name"
@@ -240,7 +306,7 @@ function start() {
               :disabled="n > maxWagerCells"
               :class="{ 'seg--on': rules.wagerCells === n }"
               :aria-pressed="rules.wagerCells === n"
-              @click="rules.wagerCells = n"
+              @click="pickWagerCells(n)"
             >
               {{ n === 0 ? 'Žádné' : n }}
             </button>
@@ -371,6 +437,59 @@ function start() {
   transition: transform var(--dur-fast) var(--ease-back);
 }
 .team__dot:hover { transform: scale(1.08); }
+
+/* Výběr barvy ------------------------------------------------------------- */
+.team__color { position: relative; display: inline-flex; }
+
+.swatches {
+  position: absolute;
+  top: calc(100% + var(--sp-2));
+  left: 0;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  gap: var(--sp-2);
+  padding: var(--sp-3);
+  border: 1px solid var(--c-line);
+  border-radius: var(--r-lg);
+  background: var(--c-surface-2);
+  box-shadow: var(--shadow-md);
+  animation: pop var(--dur-fast) var(--ease-back) both;
+}
+/* Špička směrem k tlačítku, ať je vidět, ke kterému týmu nabídka patří. */
+.swatches::before {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: 0.9rem;
+  width: 9px;
+  height: 9px;
+  rotate: 45deg;
+  background: var(--c-surface-2);
+  border-left: 1px solid var(--c-line);
+  border-top: 1px solid var(--c-line);
+}
+
+.swatch {
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 2px solid transparent;
+  border-radius: var(--r-full);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  transition: transform var(--dur-fast) var(--ease-back), border-color var(--dur-fast) var(--ease-out);
+}
+.swatch:hover:not(:disabled) { transform: scale(1.14); }
+.swatch--on { border-color: var(--c-text); }
+.swatch:disabled { opacity: 0.28; cursor: not-allowed; }
+
+@keyframes pop {
+  from { opacity: 0; transform: translateY(-6px) scale(0.94); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .swatches { animation: none; }
+  .swatch { transition: none; }
+}
 .team__name {
   flex: 1;
   min-width: 0;
