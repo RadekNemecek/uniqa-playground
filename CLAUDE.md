@@ -30,6 +30,9 @@ přímo. Implementace jsou dvě:
 - `FirestoreDb` v `src/lib/firebase.ts`, zapne se, jakmile je vyplněný
   `src/lib/firebase.config.ts`.
 
+`npm run dev:local` vynutí lokální režim i s vyplněnou konfigurací. Používej
+ho, když zkoušíš něco, co by nemělo sáhnout na sdílená data.
+
 Balíček otázek je **jeden dokument**, ne kolekce. Menší deska znamená
 jednotky kilobajtů proti limitu 1 MB a získáme tím atomické ukládání,
 jeden listener a triviální duplikaci. Cenou je, že při souběžné editaci

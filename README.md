@@ -20,8 +20,9 @@ Při prvním spuštění se založí ukázkový balíček otázek.
 
 ## Jak se hra vede
 
-1. **Otázky** připravíš předem v sekci *Otázky*. Mřížka v editoru odpovídá
-   přesně té, kterou uvidí hráči.
+1. **Otázky** připravíš předem v sekci *Otázky*. Deska v editoru vypadá
+   stejně jako ta, kterou uvidí hráči: klikneš na políčko a napíšeš k němu
+   otázku a odpověď. Tlačítko *Doplnit chybějící* tě provede zbytkem.
 2. **Hrát** otevře přípravu: vybereš balíček, kategorie, týmy a pravidla.
 3. Na desce klikneš na políčko, zobrazí se otázka. Správnou odpověď
    neznáš, odhalíš ji dalším kliknutím nebo mezerníkem.
@@ -55,11 +56,24 @@ nepůsobila jako oficiální nástroj pojišťovny. Kdyby marketing UNIQA použi
 značky schválil, patří logo do `public/` a do hlavičky v
 `src/components/AppHeader.vue`, kde je dnes textová značka Playground.
 
+## Příprava otázek
+
+Balíček je jedna herní deska: kategorie tvoří sloupce, bodové hodnoty řádky.
+V editoru se dá obojí přidávat, přejmenovat i přeskládat.
+
+Otázku otevřeš kliknutím na políčko. Ukládá se sama, tlačítko Uložit tu není.
+Šipkami v hlavičce se posuneš na sousední otázku, *Další nevyplněná* skočí
+na tu, která ještě chybí, `Ctrl+Enter` udělá totéž z klávesnice.
+
+Do hry jde jen kategorie, která má vyplněné všechny otázky i odpovědi.
+Nedodělané kategorie se v přípravě hry samy nenabídnou.
+
 ## Skripty
 
 | příkaz | co dělá |
 |---|---|
 | `npm run dev` | vývojový server |
+| `npm run dev:local` | totéž, ale data zůstanou jen v prohlížeči, sdílená databáze se nedotkne |
 | `npm run build` | kontrola typů a produkční sestavení |
 | `npm run preview` | náhled produkčního sestavení |
 | `npm run typecheck` | jen kontrola typů |

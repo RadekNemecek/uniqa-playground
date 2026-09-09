@@ -6,6 +6,7 @@
   "description": "Playground: interaktivní školicí hry. První hra: Riskuj.",
   "scripts": {
     "dev": "vite",
+    "dev:local": "VITE_LOCAL_ONLY=1 vite --port 5185 --strictPort",
     "build": "vue-tsc --noEmit && vite build && node scripts/postbuild.mjs",
     "build:only": "vite build && node scripts/postbuild.mjs",
     "preview": "vite preview",

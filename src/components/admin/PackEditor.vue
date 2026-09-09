@@ -2,12 +2,19 @@
 import { computed, ref, toRaw, watch } from 'vue'
 import type { Pack, Question } from '@/types'
 import UiButton from '@/components/ui/UiButton.vue'
+import CategoryBar from './CategoryBar.vue'
+import LadderBar from './LadderBar.vue'
+import BoardGrid from './BoardGrid.vue'
 import QuestionEditor from './QuestionEditor.vue'
 import { db } from '@/lib/db'
 import { clone } from '@/lib/clone'
-import { emptyCategory, emptyQuestion, isQuestionReady, packProgress } from '@/stores/packs'
+import { emptyCategory, emptyQuestion, isQuestionReady } from '@/stores/packs'
 import { confirmAction, toast } from '@/stores/ui'
 import { formatScore } from '@/lib/teams'
+import { count, plural } from '@/lib/format'
+
+const MAX_CATEGORIES = 8
+const MAX_ROWS = 8
 
 const props = defineProps<{ pack: Pack }>()
 const emit = defineEmits<{ duplicate: []; remove: [] }>()
@@ -16,6 +23,8 @@ const draft = ref<Pack>(clone(toRaw(props.pack)))
 const saveState = ref<'idle' | 'saving' | 'saved'>('idle')
 const conflict = ref(false)
 const selected = ref<{ categoryId: string; value: number } | null>(null)
+/** Editor otázky se otevírá přes desku, aby měla mřížka celou šířku. */
+const editorOpen = ref(false)
 
 let lastWrittenAt = props.pack.updatedAt
 let timer = 0
@@ -27,14 +36,14 @@ watch(
     draft.value = clone(toRaw(props.pack))
     lastWrittenAt = props.pack.updatedAt
     conflict.value = false
-    selected.value = null
     saveState.value = 'idle'
+    selected.value = null
+    editorOpen.value = false
+    selectFirstUseful()
   },
 )
 
-/* --- Cizí úprava ---------------------------------------------------------
-   Balíček je jeden dokument, takže při souběžné editaci vyhrává poslední
-   zápis. Radši o tom řekneme, než abychom potichu přepsali cizí práci. */
+/* --- Cizí úprava ---------------------------------------------------------- */
 watch(
   () => props.pack.updatedAt,
   (at) => {
@@ -49,7 +58,7 @@ function reloadFromSource() {
   toast('Balíček načten znovu.', 'ok')
 }
 
-/* --- Automatické ukládání ------------------------------------------------ */
+/* --- Automatické ukládání ------------------------------------------------- */
 watch(
   draft,
   () => {
@@ -73,17 +82,41 @@ async function flush() {
   }
 }
 
-/* --- Odvozené ------------------------------------------------------------ */
-const progress = computed(() => packProgress(draft.value))
-const pct = computed(() =>
-  progress.value.total ? Math.round((progress.value.done / progress.value.total) * 100) : 0,
-)
+/* --- Pohled na obsah ------------------------------------------------------ */
 
 function questionOf(categoryId: string, value: number): Question | undefined {
   return draft.value.categories
     .find((c) => c.id === categoryId)
     ?.questions.find((q) => q.value === value)
 }
+
+function isReady(categoryId: string, value: number): boolean {
+  return isQuestionReady(questionOf(categoryId, value))
+}
+
+function readyInCategory(categoryId: string): number {
+  return draft.value.ladder.filter((v) => isReady(categoryId, v)).length
+}
+
+/** Políčka v pořadí, v jakém jsou na desce vidět: po řádcích zleva doprava. */
+const cells = computed(() =>
+  draft.value.ladder.flatMap((value) =>
+    draft.value.categories.map((c) => ({ categoryId: c.id, value })),
+  ),
+)
+
+const done = computed(() => cells.value.filter((c) => isReady(c.categoryId, c.value)).length)
+const total = computed(() => cells.value.length)
+const remaining = computed(() => total.value - done.value)
+const pct = computed(() => (total.value ? Math.round((done.value / total.value) * 100) : 0))
+
+const currentIndex = computed(() =>
+  selected.value
+    ? cells.value.findIndex(
+        (c) => c.categoryId === selected.value!.categoryId && c.value === selected.value!.value,
+      )
+    : -1,
+)
 
 const selectedQuestion = computed<Question | undefined>(() =>
   selected.value ? questionOf(selected.value.categoryId, selected.value.value) : undefined,
@@ -93,44 +126,79 @@ const selectedCategoryName = computed(
   () => draft.value.categories.find((c) => c.id === selected.value?.categoryId)?.name ?? '',
 )
 
-function preview(q: Question | undefined): string {
-  const text = q?.prompt.trim() ?? ''
-  return text.length > 46 ? `${text.slice(0, 46)}…` : text
+/* --- Pohyb mezi otázkami --------------------------------------------------- */
+
+function select(categoryId: string, value: number) {
+  selected.value = { categoryId, value }
+  editorOpen.value = true
 }
 
-/* --- Struktura balíčku --------------------------------------------------- */
+function step(by: number) {
+  const next = cells.value[currentIndex.value + by]
+  if (next) selected.value = { ...next }
+}
+
+/** Skočí na první nevyplněnou otázku za tou současnou, případně od začátku. */
+function gotoNextEmpty() {
+  const from = currentIndex.value + 1
+  const order = [...cells.value.slice(from), ...cells.value.slice(0, Math.max(0, from))]
+  const target = order.find((c) => !isReady(c.categoryId, c.value))
+  if (!target) return
+  selected.value = { ...target }
+  editorOpen.value = true
+}
+
+/** Vybere políčko, na kterém dává smysl začít. Dialog neotevírá. */
+/** Otevře první nevyplněnou otázku na desce, ať je vybraná kterákoli. */
+function openFirstEmpty() {
+  const target = cells.value.find((c) => !isReady(c.categoryId, c.value))
+  if (!target) return
+  selected.value = { ...target }
+  editorOpen.value = true
+}
+
+function selectFirstUseful() {
+  const target = cells.value.find((c) => !isReady(c.categoryId, c.value)) ?? cells.value[0]
+  selected.value = target ? { ...target } : null
+}
+
+selectFirstUseful()
+
+/* --- Struktura balíčku ----------------------------------------------------- */
 
 /** Otázky musí vždy odpovídat žebříčku hodnot. */
 function syncLadder() {
-  const ladder = draft.value.ladder
   for (const cat of draft.value.categories) {
-    const kept = ladder.map(
+    cat.questions = draft.value.ladder.map(
       (v) => cat.questions.find((q) => q.value === v) ?? emptyQuestion(v),
     )
-    cat.questions = kept
   }
-  if (selected.value && !ladder.includes(selected.value.value)) selected.value = null
+  if (selected.value && !draft.value.ladder.includes(selected.value.value)) selectFirstUseful()
 }
 
 function addCategory() {
-  if (draft.value.categories.length >= 8) return
-  draft.value.categories.push(
-    emptyCategory(draft.value.ladder, `Kategorie ${draft.value.categories.length + 1}`),
-  )
+  if (draft.value.categories.length >= MAX_CATEGORIES) return
+  const cat = emptyCategory(draft.value.ladder, `Kategorie ${draft.value.categories.length + 1}`)
+  draft.value.categories.push(cat)
+  selected.value = { categoryId: cat.id, value: draft.value.ladder[0]! }
 }
 
 async function removeCategory(categoryId: string) {
   const cat = draft.value.categories.find((c) => c.id === categoryId)
   if (!cat) return
+  if (draft.value.categories.length <= 1) {
+    toast('Balíček musí mít aspoň jednu kategorii.', 'bad')
+    return
+  }
   const ok = await confirmAction({
     title: 'Smazat kategorii',
-    text: `Kategorie „${cat.name}" i všechny její otázky se smažou.`,
+    text: `Smaže se kategorie „${cat.name || 'bez názvu'}" i ${count(draft.value.ladder.length, 'otázka', 'otázky', 'otázek')}, které obsahuje.`,
     confirmLabel: 'Smazat',
     danger: true,
   })
   if (!ok) return
   draft.value.categories = draft.value.categories.filter((c) => c.id !== categoryId)
-  if (selected.value?.categoryId === categoryId) selected.value = null
+  if (selected.value?.categoryId === categoryId) selectFirstUseful()
 }
 
 function moveCategory(index: number, by: number) {
@@ -142,11 +210,9 @@ function moveCategory(index: number, by: number) {
 }
 
 function addRow() {
-  if (draft.value.ladder.length >= 8) return
+  if (draft.value.ladder.length >= MAX_ROWS) return
   const last = draft.value.ladder.at(-1) ?? 0
-  const step = draft.value.ladder.length > 1
-    ? last - (draft.value.ladder.at(-2) ?? 0)
-    : 200
+  const step = draft.value.ladder.length > 1 ? last - (draft.value.ladder.at(-2) ?? 0) : 200
   draft.value.ladder.push(last + Math.max(50, step))
   syncLadder()
 }
@@ -155,7 +221,7 @@ async function removeRow(value: number) {
   if (draft.value.ladder.length <= 2) return
   const ok = await confirmAction({
     title: 'Smazat řádek',
-    text: `Otázky za ${formatScore(value)} bodů se ve všech kategoriích smažou.`,
+    text: `Otázky za ${formatScore(value)} bodů se smažou ve všech kategoriích.`,
     confirmLabel: 'Smazat',
     danger: true,
   })
@@ -167,18 +233,23 @@ async function removeRow(value: number) {
 function editRow(index: number, raw: string) {
   const n = Math.max(10, Math.min(100000, Math.round(Number(raw) || 0)))
   const ladder = draft.value.ladder
-  if (ladder.includes(n) && ladder[index] !== n) return
   const old = ladder[index]
-  if (old === undefined) return
+  if (old === undefined || old === n) return
+  if (ladder.includes(n)) {
+    toast('Tuhle hodnotu už balíček má.', 'bad')
+    return
+  }
   ladder[index] = n
   for (const cat of draft.value.categories) {
     const q = cat.questions.find((x) => x.value === old)
     if (q) q.value = n
   }
   if (selected.value?.value === old) selected.value = { ...selected.value, value: n }
+  draft.value.ladder = [...ladder].sort((a, b) => a - b)
+  syncLadder()
 }
 
-async function remove() {
+async function removePack() {
   const ok = await confirmAction({
     title: 'Smazat balíček',
     text: `Balíček „${draft.value.name}" se smaže i se všemi otázkami. Vrátit to nejde.`,
@@ -191,7 +262,7 @@ async function remove() {
 
 <template>
   <div class="ed">
-    <!-- Hlavička balíčku ------------------------------------------------- -->
+    <!-- Hlavička balíčku -------------------------------------------------- -->
     <header class="ed__head">
       <div class="ed__ident">
         <input
@@ -208,144 +279,101 @@ async function remove() {
           type="text"
           maxlength="160"
           aria-label="Popis balíčku"
-          placeholder="Krátký popis, k čemu balíček slouží"
+          placeholder="K čemu balíček slouží, pro koho je"
         />
       </div>
 
-      <div class="ed__meta">
-        <div class="ed__progress" :title="`Vyplněno ${progress.done} z ${progress.total} otázek`">
-          <svg viewBox="0 0 36 36" width="38" height="38" aria-hidden="true">
-            <circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--c-surface-2)" stroke-width="4" />
-            <circle
-              cx="18" cy="18" r="15.5" fill="none"
-              stroke="var(--c-gold)" stroke-width="4" stroke-linecap="round"
-              :stroke-dasharray="`${(pct / 100) * 97.4} 97.4`"
-              transform="rotate(-90 18 18)"
-            />
-          </svg>
-          <span>
-            <strong>{{ progress.done }} z {{ progress.total }}</strong>
-            <em>otázek hotových</em>
-          </span>
-        </div>
-
-        <p class="ed__save" :data-state="saveState">
-          <template v-if="saveState === 'saving'">Ukládám…</template>
-          <template v-else-if="saveState === 'saved'">Uloženo</template>
-          <template v-else>Automatické ukládání</template>
-        </p>
-
-        <div class="ed__actions">
-          <UiButton size="sm" variant="ghost" @click="emit('duplicate')">Duplikovat</UiButton>
-          <UiButton size="sm" variant="danger" @click="remove">Smazat</UiButton>
-        </div>
+      <div class="ed__actions">
+        <RouterLink to="/riskuj" class="ed__play">Vyzkoušet v hře</RouterLink>
+        <UiButton size="sm" variant="ghost" @click="emit('duplicate')">Duplikovat</UiButton>
+        <UiButton size="sm" variant="danger" @click="removePack">Smazat</UiButton>
       </div>
     </header>
+
+    <!-- Postup ------------------------------------------------------------ -->
+    <div class="ed__progress">
+      <div class="ed__bar" role="progressbar" :aria-valuenow="pct" aria-valuemin="0" aria-valuemax="100">
+        <span :style="{ width: `${pct}%` }" />
+      </div>
+      <p class="ed__count">
+        <strong>{{ done }} z {{ total }}</strong>
+        <span v-if="remaining > 0">{{ plural(total, 'otázky', 'otázek', 'otázek') }} hotových</span>
+        <span v-else class="ed__complete">Balíček je hotový</span>
+      </p>
+      <UiButton v-if="remaining > 0" size="sm" variant="ghost" @click="openFirstEmpty">
+        Doplnit chybějící
+      </UiButton>
+    </div>
 
     <p v-if="conflict" class="ed__conflict" role="alert">
       Balíček mezitím upravil někdo jiný.
       <button type="button" @click="reloadFromSource">Načíst znovu</button>
-      Když budeš pokračovat, tvoje verze cizí změny přepíše.
+      Pokud budeš pokračovat, tvoje verze cizí změny přepíše.
     </p>
 
-    <!-- Mřížka a editor otázky ------------------------------------------- -->
-    <div class="ed__main">
-      <div class="grid" :style="{ '--cols': draft.categories.length }">
-        <!-- roh -->
-        <div class="grid__corner"></div>
-
-        <!-- hlavičky kategorií -->
-        <div v-for="(cat, ci) in draft.categories" :key="cat.id" class="grid__cat">
-          <input
-            v-model="cat.name"
-            type="text"
-            maxlength="30"
-            :title="cat.name"
-            :aria-label="`Název kategorie ${ci + 1}`"
-            placeholder="Kategorie"
-          />
-          <div class="grid__catTools">
-            <button type="button" :disabled="ci === 0" aria-label="Posunout doleva" @click="moveCategory(ci, -1)">&#8249;</button>
-            <button type="button" :disabled="ci === draft.categories.length - 1" aria-label="Posunout doprava" @click="moveCategory(ci, 1)">&#8250;</button>
-            <button type="button" aria-label="Smazat kategorii" @click="removeCategory(cat.id)">&#215;</button>
-          </div>
-        </div>
-
-        <!-- řádky hodnot -->
-        <template v-for="(value, ri) in draft.ladder" :key="value">
-          <div class="grid__row">
-            <input
-              class="grid__value"
-              type="number"
-              :value="value"
-              step="50"
-              min="10"
-              :aria-label="`Hodnota řádku ${ri + 1}`"
-              @change="editRow(ri, ($event.target as HTMLInputElement).value)"
-            />
-            <button
-              type="button"
-              class="grid__rowX"
-              :disabled="draft.ladder.length <= 2"
-              aria-label="Smazat řádek"
-              @click="removeRow(value)"
-            >
-              &#215;
-            </button>
-          </div>
-
-          <button
-            v-for="cat in draft.categories"
-            :key="cat.id + value"
-            type="button"
-            class="grid__cell"
-            :class="{
-              'grid__cell--ready': isQuestionReady(questionOf(cat.id, value)),
-              'grid__cell--on': selected?.categoryId === cat.id && selected?.value === value,
-            }"
-            :aria-label="`${cat.name}, ${value} bodů, ${isQuestionReady(questionOf(cat.id, value)) ? 'vyplněno' : 'prázdné'}`"
-            @click="selected = { categoryId: cat.id, value }"
-          >
-            <span v-if="preview(questionOf(cat.id, value))" class="grid__preview">
-              {{ preview(questionOf(cat.id, value)) }}
-            </span>
-            <span v-else class="grid__empty">prázdné</span>
-          </button>
-        </template>
-      </div>
-
-      <aside class="side">
-        <QuestionEditor
-          v-if="selectedQuestion"
-          :key="selectedQuestion.id"
-          :question="selectedQuestion"
-          :category-name="selectedCategoryName"
-        />
-        <div v-else class="side__empty">
-          <p class="side__emptyTitle">Klikni na políčko</p>
-          <p class="side__emptyText">
-            Mřížka odpovídá desce, kterou uvidí hráči. Vybrané políčko se otevře tady k úpravě.
-          </p>
-        </div>
-      </aside>
+    <!-- Struktura desky ---------------------------------------------------- -->
+    <div class="ed__structure">
+      <CategoryBar
+        :categories="draft.categories"
+        :ready-count="readyInCategory"
+        :total="draft.ladder.length"
+        :max="MAX_CATEGORIES"
+        @move="moveCategory"
+        @remove="removeCategory"
+        @add="addCategory"
+      />
+      <LadderBar
+        :ladder="draft.ladder"
+        :max="MAX_ROWS"
+        @edit="editRow"
+        @remove="removeRow"
+        @add="addRow"
+      />
     </div>
 
-    <footer class="ed__foot">
-      <UiButton size="sm" variant="ghost" :disabled="draft.categories.length >= 8" @click="addCategory">
-        Přidat kategorii
-      </UiButton>
-      <UiButton size="sm" variant="ghost" :disabled="draft.ladder.length >= 8" @click="addRow">
-        Přidat řádek hodnot
-      </UiButton>
-      <p class="ed__footNote">
-        Do hry jde jen kategorie, která má vyplněné všechny otázky i odpovědi.
-      </p>
-    </footer>
+    <!-- Deska ---------------------------------------------------------------- -->
+    <div class="ed__board">
+      <BoardGrid
+        :categories="draft.categories"
+        :ladder="draft.ladder"
+        :question-of="questionOf"
+        :is-ready="isReady"
+        :selected="selected"
+        @select="select"
+      />
+      <p class="ed__hint">Klikni na políčko a napiš k němu otázku s odpovědí.</p>
+    </div>
+
+    <!-- Editor otázky ---------------------------------------------------------- -->
+    <Teleport to="body">
+      <Transition name="dialog">
+        <div v-if="editorOpen && selectedQuestion" class="dialog" role="dialog" aria-modal="true" aria-label="Úprava otázky">
+          <div class="dialog__scrim" @click="editorOpen = false" />
+          <div class="dialog__panel">
+            <QuestionEditor
+              :key="selectedQuestion.id"
+              :question="selectedQuestion"
+              :category-name="selectedCategoryName"
+              :position="currentIndex + 1"
+              :total="total"
+              :has-prev="currentIndex > 0"
+              :has-next="currentIndex < total - 1"
+              :remaining="remaining"
+              :save-state="saveState"
+              @prev="step(-1)"
+              @next="step(1)"
+              @next-empty="gotoNextEmpty"
+              @close="editorOpen = false"
+            />
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
 <style scoped>
-.ed { display: grid; gap: var(--sp-4); align-content: start; min-width: 0; }
+.ed { display: grid; gap: var(--sp-5); align-content: start; min-width: 0; }
 
 /* Hlavička ---------------------------------------------------------------- */
 .ed__head {
@@ -380,19 +408,37 @@ async function remove() {
 .ed__name:hover, .ed__desc:hover { border-color: var(--c-line); }
 .ed__name:focus, .ed__desc:focus { border-color: var(--c-gold); outline: none; background: var(--c-abyss); }
 
-.ed__meta { display: flex; align-items: center; gap: var(--sp-5); flex-wrap: wrap; }
-.ed__progress { display: flex; align-items: center; gap: var(--sp-3); }
-.ed__progress strong { display: block; font-size: var(--fs-sm); font-weight: 700; }
-.ed__progress em { display: block; font-style: normal; font-size: var(--fs-xs); color: var(--c-text-faint); }
-
-.ed__save {
-  font-size: var(--fs-xs);
-  color: var(--c-text-faint);
-  transition: color var(--dur-base) var(--ease-out);
+.ed__actions { display: flex; align-items: center; gap: var(--sp-2); }
+.ed__play {
+  padding: var(--sp-2) var(--sp-3);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--c-gold);
+  text-decoration: none;
+  border-radius: var(--r-md);
 }
-.ed__save[data-state='saved'] { color: var(--c-ok); }
+.ed__play:hover { background: color-mix(in oklab, var(--c-gold) 12%, transparent); }
 
-.ed__actions { display: flex; gap: var(--sp-2); }
+/* Postup ------------------------------------------------------------------ */
+.ed__progress { display: flex; align-items: center; gap: var(--sp-4); flex-wrap: wrap; }
+.ed__bar {
+  flex: 1;
+  min-width: 8rem;
+  height: 6px;
+  border-radius: var(--r-full);
+  background: var(--c-surface-2);
+  overflow: hidden;
+}
+.ed__bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--c-gold-deep), var(--c-gold));
+  transition: width var(--dur-slow) var(--ease-out);
+}
+.ed__count { display: flex; gap: var(--sp-2); align-items: baseline; font-size: var(--fs-sm); color: var(--c-text-faint); }
+.ed__count strong { color: var(--c-text); font-variant-numeric: tabular-nums; }
+.ed__complete { color: var(--c-ok); font-weight: 600; }
 
 .ed__conflict {
   padding: var(--sp-3) var(--sp-4);
@@ -408,129 +454,51 @@ async function remove() {
   padding: 0 var(--sp-1);
 }
 
-/* Mřížka ------------------------------------------------------------------ */
-.ed__main {
+/* Struktura --------------------------------------------------------------- */
+.ed__structure {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(17rem, 21rem);
-  gap: var(--sp-4);
-  align-items: start;
-}
-
-.grid {
-  display: grid;
-  grid-template-columns: 6rem repeat(var(--cols), minmax(6.5rem, 1fr));
-  gap: 4px;
-  min-width: 0;
-  overflow-x: auto;
-}
-
-.grid__corner { }
-
-.grid__cat {
-  display: grid;
-  gap: 2px;
-  padding: var(--sp-2);
-  border: 1px solid var(--c-line);
-  border-radius: var(--r-md);
-  background: var(--c-surface-2);
-}
-.grid__cat input {
-  width: 100%;
-  border: 1px solid transparent;
-  border-radius: var(--r-sm);
-  background: transparent;
-  padding: 2px var(--sp-2);
-  font-family: var(--font-display);
-  font-size: var(--fs-xs);
-  font-weight: 700;
-  letter-spacing: 0.01em;
-  color: var(--c-text);
-  text-align: center;
-}
-.grid__cat input:hover { border-color: var(--c-line); }
-.grid__cat input:focus { border-color: var(--c-gold); outline: none; background: var(--c-abyss); }
-.grid__catTools { display: flex; justify-content: center; gap: 2px; }
-.grid__catTools button {
-  width: 1.4rem; height: 1.4rem;
-  border: 0; border-radius: var(--r-sm);
-  background: transparent; color: var(--c-text-faint);
-  font-size: 0.9rem; line-height: 1;
-}
-.grid__catTools button:hover:not(:disabled) { background: var(--c-surface-3); color: var(--c-text); }
-.grid__catTools button:disabled { opacity: 0.25; }
-
-.grid__row { display: flex; align-items: center; gap: 2px; }
-.grid__value {
-  flex: 1;
-  min-width: 0;
-  padding: var(--sp-2);
-  border: 1px solid var(--c-line);
-  border-radius: var(--r-md);
-  background: var(--c-abyss);
-  color: var(--c-gold);
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: var(--fs-md);
-  text-align: center;
-  font-variant-numeric: tabular-nums;
-}
-.grid__value:focus { border-color: var(--c-gold); outline: none; }
-.grid__rowX {
-  width: 1.4rem; height: 1.4rem; flex: none;
-  border: 0; border-radius: var(--r-sm);
-  background: transparent; color: var(--c-text-faint); font-size: 0.9rem; line-height: 1;
-}
-.grid__rowX:hover:not(:disabled) { color: var(--c-bad); }
-.grid__rowX:disabled { opacity: 0.2; }
-
-.grid__cell {
-  display: grid;
-  place-items: center;
-  min-height: 3.5rem;
-  padding: var(--sp-2);
-  border: 1px dashed var(--c-line);
-  border-radius: var(--r-md);
-  background: var(--c-abyss);
-  color: var(--c-text-faint);
-  font-size: var(--fs-xs);
-  line-height: 1.35;
-  text-align: center;
-  transition: all var(--dur-fast) var(--ease-out);
-}
-.grid__cell:hover { border-color: var(--c-surface-3); color: var(--c-text-muted); }
-.grid__cell--ready {
-  border-style: solid;
-  border-color: color-mix(in oklab, var(--c-ok) 32%, var(--c-line));
-  background: color-mix(in oklab, var(--c-ok) 7%, var(--c-abyss));
-  color: var(--c-text-muted);
-}
-.grid__cell--on {
-  border-color: var(--c-gold);
-  background: color-mix(in oklab, var(--c-gold) 12%, var(--c-abyss));
-  color: var(--c-text);
-}
-.grid__preview { display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-.grid__empty { font-style: italic; opacity: 0.6; }
-
-/* Boční editor ------------------------------------------------------------ */
-.side {
-  position: sticky;
-  top: var(--sp-4);
+  gap: var(--sp-5);
   padding: var(--sp-5);
   border: 1px solid var(--c-line);
   border-radius: var(--r-xl);
+  background: color-mix(in oklab, var(--c-surface) 55%, transparent);
+}
+
+/* Deska -------------------------------------------------------------------- */
+.ed__board { display: grid; gap: var(--sp-3); }
+.ed__hint { font-size: var(--fs-xs); color: var(--c-text-faint); }
+
+/* Editor otázky ------------------------------------------------------------ */
+.dialog {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  display: grid;
+  place-items: center;
+  padding: var(--sp-5);
+}
+.dialog__scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(3, 6, 18, 0.72);
+  backdrop-filter: blur(6px);
+}
+.dialog__panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 40rem);
+  max-height: min(90dvh, 56rem);
+  border: 1px solid var(--c-line);
+  border-radius: var(--r-xl);
   background: var(--c-surface);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
 }
-.side__empty { display: grid; gap: var(--sp-2); text-align: center; padding: var(--sp-6) var(--sp-2); }
-.side__emptyTitle { font-weight: 600; }
-.side__emptyText { font-size: var(--fs-sm); color: var(--c-text-faint); line-height: var(--lh-body); }
+.dialog__panel > * { min-height: 0; }
 
-/* Patička ----------------------------------------------------------------- */
-.ed__foot { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; }
-.ed__footNote { font-size: var(--fs-xs); color: var(--c-text-faint); }
-
-@media (max-width: 1100px) {
-  .ed__main { grid-template-columns: minmax(0, 1fr); }
-  .side { position: static; }
-}
+.dialog-enter-active, .dialog-leave-active { transition: opacity var(--dur-base) var(--ease-out); }
+.dialog-enter-active .dialog__panel { transition: transform var(--dur-base) var(--ease-back); }
+.dialog-enter-from, .dialog-leave-to { opacity: 0; }
+.dialog-enter-from .dialog__panel { transform: translateY(14px) scale(0.97); }
 </style>

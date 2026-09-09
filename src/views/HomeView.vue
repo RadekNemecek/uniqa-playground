@@ -17,8 +17,8 @@ import { count } from '@/lib/format'
           Playground
         </h1>
         <p class="hero__lead">
-          Herní nástroje pro školení týmů. Otázky si připravíš dopředu, hru pak
-          vedeš jedním klikáním před celou místností.
+          Připrav si otázky dopředu, hru pak vedeš jedním klikáním
+          před celou místností.
         </p>
       </section>
 
@@ -49,22 +49,18 @@ import { count } from '@/lib/format'
           <h2 class="card__title">{{ g.title }}</h2>
           <p class="card__desc">{{ g.description }}</p>
           <div class="card__foot">
-            <span class="card__meta">{{ count(packs.packs.length, 'balíček', 'balíčky', 'balíčků') }} otázek</span>
+            <span class="card__meta">
+              {{ packs.packs.length
+                ? `${count(packs.packs.length, 'balíček', 'balíčky', 'balíčků')} otázek připraveno`
+                : 'Zatím bez otázek' }}
+            </span>
           </div>
         </RouterLink>
-
-        <div class="card card--soon" aria-hidden="true">
-          <div class="card__top"><span class="card__badge">Připravuje se</span></div>
-          <h2 class="card__title">Další hra</h2>
-          <p class="card__desc">
-            Playground je stavěný tak, aby další hra byla přírůstek, ne přestavba.
-          </p>
-        </div>
       </section>
     </main>
 
     <footer class="foot page">
-      <p>Playground běží i bez připojení. Otázky spravuješ v sekci Otázky.</p>
+      <p>Funguje i bez připojení k internetu.</p>
     </footer>
   </div>
 </template>
@@ -149,8 +145,6 @@ main { flex: 1; padding-block: var(--sp-7) var(--sp-8); }
   box-shadow: var(--shadow-md);
 }
 .card:hover .card__arrow { transform: translateX(4px); color: var(--c-gold); }
-
-.card--soon { opacity: 0.45; pointer-events: none; }
 
 .card__top { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); }
 .card__badge {

@@ -22,5 +22,9 @@ export const FIREBASE_CONFIG = {
 }
 
 export function isFirebaseConfigured(): boolean {
+  // Bezpečný režim na zkoušení: `VITE_LOCAL_ONLY=1 npm run dev` drží data
+  // jen v prohlížeči, takže si jde cokoli vyzkoušet bez zásahu do sdílené
+  // databáze, kterou používají kolegové.
+  if (import.meta.env.VITE_LOCAL_ONLY === '1') return false
   return FIREBASE_CONFIG.projectId.trim().length > 0 && FIREBASE_CONFIG.apiKey.trim().length > 0
 }
