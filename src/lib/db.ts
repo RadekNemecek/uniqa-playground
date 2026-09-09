@@ -131,6 +131,24 @@ class LocalDb implements PlaygroundDb {
 }
 
 /* ------------------------------------------------------------------------ */
+/* Hlášení chyb úložiště                                                     */
+/* ------------------------------------------------------------------------ */
+
+type DbErrorHandler = (message: string) => void
+
+let onError: DbErrorHandler | null = null
+
+/** Aplikace si sem zaregistruje, jak má chybu úložiště ukázat uživateli. */
+export function setDbErrorHandler(handler: DbErrorHandler): void {
+  onError = handler
+}
+
+/** Volá úložiště, když zápis odmítne server. */
+export function reportDbError(message: string): void {
+  onError?.(message)
+}
+
+/* ------------------------------------------------------------------------ */
 
 let instance: PlaygroundDb | null = null
 

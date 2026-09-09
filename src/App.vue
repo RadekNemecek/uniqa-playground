@@ -3,8 +3,11 @@ import { onMounted } from 'vue'
 import UiToasts from '@/components/ui/UiToasts.vue'
 import UiConfirm from '@/components/ui/UiConfirm.vue'
 import { initPacks } from '@/stores/packs'
+import { setDbErrorHandler } from '@/lib/db'
 import { primeAudio } from '@/lib/sound'
 import { toast } from '@/stores/ui'
+
+setDbErrorHandler((message) => toast(message, 'bad', 6000))
 
 onMounted(async () => {
   try {

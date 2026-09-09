@@ -16,9 +16,22 @@ import type { Pack } from '@/types'
 import type { PlaygroundDb } from '@/lib/db'
 import { FIREBASE_CONFIG } from '@/lib/firebase.config'
 import { hashSecret } from '@/lib/hash'
+import { reportDbError } from '@/lib/db'
 
 const KEY_LOCAL_HASH = 'playground.keyhash.v1'
 const KEY_UNLOCK = 'playground.unlocked.v1'
+
+const delay = (ms: number): Promise<void> => new Promise((r) => window.setTimeout(r, ms))
+
+/** Firestore umí čekat na server libovolně dlouho. Rozhraní ne. */
+function withTimeout<T>(op: Promise<T>, ms = 8000): Promise<T> {
+  return Promise.race([
+    op,
+    delay(ms).then(() => {
+      throw new Error('Firestore neodpověděl včas.')
+    }),
+  ]) as Promise<T>
+}
 
 /**
  * Firestore jako úložiště balíčků.
@@ -72,20 +85,34 @@ class FirestoreDb implements PlaygroundDb {
   }
 
   async savePack(pack: Pack): Promise<void> {
-    await setDoc(doc(this.db, 'packs', pack.id), pack)
+    await this.write(setDoc(doc(this.db, 'packs', pack.id), pack), 'Uložení balíčku')
   }
 
   async deletePack(packId: string): Promise<void> {
-    await deleteDoc(doc(this.db, 'packs', packId))
+    await this.write(deleteDoc(doc(this.db, 'packs', packId)), 'Smazání balíčku')
+  }
+
+  /**
+   * Zápis do Firestore se potvrzuje serverem, takže bez sítě by se promise
+   * nedočkala. Data jsou přitom v lokální mezipaměti a odejdou po připojení.
+   * Proto na potvrzení čekáme jen chvíli a případné odmítnutí hlásíme zvlášť.
+   */
+  private async write(op: Promise<void>, what: string): Promise<void> {
+    op.catch((err) => {
+      console.error(`${what} selhalo:`, err)
+      reportDbError(`${what} se nepovedlo. Zkontroluj připojení a oprávnění.`)
+    })
+    await Promise.race([op.catch(() => undefined), delay(1500)])
   }
 
   async hasPassword(): Promise<boolean> {
-    if (localStorage.getItem(KEY_LOCAL_HASH)) return true
     try {
-      const snap = await getDoc(doc(this.db, 'config', 'public'))
+      const snap = await withTimeout(getDoc(doc(this.db, 'config', 'public')))
       return snap.exists() && snap.data()?.initialized === true
     } catch {
-      return false
+      // Bez odpovědi se opřeme o otisk z dřívějšího odemčení na tomhle
+      // zařízení. Rozhoduje jen o tom, co správa nabídne za obrazovku.
+      return localStorage.getItem(KEY_LOCAL_HASH) !== null
     }
   }
 
@@ -97,9 +124,22 @@ class FirestoreDb implements PlaygroundDb {
       }
     }
     const keyHash = await hashSecret(next)
-    await setDoc(doc(this.db, 'config', 'admin'), { keyHash })
-    await setDoc(doc(this.db, 'config', 'public'), { initialized: true })
-    await this.markUnlocked(keyHash)
+
+    // Na pořadí záleží, pravidla se dívají na stav databáze v ten okamžik:
+    // 1. otisk hesla, ten smí vzniknout jen dokud neexistuje,
+    // 2. doklad o odemčení, ten projde právě proto, že otisky sedí,
+    // 3. veřejný příznak, ten už vyžaduje odemčenou relaci.
+    try {
+      await withTimeout(setDoc(doc(this.db, 'config', 'admin'), { keyHash }), 12000)
+      await withTimeout(setDoc(doc(this.db, 'unlocks', this.uid), { keyHash, at: Date.now() }), 12000)
+      await withTimeout(setDoc(doc(this.db, 'config', 'public'), { initialized: true }), 12000)
+    } catch (e) {
+      console.error('Nastavení hesla selhalo:', e)
+      throw new Error(
+        'Heslo se nepodařilo uložit. Zkontroluj připojení a publikovaná pravidla ve Firebase.',
+      )
+    }
+    this.markUnlocked(keyHash)
   }
 
   async unlock(password: string): Promise<boolean> {
@@ -114,8 +154,11 @@ class FirestoreDb implements PlaygroundDb {
     }
 
     try {
-      await setDoc(doc(this.db, 'unlocks', this.uid), { keyHash, at: Date.now() })
-      await this.markUnlocked(keyHash)
+      // Zápis se čeká na potvrzení serverem, protože právě to potvrzení
+      // je ověřením hesla. Časový strop brání tomu, aby tlačítko viselo,
+      // když je síť mrtvá, ale prohlížeč o tom ještě neví.
+      await withTimeout(setDoc(doc(this.db, 'unlocks', this.uid), { keyHash, at: Date.now() }), 12000)
+      this.markUnlocked(keyHash)
       return true
     } catch {
       // Pravidlo zápis odmítlo, tedy heslo nesouhlasí.
@@ -123,7 +166,7 @@ class FirestoreDb implements PlaygroundDb {
     }
   }
 
-  private async markUnlocked(keyHash: string): Promise<void> {
+  private markUnlocked(keyHash: string): void {
     localStorage.setItem(KEY_LOCAL_HASH, keyHash)
     this.setUnlockedFlag()
   }
