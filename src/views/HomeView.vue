@@ -155,30 +155,31 @@ const packLabel = computed(() =>
       <section class="hero">
         <!-- Stěna ------------------------------------------------------- -->
         <div class="wall" aria-hidden="true">
-          <div class="wall__space">
-            <div class="wall__grid" :style="wallStyle">
+          <div class="wall__x">
+            <div class="wall__space">
               <span class="wall__spot" :style="spotStyle"></span>
-              <span
-                v-for="t in tiles"
-                :key="t.id"
-                class="tile"
-                :class="{
-                  'tile--team': t.team !== null,
-                  'tile--bonus': t.bonus,
-                  'tile--flip': t.flipping,
-                }"
-                :style="{
-                  '--i': t.id,
-                  '--team': t.team !== null ? `var(${teamColor(t.team).cssVar})` : undefined,
-                }"
-              >
-                <template v-if="t.bonus">Riskuj!</template>
-                <template v-else-if="t.team !== null">{{ teamBadge(t.team) }}</template>
-                <template v-else>{{ t.value }}</template>
-              </span>
+              <div class="wall__grid" :style="wallStyle">
+                <span
+                  v-for="t in tiles"
+                  :key="t.id"
+                  class="tile"
+                  :class="{
+                    'tile--team': t.team !== null,
+                    'tile--bonus': t.bonus,
+                    'tile--flip': t.flipping,
+                  }"
+                  :style="{
+                    '--i': t.id,
+                    '--team': t.team !== null ? `var(${teamColor(t.team).cssVar})` : undefined,
+                  }"
+                >
+                  <template v-if="t.bonus">Riskuj!</template>
+                  <template v-else-if="t.team !== null">{{ teamBadge(t.team) }}</template>
+                  <template v-else>{{ t.value }}</template>
+                </span>
+              </div>
             </div>
           </div>
-          <div class="wall__veil"></div>
         </div>
 
         <!-- Text -------------------------------------------------------- -->
@@ -237,18 +238,50 @@ main {
 
 /* Stěna --------------------------------------------------------------------
    Sahá za pravý okraj obrazovky, aby působila jako výřez z něčeho většího,
-   ne jako obrázek s rámečkem. Ořízne ji overflow-x na body. */
+   ne jako obrázek s rámečkem.
+
+   Okraje neztmavuje překryv, ale maska. Překryv měl vlastní obdélník a
+   dlaždice, které díky natočení přesahovaly mimo něj, zůstaly nezatmavené,
+   takže přes plochu vedla viditelná hrana. Maska nic nedobarvuje, jen
+   nechá stěnu zmizet, a je jedno, co je za ní.
+
+   Vodorovná a svislá maska jsou ve dvou vrstvách schválně: skládat je do
+   jedné by vyžadovalo mask-composite, který starší prohlížeče neumí. */
 .wall {
   position: absolute;
-  top: -6rem;
-  bottom: -6rem;
+  top: -7rem;
+  bottom: -7rem;
   left: 34%;
   /* Doprava přeteče přes okraj stránky i okna. */
   right: calc((100% - 100vw) / 2 - 6rem);
   pointer-events: none;
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 15%, #000 84%, transparent 100%);
+  mask-image: linear-gradient(180deg, transparent 0%, #000 15%, #000 84%, transparent 100%);
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
 }
 
-.wall__space { position: absolute; inset: 0; perspective: 1500px; perspective-origin: 8% 45%; }
+.wall__x {
+  position: absolute;
+  inset: 0;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 26%, #000 76%, transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0%, #000 26%, #000 76%, transparent 100%);
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+/* Odsazení dovnitř, aby se natočená mřížka vešla do maskované plochy
+   a nekončila na jejím okraji uříznutá. */
+.wall__space {
+  position: absolute;
+  inset: 8% 13% 8% 1%;
+  perspective: 1500px;
+  perspective-origin: 8% 45%;
+}
 
 .wall__grid {
   position: absolute;
@@ -272,7 +305,6 @@ main {
   background: radial-gradient(circle, rgba(140, 165, 255, 0.5) 0%, rgba(120, 140, 255, 0.16) 45%, transparent 70%);
   filter: blur(28px);
   transition: left 1.4s var(--ease-out), top 1.4s var(--ease-out);
-  z-index: -1;
 }
 
 .tile {
@@ -325,21 +357,8 @@ main {
     beacon 3s var(--ease-both) 1.8s infinite;
 }
 
-/* Závoj: vlevo chrání text, vpravo a dole stěna mizí do tmy, takže nemá
-   viditelný konec. */
-.wall__veil {
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(90deg, var(--c-base) 0%, var(--c-base) 12%, color-mix(in oklab, var(--c-base) 72%, transparent) 26%, transparent 52%),
-    linear-gradient(270deg, var(--c-abyss) 0%, transparent 34%),
-    linear-gradient(0deg, var(--c-abyss) 0%, transparent 26%),
-    linear-gradient(180deg, var(--c-abyss) 0%, transparent 22%);
-}
-
 /* Text ---------------------------------------------------------------------- */
 .hero__text { position: relative; z-index: 1; max-width: 30rem; }
-
 .hero__title {
   font-size: clamp(3.5rem, 2rem + 6vw, 8rem);
   font-weight: 800;
@@ -449,7 +468,7 @@ main {
 }
 
 @media (max-width: 1100px) {
-  .wall { left: 22%; top: -3rem; bottom: -3rem; opacity: 0.5; }
+  .wall { left: 22%; top: -3rem; bottom: -3rem; opacity: 0.7; }
   .hero__text { max-width: 26rem; }
 }
 
