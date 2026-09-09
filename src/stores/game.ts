@@ -235,7 +235,7 @@ export function resolveQuestion(winnerId: string | null): void {
     entry.label = 'Nikdo neuhodl'
   }
 
-  // Sázka se týmu na tahu odečte vždy, to je podstata bonusového pole.
+  // Sázka se týmu na tahu odečte vždy, to je podstata pole Nepojištěno!.
   // Minusové body mimo sázku se uplatní jen podle nastavení.
   if (activeFailed && active && (wagered || g.rules.penalty)) {
     active.score -= points

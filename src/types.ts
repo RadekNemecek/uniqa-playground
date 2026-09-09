@@ -99,7 +99,7 @@ export interface GameState {
   phase: GamePhase
   /** Otevřené políčko, pokud fáze není `board`. */
   openCell: string | null
-  /** Sázka u bonusového pole. Null znamená běžné políčko. */
+  /** Sázka u pole Nepojištěno! Null znamená běžné políčko. */
   wager: number | null
   startedAt: number
   history: HistoryEntry[]

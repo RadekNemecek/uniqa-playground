@@ -31,7 +31,10 @@ onMounted(() => {
 <template>
   <div class="results">
     <header class="results__head">
-      <p class="eyebrow">Konec hry</p>
+      <p class="results__cheer">
+        <template v-if="winners.length === 1">gratulujeme!</template>
+        <template v-else>shoda, to se nevidí</template>
+      </p>
       <h1 class="results__title">
         <template v-if="winners.length === 1">Vyhrává {{ winners[0]!.name }}</template>
         <template v-else>Remíza</template>
@@ -72,6 +75,16 @@ onMounted(() => {
   margin-inline: auto;
 }
 .results__head { text-align: center; }
+/* Ruční písmo, třetí a poslední povolené místo. Konec hry je jediný
+   okamžik, kdy aplikace mluví k lidem v místnosti, ne k moderátorce. */
+.results__cheer {
+  font-family: var(--font-hand);
+  font-weight: 500;
+  font-size: var(--fs-2xl);
+  line-height: 1;
+  color: var(--c-brand);
+  animation: rise var(--dur-slow) var(--ease-out) both;
+}
 .results__title {
   font-size: var(--fs-hero);
   font-weight: 800;
@@ -137,7 +150,7 @@ onMounted(() => {
 @keyframes rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
 @keyframes grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 @media (prefers-reduced-motion: reduce) {
-  .results__title, .rank__row, .rank__fill { animation: none; }
+  .results__cheer, .results__title, .rank__row, .rank__fill { animation: none; }
 }
 @media (max-width: 640px) {
   .rank__row { grid-template-columns: 1.5rem 2rem 1fr auto; }

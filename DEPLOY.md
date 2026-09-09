@@ -131,7 +131,7 @@ je to lepší než chybová hláška.
 
 ```bash
 git add -A
-git commit -m "Playground: hra Riskuj"
+git commit -m "Playground: hra Pojišťuj!"
 git branch -M main
 git remote add origin https://github.com/<ucet>/uniqa-playground.git
 git push -u origin main

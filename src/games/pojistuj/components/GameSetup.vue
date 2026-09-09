@@ -25,7 +25,7 @@ const rules = ref<GameRules>({
   sound: true,
 })
 
-/** Dokud si počet bonusových polí nezvolí moderátorka sama, drží se na
+/** Dokud si počet polí Nepojištěno! nezvolí moderátorka sama, drží se na
  *  maximu, které deska unese. */
 const wagerPicked = ref(false)
 

@@ -22,7 +22,7 @@ function confirm() {
 <template>
   <div class="wager" role="dialog" aria-modal="true" aria-label="Pole Nepojištěno">
     <div class="wager__panel" :style="{ '--team': `var(${teamColor(team.color).cssVar})` }">
-      <p class="wager__kicker">Bonusové pole</p>
+      <p class="wager__kicker">tohle pole nekryje</p>
       <h2 class="wager__title">Nepojištěno!</h2>
 
       <p class="wager__lead">
@@ -82,11 +82,13 @@ function confirm() {
   box-shadow: var(--shadow-lg);
   animation: pop var(--dur-slow) var(--ease-back) both;
 }
+/* Ruční písmo, druhé ze tří povolených míst. Úřední rubrika nad slovem
+   Nepojištěno! by tu vtip zabila. */
 .wager__kicker {
-  font-size: var(--fs-xs);
-  font-weight: 700;
-  letter-spacing: var(--tracking-caps);
-  text-transform: uppercase;
+  font-family: var(--font-hand);
+  font-weight: 500;
+  font-size: var(--fs-xl);
+  line-height: 1;
   color: var(--c-text-faint);
 }
 .wager__title {

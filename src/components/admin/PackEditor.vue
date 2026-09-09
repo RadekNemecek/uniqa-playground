@@ -404,7 +404,12 @@ async function removePack() {
   margin-left: calc(var(--sp-2) * -1);
   font-size: var(--fs-sm);
   color: var(--c-text-muted);
+  /* Popis se do jednoho řádku na telefonu nevejde. Tři tečky říkají, že
+     text pokračuje, useknuté slovo vypadá jako chyba. Při psaní se
+     ellipsis samo vypne, jinak by nebylo vidět, kam se píše. */
+  text-overflow: ellipsis;
 }
+.ed__desc:focus { text-overflow: clip; }
 .ed__name:hover, .ed__desc:hover { border-color: var(--c-line); }
 .ed__name:focus, .ed__desc:focus { border-color: var(--c-brand); outline: none; background: var(--c-sunken-focus); }
 

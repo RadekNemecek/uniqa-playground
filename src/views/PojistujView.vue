@@ -159,7 +159,7 @@ async function onAgain() {
 
         <GameBoard :game="game" @open="onOpenCell" />
 
-        <!-- Bonusové pole: nejdřív sázka -------------------------------- -->
+        <!-- Pole Nepojištěno, nejdřív sázka -------------------------------- -->
         <WagerDialog
         v-if="pendingWager && activeTeam"
         :team="activeTeam"

@@ -276,7 +276,7 @@ const packLabel = computed(() =>
 
       <!-- Titulek --------------------------------------------------------- -->
       <div class="title">
-        <p class="title__kicker">Vědomostní hra pro školení</p>
+        <p class="title__kicker">vědomostní hra pro školení</p>
         <h1 ref="wordmark" class="wordmark" :class="{ 'wordmark--painted': gradientReady }" aria-label="Pojišťuj!">
           <span
             v-for="(ch, i) in letters"
@@ -288,7 +288,7 @@ const packLabel = computed(() =>
         </h1>
         <p class="title__lead">
           Týmy si volí kategorii a bodovou hodnotu, ty odkrýváš otázky
-          a rozdáváš body. Až šest týmů, časomíra a bonusová pole.
+          a rozdáváš body. Až šest týmů, časomíra a pole Nepojištěno!
         </p>
       </div>
 
@@ -311,6 +311,11 @@ const packLabel = computed(() =>
           <RouterLink to="/admin">Připravit otázky</RouterLink>
           <span aria-hidden="true">&middot;</span>
           <span>{{ packLabel }}</span>
+          <span aria-hidden="true">&middot;</span>
+          <!-- Přiznání ke značce bez loga. Logo UNIQA se nesmí použít bez
+               jejího svolení, tak tu zatím stojí jen věta. Nenápadně,
+               protože to není nabídka ani razítko. -->
+          <span class="bottom__made">Vytvořeno pro tým UNIQA</span>
         </p>
       </div>
     </main>
@@ -447,12 +452,16 @@ const packLabel = computed(() =>
 /* Titulek ------------------------------------------------------------------- */
 .title { position: relative; z-index: 1; align-self: center; display: grid; justify-items: center; text-align: center; }
 
+/* Ruční písmo. Jedno ze tří míst v aplikaci, kde smí být, a je tu proto,
+   že hned pod ním stojí devět písmen v Lato Black. Bez téhle vsuvky by
+   rozcestník byl jen velký nápis. */
 .title__kicker {
-  font-size: var(--fs-sm);
-  font-weight: 600;
-  letter-spacing: 0.32em;
-  text-transform: uppercase;
-  color: var(--c-text-faint);
+  font-family: var(--font-hand);
+  font-weight: 500;
+  font-size: clamp(var(--fs-lg), 0.8rem + 1.4vw, var(--fs-3xl));
+  letter-spacing: 0.01em;
+  line-height: 1;
+  color: var(--c-brand);
   animation: rise var(--dur-slow) var(--ease-out) both;
 }
 
@@ -555,6 +564,7 @@ const packLabel = computed(() =>
   color: var(--c-text-faint);
 }
 .bottom__meta a { color: var(--c-text-muted); font-weight: 600; text-decoration: none; }
+.bottom__made { color: var(--c-text-faint); }
 .bottom__meta a:hover { color: var(--c-text); text-decoration: underline; text-underline-offset: 0.25em; }
 
 @media (pointer: coarse) {
