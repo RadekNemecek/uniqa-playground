@@ -12,10 +12,8 @@ import { prefersReducedMotion } from '@/lib/motion'
    pomalu hraje a světlo chodí za políčkem, se kterým se zrovna něco děje.
    Uprostřed ji tlumí vinětace, aby text držel kontrast. */
 
-const COLS = 9
-const ROWS = [200, 400, 600, 800, 1000, 1200]
+const LADDER = [200, 400, 600, 800, 1000, 1200]
 const TEAMS = 3
-const BONUS_ID = 16
 
 interface Tile {
   id: number
@@ -27,19 +25,68 @@ interface Tile {
   flipping: boolean
 }
 
-const tiles = reactive<Tile[]>(
-  ROWS.flatMap((value, row) =>
-    Array.from({ length: COLS }, (_, col) => ({
-      id: row * COLS + col,
-      row,
-      col,
-      value,
-      team: null,
-      bonus: row * COLS + col === BONUS_ID,
-      flipping: false,
-    })),
-  ),
-)
+/**
+ * Dlaždice mají pevný tvar, mění se jejich počet.
+ *
+ * Původně měla mřížka pevný počet sloupců a řad, takže se na užším okně
+ * dlaždice zúžily do stojatých obdélníků. Rozměr se teď odvozuje z úhlopříčky
+ * okna, poměr stran zůstává stejný a do plochy se vejde tolik dlaždic,
+ * kolik jich je potřeba.
+ */
+const grid = reactive({ cols: 0, rows: 0, tile: 0, gap: 0 })
+const tiles = reactive<Tile[]>([])
+
+const RATIO = 1.6
+/** Kolik plochy stěna přesahuje přes okno, viz odsazení .wall__space. */
+const OVERSCAN_X = 1.24
+const OVERSCAN_Y = 1.32
+
+function layout(): void {
+  const diagonal = Math.hypot(window.innerWidth, window.innerHeight)
+  const tile = Math.round(Math.min(Math.max(150, diagonal * 0.115), 260))
+  const gap = Math.max(8, Math.round(tile * 0.06))
+  const cols = Math.max(4, Math.ceil((window.innerWidth * OVERSCAN_X + gap) / (tile + gap)))
+  const rows = Math.max(3, Math.ceil((window.innerHeight * OVERSCAN_Y + gap) / (tile / RATIO + gap)))
+
+  if (cols === grid.cols && rows === grid.rows && tile === grid.tile) return
+  grid.cols = cols
+  grid.rows = rows
+  grid.tile = tile
+  grid.gap = gap
+  rebuild()
+}
+
+/** Přestaví mřížku a zachová stav políček, která zůstala na svém místě. */
+function rebuild(): void {
+  const next: Tile[] = []
+  for (let row = 0; row < grid.rows; row++) {
+    for (let col = 0; col < grid.cols; col++) {
+      const kept = tiles.find((t) => t.row === row && t.col === col)
+      next.push(
+        kept ?? {
+          id: 0,
+          row,
+          col,
+          value: LADDER[row % LADDER.length]!,
+          team: null,
+          bonus: false,
+          flipping: false,
+        },
+      )
+    }
+  }
+  for (const t of next) {
+    t.id = t.row * grid.cols + t.col
+    t.value = LADDER[t.row % LADDER.length]!
+    t.bonus = false
+  }
+  const bonus = next.find((t) => t.row === 1 && t.col === Math.max(0, grid.cols - 3))
+  if (bonus) {
+    bonus.bonus = true
+    bonus.team = null
+  }
+  tiles.splice(0, tiles.length, ...next)
+}
 
 const playable = computed(() => tiles.filter((t) => !t.bonus))
 
@@ -51,8 +98,8 @@ let timer = 0
 let nextTeam = 0
 
 function flip(tile: Tile, change: () => void): void {
-  spot.x = ((tile.col + 0.5) / COLS) * 100
-  spot.y = ((tile.row + 0.5) / ROWS.length) * 100
+  spot.x = ((tile.col + 0.5) / grid.cols) * 100
+  spot.y = ((tile.row + 0.5) / grid.rows) * 100
   tile.flipping = true
   window.setTimeout(() => {
     change()
@@ -65,7 +112,7 @@ function tick(): void {
   const free = playable.value.filter((t) => t.team === null)
 
   // Stěna nesmí zčernat celá, jinak přestane být čitelná jako deska.
-  const shouldClaim = claimed.length < 12 && free.length > 0
+  const shouldClaim = claimed.length < Math.max(6, Math.round(playable.value.length * 0.12)) && free.length > 0
   const pool = shouldClaim ? free : claimed
   const tile = pool[Math.floor(Math.random() * pool.length)]
   if (!tile) return
@@ -120,8 +167,9 @@ function onVisibility(): void {
 
 onMounted(() => {
   // Až po načtení písma, jinak by odskoky písmen seděly na náhradní řez.
+  layout()
   void document.fonts.ready.then(paintWordmark)
-  window.addEventListener('resize', repaintWordmark)
+  window.addEventListener('resize', onResize)
   window.setTimeout(() => {
     started.value = true
     start()
@@ -133,8 +181,8 @@ onMounted(() => {
 onBeforeUnmount(() => {
   stop()
   cancelAnimationFrame(raf)
-  window.clearTimeout(paintTimer)
-  window.removeEventListener('resize', repaintWordmark)
+  window.clearTimeout(resizeTimer)
+  window.removeEventListener('resize', onResize)
   document.removeEventListener('visibilitychange', onVisibility)
   window.removeEventListener('pointermove', onPointer)
 })
@@ -166,10 +214,13 @@ function paintWordmark(): void {
   gradientReady.value = true
 }
 
-let paintTimer = 0
-function repaintWordmark(): void {
-  window.clearTimeout(paintTimer)
-  paintTimer = window.setTimeout(paintWordmark, 120)
+let resizeTimer = 0
+function onResize(): void {
+  window.clearTimeout(resizeTimer)
+  resizeTimer = window.setTimeout(() => {
+    layout()
+    paintWordmark()
+  }, 140)
 }
 
 const packLabel = computed(() =>
@@ -189,7 +240,15 @@ const packLabel = computed(() =>
         <div class="wall__x">
           <div class="wall__space">
             <span class="wall__spot" :style="spotStyle"></span>
-            <div class="wall__grid" :style="wallStyle">
+            <div
+              class="wall__grid"
+              :style="{
+                ...wallStyle,
+                '--cols': grid.cols,
+                '--tile': `${grid.tile}px`,
+                '--gap': `${grid.gap}px`,
+              }"
+            >
               <span
                 v-for="t in tiles"
                 :key="t.id"
@@ -200,7 +259,7 @@ const packLabel = computed(() =>
                   'tile--flip': t.flipping,
                 }"
                 :style="{
-                  '--i': t.id,
+                  '--d': t.row + t.col,
                   '--team': t.team !== null ? `var(${teamColor(t.team).cssVar})` : undefined,
                 }"
               >
@@ -295,9 +354,13 @@ const packLabel = computed(() =>
   position: absolute;
   inset: 0;
   display: grid;
-  grid-template-columns: repeat(9, minmax(0, 1fr));
-  grid-auto-rows: minmax(0, 1fr);
-  gap: clamp(8px, 0.8vw, 16px);
+  /* Pevná šířka sloupce a výška řady odvozená z poměru stran. Díky tomu
+     má dlaždice pořád stejný tvar, ať je okno jakkoli široké. */
+  grid-template-columns: repeat(var(--cols), var(--tile));
+  grid-auto-rows: calc(var(--tile) / 1.6);
+  gap: var(--gap);
+  justify-content: center;
+  align-content: center;
   transform-style: preserve-3d;
   transition: transform 900ms var(--ease-out);
   animation: wallIn 1.6s var(--ease-out) both;
@@ -315,7 +378,7 @@ const packLabel = computed(() =>
 }
 
 .tile {
-  --i: 0;
+  --d: 0;
   display: grid;
   place-items: center;
   min-width: 0;
@@ -327,10 +390,12 @@ const packLabel = computed(() =>
     0 5px 0 var(--c-tile-edge),
     0 14px 22px -10px rgba(0, 0, 0, 0.8);
   color: var(--c-gold);
-  font-size: clamp(0.6rem, 0.2rem + 0.7vw, 1.1rem);
+  font-size: calc(var(--tile) * 0.135);
   font-weight: 800;
   text-shadow: 0 -1px 0 rgba(255, 255, 255, 0.16), 0 2px 0 rgba(0, 0, 0, 0.45);
-  animation: dealTile var(--dur-slow) var(--ease-out) calc(200ms + var(--i) * 18ms) both;
+  /* Nástup jde po úhlopříčce, ne po pořadí, aby se u velké desky
+     nečekalo několik sekund na poslední dlaždici. */
+  animation: dealTile var(--dur-slow) var(--ease-out) calc(180ms + var(--d) * 34ms) both;
   transition:
     transform 200ms var(--ease-both),
     background var(--dur-base) var(--ease-out),
@@ -350,12 +415,12 @@ const packLabel = computed(() =>
 .tile--bonus {
   background: linear-gradient(178deg, var(--c-spark) 0%, var(--c-spark-deep) 100%);
   color: var(--c-text-ink);
-  font-size: clamp(0.42rem, 0.15rem + 0.42vw, 0.7rem);
+  font-size: calc(var(--tile) * 0.075);
   letter-spacing: 0.04em;
   text-transform: uppercase;
   text-shadow: none;
   animation:
-    dealTile var(--dur-slow) var(--ease-out) calc(200ms + var(--i) * 18ms) both,
+    dealTile var(--dur-slow) var(--ease-out) calc(180ms + var(--d) * 34ms) both,
     beacon 3s var(--ease-both) 2s infinite;
 }
 
@@ -407,9 +472,9 @@ const packLabel = computed(() =>
      přes jedno slovo. Zlatá navíc v celé aplikaci znamená akci, tady by
      tenhle význam rozmělnila. */
   color: var(--c-text);
-  text-shadow:
-    0 0.02em 0.025em rgba(0, 0, 0, 0.55),
-    0 0 0.4em color-mix(in oklab, var(--c-gold) 32%, transparent);
+  /* Žádný posunutý stín, ten dělá z písma plastiku. Jen tmavá svatozář
+     bez odsazení, aby nápis držel čitelnost i nad světlou dlaždicí. */
+  text-shadow: 0 0 0.3em color-mix(in oklab, var(--c-abyss) 70%, transparent);
   /* Písmena se otáčejí jako dlaždice na desce. */
   animation: letterIn 760ms var(--ease-back) calc(240ms + var(--n) * 85ms) both;
 }
