@@ -371,22 +371,30 @@ const packLabel = computed(() =>
 
 .wordmark {
   display: flex;
-  margin: clamp(var(--sp-2), 1.6vh, var(--sp-4)) 0;
+  /* Spodní mezera se počítá z velikosti písma, aby dotah „j" nikdy
+     nedosedl na odstavec pod titulkem. */
+  margin: clamp(var(--sp-2), 1.6vh, var(--sp-4)) 0 0.1em;
   /* Titulek má nést celou stránku, proto se roztahuje podle šířky i výšky
      okna. Strop v obou osách brání tomu, aby na širokém nebo nízkém
      monitoru přerostl plochu. */
   font-size: clamp(3rem, min(27vw, 42vh), 26rem);
   font-weight: 800;
-  line-height: 0.82;
+  /* Řádkování musí nechat místo dotahu u „j". Při 0,82 se dotahovalo do
+     odstavce pod titulkem. */
+  line-height: 0.95;
   letter-spacing: -0.015em;
   perspective: 900px;
 }
 .wordmark__l {
   display: inline-block;
-  background: linear-gradient(168deg, var(--c-text) 12%, var(--c-gold) 108%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  /* Jednolitá barva, ne přechod. Přechod na písmu je otřepaný a hlavně
+     seděl na každém písmenu zvlášť, takže se bílá a zlatá střídaly šestkrát
+     přes jedno slovo. Zlatá navíc v celé aplikaci znamená akci, tady by
+     tenhle význam rozmělnila. */
+  color: var(--c-text);
+  text-shadow:
+    0 0.02em 0.025em rgba(0, 0, 0, 0.55),
+    0 0 0.4em color-mix(in oklab, var(--c-gold) 32%, transparent);
   /* Písmena se otáčejí jako dlaždice na desce. */
   animation: letterIn 760ms var(--ease-back) calc(240ms + var(--n) * 85ms) both;
 }
