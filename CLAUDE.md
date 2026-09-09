@@ -15,7 +15,7 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
   animace psané přes tokeny to řeší samy. Klíčové snímky s `animation`
   vypni explicitně.
 - **Kontrast textu nejméně 4,5:1, spočítaný.** Neodhaduj ho. Každá dvojice
-  text/plocha v `tokens.css` má poměr v komentáři a platí v obou vrstvách.
+  text/plocha v `tokens.css` má poměr uvedený v komentáři.
   Barvy týmů drží aspoň 7:1 vůči `--c-text-ink`, aby na nich mohl být tmavý
   text.
 - **Tým se nikdy nerozlišuje jen barvou.** Vždy je vedle ní i písmeno.
@@ -32,11 +32,9 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
   rozcestníku, kicker v dialogu sázky, blahopřání na výsledkové obrazovce.
   Nikdy nenese otázku, odpověď, hodnotu ani ovládací prvek, ty se čtou
   z druhého konce místnosti a tam vyhrává čitelnost nad charakterem.
-- **Dvě barevné vrstvy se stejnými názvy tokenů.** `:root` je světlá a patří
-  správě otázek, kde se pracuje. `:root[data-theme="dark"]` je tmavě modrá
-  a patří rozcestníku a hře, kde se promítá. Přepíná je router podle
-  `meta.theme` routy, komponenty o vrstvách nevědí. Nová barva se musí
-  doplnit do obou, jinak propadne na hodnotu z té druhé.
+- **Jedno téma, tmavě modré.** Rampa ploch je čistý odstín `#005CA9`
+  ztlumený do hloubky. Platí i pro správu otázek: hraje se na projektoru
+  a správa má vypadat jako součást hry, ne jako cizí nástroj.
 - **Žádná zlatá ani žlutá.** UNIQA je nemá. Akcent je `--c-brand`, hodnoty
   na dlaždicích nese `--c-value`. Žlutá chybí i mezi barvami týmů, jinak by
   se zlatá vrátila zadními dveřmi.

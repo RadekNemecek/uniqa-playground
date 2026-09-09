@@ -63,10 +63,10 @@ kterým UNIQA sází, a **Caveat**, ruční řez, který si na svůj web pustila
 sama tam, kde chce znít lidsky. Hravost se tedy ke značce nepřilepuje,
 jen se zesiluje to, co v ní už je.
 
-**Dvě barevné vrstvy.** Správa otázek je bílá jako web UNIQA, protože se
-v ní pracuje. Rozcestník a hra jsou tmavě modré, protože se promítají.
-Obě používají stejné názvy tokenů, přepíná je router. Tmavá modrá je čistý
-odstín `#005CA9` ztlumený do hloubky, takže deska nese barvu značky.
+**Jedno téma, tmavě modré.** Rampa ploch je čistý odstín `#005CA9`
+ztlumený do hloubky, takže deska i rozhraní nesou barvu značky. Platí
+i pro správu otázek: hraje se na projektoru a správa má vypadat jako
+součást hry, ne jako cizí nástroj.
 
 **Zlatá v systému není**, UNIQA žádnou nemá. Hodnoty na dlaždicích jsou
 bílé, akcent je modrý a jediná teplá barva patří poli **Nepojištěno!**
@@ -118,6 +118,5 @@ src/
   components/ui/    sdílené prvky rozhraní
   stores/           stav: balíčky, hra, nastavení, oznámení
   lib/              úložiště, Firebase, animace, zvuk, konfety
-  styles/tokens.css jediné místo pro barvy, mezery, písma a časování,
-                    ve dvou vrstvách: světlá a tmavá
+  styles/tokens.css jediné místo pro barvy, mezery, písma a časování
 ```

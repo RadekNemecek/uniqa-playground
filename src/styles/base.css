@@ -27,30 +27,20 @@ body {
   overflow-x: clip;
 }
 
-/* Atmosféra. Nikdy se nesmí prosadit jako efekt, jen zabraňuje tomu, aby
-   plocha působila plochá. Každá vrstva ji má jinou: světlá jemný spád do
-   modré jako hero na uniqa.cz, tmavá dvě tlumená světla a zrno. */
+/* Atmosféra: dvě tlumená světla a jemné zrno. Nikdy se nesmí prosadit
+   jako efekt, jen zabraňuje tomu, aby tmavá plocha působila plochá. */
 body::before {
   content: '';
   position: fixed;
   inset: 0;
   z-index: -2;
   background:
-    radial-gradient(70vw 55vw at 88% -10%, var(--c-brand-wash), transparent 68%),
-    linear-gradient(180deg, var(--c-surface) 0%, var(--c-abyss) 100%);
-}
-
-body::after { content: none; }
-
-:root[data-theme='dark'] body::before {
-  background:
-    radial-gradient(60vw 60vw at 12% -8%, rgba(0, 122, 214, 0.16), transparent 62%),
-    radial-gradient(52vw 52vw at 92% 104%, rgba(85, 214, 206, 0.07), transparent 60%),
+    radial-gradient(60vw 60vw at 12% -8%, color-mix(in oklab, var(--c-light) 22%, transparent), transparent 62%),
+    radial-gradient(52vw 52vw at 92% 104%, color-mix(in oklab, var(--c-team-2) 10%, transparent), transparent 60%),
     linear-gradient(180deg, var(--c-base) 0%, var(--c-abyss) 100%);
 }
 
-/* Zrno patří jen do tmy. Na bílé by z čisté plochy udělalo špinavou. */
-:root[data-theme='dark'] body::after {
+body::after {
   content: '';
   position: fixed;
   inset: 0;
