@@ -7,19 +7,20 @@ import { count } from '@/lib/format'
 import { teamBadge, teamColor } from '@/lib/teams'
 import { prefersReducedMotion } from '@/lib/motion'
 
-/* --- Deska na úvodní stránce ---------------------------------------------
-   Není to hra, je to obraz hry. Sama se pomalu hraje: co chvíli některé
-   políčko získá tým, jindy se zase uvolní. Z rozcestníku je tím vidět,
-   o čem Riskuj je, aniž by to někdo musel číst. */
+/* --- Studiová stěna -------------------------------------------------------
+   Deska není obrázek vedle textu, je to kus stěny natočený do prostoru,
+   který pokračuje za okraj obrazovky. Sama se pomalu hraje a světlo chodí
+   za políčkem, na kterém se zrovna něco děje. */
 
-const COLS = 5
-const ROWS = [200, 400, 600]
-const BONUS_INDEX = 12
-/** Tři týmy jako v běžné hře. Šest barev naráz by z desky udělalo vzorník. */
+const COLS = 6
+const ROWS = [200, 400, 600, 800]
 const TEAMS = 3
+const BONUS_ID = 15
 
 interface Tile {
   id: number
+  row: number
+  col: number
   value: number
   team: number | null
   bonus: boolean
@@ -27,12 +28,14 @@ interface Tile {
 }
 
 const tiles = reactive<Tile[]>(
-  ROWS.flatMap((value, r) =>
-    Array.from({ length: COLS }, (_, c) => ({
-      id: r * COLS + c,
+  ROWS.flatMap((value, row) =>
+    Array.from({ length: COLS }, (_, col) => ({
+      id: row * COLS + col,
+      row,
+      col,
       value,
       team: null,
-      bonus: r * COLS + c === BONUS_INDEX,
+      bonus: row * COLS + col === BONUS_ID,
       flipping: false,
     })),
   ),
@@ -40,24 +43,33 @@ const tiles = reactive<Tile[]>(
 
 const playable = computed(() => tiles.filter((t) => !t.bonus))
 
+/* --- Světlo, které chodí za děním ---------------------------------------- */
+const spot = reactive({ x: 50, y: 40 })
+
+function lightUp(tile: Tile): void {
+  spot.x = ((tile.col + 0.5) / COLS) * 100
+  spot.y = ((tile.row + 0.5) / ROWS.length) * 100
+}
+
+/* --- Deska se hraje sama -------------------------------------------------- */
 let timer = 0
 let nextTeam = 0
 
 function flip(tile: Tile, change: () => void): void {
+  lightUp(tile)
   tile.flipping = true
   window.setTimeout(() => {
     change()
     tile.flipping = false
-  }, 190)
+  }, 200)
 }
 
-/** Jedno kolo: buď někdo políčko získá, nebo se políčko vrátí do hry. */
 function tick(): void {
   const claimed = playable.value.filter((t) => t.team !== null)
   const free = playable.value.filter((t) => t.team === null)
 
-  // Deska nesmí zčernat celá, jinak přestane být čitelná jako deska.
-  const shouldClaim = claimed.length < 4 && free.length > 0
+  // Stěna nesmí zčernat celá, jinak přestane být čitelná jako deska.
+  const shouldClaim = claimed.length < 6 && free.length > 0
   const pool = shouldClaim ? free : claimed
   const tile = pool[Math.floor(Math.random() * pool.length)]
   if (!tile) return
@@ -72,12 +84,33 @@ function tick(): void {
   })
 }
 
-function start(): void {
+/* --- Naklonění za kurzorem ------------------------------------------------ */
+const tilt = reactive({ x: 0, y: 0 })
+let raf = 0
+
+function onPointer(e: PointerEvent): void {
   if (prefersReducedMotion()) return
-  stop()
+  cancelAnimationFrame(raf)
+  raf = requestAnimationFrame(() => {
+    tilt.x = (e.clientY / window.innerHeight - 0.5) * -4
+    tilt.y = (e.clientX / window.innerWidth - 0.5) * 6
+  })
+}
+
+const wallStyle = computed(() => ({
+  transform: `rotateX(calc(4deg + ${tilt.x}deg)) rotateY(calc(-19deg + ${tilt.y}deg))`,
+}))
+
+const spotStyle = computed(() => ({ left: `${spot.x}%`, top: `${spot.y}%` }))
+
+/* --- Životní cyklus ------------------------------------------------------- */
+const started = ref(false)
+
+function start(): void {
+  if (prefersReducedMotion() || timer) return
   timer = window.setInterval(() => {
     if (document.visibilityState === 'visible') tick()
-  }, 2200)
+  }, 2000)
 }
 
 function stop(): void {
@@ -85,26 +118,27 @@ function stop(): void {
   timer = 0
 }
 
-const dealt = ref(false)
+function onVisibility(): void {
+  if (document.visibilityState === 'hidden') stop()
+  else if (started.value) start()
+}
 
 onMounted(() => {
-  // Nejdřív se deska rozdá, teprve pak se začne hrát sama.
+  // Nejdřív se stěna rozsvítí, teprve pak se začne hrát.
   window.setTimeout(() => {
-    dealt.value = true
+    started.value = true
     start()
-  }, 1400)
+  }, 1600)
   document.addEventListener('visibilitychange', onVisibility)
+  window.addEventListener('pointermove', onPointer, { passive: true })
 })
 
 onBeforeUnmount(() => {
   stop()
+  cancelAnimationFrame(raf)
   document.removeEventListener('visibilitychange', onVisibility)
+  window.removeEventListener('pointermove', onPointer)
 })
-
-function onVisibility(): void {
-  if (document.visibilityState === 'hidden') stop()
-  else if (dealt.value) start()
-}
 
 const packLabel = computed(() =>
   packs.packs.length
@@ -119,6 +153,35 @@ const packLabel = computed(() =>
 
     <main class="page">
       <section class="hero">
+        <!-- Stěna ------------------------------------------------------- -->
+        <div class="wall" aria-hidden="true">
+          <div class="wall__space">
+            <div class="wall__grid" :style="wallStyle">
+              <span class="wall__spot" :style="spotStyle"></span>
+              <span
+                v-for="t in tiles"
+                :key="t.id"
+                class="tile"
+                :class="{
+                  'tile--team': t.team !== null,
+                  'tile--bonus': t.bonus,
+                  'tile--flip': t.flipping,
+                }"
+                :style="{
+                  '--i': t.id,
+                  '--team': t.team !== null ? `var(${teamColor(t.team).cssVar})` : undefined,
+                }"
+              >
+                <template v-if="t.bonus">Riskuj!</template>
+                <template v-else-if="t.team !== null">{{ teamBadge(t.team) }}</template>
+                <template v-else>{{ t.value }}</template>
+              </span>
+            </div>
+          </div>
+          <div class="wall__veil"></div>
+        </div>
+
+        <!-- Text -------------------------------------------------------- -->
         <div class="hero__text">
           <p class="eyebrow">Vědomostní hra pro školení</p>
           <h1 class="hero__title">Riskuj</h1>
@@ -139,27 +202,6 @@ const packLabel = computed(() =>
           </div>
 
           <p class="hero__meta">{{ packLabel }}</p>
-        </div>
-
-        <div class="board" :style="{ '--cols': COLS }" aria-hidden="true">
-          <span
-            v-for="t in tiles"
-            :key="t.id"
-            class="tile"
-            :class="{
-              'tile--team': t.team !== null,
-              'tile--bonus': t.bonus,
-              'tile--flip': t.flipping,
-            }"
-            :style="{
-              '--i': t.id,
-              '--team': t.team !== null ? `var(${teamColor(t.team).cssVar})` : undefined,
-            }"
-          >
-            <template v-if="t.bonus">Riskuj!</template>
-            <template v-else-if="t.team !== null">{{ teamBadge(t.team) }}</template>
-            <template v-else>{{ t.value }}</template>
-          </span>
         </div>
       </section>
 
@@ -183,23 +225,128 @@ const packLabel = computed(() =>
 
 <style scoped>
 .home { min-height: 100dvh; display: flex; flex-direction: column; }
-main { flex: 1; padding-block: var(--sp-7) var(--sp-8); display: grid; gap: var(--sp-6); align-content: center; }
-
-/* Hero --------------------------------------------------------------------- */
-.hero {
+main {
+  flex: 1;
   display: grid;
-  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
-  gap: var(--sp-8);
-  align-items: center;
+  gap: var(--sp-6);
+  align-content: center;
+  padding-block: var(--sp-7) var(--sp-8);
 }
-.hero__text { max-width: 32rem; }
+
+.hero { position: relative; min-height: min(34rem, 62dvh); display: grid; align-items: center; }
+
+/* Stěna --------------------------------------------------------------------
+   Sahá za pravý okraj obrazovky, aby působila jako výřez z něčeho většího,
+   ne jako obrázek s rámečkem. Ořízne ji overflow-x na body. */
+.wall {
+  position: absolute;
+  top: -6rem;
+  bottom: -6rem;
+  left: 34%;
+  /* Doprava přeteče přes okraj stránky i okna. */
+  right: calc((100% - 100vw) / 2 - 6rem);
+  pointer-events: none;
+}
+
+.wall__space { position: absolute; inset: 0; perspective: 1500px; perspective-origin: 8% 45%; }
+
+.wall__grid {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-auto-rows: minmax(0, 1fr);
+  gap: clamp(8px, 0.9vw, 18px);
+  transform-style: preserve-3d;
+  transition: transform 900ms var(--ease-out);
+  animation: wallIn 1.4s var(--ease-out) both;
+}
+
+/* Světlo za deskou. Přesouvá se k políčku, se kterým se zrovna něco děje. */
+.wall__spot {
+  position: absolute;
+  width: 46%;
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(140, 165, 255, 0.5) 0%, rgba(120, 140, 255, 0.16) 45%, transparent 70%);
+  filter: blur(28px);
+  transition: left 1.4s var(--ease-out), top 1.4s var(--ease-out);
+  z-index: -1;
+}
+
+.tile {
+  --i: 0;
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  border-radius: clamp(8px, 0.9vw, 18px);
+  background: linear-gradient(178deg, var(--c-tile-top) 0%, var(--c-tile-bottom) 100%);
+  box-shadow:
+    inset 0 1.5px 0 var(--c-tile-sheen),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.4),
+    0 6px 0 var(--c-tile-edge),
+    0 16px 26px -10px rgba(0, 0, 0, 0.8);
+  color: var(--c-gold);
+  font-size: clamp(0.8rem, 0.3rem + 0.95vw, 1.5rem);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  text-shadow: 0 -1px 0 rgba(255, 255, 255, 0.18), 0 2px 0 rgba(0, 0, 0, 0.45);
+  animation: dealTile var(--dur-slow) var(--ease-out) calc(300ms + var(--i) * 26ms) both;
+  transition:
+    transform 200ms var(--ease-both),
+    background var(--dur-base) var(--ease-out),
+    color var(--dur-base) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out);
+}
+
+/* Otočení kolem vodorovné osy. Obsah se vymění v polovině, kdy je políčko
+   na hraně a není co číst. */
+.tile--flip { transform: rotateX(88deg); }
+
+.tile--team {
+  background: linear-gradient(178deg, var(--team) 0%, color-mix(in oklab, var(--team) 76%, black) 100%);
+  color: var(--c-text-ink);
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.35),
+    0 6px 0 color-mix(in oklab, var(--team) 30%, black),
+    0 18px 34px -12px color-mix(in oklab, var(--team) 55%, transparent);
+  text-shadow: none;
+}
+.tile--bonus {
+  background: linear-gradient(178deg, var(--c-spark) 0%, var(--c-spark-deep) 100%);
+  color: var(--c-text-ink);
+  font-size: clamp(0.55rem, 0.2rem + 0.55vw, 0.9rem);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-shadow: none;
+  animation:
+    dealTile var(--dur-slow) var(--ease-out) calc(300ms + var(--i) * 26ms) both,
+    beacon 3s var(--ease-both) 1.8s infinite;
+}
+
+/* Závoj: vlevo chrání text, vpravo a dole stěna mizí do tmy, takže nemá
+   viditelný konec. */
+.wall__veil {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, var(--c-base) 0%, var(--c-base) 12%, color-mix(in oklab, var(--c-base) 72%, transparent) 26%, transparent 52%),
+    linear-gradient(270deg, var(--c-abyss) 0%, transparent 34%),
+    linear-gradient(0deg, var(--c-abyss) 0%, transparent 26%),
+    linear-gradient(180deg, var(--c-abyss) 0%, transparent 22%);
+}
+
+/* Text ---------------------------------------------------------------------- */
+.hero__text { position: relative; z-index: 1; max-width: 30rem; }
 
 .hero__title {
-  font-size: var(--fs-hero);
+  font-size: clamp(3.5rem, 2rem + 6vw, 8rem);
   font-weight: 800;
-  letter-spacing: -0.04em;
-  margin: var(--sp-2) 0 var(--sp-4);
-  background: linear-gradient(160deg, var(--c-text) 20%, var(--c-gold) 120%);
+  letter-spacing: -0.045em;
+  line-height: 0.92;
+  margin: var(--sp-3) 0 var(--sp-4);
+  background: linear-gradient(150deg, var(--c-text) 18%, var(--c-gold) 115%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -208,6 +355,7 @@ main { flex: 1; padding-block: var(--sp-7) var(--sp-8); display: grid; gap: var(
 .hero__lead {
   font-size: var(--fs-lg);
   color: var(--c-text-muted);
+  text-shadow: 0 2px 12px var(--c-base);
   animation: rise var(--dur-slow) var(--ease-out) 80ms both;
 }
 
@@ -236,92 +384,22 @@ main { flex: 1; padding-block: var(--sp-7) var(--sp-8); display: grid; gap: var(
 .cta:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0, 0, 0, 0.45); }
 
 .cta--quiet {
-  background: transparent;
+  background: color-mix(in oklab, var(--c-base) 70%, transparent);
   color: var(--c-text-muted);
   border: 1px solid var(--c-line);
   box-shadow: none;
   font-weight: 600;
+  backdrop-filter: blur(6px);
 }
 .cta--quiet:hover { color: var(--c-text); border-color: var(--c-surface-3); transform: none; box-shadow: none; }
 .cta--quiet:active { transform: none; box-shadow: none; }
 
 .hero__meta { margin-top: var(--sp-4); font-size: var(--fs-sm); color: var(--c-text-faint); }
 
-/* Deska, která se hraje sama ------------------------------------------------ */
-.board {
-  position: relative;
-  display: grid;
-  grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
-  gap: clamp(6px, 0.7vw, 12px);
-}
-
-/* Studiové světlo pomalu přejede desku. */
-.board::after {
-  content: '';
-  position: absolute;
-  inset: -8%;
-  pointer-events: none;
-  background: linear-gradient(105deg, transparent 42%, rgba(255, 255, 255, 0.07) 50%, transparent 58%);
-  translate: -60% 0;
-  animation: pass 9s var(--ease-both) 2s infinite;
-}
-
-.tile {
-  --i: 0;
-  display: grid;
-  place-items: center;
-  aspect-ratio: 16 / 10;
-  border-radius: var(--r-lg);
-  background: linear-gradient(178deg, var(--c-tile-top) 0%, var(--c-tile-bottom) 100%);
-  box-shadow:
-    inset 0 1.5px 0 var(--c-tile-sheen),
-    inset 0 -2px 0 rgba(0, 0, 0, 0.4),
-    0 4px 0 var(--c-tile-edge),
-    0 10px 18px -8px rgba(0, 0, 0, 0.7);
-  color: var(--c-gold);
-  font-size: clamp(0.9rem, 0.35rem + 1.25vw, 1.75rem);
-  font-weight: 800;
-  letter-spacing: -0.01em;
-  text-shadow: 0 -1px 0 rgba(255, 255, 255, 0.18), 0 2px 0 rgba(0, 0, 0, 0.45);
-  animation: deal var(--dur-slow) var(--ease-out) calc(120ms + var(--i) * 45ms) both;
-  transition:
-    transform 190ms var(--ease-both),
-    background var(--dur-base) var(--ease-out),
-    color var(--dur-base) var(--ease-out),
-    box-shadow var(--dur-base) var(--ease-out);
-}
-
-/* Otočení kolem vodorovné osy. Obsah se vymění v polovině, kdy je
-   políčko na hraně a není co číst. */
-.tile--flip { transform: rotateX(90deg); }
-
-.tile--team {
-  background: linear-gradient(178deg, var(--team) 0%, color-mix(in oklab, var(--team) 76%, black) 100%);
-  color: var(--c-text-ink);
-  box-shadow:
-    inset 0 1.5px 0 rgba(255, 255, 255, 0.35),
-    0 4px 0 color-mix(in oklab, var(--team) 35%, black),
-    0 10px 20px -8px color-mix(in oklab, var(--team) 50%, transparent);
-  text-shadow: none;
-}
-.tile--bonus {
-  background: linear-gradient(178deg, var(--c-spark) 0%, var(--c-spark-deep) 100%);
-  color: var(--c-text-ink);
-  box-shadow:
-    inset 0 1.5px 0 rgba(255, 255, 255, 0.35),
-    0 4px 0 rgba(0, 0, 0, 0.45),
-    0 12px 26px -8px var(--c-spark-glow);
-  font-size: clamp(0.6rem, 0.25rem + 0.7vw, 0.95rem);
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  text-shadow: none;
-  animation:
-    deal var(--dur-slow) var(--ease-out) calc(120ms + var(--i) * 45ms) both,
-    glow 3.2s var(--ease-both) 1.6s infinite;
-}
-
-/* Rozehraná hra ------------------------------------------------------------ */
+/* Rozehraná hra ------------------------------------------------------------- */
 .resume {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   gap: var(--sp-4);
@@ -346,33 +424,38 @@ main { flex: 1; padding-block: var(--sp-7) var(--sp-8); display: grid; gap: var(
 .resume__text strong { font-size: var(--fs-md); color: var(--c-text); }
 .resume svg { color: var(--c-gold); }
 
-.foot { padding-block: var(--sp-6); color: var(--c-text-faint); font-size: var(--fs-sm); }
+.foot { position: relative; z-index: 1; padding-block: var(--sp-6); color: var(--c-text-faint); font-size: var(--fs-sm); }
 
 @keyframes rise {
   from { opacity: 0; transform: translateY(14px); }
   to { opacity: 1; transform: none; }
 }
-@keyframes deal {
-  from { opacity: 0; transform: translateY(26px) scale(0.94); }
+@keyframes wallIn {
+  from { opacity: 0; transform: rotateX(4deg) rotateY(-34deg) translateZ(-260px); }
+  to { opacity: 1; }
+}
+@keyframes dealTile {
+  from { opacity: 0; transform: translateY(22px) scale(0.9); }
   to { opacity: 1; transform: none; }
 }
-@keyframes pass {
-  0% { translate: -60% 0; }
-  55%, 100% { translate: 160% 0; }
-}
-@keyframes glow {
-  0%, 100% { box-shadow: inset 0 1.5px 0 rgba(255,255,255,.35), 0 4px 0 rgba(0,0,0,.45), 0 12px 22px -10px var(--c-spark-glow); }
-  50% { box-shadow: inset 0 1.5px 0 rgba(255,255,255,.35), 0 4px 0 rgba(0,0,0,.45), 0 16px 34px -8px var(--c-spark-glow); }
+@keyframes beacon {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.25); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hero__title, .hero__lead, .hero__actions, .tile, .board::after { animation: none; }
-  .tile { transition: none; }
+  .hero__title, .hero__lead, .hero__actions, .tile, .wall__grid { animation: none; }
+  .tile, .wall__grid, .wall__spot { transition: none; }
 }
 
-@media (max-width: 960px) {
-  .hero { grid-template-columns: minmax(0, 1fr); gap: var(--sp-6); }
+@media (max-width: 1100px) {
+  .wall { left: 22%; top: -3rem; bottom: -3rem; opacity: 0.5; }
+  .hero__text { max-width: 26rem; }
+}
+
+@media (max-width: 760px) {
+  .wall { left: 0; opacity: 0.28; }
+  .hero { min-height: 26rem; }
   .hero__text { max-width: none; }
-  .board { max-width: 34rem; }
 }
 </style>

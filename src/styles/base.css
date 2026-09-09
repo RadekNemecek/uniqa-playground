@@ -9,6 +9,10 @@
 html {
   -webkit-text-size-adjust: 100%;
   scrollbar-color: var(--c-surface-3) transparent;
+  /* clip, ne hidden: nevytvoří scroll kontejner, takže position: sticky
+     ve správě otázek dál funguje. Drží uvnitř prvky, které schválně
+     přetékají za okraj okna, jako natočená deska na rozcestníku. */
+  overflow-x: clip;
 }
 
 body {
@@ -20,7 +24,7 @@ body {
   background-color: var(--c-base);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 /* Atmosféra: dvě tlumená světla a jemné zrno. Nikdy se nesmí prosadit
