@@ -575,4 +575,16 @@ function start() {
 }
 .summary { color: var(--c-text-muted); font-size: var(--fs-sm); }
 .problems { list-style: none; padding: 0; display: grid; gap: var(--sp-1); color: var(--c-text-faint); font-size: var(--fs-sm); }
+
+/* Dotykové ovládání. Blok musí zůstat na konci, aby přebil velikosti
+   nastavené výš. */
+@media (pointer: coarse) {
+  .team__dot { width: 2.75rem; height: 2.75rem; }
+  .team__name { padding-block: var(--sp-3); font-size: var(--fs-md); }
+  .team__x { width: 2.75rem; height: 2.75rem; font-size: 1.6rem; }
+  .swatches { grid-template-columns: repeat(3, auto); gap: var(--sp-3); padding: var(--sp-4); }
+  .swatch { width: 2.75rem; height: 2.75rem; }
+  .segmented button { padding-block: var(--sp-3); }
+  .chip { padding: var(--sp-3) var(--sp-4); }
+}
 </style>

@@ -143,4 +143,36 @@ function ready(id: string): boolean {
 @media (hover: none) {
   .chip__tools { opacity: 1; }
 }
+
+/* Dotykové ovládání: na telefonu je každá kategorie vlastní řádek přes
+   celou šířku a ovládací prvky mají velikost, do které jde trefit prstem. */
+/* Na telefonu je každá kategorie vlastní řádek přes celou šířku a ovládání
+   se odsune pod název. Ve vodorovné řadě by tlačítka sebrala tolik místa,
+   že by se do zbytku vešla jen půlka názvu. */
+@media (max-width: 720px) {
+  .chips { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-2); }
+  .chip {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: var(--sp-1) var(--sp-2);
+    padding: var(--sp-2) var(--sp-3);
+    border-radius: var(--r-lg);
+  }
+  .chip__name { width: 100%; font-size: var(--fs-md); }
+  .chip__tools {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+    border-top: 1px solid var(--c-line-soft);
+    padding-top: var(--sp-1);
+  }
+}
+
+@media (pointer: coarse) {
+  .chip { min-height: 3rem; }
+  .chip__state { min-width: 2.5rem; height: 1.9rem; font-size: var(--fs-xs); }
+  .chip__name { padding-block: var(--sp-2); }
+  .chip__tools button { width: 2.75rem; height: 2.75rem; }
+  .chip__tools svg { width: 16px; height: 16px; }
+}
 </style>

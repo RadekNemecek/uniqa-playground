@@ -119,4 +119,11 @@ async function change(index: number, event: Event) {
 @media (hover: none) {
   .chip__x { opacity: 1; }
 }
+
+@media (pointer: coarse) {
+  .chip { min-height: 3rem; padding-inline: var(--sp-3) var(--sp-2); }
+  .chip__value { width: 5rem; font-size: var(--fs-lg); padding-block: var(--sp-2); }
+  .chip__x { width: 2.5rem; height: 2.5rem; }
+  .chip__x svg { width: 16px; height: 16px; }
+}
 </style>

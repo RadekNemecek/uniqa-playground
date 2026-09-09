@@ -134,6 +134,13 @@ async function toggleFullscreen() {
 }
 .tool:hover { color: var(--c-text); border-color: var(--c-surface-3); background: var(--c-surface); }
 
+@media (pointer: coarse) {
+  /* Na mobilu je z odkazu vidět jen značka, sama o sobě moc úzká na prst. */
+  .brand { min-height: 2.75rem; min-width: 2.75rem; }
+  .tool { width: 2.75rem; height: 2.75rem; }
+  .nav__link { padding: var(--sp-3) var(--sp-4); }
+}
+
 @media (max-width: 720px) {
   .head { gap: var(--sp-2) var(--sp-3); }
   .brand__name { display: none; }

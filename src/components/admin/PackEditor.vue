@@ -497,6 +497,27 @@ async function removePack() {
 }
 .dialog__panel > * { min-height: 0; }
 
+/* Na telefonu je editor otázky celá obrazovka. Vystředěné okno s okraji
+   by ubralo místo právě tam, kde se píše nejvíc textu. */
+@media (pointer: coarse) {
+  .ed__name { padding-block: var(--sp-2); }
+  .ed__desc { padding-block: var(--sp-3); font-size: var(--fs-md); }
+  .ed__play { min-height: 2.75rem; display: inline-flex; align-items: center; }
+}
+
+@media (max-width: 640px) {
+  .dialog { padding: 0; place-items: stretch; }
+  .dialog__panel {
+    width: 100%;
+    max-width: none;
+    max-height: none;
+    height: 100dvh;
+    border: 0;
+    border-radius: 0;
+  }
+  .dialog__scrim { display: none; }
+}
+
 .dialog-enter-active, .dialog-leave-active { transition: opacity var(--dur-base) var(--ease-out); }
 .dialog-enter-active .dialog__panel { transition: transform var(--dur-base) var(--ease-back); }
 .dialog-enter-from, .dialog-leave-to { opacity: 0; }

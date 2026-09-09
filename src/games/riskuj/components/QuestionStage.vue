@@ -495,4 +495,11 @@ onBeforeUnmount(() => {
   .judge { grid-template-columns: 1fr; gap: var(--sp-3); }
   .stage__head { padding-inline: var(--sp-4); }
 }
+
+@media (pointer: coarse) {
+  .stage__close { width: 2.75rem; height: 2.75rem; display: grid; place-items: center; }
+  .steal__toggle { min-height: 2.75rem; }
+  .steal__chip { min-height: 2.75rem; }
+  .steal__cancel { min-height: 2.75rem; padding-inline: var(--sp-3); }
+}
 </style>

@@ -104,4 +104,10 @@ withDefaults(
 }
 
 .btn--block { width: 100%; }
+
+/* Na dotyku musí i malé tlačítko nabídnout plochu, do které jde trefit. */
+@media (pointer: coarse) {
+  .btn--sm { min-height: 2.75rem; padding-block: var(--sp-3); }
+  .btn--quiet { min-height: 2.75rem; }
+}
 </style>

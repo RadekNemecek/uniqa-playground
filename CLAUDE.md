@@ -29,6 +29,9 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
   vyhrává čitelnost nad charakterem. Token `--font-display` zůstává jako
   jediné místo, kde by šel displejový řez nasadit.
 - **Hra přežije obnovení stránky.** Stav se ukládá po každé akci.
+- **Ovládací prvek musí mít na dotyku aspoň 44 px.** Bloky
+  `@media (pointer: coarse)` patří na konec souboru se styly, jinak je
+  přebijí pravidla zapsaná pod nimi.
 - **Texty česky, bez dlouhých pomlček.** A bez řeči o tom, jak je aplikace
   postavená. Uživatelku zajímá, co s tím může dělat, ne architektura.
 - **Hravost patří do hry a na rozcestník, ne do správy otázek.** Tam se
@@ -65,6 +68,16 @@ Zapisuje se výhradně přes exportované funkce, aby změna vždy prošla
 
 Na hluboké kopie používej `clone()` z `src/lib/clone.ts`.
 `structuredClone` na reaktivních objektech z Vue selže.
+
+## Mobil
+
+Správa otázek je na telefonu použitelná, matice kategorie krát hodnota se
+pod 720 px přepíná na seznam podle kategorií (`BoardGrid.vue`, přepínač je
+`useMediaQuery` z `src/lib/media.ts`). Editor otázky je na telefonu celá
+obrazovka, ne vystředěné okno.
+
+Herní deska na telefonu jen padne na obrazovku, s pěti kategoriemi vyjde
+políčko na 65 px. Je to kompromis, hra se vede z notebooku.
 
 ## Přidání další hry
 

@@ -116,6 +116,10 @@ onBeforeUnmount(() => {
 }
 .modal__x:hover { color: var(--c-text); }
 
+@media (pointer: coarse) {
+  .modal__x { width: 2.75rem; height: 2.75rem; }
+}
+
 .modal__body { padding: var(--sp-5); overflow-y: auto; }
 .modal__foot {
   display: flex;

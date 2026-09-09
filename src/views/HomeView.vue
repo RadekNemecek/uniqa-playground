@@ -548,6 +548,10 @@ const packLabel = computed(() =>
 .bottom__meta a { color: var(--c-text-muted); font-weight: 600; text-decoration: none; }
 .bottom__meta a:hover { color: var(--c-text); text-decoration: underline; text-underline-offset: 0.25em; }
 
+@media (pointer: coarse) {
+  .bottom__meta a { min-height: 2.75rem; display: inline-flex; align-items: center; padding-inline: var(--sp-2); }
+}
+
 .resume {
   display: inline-flex;
   align-items: center;
