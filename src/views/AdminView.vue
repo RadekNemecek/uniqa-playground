@@ -5,7 +5,15 @@ import AdminGate from '@/components/admin/AdminGate.vue'
 import PackEditor from '@/components/admin/PackEditor.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import { db } from '@/lib/db'
-import { createPack, deletePack, duplicatePack, packProgress, packs, playableCategories } from '@/stores/packs'
+import {
+  createDemoPack,
+  createPack,
+  deletePack,
+  duplicatePack,
+  packProgress,
+  packs,
+  playableCategories,
+} from '@/stores/packs'
 import { toast } from '@/stores/ui'
 
 const unlocked = ref(db().isUnlocked())
@@ -43,6 +51,12 @@ async function onRemove() {
   toast(`Balíček „${name}" smazán.`, 'ok')
 }
 
+async function onCreateDemo() {
+  const pack = await createDemoPack()
+  currentId.value = pack.id
+  toast('Ukázkový balíček založen. Klidně ho přepiš vlastními otázkami.', 'ok')
+}
+
 function lock() {
   db().lock()
   unlocked.value = false
@@ -70,9 +84,15 @@ function lock() {
             <UiButton size="sm" variant="gold" @click="onCreate">Nový</UiButton>
           </div>
 
-          <p v-if="packs.packs.length === 0" class="list__empty">
-            Zatím žádný balíček. Založ první tlačítkem Nový.
-          </p>
+          <div v-if="packs.packs.length === 0" class="list__blank">
+            <p class="list__empty">
+              Zatím tu není žádný balíček. Založ prázdný tlačítkem Nový, nebo si
+              napřed prohlédni ukázku.
+            </p>
+            <UiButton size="sm" variant="ghost" block @click="onCreateDemo">
+              Vytvořit ukázkový balíček
+            </UiButton>
+          </div>
 
           <ul v-else class="list__items">
             <li v-for="p in packs.packs" :key="p.id">
@@ -136,6 +156,7 @@ function lock() {
 }
 .list__head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); }
 .list__title { font-size: var(--fs-lg); }
+.list__blank { display: grid; gap: var(--sp-3); }
 .list__empty { font-size: var(--fs-sm); color: var(--c-text-faint); line-height: var(--lh-body); }
 .list__items { list-style: none; padding: 0; display: grid; gap: var(--sp-2); }
 

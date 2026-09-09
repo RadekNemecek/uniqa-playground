@@ -19,14 +19,39 @@ let stop: (() => void) | null = null
 export async function initPacks(): Promise<void> {
   if (stop) return
   await db().ready()
-  stop = db().watchPacks((packs) => {
-    state.packs = [...packs].sort((a, b) => a.name.localeCompare(b.name, 'cs'))
-    state.loaded = true
+
+  // Na první snímek se musí počkat. U Firestore přijde asynchronně a bez
+  // čekání bychom se rozhodovali podle prázdného seznamu, který ještě
+  // nikdo nenaplnil.
+  await new Promise<void>((resolve) => {
+    let settled = false
+    const done = () => {
+      if (settled) return
+      settled = true
+      resolve()
+    }
+    stop = db().watchPacks((list) => {
+      state.packs = [...list].sort((a, b) => a.name.localeCompare(b.name, 'cs'))
+      state.loaded = true
+      done()
+    })
+    // Kdyby snímek nepřišel vůbec, nesmí kvůli tomu aplikace stát.
+    window.setTimeout(done, 4000)
   })
-  // Při úplně prvním spuštění dáme uživatelce něco, co si může prohlédnout.
-  if (state.packs.length === 0) {
+
+  // Ukázkový balíček zakládáme jen v lokálním režimu. Ve sdílené databázi
+  // je zápis vyhrazený tomu, kdo zná heslo, a hlavně: nechceme, aby se
+  // v cloudu množily kopie ukázky při každém spuštění.
+  if (state.packs.length === 0 && db().kind === 'local') {
     await db().savePack(demoPack())
   }
+}
+
+/** Založí ukázkový balíček na vyžádání, tlačítkem ve správě. */
+export async function createDemoPack(): Promise<Pack> {
+  const pack = demoPack()
+  await db().savePack(pack)
+  return pack
 }
 
 /** Čtený stav balíčků. Zapisuje se výhradně přes funkce níže,
