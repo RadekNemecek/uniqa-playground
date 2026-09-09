@@ -159,7 +159,7 @@ function start() {
 <template>
   <div class="setup page">
     <header class="setup__head">
-      <p class="eyebrow">Riskuj</p>
+      <p class="eyebrow">Pojišťuj!</p>
       <h1 class="setup__title">Připrav hru</h1>
     </header>
 
@@ -295,7 +295,7 @@ function start() {
         </UiField>
 
         <UiField
-          label="Bonusová pole Riskuj!"
+          label="Pole Nepojištěno!"
           hint="Na těchto polích tým před otázkou vsadí část svých bodů."
         >
           <div class="segmented">
@@ -343,7 +343,7 @@ function start() {
         {{ count(selected.size * (pack?.ladder.length ?? 0), 'otázka', 'otázky', 'otázek') }},
         {{ count(teams.length, 'tým', 'týmy', 'týmů') }}.
       </p>
-      <UiButton variant="gold" size="xl" :disabled="!ready" @click="start">Spustit hru</UiButton>
+      <UiButton variant="brand" size="xl" :disabled="!ready" @click="start">Spustit hru</UiButton>
     </div>
   </div>
 </template>
@@ -377,7 +377,7 @@ function start() {
   height: 1.6rem;
   border-radius: var(--r-full);
   background: var(--c-surface-3);
-  color: var(--c-gold);
+  color: var(--c-brand);
   font-size: var(--fs-sm);
   font-family: var(--font-ui);
 }
@@ -395,12 +395,12 @@ function start() {
   padding: var(--sp-3) var(--sp-4);
   border: 1px solid var(--c-line);
   border-radius: var(--r-md);
-  background: var(--c-abyss);
+  background: var(--c-sunken);
   color: var(--c-text);
   transition: all var(--dur-fast) var(--ease-out);
 }
 .pick:hover { border-color: var(--c-surface-3); }
-.pick--on { border-color: var(--c-gold); background: color-mix(in oklab, var(--c-gold) 10%, var(--c-abyss)); }
+.pick--on { border-color: var(--c-brand); background: color-mix(in oklab, var(--c-brand) 10%, var(--c-sunken)); }
 .pick__name { font-weight: 600; }
 .pick__meta { font-size: var(--fs-xs); color: var(--c-text-faint); }
 
@@ -417,9 +417,9 @@ function start() {
 }
 .chip:hover { color: var(--c-text); border-color: var(--c-surface-3); }
 .chip--on {
-  color: var(--c-text-ink);
-  background: var(--c-gold);
-  border-color: var(--c-gold);
+  color: var(--c-on-accent);
+  background: var(--c-brand);
+  border-color: var(--c-brand);
 }
 
 .teams { list-style: none; padding: 0; display: grid; gap: var(--sp-2); }
@@ -496,11 +496,11 @@ function start() {
   padding: var(--sp-2) var(--sp-3);
   border: 1px solid var(--c-line);
   border-radius: var(--r-md);
-  background: var(--c-abyss);
+  background: var(--c-sunken);
   color: var(--c-text);
   font-size: var(--fs-md);
 }
-.team__name:focus { border-color: var(--c-gold); outline: none; }
+.team__name:focus { border-color: var(--c-brand); outline: none; }
 .team__x {
   flex: none;
   width: 2rem;
@@ -515,7 +515,7 @@ function start() {
 .team__x:hover:not(:disabled) { color: var(--c-bad); background: var(--c-surface-2); }
 .team__x:disabled { opacity: 0.25; }
 
-.segmented { display: flex; gap: 2px; padding: 3px; border: 1px solid var(--c-line); border-radius: var(--r-md); background: var(--c-abyss); }
+.segmented { display: flex; gap: 2px; padding: 3px; border: 1px solid var(--c-line); border-radius: var(--r-md); background: var(--c-sunken); }
 .segmented button {
   flex: 1;
   padding: var(--sp-2) var(--sp-1);
@@ -529,7 +529,7 @@ function start() {
 }
 .segmented button:hover:not(:disabled) { color: var(--c-text); background: var(--c-surface); }
 .segmented button:disabled { opacity: 0.3; cursor: not-allowed; }
-.segmented .seg--on { background: var(--c-gold); color: var(--c-text-ink); }
+.segmented .seg--on { background: var(--c-brand); color: var(--c-on-accent); }
 
 .switch { display: flex; gap: var(--sp-3); align-items: flex-start; cursor: pointer; }
 .switch input { position: absolute; opacity: 0; width: 0; height: 0; }
@@ -555,9 +555,9 @@ function start() {
   background: var(--c-text-muted);
   transition: transform var(--dur-fast) var(--ease-back), background-color var(--dur-fast) var(--ease-out);
 }
-.switch input:checked + .switch__box { background: var(--c-gold); border-color: var(--c-gold); }
-.switch input:checked + .switch__box::after { transform: translateX(1.1rem); background: var(--c-text-ink); }
-.switch input:focus-visible + .switch__box { outline: 3px solid var(--c-gold); outline-offset: 3px; }
+.switch input:checked + .switch__box { background: var(--c-brand); border-color: var(--c-brand); }
+.switch input:checked + .switch__box::after { transform: translateX(1.1rem); background: var(--c-on-accent); }
+.switch input:focus-visible + .switch__box { outline: 3px solid var(--c-brand); outline-offset: 3px; }
 .switch strong { display: block; font-size: var(--fs-sm); font-weight: 600; }
 .switch em { display: block; font-style: normal; font-size: var(--fs-xs); color: var(--c-text-faint); line-height: 1.5; }
 

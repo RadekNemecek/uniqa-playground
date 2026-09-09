@@ -9,11 +9,11 @@ export interface GameEntry {
 
 export const GAMES: GameEntry[] = [
   {
-    slug: 'riskuj',
-    title: 'Riskuj',
+    slug: 'pojistuj',
+    title: 'Pojišťuj!',
     tagline: 'Vědomostní souboj týmů',
     description:
       'Klasická deska kategorií a bodových hodnot. Jeden až šest týmů, vlastní otázky, časomíra a bonusová pole.',
-    route: '/riskuj',
+    route: '/pojistuj',
   },
 ]

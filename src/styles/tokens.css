@@ -1,70 +1,130 @@
 /* ---------------------------------------------------------------------------
-   Playground: designové tokeny
+   Pojišťuj!: designové tokeny
+
    Pravidlo projektu: v komponentách se nepoužívají syrové hodnoty barvy,
    mezery, velikosti písma, poloměru ani trvání animace. Vždy var(--token).
    Novou hodnotu nejdřív přidej sem.
+
+   Barvy vycházejí ze značky UNIQA. Nejsou odhadnuté, jsou změřené ze
+   živých stylů na uniqa.cz: modrá #005CA9, inkoust #1B1B1B, studené
+   plochy #EEF2FA a #D5DEEE, zelená #026E46, červená #D71C4F.
+
+   Aplikace má dvě barevné vrstvy se stejnými názvy tokenů:
+
+     :root                     světlá, brand native, pro správu otázek
+     :root[data-theme="dark"]  tmavě modrá, pro rozcestník a hru
+
+   Přepíná je router jedním řádkem podle meta.theme routy. Komponenty o
+   vrstvách nevědí, čtou pořád tytéž tokeny. Tam, kde se pracuje, je bílá
+   jako na webu UNIQA. Tam, kde se hraje, je tma, protože se promítá.
+
+   Všechny dvojice text/plocha jsou spočítané podle WCAG a drží aspoň
+   4,5:1. Když měníš odstín, přepočítej ho, neodhaduj.
 --------------------------------------------------------------------------- */
 
 :root {
+  /* =========================================================================
+     SVĚTLÁ VRSTVA
+     Rozhraní, kde se pracuje. Odpovídá webu UNIQA.
+     ========================================================================= */
+
   /* --- Plocha ------------------------------------------------------------ */
-  --c-abyss:        #070B1C;  /* nejhlubší vrstva, pozadí za vším */
-  --c-base:         #0B1026;  /* základní plocha aplikace */
-  --c-surface:      #141B3D;  /* karty, dlaždice */
-  --c-surface-2:    #1D2650;  /* vyvýšené plochy, hover */
-  --c-surface-3:    #27336B;  /* aktivní stav, ohraničení dlaždic */
-  --c-line:         #2E3A70;  /* dělítka */
-  --c-line-soft:    #202A57;
+  --c-abyss:        #E3EAF6;  /* nejhlubší vrstva, pozadí za vším */
+  --c-base:         #F7F9FD;  /* základní plocha aplikace */
+  --c-surface:      #FFFFFF;  /* karty, panely */
+  --c-surface-2:    #F2F5FB;  /* vyvýšené plochy, hover */
+  --c-surface-3:    #E7ECF6;  /* aktivní stav */
+  --c-line:         #D5DEEE;  /* dělítka, UNIQA */
+  --c-line-soft:    #E7ECF6;
+  /* Zapadlá plocha: políčko formuláře, prázdná buňka v editoru, dráha
+     posuvníku. Není to pozadí stránky, proto vlastní token, ne --c-abyss.
+     Každá vrstva potřebuje jiný směr, do světla nebo do tmy. */
+  --c-sunken:       #F1F4FA;
+  --c-sunken-focus: #FFFFFF;
 
   /* --- Text -------------------------------------------------------------- */
-  --c-text:         #F2F4FF;  /* 17:1 na --c-base */
-  --c-text-muted:   #A8B2D8;  /* 9:1 na --c-base */
-  --c-text-faint:   #949FCB;  /* nejméně 4,5:1 i na nejsvětlejší ploše --c-surface-3 */
-  --c-text-ink:     #0B1026;  /* text na světlých plochách */
+  --c-text:         #1B1B1B;  /* 17,2:1 na --c-surface, UNIQA */
+  --c-text-muted:   #495663;  /* 7,5:1 na --c-surface, UNIQA */
+  --c-text-faint:   #5B6B7C;  /* 4,6:1 i na nejtmavší ploše --c-surface-3 */
+  --c-text-ink:     #1B1B1B;  /* text na světlé barevné ploše, třeba na týmu */
+  /* Text na syté akcentové ploše, tedy na modré, zelené nebo červené.
+     Ve světlé vrstvě je akcent tmavý, takže text bílý. V tmavé je to
+     obráceně, proto se token otáčí spolu s vrstvou. */
+  --c-on-accent:     #FFFFFF;  /* 6,8:1 na --c-brand, 6,3:1 na --c-ok */
 
-  /* --- Akcent ------------------------------------------------------------ */
-  --c-gold:         #F5C451;  /* hodnoty, tým na tahu */
-  --c-gold-deep:    #D9A22F;
-  --c-gold-glow:    rgba(245, 196, 81, 0.28);
-
-  /* --- Jiskra ------------------------------------------------------------ */
-  /* Třetí barva celého systému. Používá se výhradně pro bonusové pole
-     Riskuj!, protože je to jediný okamžik hry, který má být divoký.
-     Jakmile se objeví jinde, přestane fungovat. */
-  --c-spark:      #FF8A76;
-  --c-spark-deep: #E24F3B;
-  --c-spark-glow: rgba(255, 138, 118, 0.30);
-
-  /* --- Dlaždice desky ----------------------------------------------------- */
-  /* Dlaždice má působit jako fyzický panel: světlo shora, hrana zespodu.
-     Právě tahle hmotnost dělá z tabulky herní desku. */
-  --c-tile-top:    #2E3C8C;
-  --c-tile-bottom: #171F4E;
-  --c-tile-edge:   #080C22;
-  --c-tile-sheen:  rgba(255, 255, 255, 0.14);
+  /* --- Značka ------------------------------------------------------------ */
+  /* Modrá UNIQA. Nese odkazy, focus, primární tlačítko a označení textu.
+     Nahradila zlatou, která tady dřív dělala všechno naráz. */
+  --c-brand:        #005CA9;  /* 6,8:1 na bílé */
+  --c-brand-core:   #005CA9;  /* modrá značky, stejná v obou vrstvách */
+  --c-brand-deep:   #00447D;
+  --c-brand-soft:   #3578C7;  /* UNIQA */
+  --c-brand-wash:   #EEF2FA;  /* UNIQA, tlumená plocha pod modrou */
+  --c-brand-glow:   rgba(0, 92, 169, 0.22);
 
   /* --- Stavy ------------------------------------------------------------- */
-  --c-ok:           #4ADE80;
-  --c-ok-deep:      #16A34A;
-  --c-bad:          #F87171;
-  --c-bad-deep:     #B91C1C;
-  --c-dead:         #05070F;  /* políčko, které nikdo neuhodl */
+  --c-ok:           #026E46;  /* UNIQA, 6,3:1 na bílé */
+  --c-ok-deep:      #015435;
+  --c-bad:          #D71C4F;  /* UNIQA, 5,0:1 na bílé */
+  --c-bad-deep:     #A81139;
+  --c-dead:         #C8D2E4;  /* políčko, které nikdo neuhodl */
+
+  /* --- Stíny ------------------------------------------------------------- */
+  /* Měkké a modře podbarvené, ne černé. Odpovídá webu UNIQA. */
+  --shadow-sm:   0 1px 2px rgba(24, 39, 75, 0.08);
+  --shadow-md:   0 4px 16px -6px rgba(24, 39, 75, 0.18);
+  --shadow-lg:   0 20px 40px -12px rgba(24, 39, 75, 0.22);
+  --shadow-glow: 0 0 0 1px var(--c-brand), 0 0 24px -6px var(--c-brand-glow);
+  --c-scrim:     rgba(10, 26, 48, 0.42);
+
+  /* =========================================================================
+     NEZÁVISLÉ NA VRSTVĚ
+     ========================================================================= */
+
+  /* --- Jiskra ------------------------------------------------------------ */
+  /* Používá se výhradně pro pole Nepojištěno!, protože je to jediný
+     okamžik hry, který má být divoký. Po zrušení zlaté je to zároveň
+     jediná teplá barva celého systému, takže jakmile se objeví jinde,
+     přestane fungovat. --c-spark-deep je doslova červená, kterou UNIQA
+     dává na chyby: pole bez krytí je obarvené varovnou barvou značky. */
+  --c-spark:      #FF8B70;  /* 6,7:1 na tmavé ploše, ink 6,7:1 na ní */
+  --c-spark-mid:  #EE7154;  /* spodek přechodu, tmavý text na něm drží 5,2:1 */
+  --c-spark-deep: #D71C4F;  /* UNIQA */
+  --c-spark-glow: rgba(255, 139, 112, 0.30);
+
+  /* --- Dlaždice desky ---------------------------------------------------- */
+  /* Deska je vždy tmavá, ať je aplikace v jakékoli vrstvě. Dlaždice má
+     působit jako fyzický panel: světlo shora, hrana zespodu. Právě tahle
+     hmotnost dělá z tabulky herní desku, ne barva čísla na ní. */
+  --c-tile-top:    #12559A;
+  --c-tile-bottom: #063764;
+  --c-tile-edge:   #01182E;
+  --c-tile-sheen:  rgba(255, 255, 255, 0.16);
+  --c-value:       #FFFFFF;  /* hodnota na dlaždici, 7,5:1 na --c-tile-top */
+  --c-value-glow:  rgba(255, 255, 255, 0.22);
 
   /* --- Barvy týmů -------------------------------------------------------- */
-  /* Všechny mají kontrast >= 4,5:1 vůči --c-text-ink, takže na nich může
-     být tmavý text. Tým se nikdy nerozlišuje jen barvou, vždy i písmenem. */
-  --c-team-1: #A78BFA;  /* ametyst */
-  --c-team-2: #22D3EE;  /* tyrkys  */
-  --c-team-3: #FB7185;  /* korál   */
-  --c-team-4: #A3E635;  /* limeta  */
-  --c-team-5: #FBBF24;  /* jantar  */
-  --c-team-6: #60A5FA;  /* azur    */
+  /* Všechny mají nejméně 7:1 vůči tmavému inkoustu v obou vrstvách, takže
+     na nich může být tmavý text. Tým se nikdy nerozlišuje jen barvou,
+     vždy i písmenem. Žlutá v sadě schválně chybí, jinak by se zlatá
+     vrátila zadními dveřmi. Odstíny jsou rozprostřené po celém kruhu:
+     205, 176, 86, 253, 333 a 31 stupňů. */
+  --c-team-1: #7CC0F0;  /* azur      */
+  --c-team-2: #55D6CE;  /* tyrkys    */
+  --c-team-3: #ABDD6B;  /* limeta    */
+  --c-team-4: #B7A6F2;  /* levandule */
+  --c-team-5: #F79DC6;  /* růžová    */
+  --c-team-6: #EFC08D;  /* písek     */
 
   /* --- Typografie -------------------------------------------------------- */
-  --font-ui:      'Inter Variable', 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  /* Displejové písmo je záměrně to samé. Otázky se čtou z druhého konce
-     místnosti, tam vyhrává čitelnost nad charakterem. Token zůstává, aby
-     se dal případný displejový řez nasadit na jednom místě. */
+  /* Lato je písmo UNIQA. Nadpisy jdou v 900, stejně jako na uniqa.cz. */
+  --font-ui:      'Lato', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-display: var(--font-ui);
+  /* Ruční písmo. UNIQA ho na webu používá tam, kde chce znít lidsky.
+     Smí být jen na třech místech: kicker rozcestníku, dialog sázky,
+     blahopřání vítězi. Nikdy nenese otázku, odpověď, hodnotu ani
+     ovládací prvek, ty se čtou z druhého konce místnosti. */
+  --font-hand:    'Caveat', var(--font-ui);
 
   /* Rozhraní má pevné velikosti. Nastavení „velikost písma" mění jen
      herní plochu, kde jde o čitelnost z druhého konce místnosti. */
@@ -104,17 +164,14 @@
   --sp-9:  6rem;
 
   /* --- Poloměry ---------------------------------------------------------- */
-  --r-sm:   6px;
-  --r-md:   10px;
-  --r-lg:   16px;
-  --r-xl:   24px;
+  /* UNIQA jede na 4 a 8 px, rozhraní se tomu drží. Dlaždice desky má
+     vlastní token, protože je to objekt ve hře, ne prvek webu. */
+  --r-sm:   4px;
+  --r-md:   8px;
+  --r-lg:   12px;
+  --r-xl:   20px;
+  --r-tile: 16px;
   --r-full: 999px;
-
-  /* --- Stíny ------------------------------------------------------------- */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 8px 24px -8px rgba(0, 0, 0, 0.6);
-  --shadow-lg: 0 24px 64px -16px rgba(0, 0, 0, 0.7);
-  --shadow-glow: 0 0 0 1px var(--c-gold), 0 0 32px -4px var(--c-gold-glow);
 
   /* --- Pohyb ------------------------------------------------------------- */
   --dur-instant: 90ms;
@@ -140,12 +197,65 @@
 }
 
 /* ---------------------------------------------------------------------------
+   TMAVÁ VRSTVA
+
+   Rozcestník a hra. Modrá je odvozená z #005CA9, ne z indiga, takže deska
+   je pořád ve značkové barvě, jen ztlumené do projekce. Přepisují se jen
+   plochy, texty, akcent a stavy. Všechno ostatní zůstává z :root.
+--------------------------------------------------------------------------- */
+:root[data-theme='dark'] {
+  /* Rampa je čistý odstín #005CA9 ztlumený do hloubky, tedy rgb(0, x, y).
+     Deska tak nese barvu značky, jen v projekční tmě. Kroky drží odstup
+     kolem 1,18, aby se vrstvy daly rozeznat, ale nekřičely. */
+  --c-abyss:        #001120;
+  --c-base:         #001A31;
+  --c-surface:      #002846;
+  --c-surface-2:    #00355C;
+  --c-surface-3:    #003F6D;
+  --c-line:         #00558F;
+  --c-line-soft:    #002F52;
+  --c-sunken:       #001120;
+  --c-sunken-focus: #001A31;
+
+  --c-text:         #F2F7FD;  /* 16,4:1 na --c-base, 10,1:1 i na --c-surface-3 */
+  --c-text-muted:   #A9C6E2;  /* 10,0:1 na --c-base */
+  --c-text-faint:   #96B8D8;  /* 5,3:1 i na nejsvětlejší ploše --c-surface-3 */
+  --c-text-ink:     #001A31;  /* text na světlé barevné ploše, třeba na týmu */
+  --c-on-accent:     #001A31;  /* akcent je tady světlý, 8,6:1 na něm */
+
+  /* Na tmavé musí akcent zesvětlat, jinak by modrá zmizela v modré. */
+  --c-brand:        #7DBBF0;  /* 8,6:1 na --c-base, 5,3:1 na --c-surface-3 */
+  --c-brand-deep:   #4E9BDD;
+  --c-brand-soft:   #A8D3F6;
+  /* Modrá značky se nemění s vrstvou. Je to jediná barva, která má být
+     všude stejná, protože právě ji si člověk spojí s UNIQA. Nese ji CTA
+     na rozcestníku a značka v hlavičce, ne běžný text. */
+  --c-brand-core:   #005CA9;
+  --c-brand-wash:   #00243F;
+  --c-brand-glow:   rgba(125, 187, 240, 0.28);
+
+  --c-ok:           #3FCF8E;  /* 8,8:1 na --c-base */
+  --c-ok-deep:      #17A06A;
+  --c-bad:          #E89BAD;  /* chladnější než jiskra, aby se nepletly */
+  --c-bad-deep:     #B4325A;
+  --c-dead:         #000A14;
+
+  /* Na tmavé se stíny zase smějí opřít do černé. */
+  --shadow-sm:   0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md:   0 8px 24px -8px rgba(0, 0, 0, 0.6);
+  --shadow-lg:   0 24px 64px -16px rgba(0, 0, 0, 0.7);
+  --c-scrim:     rgba(0, 8, 16, 0.76);
+  --shadow-glow: 0 0 0 1px var(--c-brand), 0 0 32px -4px var(--c-brand-glow);
+}
+
+/* ---------------------------------------------------------------------------
    Herní plocha
 
-   Nastavení velikosti písma se projeví jen tady. Tokeny se musí přepsat
-   celé, protože var() uvnitř custom property se dosazuje tam, kde je
-   property deklarovaná, ne tam, kde se používá. Přepsat samotné --scale
-   na potomkovi by tedy s hodnotami z :root nehnulo.
+   Nastavení velikosti písma se projeví jen tady. Je to jiná osa než
+   barevná vrstva a nesmí se s ní slít. Tokeny se musí přepsat celé,
+   protože var() uvnitř custom property se dosazuje tam, kde je property
+   deklarovaná, ne tam, kde se používá. Přepsat samotné --scale na
+   potomkovi by tedy s hodnotami z :root nehnulo.
 --------------------------------------------------------------------------- */
 .game-surface {
   --fs-xs:   calc(0.75rem  * var(--scale));

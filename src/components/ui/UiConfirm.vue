@@ -15,7 +15,7 @@ import { ui, answerConfirm } from '@/stores/ui'
     <template #footer>
       <UiButton variant="ghost" @click="answerConfirm(false)">Zrušit</UiButton>
       <UiButton
-        :variant="ui.confirm?.danger ? 'danger' : 'gold'"
+        :variant="ui.confirm?.danger ? 'danger' : 'brand'"
         @click="answerConfirm(true)"
       >
         {{ ui.confirm?.confirmLabel }}

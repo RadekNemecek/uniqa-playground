@@ -157,7 +157,7 @@ function readyIn(categoryId: string): number {
   padding: var(--sp-3);
   border: 1px dashed var(--c-line);
   border-radius: var(--r-md);
-  background: var(--c-abyss);
+  background: var(--c-sunken);
   color: var(--c-text-faint);
   text-align: left;
   transition: border-color var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out);
@@ -168,15 +168,15 @@ function readyIn(categoryId: string): number {
   color: var(--c-text-muted);
 }
 .row--on {
-  border-color: var(--c-gold) !important;
-  background: color-mix(in oklab, var(--c-gold) 12%, var(--c-abyss));
+  border-color: var(--c-brand) !important;
+  background: color-mix(in oklab, var(--c-brand) 12%, var(--c-sunken));
   color: var(--c-text);
 }
 .row__value {
   font-family: var(--font-display);
   font-size: var(--fs-md);
   font-weight: 800;
-  color: var(--c-gold);
+  color: var(--c-brand);
   font-variant-numeric: tabular-nums;
 }
 .row__text {
@@ -227,7 +227,7 @@ function readyIn(categoryId: string): number {
   font-family: var(--font-display);
   font-size: var(--fs-lg);
   font-weight: 800;
-  color: var(--c-gold);
+  color: var(--c-brand);
   font-variant-numeric: tabular-nums;
 }
 
@@ -240,7 +240,7 @@ function readyIn(categoryId: string): number {
   padding: var(--sp-3) var(--sp-3);
   border: 1px dashed var(--c-line);
   border-radius: var(--r-md);
-  background: var(--c-abyss);
+  background: var(--c-sunken);
   color: var(--c-text-faint);
   font-size: var(--fs-xs);
   line-height: 1.45;
@@ -264,8 +264,8 @@ function readyIn(categoryId: string): number {
 .cell--ready:hover { border-color: var(--c-surface-3); }
 
 .cell--on {
-  border-color: var(--c-gold) !important;
-  background: color-mix(in oklab, var(--c-gold) 12%, var(--c-abyss));
+  border-color: var(--c-brand) !important;
+  background: color-mix(in oklab, var(--c-brand) 12%, var(--c-sunken));
   color: var(--c-text);
 }
 

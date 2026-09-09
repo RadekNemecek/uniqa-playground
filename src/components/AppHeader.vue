@@ -32,7 +32,7 @@ async function toggleFullscreen() {
     </RouterLink>
 
     <nav class="nav" aria-label="Hlavní">
-      <RouterLink to="/riskuj" class="nav__link">Hrát</RouterLink>
+      <RouterLink to="/pojistuj" class="nav__link">Hrát</RouterLink>
       <RouterLink to="/admin" class="nav__link">Otázky</RouterLink>
     </nav>
 
@@ -80,7 +80,10 @@ async function toggleFullscreen() {
 }
 .brand__mark span {
   border-radius: 2px;
-  background: var(--c-surface-3);
+  /* Zhasnutá dlaždice se míchá ze značky a plochy, aby držela stejnou
+     váhu na bílé i na tmavě modré. Samotná --c-surface-3 by se ve světlé
+     vrstvě do bílé ztratila. */
+  background: color-mix(in oklab, var(--c-brand) 30%, var(--c-surface));
   /* Zlatá dlaždice pomalu obchází mřížku dokola. Je to jediná ozdoba
      v hlavičce a je schválně tak pomalá, aby si jí člověk všiml až
      napodruhé a nerušila ho. */
@@ -92,13 +95,13 @@ async function toggleFullscreen() {
 .brand__mark span:nth-child(3) { animation-delay: 6.75s; }
 
 @keyframes hop {
-  0%, 25% { background: var(--c-gold); }
-  25.01%, 100% { background: var(--c-surface-3); }
+  0%, 25% { background: var(--c-brand); }
+  25.01%, 100% { background: color-mix(in oklab, var(--c-brand) 30%, var(--c-surface)); }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .brand__mark span { animation: none; }
-  .brand__mark span:nth-child(1) { background: var(--c-gold); }
+  .brand__mark span:nth-child(1) { background: var(--c-brand); }
 }
 .brand__name {
   font-family: var(--font-display);

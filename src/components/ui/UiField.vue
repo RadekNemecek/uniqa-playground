@@ -27,7 +27,7 @@ defineProps<{ label: string; hint?: string; id?: string }>()
   padding: var(--sp-3) var(--sp-4);
   border: 1px solid var(--c-line);
   border-radius: var(--r-md);
-  background: var(--c-abyss);
+  background: var(--c-sunken);
   color: var(--c-text);
   font-size: var(--fs-md);
   transition: border-color var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out);
@@ -37,6 +37,6 @@ defineProps<{ label: string; hint?: string; id?: string }>()
 .field :deep(textarea:hover) { border-color: var(--c-surface-3); }
 .field :deep(input:focus),
 .field :deep(textarea:focus),
-.field :deep(select:focus) { border-color: var(--c-gold); background: var(--c-base); }
+.field :deep(select:focus) { border-color: var(--c-brand); background: var(--c-sunken-focus); }
 .field :deep(::placeholder) { color: var(--c-text-faint); }
 </style>

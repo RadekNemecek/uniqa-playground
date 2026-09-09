@@ -64,9 +64,9 @@ function open(e: MouseEvent) {
   min-height: 2.75rem;
   padding: var(--sp-2);
   border: 0;
-  border-radius: var(--r-lg);
+  border-radius: var(--r-tile);
   background: linear-gradient(178deg, var(--c-tile-top) 0%, var(--c-tile-bottom) 100%);
-  color: var(--c-gold);
+  color: var(--c-value);
   overflow: hidden;
   /* Světlo shora, hrana zespodu. Dlaždice se má dát zmáčknout. */
   box-shadow:
@@ -97,9 +97,9 @@ function open(e: MouseEvent) {
   filter: brightness(1.08);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.16),
-    inset 0 0 0 1px color-mix(in oklab, var(--c-gold) 55%, transparent),
+    inset 0 0 0 1px color-mix(in oklab, var(--c-brand) 55%, transparent),
     0 6px 0 var(--c-tile-edge),
-    0 16px 32px -12px var(--c-gold-glow);
+    0 16px 32px -12px var(--c-brand-glow);
 }
 .cell--open:hover::after { translate: 120% 0; }
 
@@ -122,7 +122,7 @@ function open(e: MouseEvent) {
   text-shadow:
     0 -1px 0 rgba(255, 255, 255, 0.18),
     0 2px 0 rgba(0, 0, 0, 0.45),
-    0 4px 22px var(--c-gold-glow);
+    0 4px 22px var(--c-value-glow);
 }
 
 /* Vyřešená políčka ------------------------------------------------------- */

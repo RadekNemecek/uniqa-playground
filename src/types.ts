@@ -58,7 +58,7 @@ export interface GameRules {
   penalty: boolean
   /** Umožnit přiznat body jinému týmu, než je na tahu. */
   steal: boolean
-  /** Počet bonusových polí Riskuj! na desce. */
+  /** Počet polí Nepojištěno! na desce. */
   wagerCells: number
   /** Zvuková odezva. */
   sound: boolean
@@ -91,7 +91,7 @@ export interface GameState {
   questions: Record<string, Question>
   /** cellKey -> stav políčka. */
   cells: Record<string, CellState>
-  /** cellKey políček označených jako Riskuj! */
+  /** cellKey políček označených jako Nepojištěno! */
   wagerCells: string[]
   teams: Team[]
   activeTeamIndex: number

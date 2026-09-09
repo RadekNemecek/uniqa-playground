@@ -39,7 +39,7 @@ export function flipFrom(
       {
         transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`,
         opacity: options.fade === false ? 1 : 0.4,
-        borderRadius: 'var(--r-lg)',
+        borderRadius: 'var(--r-tile)',
       },
       { transform: 'none', opacity: 1, borderRadius: '0px' },
     ],

@@ -173,7 +173,7 @@ export function selectCell(key: string): void {
   g.phase = 'question'
 }
 
-/** Potvrzení sázky u bonusového pole Riskuj! */
+/** Potvrzení sázky u pole Nepojištěno! */
 export function setWager(amount: number): void {
   const g = store.current
   if (!g) return

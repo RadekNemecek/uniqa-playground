@@ -42,7 +42,7 @@ function toggleSound() {
       <section>
         <h3 class="head">Zvuk</h3>
         <p class="note">Krátké tóny při otevření otázky a připsání bodů.</p>
-        <UiButton :variant="settings.sound ? 'gold' : 'ghost'" block @click="toggleSound">
+        <UiButton :variant="settings.sound ? 'brand' : 'ghost'" block @click="toggleSound">
           {{ settings.sound ? 'Zvuk zapnutý' : 'Zvuk vypnutý' }}
         </UiButton>
       </section>
@@ -66,12 +66,12 @@ function toggleSound() {
   padding: var(--sp-3) var(--sp-1);
   border: 1px solid var(--c-line);
   border-radius: var(--r-md);
-  background: var(--c-abyss);
+  background: var(--c-sunken);
   color: var(--c-text-muted);
   transition: all var(--dur-fast) var(--ease-out);
 }
 .step:hover { border-color: var(--c-surface-3); color: var(--c-text); }
-.step--on { border-color: var(--c-gold); color: var(--c-text); background: color-mix(in oklab, var(--c-gold) 12%, transparent); }
+.step--on { border-color: var(--c-brand); color: var(--c-text); background: color-mix(in oklab, var(--c-brand) 12%, transparent); }
 .step__glyph { font-family: var(--font-display); font-weight: 700; line-height: 1; }
 .step__label { font-size: 0.625rem; letter-spacing: 0.02em; }
 </style>

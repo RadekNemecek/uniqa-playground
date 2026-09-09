@@ -131,7 +131,7 @@ onBeforeUnmount(() => {
     <header class="stage__head">
       <div class="stage__id">
         <span class="stage__cat">{{ categoryName }}</span>
-        <span v-if="isWager" class="stage__wagerTag">Riskuj!</span>
+        <span v-if="isWager" class="stage__wagerTag">Nepojištěno!</span>
       </div>
       <span class="stage__value" data-stage-value>{{ formatScore(points) }}</span>
       <button type="button" class="stage__close" aria-label="Zavřít bez bodování" @click="emit('cancel')">
@@ -168,7 +168,7 @@ onBeforeUnmount(() => {
           </p>
         </div>
         <p v-if="timedOut" class="stage__timeout">Čas vypršel</p>
-        <UiButton variant="gold" size="xl" @click="reveal">Zobrazit odpověď</UiButton>
+        <UiButton variant="brand" size="xl" @click="reveal">Zobrazit odpověď</UiButton>
         <p class="stage__hint">Mezerník zobrazí odpověď, Esc zavře políčko bez bodování.</p>
       </template>
 
@@ -233,7 +233,7 @@ onBeforeUnmount(() => {
   display: grid;
   grid-template-rows: auto 1fr auto;
   background:
-    radial-gradient(80% 60% at 50% 0%, color-mix(in oklab, var(--c-gold) 7%, transparent), transparent 70%),
+    radial-gradient(80% 60% at 50% 0%, color-mix(in oklab, var(--c-brand) 7%, transparent), transparent 70%),
     linear-gradient(180deg, var(--c-surface) 0%, var(--c-abyss) 100%);
   will-change: transform, opacity;
 }
@@ -258,7 +258,7 @@ onBeforeUnmount(() => {
 .stage__wagerTag {
   padding: 2px var(--sp-3);
   border-radius: var(--r-full);
-  background: linear-gradient(180deg, var(--c-spark) 0%, var(--c-spark-deep) 100%);
+  background: linear-gradient(180deg, var(--c-spark) 0%, var(--c-spark-mid) 100%);
   color: var(--c-text-ink);
   font-size: var(--fs-xs);
   font-weight: 800;
@@ -278,7 +278,7 @@ onBeforeUnmount(() => {
   font-family: var(--font-display);
   font-size: var(--fs-2xl);
   font-weight: 800;
-  color: var(--c-gold);
+  color: var(--c-brand);
   font-variant-numeric: tabular-nums;
 }
 .stage__close {

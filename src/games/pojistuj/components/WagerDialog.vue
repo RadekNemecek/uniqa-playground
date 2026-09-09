@@ -20,10 +20,10 @@ function confirm() {
 </script>
 
 <template>
-  <div class="wager" role="dialog" aria-modal="true" aria-label="Bonusové pole Riskuj">
+  <div class="wager" role="dialog" aria-modal="true" aria-label="Pole Nepojištěno">
     <div class="wager__panel" :style="{ '--team': `var(${teamColor(team.color).cssVar})` }">
       <p class="wager__kicker">Bonusové pole</p>
-      <h2 class="wager__title">Riskuj!</h2>
+      <h2 class="wager__title">Nepojištěno!</h2>
 
       <p class="wager__lead">
         <span class="wager__badge">{{ teamBadge(teamIndex) }}</span>
@@ -76,7 +76,7 @@ function confirm() {
   width: min(100%, 34rem);
   padding: var(--sp-7) var(--sp-6);
   text-align: center;
-  border: 1px solid color-mix(in oklab, var(--c-spark) 42%, transparent);
+  border: 1px solid var(--c-spark-deep);
   border-radius: var(--r-xl);
   background: radial-gradient(120% 90% at 50% 0%, color-mix(in oklab, var(--c-spark) 16%, transparent), transparent 60%), var(--c-surface);
   box-shadow: var(--shadow-lg);

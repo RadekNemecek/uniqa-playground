@@ -49,7 +49,7 @@ export function confetti(colors: string[], count = 90): void {
     vr: (Math.random() - 0.5) * 0.3,
     w: 6 + Math.random() * 6,
     h: 9 + Math.random() * 8,
-    color: colors[Math.floor(Math.random() * colors.length)] ?? '#F5C451',
+    color: colors[Math.floor(Math.random() * colors.length)] ?? '#7CC0F0',
   }))
 
   const started = performance.now()

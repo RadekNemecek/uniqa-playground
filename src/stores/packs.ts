@@ -3,7 +3,7 @@ import type { Category, Pack, Question } from '@/types'
 import { db } from '@/lib/db'
 import { id } from '@/lib/id'
 import { clone } from '@/lib/clone'
-import { demoPack } from '@/games/riskuj/demoPack'
+import { demoPack } from '@/games/pojistuj/demoPack'
 
 const DEFAULT_LADDER = [200, 400, 600, 800, 1000]
 

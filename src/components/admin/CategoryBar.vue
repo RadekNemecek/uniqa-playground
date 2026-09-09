@@ -119,7 +119,7 @@ function ready(id: string): boolean {
   font-weight: 700;
   padding: var(--sp-1) 0;
 }
-.chip__name:focus { outline: none; color: var(--c-gold); }
+.chip__name:focus { outline: none; color: var(--c-brand); }
 .chip__name::placeholder { color: var(--c-text-faint); font-weight: 500; }
 
 .chip__tools { display: inline-flex; gap: 1px; opacity: 0; transition: opacity var(--dur-fast) var(--ease-out); }

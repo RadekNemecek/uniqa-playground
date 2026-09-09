@@ -1,7 +1,7 @@
 <script setup lang="ts">
 withDefaults(
   defineProps<{
-    variant?: 'primary' | 'gold' | 'spark' | 'ghost' | 'quiet' | 'danger' | 'ok'
+    variant?: 'primary' | 'brand' | 'spark' | 'ghost' | 'quiet' | 'danger' | 'ok'
     size?: 'sm' | 'md' | 'lg' | 'xl'
     block?: boolean
     disabled?: boolean
@@ -57,15 +57,15 @@ withDefaults(
 
 .btn--primary { --btn-bg: var(--c-surface-2); --btn-line: var(--c-line); }
 
-.btn--gold {
-  --btn-bg: linear-gradient(180deg, var(--c-gold) 0%, var(--c-gold-deep) 100%);
-  --btn-fg: var(--c-text-ink);
+.btn--brand {
+  --btn-bg: linear-gradient(180deg, var(--c-brand) 0%, var(--c-brand-deep) 100%);
+  --btn-fg: var(--c-on-accent);
   --btn-line: transparent;
-  box-shadow: 0 6px 20px -8px var(--c-gold-glow);
+  box-shadow: 0 6px 20px -8px var(--c-brand-glow);
 }
 
 .btn--spark {
-  --btn-bg: linear-gradient(180deg, var(--c-spark) 0%, var(--c-spark-deep) 100%);
+  --btn-bg: linear-gradient(180deg, var(--c-spark) 0%, var(--c-spark-mid) 100%);
   --btn-fg: var(--c-text-ink);
   --btn-line: transparent;
   box-shadow: 0 6px 22px -8px var(--c-spark-glow);
@@ -73,7 +73,7 @@ withDefaults(
 
 .btn--ok {
   --btn-bg: linear-gradient(180deg, var(--c-ok) 0%, var(--c-ok-deep) 100%);
-  --btn-fg: #04220F;
+  --btn-fg: var(--c-on-accent);
   --btn-line: transparent;
 }
 

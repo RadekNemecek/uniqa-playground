@@ -80,7 +80,7 @@ onBeforeUnmount(() => {
   place-items: center;
   padding: var(--sp-5);
 }
-.modal__scrim { position: absolute; inset: 0; background: rgba(3, 6, 18, 0.76); backdrop-filter: blur(6px); }
+.modal__scrim { position: absolute; inset: 0; background: var(--c-scrim); backdrop-filter: blur(6px); }
 .modal__panel {
   position: relative;
   width: min(100%, 34rem);

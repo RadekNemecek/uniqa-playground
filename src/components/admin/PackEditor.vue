@@ -284,7 +284,7 @@ async function removePack() {
       </div>
 
       <div class="ed__actions">
-        <RouterLink to="/riskuj" class="ed__play">Vyzkoušet v hře</RouterLink>
+        <RouterLink to="/pojistuj" class="ed__play">Vyzkoušet v hře</RouterLink>
         <UiButton size="sm" variant="ghost" @click="emit('duplicate')">Duplikovat</UiButton>
         <UiButton size="sm" variant="danger" @click="removePack">Smazat</UiButton>
       </div>
@@ -406,18 +406,18 @@ async function removePack() {
   color: var(--c-text-muted);
 }
 .ed__name:hover, .ed__desc:hover { border-color: var(--c-line); }
-.ed__name:focus, .ed__desc:focus { border-color: var(--c-gold); outline: none; background: var(--c-abyss); }
+.ed__name:focus, .ed__desc:focus { border-color: var(--c-brand); outline: none; background: var(--c-sunken-focus); }
 
 .ed__actions { display: flex; align-items: center; gap: var(--sp-2); }
 .ed__play {
   padding: var(--sp-2) var(--sp-3);
   font-size: var(--fs-sm);
   font-weight: 600;
-  color: var(--c-gold);
+  color: var(--c-brand);
   text-decoration: none;
   border-radius: var(--r-md);
 }
-.ed__play:hover { background: color-mix(in oklab, var(--c-gold) 12%, transparent); }
+.ed__play:hover { background: color-mix(in oklab, var(--c-brand) 12%, transparent); }
 
 /* Postup ------------------------------------------------------------------ */
 .ed__progress { display: flex; align-items: center; gap: var(--sp-4); flex-wrap: wrap; }
@@ -433,7 +433,7 @@ async function removePack() {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, var(--c-gold-deep), var(--c-gold));
+  background: linear-gradient(90deg, var(--c-brand-deep), var(--c-brand));
   transition: width var(--dur-slow) var(--ease-out);
 }
 .ed__count { display: flex; gap: var(--sp-2); align-items: baseline; font-size: var(--fs-sm); color: var(--c-text-faint); }
@@ -442,14 +442,14 @@ async function removePack() {
 
 .ed__conflict {
   padding: var(--sp-3) var(--sp-4);
-  border: 1px solid color-mix(in oklab, var(--c-gold) 45%, transparent);
+  border: 1px solid color-mix(in oklab, var(--c-brand) 45%, transparent);
   border-radius: var(--r-md);
-  background: color-mix(in oklab, var(--c-gold) 9%, transparent);
+  background: color-mix(in oklab, var(--c-brand) 9%, transparent);
   font-size: var(--fs-sm);
   color: var(--c-text-muted);
 }
 .ed__conflict button {
-  border: 0; background: transparent; color: var(--c-gold);
+  border: 0; background: transparent; color: var(--c-brand);
   font-weight: 700; text-decoration: underline; text-underline-offset: 0.2em;
   padding: 0 var(--sp-1);
 }
@@ -480,7 +480,7 @@ async function removePack() {
 .dialog__scrim {
   position: absolute;
   inset: 0;
-  background: rgba(3, 6, 18, 0.72);
+  background: var(--c-scrim);
   backdrop-filter: blur(6px);
 }
 .dialog__panel {

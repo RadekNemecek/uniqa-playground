@@ -8,7 +8,7 @@
 
 html {
   -webkit-text-size-adjust: 100%;
-  scrollbar-color: var(--c-surface-3) transparent;
+  scrollbar-color: var(--c-line) transparent;
   /* clip, ne hidden: nevytvoří scroll kontejner, takže position: sticky
      ve správě otázek dál funguje. Drží uvnitř prvky, které schválně
      přetékají za okraj okna, jako natočená deska na rozcestníku. */
@@ -27,20 +27,30 @@ body {
   overflow-x: clip;
 }
 
-/* Atmosféra: dvě tlumená světla a jemné zrno. Nikdy se nesmí prosadit
-   jako efekt, jen zabraňuje tomu, aby tmavá plocha působila plochá. */
+/* Atmosféra. Nikdy se nesmí prosadit jako efekt, jen zabraňuje tomu, aby
+   plocha působila plochá. Každá vrstva ji má jinou: světlá jemný spád do
+   modré jako hero na uniqa.cz, tmavá dvě tlumená světla a zrno. */
 body::before {
   content: '';
   position: fixed;
   inset: 0;
   z-index: -2;
   background:
-    radial-gradient(60vw 60vw at 12% -8%, rgba(94, 114, 235, 0.20), transparent 62%),
-    radial-gradient(52vw 52vw at 92% 104%, rgba(245, 196, 81, 0.10), transparent 60%),
+    radial-gradient(70vw 55vw at 88% -10%, var(--c-brand-wash), transparent 68%),
+    linear-gradient(180deg, var(--c-surface) 0%, var(--c-abyss) 100%);
+}
+
+body::after { content: none; }
+
+:root[data-theme='dark'] body::before {
+  background:
+    radial-gradient(60vw 60vw at 12% -8%, rgba(0, 122, 214, 0.16), transparent 62%),
+    radial-gradient(52vw 52vw at 92% 104%, rgba(85, 214, 206, 0.07), transparent 60%),
     linear-gradient(180deg, var(--c-base) 0%, var(--c-abyss) 100%);
 }
 
-body::after {
+/* Zrno patří jen do tmy. Na bílé by z čisté plochy udělalo špinavou. */
+:root[data-theme='dark'] body::after {
   content: '';
   position: fixed;
   inset: 0;
@@ -60,31 +70,33 @@ input, button, textarea, select {
 button { cursor: pointer; }
 button:disabled { cursor: not-allowed; }
 
+/* Lato Black na nadpisech je přesně to, co UNIQA sází na svém webu.
+   Snese těsnější sazbu než Inter, proto větší záporné prostrkání. */
 h1, h2, h3, h4 {
   font-family: var(--font-display);
-  font-weight: 700;
+  font-weight: 900;
   line-height: var(--lh-tight);
-  letter-spacing: -0.015em;
+  letter-spacing: -0.02em;
   text-wrap: balance;
 }
 
 p { text-wrap: pretty; }
 
 a {
-  color: var(--c-gold);
+  color: var(--c-brand);
   text-underline-offset: 0.2em;
 }
 
 /* Zaměření je vidět vždy. Moderátorka může hru ovládat jen klávesnicí. */
 :focus-visible {
-  outline: 3px solid var(--c-gold);
+  outline: 3px solid var(--c-brand);
   outline-offset: 3px;
   border-radius: var(--r-sm);
 }
 
 ::selection {
-  background: var(--c-gold);
-  color: var(--c-text-ink);
+  background: var(--c-brand);
+  color: var(--c-on-accent);
 }
 
 /* Pomocné třídy */
@@ -99,10 +111,18 @@ a {
 
 .eyebrow {
   font-size: var(--fs-xs);
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: var(--tracking-caps);
   text-transform: uppercase;
   color: var(--c-text-faint);
+}
+
+/* Ruční poznámka. Jen tři místa v aplikaci, seznam je v tokens.css. */
+.hand {
+  font-family: var(--font-hand);
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 .stack { display: grid; gap: var(--sp-4); }

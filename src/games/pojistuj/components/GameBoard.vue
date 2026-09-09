@@ -179,7 +179,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
   bottom: 4px;
   height: 2px;
   border-radius: var(--r-full);
-  background: linear-gradient(90deg, transparent, color-mix(in oklab, var(--c-gold) 60%, transparent), transparent);
+  background: linear-gradient(90deg, transparent, color-mix(in oklab, var(--c-brand) 60%, transparent), transparent);
 }
 .board__cat span {
   font-family: var(--font-display);

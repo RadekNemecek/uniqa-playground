@@ -62,7 +62,7 @@ onBeforeUnmount(() => cancelAnimationFrame(handle))
 .timer__fill {
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, var(--c-gold-deep), var(--c-gold));
+  background: linear-gradient(90deg, var(--c-brand-deep), var(--c-brand));
   transform-origin: left center;
   transition: background var(--dur-base) var(--ease-out);
 }

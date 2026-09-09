@@ -188,7 +188,7 @@ onBeforeUnmount(() => {
 })
 
 /** Titulek se skládá po písmenech, každé se otočí jako dlaždice na desce. */
-const letters = [...'Riskuj']
+const letters = [...'Pojišťuj!']
 
 /**
  * Přechod přes celé slovo, ne přes každé písmeno.
@@ -263,7 +263,7 @@ const packLabel = computed(() =>
                   '--team': t.team !== null ? `var(${teamColor(t.team).cssVar})` : undefined,
                 }"
               >
-                <template v-if="t.bonus">Riskuj!</template>
+                <template v-if="t.bonus">Nepojištěno!</template>
                 <template v-else-if="t.team !== null">{{ teamBadge(t.team) }}</template>
                 <template v-else>{{ t.value }}</template>
               </span>
@@ -277,7 +277,7 @@ const packLabel = computed(() =>
       <!-- Titulek --------------------------------------------------------- -->
       <div class="title">
         <p class="title__kicker">Vědomostní hra pro školení</p>
-        <h1 ref="wordmark" class="wordmark" :class="{ 'wordmark--painted': gradientReady }" aria-label="Riskuj">
+        <h1 ref="wordmark" class="wordmark" :class="{ 'wordmark--painted': gradientReady }" aria-label="Pojišťuj!">
           <span
             v-for="(ch, i) in letters"
             :key="i"
@@ -294,13 +294,13 @@ const packLabel = computed(() =>
 
       <!-- Spodní lišta ---------------------------------------------------- -->
       <div class="bottom">
-        <RouterLink v-if="hasGame && game" to="/riskuj" class="resume">
+        <RouterLink v-if="hasGame && game" to="/pojistuj" class="resume">
           <span class="resume__dot" aria-hidden="true"></span>
           Pokračovat v rozehrané hře: {{ game.packName }},
           {{ count(game.teams.length, 'tým', 'týmy', 'týmů') }}
         </RouterLink>
 
-        <RouterLink to="/riskuj" class="cta">
+        <RouterLink to="/pojistuj" class="cta">
           Spustit hru
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
             <path d="M5 12h13M12 5l7 7-7 7" />
@@ -392,7 +392,7 @@ const packLabel = computed(() =>
     inset 0 -2px 0 rgba(0, 0, 0, 0.4),
     0 5px 0 var(--c-tile-edge),
     0 14px 22px -10px rgba(0, 0, 0, 0.8);
-  color: var(--c-gold);
+  color: var(--c-value);
   font-size: calc(var(--tile) * 0.115);
   font-weight: 800;
   text-shadow: 0 -1px 0 rgba(255, 255, 255, 0.16), 0 2px 0 rgba(0, 0, 0, 0.45);
@@ -416,7 +416,11 @@ const packLabel = computed(() =>
   text-shadow: none;
 }
 .tile--bonus {
-  background: linear-gradient(178deg, var(--c-spark) 0%, var(--c-spark-deep) 100%);
+  background: linear-gradient(178deg, var(--c-spark) 0%, var(--c-spark-mid) 100%);
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.35),
+    0 5px 0 var(--c-spark-deep),
+    0 16px 30px -12px var(--c-spark-glow);
   color: var(--c-text-ink);
   font-size: calc(var(--tile) * 0.062);
   letter-spacing: 0.04em;
@@ -460,26 +464,31 @@ const packLabel = computed(() =>
   /* Titulek má nést celou stránku, proto se roztahuje podle šířky i výšky
      okna. Strop v obou osách brání tomu, aby na širokém nebo nízkém
      monitoru přerostl plochu. */
-  font-size: clamp(3rem, min(27vw, 42vh), 26rem);
-  font-weight: 800;
-  /* Řádkování musí nechat místo dotahu u „j". Při 0,82 se dotahovalo do
-     odstavce pod titulkem. */
-  line-height: 0.95;
-  letter-spacing: -0.015em;
+  /* „Pojišťuj!" je devět znaků a v Lato Black měří 3,5 em na šířku.
+     Změřeno v prohlížeči, ne odhadnuto. Při 21vw zabere nápis zhruba
+     tři čtvrtiny okna, což je poměr, na kterém stálo i „Riskuj".
+     Strop v obou osách brání přerůstu na širokém či nízkém monitoru. */
+  font-size: clamp(2.5rem, min(21vw, 34vh), 18rem);
+  font-weight: 900;
+  /* Řádkování musí nechat místo dotahu, „Pojišťuj!" má dvě „j". Nahoře
+     si zase háčky nad „š" a „ť" berou víc místa než celé „Riskuj". */
+  line-height: 1.02;
+  /* Lato Black snese těsnější sazbu než Inter, ale ne o moc: při -0,03em
+     se „ť" dotýkalo následujícího „u". */
+  letter-spacing: -0.02em;
   perspective: 900px;
 }
 .wordmark__l {
   display: inline-block;
   /* Jednolitá barva, ne přechod. Přechod na písmu je otřepaný a hlavně
-     seděl na každém písmenu zvlášť, takže se bílá a zlatá střídaly šestkrát
-     přes jedno slovo. Zlatá navíc v celé aplikaci znamená akci, tady by
-     tenhle význam rozmělnila. */
+     seděl na každém písmenu zvlášť, takže se barvy střídaly devětkrát
+     přes jedno slovo. Přechod se nasazuje až po změření, viz níž. */
   color: var(--c-text);
   /* Žádný posunutý stín, ten dělá z písma plastiku. Jen tmavá svatozář
      bez odsazení, aby nápis držel čitelnost i nad světlou dlaždicí. */
   text-shadow: 0 0 0.3em color-mix(in oklab, var(--c-abyss) 70%, transparent);
   /* Písmena se otáčejí jako dlaždice na desce. */
-  animation: letterIn 760ms var(--ease-back) calc(240ms + var(--n) * 85ms) both;
+  animation: letterIn 760ms var(--ease-back) calc(200ms + var(--n) * 58ms) both;
 }
 
 /* Přechod se nasadí, až když jsou změřené odskoky písmen. Do té doby drží
@@ -487,9 +496,9 @@ const packLabel = computed(() =>
 .wordmark--painted .wordmark__l {
   background-image: linear-gradient(
     96deg,
-    color-mix(in oklab, var(--c-text) 88%, var(--c-team-6)) 0%,
-    var(--c-text) 38%,
-    color-mix(in oklab, var(--c-gold) 44%, var(--c-text)) 100%
+    var(--c-text) 0%,
+    var(--c-text) 46%,
+    color-mix(in oklab, var(--c-brand) 40%, var(--c-text)) 100%
   );
   background-size: var(--gw, 100%) 100%;
   background-position: var(--gx, 0) 0;
@@ -524,16 +533,16 @@ const packLabel = computed(() =>
   gap: var(--sp-3);
   padding: var(--sp-5) var(--sp-8);
   border-radius: var(--r-full);
-  background: linear-gradient(180deg, var(--c-gold) 0%, var(--c-gold-deep) 100%);
-  color: var(--c-text-ink);
+  background: linear-gradient(180deg, var(--c-brand) 0%, var(--c-brand-deep) 100%);
+  color: var(--c-on-accent);
   font-size: clamp(var(--fs-lg), 0.9rem + 0.6vw, 1.6rem);
   font-weight: 800;
   letter-spacing: -0.01em;
   text-decoration: none;
-  box-shadow: 0 5px 0 rgba(0, 0, 0, 0.5), 0 20px 40px -14px var(--c-gold-glow);
+  box-shadow: 0 5px 0 rgba(0, 0, 0, 0.5), 0 20px 40px -14px var(--c-brand-glow);
   transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
 }
-.cta:hover { transform: translateY(-3px); box-shadow: 0 8px 0 rgba(0, 0, 0, 0.5), 0 28px 52px -16px var(--c-gold-glow); }
+.cta:hover { transform: translateY(-3px); box-shadow: 0 8px 0 rgba(0, 0, 0, 0.5), 0 28px 52px -16px var(--c-brand-glow); }
 .cta:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(0, 0, 0, 0.5); }
 
 .bottom__meta {
@@ -557,21 +566,21 @@ const packLabel = computed(() =>
   align-items: center;
   gap: var(--sp-3);
   padding: var(--sp-2) var(--sp-4);
-  border: 1px solid color-mix(in oklab, var(--c-gold) 42%, transparent);
+  border: 1px solid color-mix(in oklab, var(--c-brand) 42%, transparent);
   border-radius: var(--r-full);
-  background: color-mix(in oklab, var(--c-gold) 10%, var(--c-abyss));
+  background: color-mix(in oklab, var(--c-brand) 10%, var(--c-abyss));
   color: var(--c-text);
   font-size: var(--fs-sm);
   text-decoration: none;
   transition: border-color var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out);
 }
-.resume:hover { border-color: var(--c-gold); background: color-mix(in oklab, var(--c-gold) 18%, var(--c-abyss)); }
+.resume:hover { border-color: var(--c-brand); background: color-mix(in oklab, var(--c-brand) 18%, var(--c-abyss)); }
 .resume__dot {
   width: 8px;
   height: 8px;
   border-radius: var(--r-full);
-  background: var(--c-gold);
-  box-shadow: 0 0 0 4px color-mix(in oklab, var(--c-gold) 22%, transparent);
+  background: var(--c-brand);
+  box-shadow: 0 0 0 4px color-mix(in oklab, var(--c-brand) 22%, transparent);
 }
 
 @keyframes rise {

@@ -56,7 +56,7 @@ onMounted(() => {
 
     <div class="results__actions">
       <UiButton variant="ghost" @click="emit('board')">Zpět na desku</UiButton>
-      <UiButton variant="gold" size="lg" @click="emit('again')">Nová hra</UiButton>
+      <UiButton variant="brand" size="lg" @click="emit('again')">Nová hra</UiButton>
     </div>
   </div>
 </template>
@@ -77,7 +77,7 @@ onMounted(() => {
   font-weight: 800;
   letter-spacing: -0.035em;
   margin: var(--sp-3) 0 var(--sp-2);
-  background: linear-gradient(160deg, var(--c-text) 25%, var(--c-gold) 125%);
+  background: linear-gradient(160deg, var(--c-text) 25%, var(--c-brand) 125%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -98,9 +98,9 @@ onMounted(() => {
   background: var(--c-surface);
   animation: rise var(--dur-slow) var(--ease-out) calc(120ms + var(--i) * 90ms) both;
 }
-.rank__row:first-child { border-color: color-mix(in oklab, var(--c-gold) 45%, transparent); }
+.rank__row:first-child { border-color: color-mix(in oklab, var(--c-brand) 45%, transparent); }
 .rank__place { font-family: var(--font-display); font-weight: 800; color: var(--c-text-faint); text-align: center; }
-.rank__row:first-child .rank__place { color: var(--c-gold); }
+.rank__row:first-child .rank__place { color: var(--c-brand); }
 .rank__badge {
   display: grid;
   place-items: center;
@@ -113,7 +113,7 @@ onMounted(() => {
   font-weight: 800;
 }
 .rank__name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.rank__bar { height: 10px; border-radius: var(--r-full); background: var(--c-abyss); overflow: hidden; }
+.rank__bar { height: 10px; border-radius: var(--r-full); background: var(--c-sunken); overflow: hidden; }
 .rank__fill {
   display: block;
   height: 100%;

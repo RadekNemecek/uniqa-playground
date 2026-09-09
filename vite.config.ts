@@ -25,15 +25,15 @@ export default defineConfig({
       manifest: {
         name: 'Playground: školicí hry',
         short_name: 'Playground',
-        description: 'Interaktivní hry pro školení týmů. Riskuj s vlastními otázkami.',
+        description: 'Interaktivní hry pro školení týmů. Pojišťuj! s vlastními otázkami.',
         lang: 'cs',
         dir: 'ltr',
         start_url: '.',
         scope: '.',
         display: 'standalone',
         orientation: 'landscape',
-        background_color: '#0B1026',
-        theme_color: '#0B1026',
+        background_color: '#001A31',
+        theme_color: '#001A31',
         categories: ['education', 'games'],
         icons: [
           { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },

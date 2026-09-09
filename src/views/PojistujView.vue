@@ -3,11 +3,11 @@ import { computed, nextTick, ref } from 'vue'
 import type { GameSetup as Setup, Pack } from '@/types'
 import AppHeader from '@/components/AppHeader.vue'
 import UiButton from '@/components/ui/UiButton.vue'
-import GameSetup from '@/games/riskuj/components/GameSetup.vue'
-import GameBoard from '@/games/riskuj/components/GameBoard.vue'
-import QuestionStage from '@/games/riskuj/components/QuestionStage.vue'
-import WagerDialog from '@/games/riskuj/components/WagerDialog.vue'
-import ResultsScreen from '@/games/riskuj/components/ResultsScreen.vue'
+import GameSetup from '@/games/pojistuj/components/GameSetup.vue'
+import GameBoard from '@/games/pojistuj/components/GameBoard.vue'
+import QuestionStage from '@/games/pojistuj/components/QuestionStage.vue'
+import WagerDialog from '@/games/pojistuj/components/WagerDialog.vue'
+import ResultsScreen from '@/games/pojistuj/components/ResultsScreen.vue'
 import {
   activeTeam,
   backToBoard,
@@ -35,7 +35,7 @@ import { plural } from '@/lib/format'
 
 /** Obdélník dlaždice, ze které se otázka roztahuje. */
 const origin = ref<DOMRect | null>(null)
-/** Políčko Riskuj! čeká na potvrzení sázky. */
+/** Políčko Nepojištěno! čeká na potvrzení sázky. */
 const pendingWager = ref<string | null>(null)
 
 const openCategoryName = computed(() => {
@@ -132,7 +132,7 @@ async function onAgain() {
 </script>
 
 <template>
-  <div class="riskuj" :class="{ 'riskuj--playing': !!game }">
+  <div class="pojistuj" :class="{ 'pojistuj--playing': !!game }">
     <!-- Bez rozehrané hry nabídneme nastavení ---------------------------- -->
     <template v-if="!game">
       <AppHeader />
@@ -197,16 +197,16 @@ async function onAgain() {
 </template>
 
 <style scoped>
-.riskuj { min-height: 100dvh; display: flex; flex-direction: column; }
+.pojistuj { min-height: 100dvh; display: flex; flex-direction: column; }
 
 /* Rozehraná hra drží celou desku na jedné obrazovce. */
-.riskuj--playing { height: 100dvh; overflow: hidden; }
+.pojistuj--playing { height: 100dvh; overflow: hidden; }
 
 .surface { display: flex; flex-direction: column; flex: 1; min-height: 0; }
-.riskuj--playing .surface :deep(.board) { flex: 1; min-height: 0; }
+.pojistuj--playing .surface :deep(.board) { flex: 1; min-height: 0; }
 
 @media (max-height: 560px), (max-width: 560px) {
-  .riskuj--playing { height: auto; overflow: visible; }
+  .pojistuj--playing { height: auto; overflow: visible; }
 }
 
 .status {

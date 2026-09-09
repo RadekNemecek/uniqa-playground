@@ -8,12 +8,12 @@ export interface TeamColor {
 }
 
 export const TEAM_COLORS: TeamColor[] = [
-  { label: 'Ametyst', hex: '#A78BFA', cssVar: '--c-team-1' },
-  { label: 'Tyrkys', hex: '#22D3EE', cssVar: '--c-team-2' },
-  { label: 'Korál', hex: '#FB7185', cssVar: '--c-team-3' },
-  { label: 'Limeta', hex: '#A3E635', cssVar: '--c-team-4' },
-  { label: 'Jantar', hex: '#FBBF24', cssVar: '--c-team-5' },
-  { label: 'Azur', hex: '#60A5FA', cssVar: '--c-team-6' },
+  { label: 'Azur', hex: '#7CC0F0', cssVar: '--c-team-1' },
+  { label: 'Tyrkys', hex: '#55D6CE', cssVar: '--c-team-2' },
+  { label: 'Limeta', hex: '#ABDD6B', cssVar: '--c-team-3' },
+  { label: 'Levandule', hex: '#B7A6F2', cssVar: '--c-team-4' },
+  { label: 'Růžová', hex: '#F79DC6', cssVar: '--c-team-5' },
+  { label: 'Písek', hex: '#EFC08D', cssVar: '--c-team-6' },
 ]
 
 export function teamColor(index: number): TeamColor {

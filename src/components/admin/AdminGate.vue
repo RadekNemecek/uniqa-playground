@@ -81,7 +81,7 @@ async function submit() {
 
       <p v-if="error" class="gate__error" role="alert">{{ error }}</p>
 
-      <UiButton v-if="mode !== 'unknown'" type="submit" variant="gold" size="lg" block :disabled="busy">
+      <UiButton v-if="mode !== 'unknown'" type="submit" variant="brand" size="lg" block :disabled="busy">
         {{ mode === 'create' ? 'Nastavit heslo' : 'Odemknout' }}
       </UiButton>
 
@@ -110,7 +110,7 @@ async function submit() {
   height: 3rem;
   border-radius: var(--r-lg);
   background: var(--c-surface-2);
-  color: var(--c-gold);
+  color: var(--c-brand);
 }
 .gate__title { font-size: var(--fs-2xl); }
 .gate__lead { color: var(--c-text-muted); font-size: var(--fs-sm); line-height: var(--lh-body); }

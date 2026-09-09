@@ -81,7 +81,7 @@ function lock() {
         <aside class="list">
           <div class="list__head">
             <h2 class="list__title">Balíčky</h2>
-            <UiButton size="sm" variant="gold" @click="onCreate">Nový</UiButton>
+            <UiButton size="sm" variant="brand" @click="onCreate">Nový</UiButton>
           </div>
 
           <div v-if="packs.packs.length === 0" class="list__blank">
@@ -173,14 +173,14 @@ function lock() {
   transition: all var(--dur-fast) var(--ease-out);
 }
 .item:hover { border-color: var(--c-surface-3); }
-.item--on { border-color: var(--c-gold); background: color-mix(in oklab, var(--c-gold) 9%, var(--c-surface)); }
+.item--on { border-color: var(--c-brand); background: color-mix(in oklab, var(--c-brand) 9%, var(--c-surface)); }
 .item__name { font-weight: 600; }
 .item__meta { font-size: var(--fs-xs); color: var(--c-text-faint); line-height: 1.4; }
-.item__bar { display: block; height: 3px; border-radius: var(--r-full); background: var(--c-abyss); overflow: hidden; margin-top: var(--sp-1); }
+.item__bar { display: block; height: 3px; border-radius: var(--r-full); background: var(--c-sunken); overflow: hidden; margin-top: var(--sp-1); }
 .item__bar span {
   display: block;
   height: 100%;
-  background: var(--c-gold);
+  background: var(--c-brand);
   transition: width var(--dur-slow) var(--ease-out);
 }
 

@@ -173,10 +173,10 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 
       <div class="qe__actions">
         <UiButton size="sm" variant="ghost" @click="emit('close')">Zavřít</UiButton>
-        <UiButton v-if="remaining > 0" size="sm" variant="gold" @click="emit('nextEmpty')">
+        <UiButton v-if="remaining > 0" size="sm" variant="brand" @click="emit('nextEmpty')">
           Další nevyplněná
         </UiButton>
-        <UiButton v-else-if="hasNext" size="sm" variant="gold" @click="emit('next')">
+        <UiButton v-else-if="hasNext" size="sm" variant="brand" @click="emit('next')">
           Další otázka
         </UiButton>
       </div>
@@ -208,7 +208,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
   font-size: var(--fs-2xl);
   font-weight: 800;
   line-height: 1.1;
-  color: var(--c-gold);
+  color: var(--c-brand);
   font-variant-numeric: tabular-nums;
 }
 
@@ -255,7 +255,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
   padding: var(--sp-3) var(--sp-4);
   border: 1px solid var(--c-line);
   border-radius: var(--r-md);
-  background: var(--c-abyss);
+  background: var(--c-sunken);
   color: var(--c-text);
   font-size: var(--fs-md);
   line-height: var(--lh-body);
@@ -264,12 +264,12 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
   transition: border-color var(--dur-fast) var(--ease-out);
 }
 .f textarea:hover { border-color: var(--c-surface-3); }
-.f textarea:focus { border-color: var(--c-gold); outline: none; }
+.f textarea:focus { border-color: var(--c-brand); outline: none; }
 .f textarea::placeholder { color: var(--c-text-faint); }
 
 .f__note { font-size: var(--fs-xs); line-height: 1.5; }
 .f__note--info { color: var(--c-text-faint); }
-.f__note--warn { color: var(--c-gold); }
+.f__note--warn { color: var(--c-brand); }
 
 /* Rozbalovací části -------------------------------------------------------- */
 .extras { display: grid; gap: var(--sp-3); }
@@ -296,7 +296,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
   font-size: var(--fs-sm);
   line-height: 1;
 }
-.toggle__dot { width: 6px; height: 6px; border-radius: var(--r-full); background: var(--c-gold); }
+.toggle__dot { width: 6px; height: 6px; border-radius: var(--r-full); background: var(--c-brand); }
 
 .preview {
   display: grid;
@@ -304,7 +304,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
   padding: var(--sp-5) var(--sp-4);
   border: 1px solid var(--c-line);
   border-radius: var(--r-lg);
-  background: linear-gradient(180deg, var(--c-surface) 0%, var(--c-abyss) 100%);
+  background: linear-gradient(180deg, var(--c-surface) 0%, var(--c-sunken) 100%);
   text-align: center;
 }
 .preview__prompt {

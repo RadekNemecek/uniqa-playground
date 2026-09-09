@@ -78,13 +78,13 @@ async function change(index: number, event: Event) {
   background: var(--c-surface);
   transition: border-color var(--dur-fast) var(--ease-out);
 }
-.chip:hover, .chip:focus-within { border-color: var(--c-gold); }
+.chip:hover, .chip:focus-within { border-color: var(--c-brand); }
 
 .chip__value {
   width: 4.25rem;
   border: 0;
   background: transparent;
-  color: var(--c-gold);
+  color: var(--c-brand);
   font-family: var(--font-display);
   font-size: var(--fs-md);
   font-weight: 800;

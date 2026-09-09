@@ -5,11 +5,13 @@
 import { mkdir, writeFile } from 'node:fs/promises'
 import sharp from 'sharp'
 
-const BASE = '#0B1026'
-const GOLD = '#F5C451'
-const TILE = '#27336B'
+// Musí odpovídat tmavé vrstvě v src/styles/tokens.css.
+const BASE = '#001A31'  // --c-base
+const LIT = '#7DBBF0'   // --c-brand, rozsvícená dlaždice
+const TILE = '#003F6D'  // --c-surface-3
+const GLOW = '#002846'  // --c-surface
 
-/** Značka Playgroundu: mřížka dlaždic, jedna z nich zlatá. */
+/** Značka Playgroundu: mřížka dlaždic, jedna z nich rozsvícená. */
 function markSvg(size, padding) {
   const inner = size - padding * 2
   const gap = inner * 0.07
@@ -23,12 +25,12 @@ function markSvg(size, padding) {
   <rect width="${size}" height="${size}" fill="${BASE}"/>
   <defs>
     <radialGradient id="glow" cx="30%" cy="22%" r="85%">
-      <stop offset="0%" stop-color="#1D2650"/>
+      <stop offset="0%" stop-color="${GLOW}"/>
       <stop offset="100%" stop-color="${BASE}"/>
     </radialGradient>
   </defs>
   <rect width="${size}" height="${size}" fill="url(#glow)"/>
-  ${tile(at(0), at(0), GOLD)}
+  ${tile(at(0), at(0), LIT)}
   ${tile(at(1), at(0), TILE)}
   ${tile(at(0), at(1), TILE)}
   ${tile(at(1), at(1), TILE)}
