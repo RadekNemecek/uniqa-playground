@@ -21,10 +21,6 @@ export function setSoundEnabled(on: boolean): void {
   enabled = on
 }
 
-export function isSoundEnabled(): boolean {
-  return enabled
-}
-
 /** Prohlížeč pustí zvuk až po interakci uživatele. */
 export function primeAudio(): void {
   audio()

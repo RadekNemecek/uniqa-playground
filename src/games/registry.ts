@@ -5,8 +5,6 @@ export interface GameEntry {
   tagline: string
   description: string
   route: string
-  status: 'ready' | 'soon'
-  accent: string
 }
 
 export const GAMES: GameEntry[] = [
@@ -17,7 +15,5 @@ export const GAMES: GameEntry[] = [
     description:
       'Klasická deska kategorií a bodových hodnot. Jeden až šest týmů, vlastní otázky, časomíra a bonusová pole.',
     route: '/riskuj',
-    status: 'ready',
-    accent: 'var(--c-gold)',
   },
 ]

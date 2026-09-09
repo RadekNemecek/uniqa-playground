@@ -33,10 +33,6 @@ export async function initPacks(): Promise<void> {
  *  aby změna vždy prošla úložištěm. */
 export const packs = state
 
-export function findPack(packId: string): Pack | undefined {
-  return state.packs.find((p) => p.id === packId)
-}
-
 /* --- Tovární funkce ------------------------------------------------------ */
 
 export function emptyQuestion(value: number): Question {
@@ -51,7 +47,7 @@ export function emptyCategory(ladder: number[], name = ''): Category {
   }
 }
 
-export function emptyPack(name = 'Nový balíček'): Pack {
+function emptyPack(name = 'Nový balíček'): Pack {
   const ladder = [...DEFAULT_LADDER]
   const now = Date.now()
   return {
@@ -112,16 +108,6 @@ export function isQuestionReady(q: Question | undefined): boolean {
   return !!q && q.prompt.trim().length > 0 && q.answer.trim().length > 0
 }
 
-export function questionAt(
-  pack: Pack,
-  categoryId: string,
-  value: number,
-): Question | undefined {
-  return pack.categories
-    .find((c) => c.id === categoryId)
-    ?.questions.find((q) => q.value === value)
-}
-
 /** Kolik otázek je hotových a kolik jich deska potřebuje. */
 export function packProgress(pack: Pack): { done: number; total: number } {
   let done = 0
@@ -139,5 +125,3 @@ export function playableCategories(pack: Pack): Category[] {
     pack.ladder.every((v) => isQuestionReady(c.questions.find((q) => q.value === v))),
   )
 }
-
-export { DEFAULT_LADDER }
