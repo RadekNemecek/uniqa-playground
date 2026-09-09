@@ -43,7 +43,7 @@ const OVERSCAN_Y = 1.32
 
 function layout(): void {
   const diagonal = Math.hypot(window.innerWidth, window.innerHeight)
-  const tile = Math.round(Math.min(Math.max(150, diagonal * 0.115), 260))
+  const tile = Math.round(Math.min(Math.max(190, diagonal * 0.155), 340))
   const gap = Math.max(8, Math.round(tile * 0.06))
   const cols = Math.max(4, Math.ceil((window.innerWidth * OVERSCAN_X + gap) / (tile + gap)))
   const rows = Math.max(3, Math.ceil((window.innerHeight * OVERSCAN_Y + gap) / (tile / RATIO + gap)))
@@ -340,7 +340,10 @@ const packLabel = computed(() =>
   inset: 0;
   z-index: -2;
   pointer-events: none;
-  opacity: 0.6;
+  /* Deska je symbol, ne obsah. Ztlumená a lehce odbarvená ustoupí do
+     pozadí a nepere se s titulkem. */
+  opacity: 0.42;
+  filter: saturate(0.85);
 }
 
 .wall__space {
@@ -390,7 +393,7 @@ const packLabel = computed(() =>
     0 5px 0 var(--c-tile-edge),
     0 14px 22px -10px rgba(0, 0, 0, 0.8);
   color: var(--c-gold);
-  font-size: calc(var(--tile) * 0.135);
+  font-size: calc(var(--tile) * 0.115);
   font-weight: 800;
   text-shadow: 0 -1px 0 rgba(255, 255, 255, 0.16), 0 2px 0 rgba(0, 0, 0, 0.45);
   /* Nástup jde po úhlopříčce, ne po pořadí, aby se u velké desky
@@ -415,7 +418,7 @@ const packLabel = computed(() =>
 .tile--bonus {
   background: linear-gradient(178deg, var(--c-spark) 0%, var(--c-spark-deep) 100%);
   color: var(--c-text-ink);
-  font-size: calc(var(--tile) * 0.075);
+  font-size: calc(var(--tile) * 0.062);
   letter-spacing: 0.04em;
   text-transform: uppercase;
   text-shadow: none;
@@ -432,7 +435,7 @@ const packLabel = computed(() =>
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(58% 54% at 50% 46%, var(--c-abyss) 0%, color-mix(in oklab, var(--c-abyss) 84%, transparent) 40%, transparent 72%),
+    radial-gradient(62% 58% at 50% 46%, var(--c-abyss) 0%, color-mix(in oklab, var(--c-abyss) 88%, transparent) 42%, transparent 74%),
     linear-gradient(180deg, var(--c-abyss) 0%, color-mix(in oklab, var(--c-abyss) 55%, transparent) 9%, transparent 20%),
     linear-gradient(0deg, var(--c-abyss) 0%, transparent 26%);
 }
