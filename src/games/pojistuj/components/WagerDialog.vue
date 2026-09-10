@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import type { Team } from '@/types'
 import UiButton from '@/components/ui/UiButton.vue'
 import { teamBadge, teamColor, formatScore } from '@/lib/teams'
@@ -8,6 +8,8 @@ const props = defineProps<{ team: Team; teamIndex: number; max: number; base: nu
 const emit = defineEmits<{ confirm: [amount: number]; cancel: [] }>()
 
 const amount = ref(props.base)
+const root = ref<HTMLElement | null>(null)
+const slider = ref<HTMLInputElement | null>(null)
 
 const steps = computed(() => {
   const out = new Set<number>([props.base, Math.round(props.max / 2), props.max])
@@ -17,10 +19,40 @@ const steps = computed(() => {
 function confirm() {
   emit('confirm', Math.min(props.max, Math.max(0, Math.round(amount.value))))
 }
+
+/**
+ * Sázka se musí dát vyřídit od klávesnice.
+ *
+ * Celou hru vede moderátorka mezerníkem, čísly a Esc, a tohle je jediný
+ * krok, který ji dřív poslal pro myš. Zaměření drží posuvník, takže
+ * šipkami jde sázkou hýbat hned, Enter ji potvrdí a Esc se vrátí na desku
+ * stejně jako všude jinde.
+ */
+function onKey(e: KeyboardEvent) {
+  if (e.key === 'Escape') {
+    e.preventDefault()
+    emit('cancel')
+    return
+  }
+  if (e.key === 'Enter') {
+    // Enter na tlačítku ať udělá to, co tlačítko slibuje, ne něco jiného.
+    const el = document.activeElement
+    if (el instanceof HTMLButtonElement && root.value?.contains(el)) return
+    e.preventDefault()
+    confirm()
+  }
+}
+
+onMounted(async () => {
+  window.addEventListener('keydown', onKey, true)
+  await nextTick()
+  slider.value?.focus()
+})
+onBeforeUnmount(() => window.removeEventListener('keydown', onKey, true))
 </script>
 
 <template>
-  <div class="wager" role="dialog" aria-modal="true" aria-label="Pole Nepojištěno">
+  <div ref="root" class="wager" role="dialog" aria-modal="true" aria-label="Pole Nepojištěno">
     <div class="wager__panel" :style="{ '--team': `var(${teamColor(team.color).cssVar})` }">
       <p class="wager__kicker">tohle pole nekryje</p>
       <h2 class="wager__title">Nepojištěno!</h2>
@@ -36,6 +68,7 @@ function confirm() {
       <output class="wager__amount">{{ formatScore(amount) }}</output>
 
       <input
+        ref="slider"
         v-model.number="amount"
         class="wager__slider"
         type="range"
@@ -55,6 +88,10 @@ function confirm() {
         <UiButton variant="ghost" @click="emit('cancel')">Zpět na desku</UiButton>
         <UiButton variant="spark" size="lg" @click="confirm">Vsadit a zobrazit otázku</UiButton>
       </div>
+
+      <p class="wager__hint">
+        Šipkami měníš sázku, Enter ji potvrdí, Esc se vrátí na desku.
+      </p>
     </div>
   </div>
 </template>
@@ -156,6 +193,14 @@ function confirm() {
 .wager__steps button:hover { color: var(--c-text); border-color: var(--c-spark); }
 
 .wager__actions { display: flex; gap: var(--sp-3); flex-wrap: wrap; justify-content: center; margin-top: var(--sp-2); }
+
+/* Stejně tichá nápověda jako pod otázkou. Čte ji moderátorka z notebooku,
+   ne sál z projektoru. */
+.wager__hint {
+  margin-top: var(--sp-3);
+  font-size: var(--fs-xs);
+  color: var(--c-text-faint);
+}
 
 @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes pop { from { opacity: 0; transform: translateY(20px) scale(0.94); } to { opacity: 1; transform: none; } }

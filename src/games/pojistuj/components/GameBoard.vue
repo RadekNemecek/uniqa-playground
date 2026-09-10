@@ -233,6 +233,13 @@ function open(key: string, el: HTMLElement) {
   line-clamp: 3;
   overflow: hidden;
   max-width: 100%;
+  /* Dlouhé slovo se musí zlomit. Samotné ořezání na tři řádky ho neuhlídá:
+     „ODPOVĚDNOSTNÍ" je širší než sloupec, přeteče a uřízne se uprostřed,
+     aniž by to bylo při přípravě hry poznat. Dělení se zkusí nejdřív podle
+     slovníku (stránka má lang="cs"), teprve když ani to nestačí, zlomí se
+     slovo kdekoli. */
+  hyphens: auto;
+  overflow-wrap: anywhere;
 }
 
 .board__cell { display: contents; }

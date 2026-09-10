@@ -143,16 +143,26 @@ function open(e: MouseEvent) {
 .cell--lost {
   cursor: default;
   animation: settle var(--dur-slow) var(--ease-out) both;
-  opacity: 0.48;
-  filter: saturate(0.7);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.08),
     0 2px 0 color-mix(in oklab, var(--c-tile-edge) 70%, transparent);
   transform: none;
 }
 
+/* Odehrané políčko ustupuje do desky, ale ne krytím.
+   `opacity` mísí do pozadí celý prvek včetně textu, takže s dlaždicí
+   zbledlo i písmeno týmu: barvy, které mají na inkoustu 8 az 11:1,
+   spadly na 2,8 az 3,5:1 a z projektoru nešlo přečíst, čí políčko to je.
+   Ztlumení proto nese pozadí a text zůstává plný. Poměry změřené
+   v prohlížeči nad skutečným mixem v oklab, nejhorší dvojice je levandule:
+   6,7:1 na vrchu přechodu a 5,0:1 na jeho spodku. Ostatní barvy jsou výš.
+   Když sáhneš na procenta, přeměř to, oklab se nemíchá lineárně. */
 .cell--won {
-  background: linear-gradient(178deg, var(--team) 0%, color-mix(in oklab, var(--team) 76%, black) 100%);
+  background: linear-gradient(
+    178deg,
+    color-mix(in oklab, var(--team) 90%, var(--c-base)) 0%,
+    color-mix(in oklab, var(--team) 76%, var(--c-base)) 100%
+  );
   color: var(--c-text-ink);
 }
 .cell__won { display: grid; justify-items: center; gap: 2px; }
@@ -162,9 +172,15 @@ function open(e: MouseEvent) {
   font-weight: 800;
   line-height: 1;
 }
-.cell__points { font-size: var(--fs-xs); font-weight: 700; opacity: 0.85; }
+/* Bez ztlumení. Hodnota je drobné písmo a platí pro ni stejná hranice
+   kontrastu jako pro písmeno týmu; o hierarchii se stará velikost. */
+.cell__points { font-size: var(--fs-xs); font-weight: 700; }
 
+/* Neuhodnuté políčko naopak zhasne. Tady krytí vadit nemůže, křížek je
+   jen ozdoba stavu, ne údaj ke čtení, a proto je i skrytý před odečítačem. */
 .cell--lost {
+  opacity: 0.48;
+  filter: saturate(0.7);
   background: var(--c-dead);
   color: #2A3252;
 }

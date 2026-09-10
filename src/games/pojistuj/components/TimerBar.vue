@@ -102,13 +102,14 @@ onBeforeUnmount(() => stopLoop())
 </template>
 
 <style scoped>
-.timer { display: flex; align-items: center; gap: var(--sp-3); width: 100%; }
+.timer { display: flex; align-items: center; gap: var(--sp-4); width: 100%; }
 .timer__track {
   flex: 1;
-  height: 6px;
+  height: 1rem;
   border-radius: var(--r-full);
-  background: var(--c-surface-2);
+  background: var(--c-sunken);
   overflow: hidden;
+  border: 1px solid var(--c-line-soft);
 }
 .timer__fill {
   height: 100%;
@@ -118,13 +119,14 @@ onBeforeUnmount(() => stopLoop())
   transition: background var(--dur-base) var(--ease-out);
 }
 .timer__num {
-  min-width: 2.5ch;
+  min-width: 3ch;
   text-align: right;
   font-family: var(--font-display);
-  font-size: var(--fs-2xl);
-  font-weight: 800;
+  font-size: clamp(var(--fs-2xl), 1rem + 2.5vw, 3rem);
+  font-weight: 900;
   font-variant-numeric: tabular-nums;
-  color: var(--c-text-muted);
+  line-height: 1;
+  color: var(--c-text);
   transition: color var(--dur-base) var(--ease-out);
 }
 .timer__pause {

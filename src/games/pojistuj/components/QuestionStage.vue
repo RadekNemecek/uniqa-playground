@@ -136,11 +136,24 @@ onBeforeUnmount(() => {
         <span class="stage__cat">{{ categoryName }}</span>
         <span v-if="isWager" class="stage__wagerTag">Nepojištěno!</span>
       </div>
-      <span class="stage__value" data-stage-value>{{ formatScore(points) }}</span>
       <button type="button" class="stage__close" aria-label="Zavřít bez bodování" @click="emit('cancel')">
         &#215;
       </button>
     </header>
+
+    <div class="stage__meta">
+      <p
+        class="stage__value"
+        :class="{ 'stage__value--wager': isWager }"
+        data-stage-value
+      >
+        {{ formatScore(points) }}
+      </p>
+      <p v-if="active" class="stage__who" :style="{ '--team': `var(${teamColor(active.color).cssVar})` }">
+        <span class="stage__who-badge">{{ teamBadge(game.activeTeamIndex) }}</span>
+        <strong>{{ active.name }}</strong>
+      </p>
+    </div>
 
     <div ref="body" class="stage__body">
       <p class="stage__prompt">{{ question.prompt }}</p>
@@ -156,18 +169,14 @@ onBeforeUnmount(() => {
     <footer class="stage__foot">
       <!-- Fáze otázky: běží čas, odpověď je schovaná ---------------------- -->
       <template v-if="!revealed">
-        <div class="stage__timerRow">
+        <div v-if="game.rules.timerSeconds > 0" class="stage__timer">
           <TimerBar
-            v-if="game.rules.timerSeconds > 0"
             :seconds="game.rules.timerSeconds"
             running
             @expired="timedOut = true"
           />
-          <p v-else class="stage__turn">
-            Odpovídá <strong>{{ active?.name }}</strong>
-          </p>
+          <p v-if="timedOut" class="stage__timeout">Čas vypršel. Zobraz odpověď a vyhodnoť.</p>
         </div>
-        <p v-if="timedOut" class="stage__timeout">Čas vypršel. Zobraz odpověď a vyhodnoť.</p>
         <UiButton variant="brand" size="xl" @click="reveal">Zobrazit odpověď</UiButton>
         <p class="stage__hint">Mezerník zobrazí odpověď, Esc zavře políčko bez bodování.</p>
       </template>
@@ -182,7 +191,7 @@ onBeforeUnmount(() => {
 
         <div class="judge">
           <button type="button" class="judge__btn judge__btn--yes" @click="resolve(active?.id ?? null)">
-            <span class="judge__key">Enter</span>
+            <span class="judge__key">Mezerník</span>
             <span class="judge__label">Správně</span>
             <span class="judge__points">+{{ formatScore(points) }}</span>
           </button>
@@ -231,7 +240,7 @@ onBeforeUnmount(() => {
   inset: 0;
   z-index: var(--z-stage);
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto auto 1fr auto;
   background:
     radial-gradient(80% 60% at 50% 0%, color-mix(in oklab, var(--c-brand) 7%, transparent), transparent 70%),
     linear-gradient(180deg, var(--c-surface) 0%, var(--c-abyss) 100%);
@@ -243,7 +252,7 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   gap: var(--sp-4);
-  padding: var(--sp-4) var(--sp-6);
+  padding: var(--sp-3) var(--sp-6);
   border-bottom: 1px solid var(--c-line-soft);
 }
 .stage__id { display: flex; align-items: center; gap: var(--sp-3); flex: 1; min-width: 0; }
@@ -274,13 +283,6 @@ onBeforeUnmount(() => {
 @media (prefers-reduced-motion: reduce) {
   .stage__wagerTag { animation: none; }
 }
-.stage__value {
-  font-family: var(--font-display);
-  font-size: var(--fs-2xl);
-  font-weight: 800;
-  color: var(--c-brand);
-  font-variant-numeric: tabular-nums;
-}
 .stage__close {
   border: 0;
   background: transparent;
@@ -291,6 +293,61 @@ onBeforeUnmount(() => {
   border-radius: var(--r-sm);
 }
 .stage__close:hover { color: var(--c-text); }
+
+/* Hodnota + tým na tahu --------------------------------------------------- */
+.stage__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-4) var(--sp-7);
+  padding: var(--sp-4) var(--sp-6);
+  border-bottom: 1px solid var(--c-line-soft);
+  background: color-mix(in oklab, var(--c-brand-wash) 70%, transparent);
+}
+.stage__value {
+  font-family: var(--font-display);
+  font-size: clamp(var(--fs-3xl), 1.2rem + 5vw, 5rem);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  color: var(--c-brand);
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 40px var(--c-brand-glow);
+}
+.stage__value--wager {
+  color: var(--c-spark);
+  text-shadow: 0 0 40px var(--c-spark-glow);
+}
+.stage__who {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-5) var(--sp-3) var(--sp-3);
+  border-radius: var(--r-full);
+  background: color-mix(in oklab, var(--team) 16%, transparent);
+  border: 1px solid color-mix(in oklab, var(--team) 40%, transparent);
+}
+.stage__who-badge {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--r-md);
+  background: var(--team);
+  color: var(--c-text-ink);
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: var(--fs-lg);
+  box-shadow:
+    inset 0 1px 0 var(--c-tile-sheen),
+    0 2px 0 color-mix(in oklab, var(--team) 40%, black);
+}
+.stage__who strong {
+  font-size: var(--fs-xl);
+  font-weight: 800;
+  color: var(--c-text);
+}
 
 /* Tělo -------------------------------------------------------------------- */
 .stage__body {
@@ -357,9 +414,15 @@ onBeforeUnmount(() => {
   border-top: 1px solid var(--c-line-soft);
   background: color-mix(in oklab, var(--c-abyss) 55%, transparent);
 }
-.stage__timerRow { width: min(100%, 34rem); }
-.stage__turn { color: var(--c-text-muted); text-align: center; }
-.stage__turn strong { color: var(--c-text); }
+.stage__timer {
+  display: grid;
+  gap: var(--sp-2);
+  width: min(100%, 42rem);
+  padding: var(--sp-4) var(--sp-5);
+  border-radius: var(--r-xl);
+  border: 1px solid var(--c-line);
+  background: var(--c-surface);
+}
 .stage__timeout {
   font-family: var(--font-display);
   font-weight: 800;
@@ -367,6 +430,7 @@ onBeforeUnmount(() => {
   letter-spacing: var(--tracking-wide);
   text-transform: uppercase;
   font-size: var(--fs-sm);
+  text-align: center;
 }
 .stage__hint { font-size: var(--fs-xs); color: var(--c-text-faint); }
 .stage__question { font-size: var(--fs-lg); color: var(--c-text-muted); }
