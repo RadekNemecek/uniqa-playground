@@ -1,16 +1,20 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed } from 'vue'
 import type { GameState } from '@/types'
 import { cellKey } from '@/types'
 import BoardCell from './BoardCell.vue'
 import TeamScore from './TeamScore.vue'
-import { setActiveTeam, teamById } from '@/stores/game'
+import {
+  restoreTurnOrder,
+  setActiveTeam,
+  teamById,
+  turnOverridden,
+  turnTeam,
+} from '@/stores/game'
+import { teamBadge, teamColor } from '@/lib/teams'
 
 const props = defineProps<{ game: GameState }>()
 const emit = defineEmits<{ open: [key: string, el: HTMLElement] }>()
-
-const grid = ref<HTMLElement | null>(null)
-const cursor = ref(0)
 
 const cols = computed(() => props.game.categories.length)
 const rows = computed(() => props.game.ladder.length)
@@ -39,55 +43,40 @@ function teamIndexOf(key: string): number {
 function open(key: string, el: HTMLElement) {
   emit('open', key, el)
 }
-
-/* --- Ovládání klávesnicí -------------------------------------------------
-   Moderátorka musí zvládnout hru bez míření myší. */
-function onKey(e: KeyboardEvent) {
-  const target = e.target as HTMLElement | null
-  if (target && ['INPUT', 'TEXTAREA'].includes(target.tagName)) return
-
-  const total = flat.value.length
-  if (total === 0) return
-
-  let next = cursor.value
-  switch (e.key) {
-    case 'ArrowRight': next = (cursor.value + 1) % total; break
-    case 'ArrowLeft': next = (cursor.value - 1 + total) % total; break
-    case 'ArrowDown': next = (cursor.value + cols.value) % total; break
-    case 'ArrowUp': next = (cursor.value - cols.value + total) % total; break
-    default: return
-  }
-  e.preventDefault()
-  cursor.value = next
-  focusCursor()
-}
-
-function focusCursor() {
-  const buttons = grid.value?.querySelectorAll<HTMLButtonElement>('.board__cell button')
-  buttons?.[cursor.value]?.focus()
-}
-
-onMounted(() => window.addEventListener('keydown', onKey))
-onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 </script>
 
 <template>
   <div class="board">
-    <!-- Skóre týmů -------------------------------------------------------- -->
-    <div class="board__teams" role="group" aria-label="Skóre týmů">
-      <TeamScore
-        v-for="(t, i) in game.teams"
-        :key="t.id"
-        :team="t"
-        :index="i"
-        :active="i === game.activeTeamIndex"
-        @activate="setActiveTeam(i)"
-      />
+    <div class="board__top">
+      <div class="board__teams" role="group" aria-label="Skóre týmů">
+        <TeamScore
+          v-for="(t, i) in game.teams"
+          :key="t.id"
+          :team="t"
+          :index="i"
+          :active="i === game.activeTeamIndex"
+          @activate="setActiveTeam(i)"
+        />
+      </div>
+
+      <p v-if="turnOverridden && turnTeam" class="board__turn-fix">
+        <span class="board__turn-note">
+          Tah byl ručně přesunut. Původně byl na řadě
+          <span
+            class="board__turn-who"
+            :style="{ '--team': `var(${teamColor(turnTeam.color).cssVar})` }"
+          >
+            <span class="board__turn-badge">{{ teamBadge(game.turnResumeIndex ?? 0) }}</span>
+            {{ turnTeam.name }}
+          </span>
+        </span>
+        <button type="button" class="board__turn-btn" @click="restoreTurnOrder">
+          Vrátit tah
+        </button>
+      </p>
     </div>
 
-    <!-- Deska ------------------------------------------------------------- -->
     <div
-      ref="grid"
       class="board__grid"
       :style="{ '--cols': cols, '--rows': rows }"
       role="grid"
@@ -121,9 +110,13 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
   padding: 0 var(--sp-5) var(--sp-5);
   width: min(100%, 1720px);
   margin-inline: auto;
-  /* Deska musí padnout na jednu obrazovku. Na projektoru se nescrolluje. */
   min-height: 0;
   height: 100%;
+}
+
+.board__top {
+  display: grid;
+  gap: var(--sp-3);
 }
 
 .board__teams {
@@ -132,8 +125,60 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
   gap: var(--sp-3);
 }
 
-/* Studiové světlo nad deskou. Nesmí být vidět jako efekt, jen bere
-   ploše plochost. */
+.board__turn-fix {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-4);
+  border: 1px solid color-mix(in oklab, var(--c-brand) 35%, var(--c-line));
+  border-radius: var(--r-lg);
+  background: color-mix(in oklab, var(--c-brand) 10%, var(--c-surface));
+  font-size: var(--fs-sm);
+  color: var(--c-text-muted);
+}
+.board__turn-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+.board__turn-who {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  font-weight: 700;
+  color: var(--c-text);
+}
+.board__turn-badge {
+  display: inline-grid;
+  place-items: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: var(--r-sm);
+  background: var(--team);
+  color: var(--c-text-ink);
+  font-family: var(--font-display);
+  font-size: var(--fs-xs);
+  font-weight: 900;
+}
+.board__turn-btn {
+  flex: none;
+  padding: var(--sp-2) var(--sp-4);
+  border: 1px solid var(--c-brand);
+  border-radius: var(--r-md);
+  background: var(--c-brand);
+  color: var(--c-on-accent);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+}
+.board__turn-btn:hover {
+  background: var(--c-brand-soft);
+  border-color: var(--c-brand-soft);
+}
+
 .board__grid::before {
   content: '';
   position: absolute;
@@ -158,37 +203,36 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
   position: relative;
   display: grid;
   place-items: center;
-  min-height: 2.75rem;
-  padding: var(--sp-2) var(--sp-3);
+  min-height: clamp(3.25rem, 2.4rem + 1.2vh, 4.75rem);
+  padding: var(--sp-3) var(--sp-3) calc(var(--sp-3) + 2px);
   border-radius: var(--r-md);
-  background: linear-gradient(180deg, var(--c-surface-3) 0%, var(--c-surface-2) 100%);
+  background: linear-gradient(180deg, var(--c-brand-soft) 0%, var(--c-brand) 100%);
   border: 0;
   box-shadow:
-    inset 0 1px 0 var(--c-tile-sheen),
-    0 2px 0 var(--c-tile-edge);
-  color: var(--c-text);
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 2px 0 color-mix(in oklab, var(--c-brand-deep) 70%, black),
+    0 8px 18px -10px color-mix(in oklab, var(--c-brand) 40%, transparent);
+  color: var(--c-text-ink);
   text-align: center;
   animation: dropIn var(--dur-slow) var(--ease-out) both;
 }
-/* Tenká zlatá linka pod hlavičkou drží sloupec pohromadě. */
 .board__cat::after {
-  content: '';
-  position: absolute;
-  left: 18%;
-  right: 18%;
-  bottom: 4px;
-  height: 2px;
-  border-radius: var(--r-full);
-  background: linear-gradient(90deg, transparent, color-mix(in oklab, var(--c-brand) 60%, transparent), transparent);
+  display: none;
 }
 .board__cat span {
   font-family: var(--font-display);
-  font-size: calc(clamp(0.75rem, 0.55rem + 0.65vw, 1.15rem) * var(--scale));
-  font-weight: 700;
-  letter-spacing: var(--tracking-wide);
+  font-size: var(--fs-cat);
+  font-weight: 800;
+  letter-spacing: 0.02em;
   text-transform: uppercase;
-  line-height: 1.15;
+  line-height: 1.2;
   text-wrap: balance;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+  max-width: 100%;
 }
 
 .board__cell { display: contents; }
@@ -204,13 +248,15 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 
 @media (max-width: 720px) {
   .board { padding-inline: var(--sp-3); }
-  .board__cat { min-height: 2.25rem; }
+  .board__cat { min-height: 2.75rem; padding-block: var(--sp-2) calc(var(--sp-2) + 4px); }
 }
 
-/* Na malé nebo nízké obrazovce se radši scrolluje, než aby se deska
-   smrskla do nečitelna. */
 @media (max-height: 560px), (max-width: 560px) {
   .board { height: auto; }
   .board__grid { grid-auto-rows: minmax(3.25rem, auto); }
+}
+
+@media (pointer: coarse) {
+  .board__turn-btn { min-height: 2.75rem; }
 }
 </style>

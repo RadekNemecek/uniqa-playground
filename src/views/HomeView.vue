@@ -1,11 +1,29 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import AppHeader from '@/components/AppHeader.vue'
-import { hasGame, game } from '@/stores/game'
+import { endGame, hasGame, game } from '@/stores/game'
 import { packs } from '@/stores/packs'
 import { count } from '@/lib/format'
 import { teamBadge, teamColor } from '@/lib/teams'
 import { prefersReducedMotion } from '@/lib/motion'
+import { confirmAction } from '@/stores/ui'
+
+const router = useRouter()
+
+async function startFresh() {
+  if (hasGame.value) {
+    const ok = await confirmAction({
+      title: 'Nová hra',
+      text: 'Rozehraná hra se ukončí a otevře se příprava nové.',
+      confirmLabel: 'Nová hra',
+      danger: true,
+    })
+    if (!ok) return
+    endGame()
+  }
+  void router.push('/pojistuj')
+}
 
 /* --- Studiová stěna v pozadí ---------------------------------------------
    Deska vyplňuje celou plochu za titulkem, natočená a ztlumená. Sama se
@@ -300,12 +318,12 @@ const packLabel = computed(() =>
           {{ count(game.teams.length, 'tým', 'týmy', 'týmů') }}
         </RouterLink>
 
-        <RouterLink to="/pojistuj" class="cta">
-          Spustit hru
+        <button type="button" class="cta" @click="startFresh">
+          {{ hasGame ? 'Nová hra' : 'Spustit hru' }}
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
             <path d="M5 12h13M12 5l7 7-7 7" />
           </svg>
-        </RouterLink>
+        </button>
 
         <p class="bottom__meta">
           <RouterLink to="/admin">Připravit otázky</RouterLink>
@@ -546,13 +564,16 @@ const packLabel = computed(() =>
   align-items: center;
   gap: var(--sp-3);
   padding: var(--sp-5) var(--sp-8);
+  border: 0;
   border-radius: var(--r-full);
   background: linear-gradient(180deg, var(--c-brand) 0%, var(--c-brand-deep) 100%);
   color: var(--c-on-accent);
+  font-family: inherit;
   font-size: clamp(var(--fs-lg), 0.9rem + 0.6vw, 1.6rem);
   font-weight: 800;
   letter-spacing: -0.01em;
   text-decoration: none;
+  cursor: pointer;
   box-shadow: 0 5px 0 rgba(0, 0, 0, 0.5), 0 20px 40px -14px var(--c-brand-glow);
   transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
 }

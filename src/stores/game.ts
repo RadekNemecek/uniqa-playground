@@ -29,7 +29,30 @@ export function restoreGame(): void {
   store.restored = true
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) store.current = JSON.parse(raw) as GameState
+    if (raw) {
+      const parsed = JSON.parse(raw) as GameState
+      // Starší uložené hry ještě turnTeamIndex / turnResumeIndex neměly.
+      if (typeof parsed.turnTeamIndex !== 'number') {
+        parsed.turnTeamIndex = parsed.activeTeamIndex
+      }
+      if (parsed.turnResumeIndex === undefined) {
+        parsed.turnResumeIndex =
+          parsed.activeTeamIndex !== parsed.turnTeamIndex ? parsed.turnTeamIndex : null
+        // Po starém modelu byl turn kotva a active přepis; sjednotíme na nový.
+        if (parsed.turnResumeIndex !== null) {
+          parsed.turnTeamIndex = parsed.activeTeamIndex
+        }
+      }
+      for (const entry of parsed.history ?? []) {
+        if (typeof entry.turnTeamIndex !== 'number') {
+          entry.turnTeamIndex = entry.activeTeamIndex
+        }
+        if (entry.turnResumeIndex === undefined) {
+          entry.turnResumeIndex = null
+        }
+      }
+      store.current = parsed
+    }
   } catch {
     localStorage.removeItem(STORAGE_KEY)
   }
@@ -100,7 +123,12 @@ export function startGame(pack: Pack, setup: GameSetup): GameState {
     wagerCells: pickWagerCells(Object.keys(cells), pack.ladder, setup.rules.wagerCells),
     teams,
     activeTeamIndex: 0,
-    rules: { ...setup.rules },
+    turnTeamIndex: 0,
+    turnResumeIndex: null,
+    rules: {
+      ...setup.rules,
+      floorZero: setup.rules.floorZero ?? true,
+    },
     phase: 'board',
     openCell: null,
     wager: null,
@@ -154,7 +182,7 @@ export function isWagerCell(key: string): boolean {
 }
 
 /** Nejvyšší možná sázka: co má tým na kontě, nejméně však nejvyšší
- *  hodnota na desce, aby si mohl vsadit i tým se záporným skóre. */
+ *  hodnota na desce, aby šlo vsadit i při nule. */
 export function maxWager(): number {
   const g = store.current
   if (!g) return 0
@@ -201,6 +229,13 @@ function pointsForOpenCell(g: GameState): number {
   return key ? Number(key.split(':')[1]) : 0
 }
 
+/** Odečte body. Při floorZero nesmí skóre klesnout pod nulu. */
+function deduct(team: Team, amount: number, floorZero: boolean): number {
+  const take = floorZero ? Math.min(amount, Math.max(0, team.score)) : amount
+  team.score -= take
+  return take
+}
+
 /**
  * Vyhodnotí otevřenou otázku.
  * @param winnerId tým, kterému se body připíšou, nebo null, když neuhodl nikdo.
@@ -213,6 +248,7 @@ export function resolveQuestion(winnerId: string | null): void {
   const points = pointsForOpenCell(g)
   const active = g.teams[g.activeTeamIndex]
   const wagered = g.wager !== null
+  const floorZero = g.rules.floorZero !== false
 
   // Snímek pro tlačítko Zpět, ještě před jakoukoli změnou.
   const entry: HistoryEntry = {
@@ -220,6 +256,8 @@ export function resolveQuestion(winnerId: string | null): void {
     cell: { ...g.cells[key] },
     scores: Object.fromEntries(g.teams.map((t) => [t.id, t.score])),
     activeTeamIndex: g.activeTeamIndex,
+    turnTeamIndex: g.turnTeamIndex,
+    turnResumeIndex: g.turnResumeIndex,
     label: '',
   }
 
@@ -238,9 +276,9 @@ export function resolveQuestion(winnerId: string | null): void {
   // Sázka se týmu na tahu odečte vždy, to je podstata pole Nepojištěno!.
   // Minusové body mimo sázku se uplatní jen podle nastavení.
   if (activeFailed && active && (wagered || g.rules.penalty)) {
-    active.score -= points
-    g.cells[key] = { ...g.cells[key], points: winner ? points : -points }
-    entry.label += `, ${active.name} -${points}`
+    const taken = deduct(active, points, floorZero)
+    g.cells[key] = { ...g.cells[key], points: winner ? points : -taken }
+    if (taken > 0) entry.label += `, ${active.name} -${taken}`
   }
 
   g.history.push(entry)
@@ -248,7 +286,11 @@ export function resolveQuestion(winnerId: string | null): void {
 
   g.openCell = null
   g.wager = null
-  g.activeTeamIndex = g.teams.length ? (g.activeTeamIndex + 1) % g.teams.length : 0
+  // Další tah jde od týmu, který teď doopravdy hrál (včetně ruční změny).
+  const next = g.teams.length ? (g.turnTeamIndex + 1) % g.teams.length : 0
+  g.turnTeamIndex = next
+  g.activeTeamIndex = next
+  g.turnResumeIndex = null
 
   const open = Object.values(g.cells).some((c) => c.status === 'open')
   g.phase = open ? 'board' : 'results'
@@ -263,9 +305,11 @@ export function undo(): void {
   if (!entry) return
   g.cells[entry.cellKey] = { ...entry.cell }
   for (const team of g.teams) {
-    if (entry.scores[team.id] !== undefined) team.score = entry.scores[team.id]
+    if (entry.scores[team.id] !== undefined) team.score = entry.scores[team.id]!
   }
   g.activeTeamIndex = entry.activeTeamIndex
+  g.turnTeamIndex = entry.turnTeamIndex
+  g.turnResumeIndex = entry.turnResumeIndex
   g.openCell = null
   g.wager = null
   g.phase = 'board'
@@ -274,8 +318,39 @@ export function undo(): void {
 export function setActiveTeam(index: number): void {
   const g = store.current
   if (!g || index < 0 || index >= g.teams.length) return
+  if (index === g.activeTeamIndex) return
+
+  // První odbočení z pořadí si pamatujeme, kam se vrátit.
+  if (g.turnResumeIndex === null) {
+    g.turnResumeIndex = g.turnTeamIndex
+  }
   g.activeTeamIndex = index
+  g.turnTeamIndex = index
+  // Klik zpět na původní tým přepis zruší.
+  if (g.turnResumeIndex === index) {
+    g.turnResumeIndex = null
+  }
 }
+
+/** Vrátí tah na tým, který byl na řadě před ruční změnou. */
+export function restoreTurnOrder(): void {
+  const g = store.current
+  if (!g || g.turnResumeIndex === null) return
+  g.activeTeamIndex = g.turnResumeIndex
+  g.turnTeamIndex = g.turnResumeIndex
+  g.turnResumeIndex = null
+}
+
+export const turnOverridden = computed(() => {
+  const g = store.current
+  return !!g && g.turnResumeIndex !== null
+})
+
+export const turnTeam = computed<Team | null>(() => {
+  const g = store.current
+  if (!g || g.turnResumeIndex === null) return null
+  return g.teams[g.turnResumeIndex] ?? null
+})
 
 export function showResults(): void {
   const g = store.current
@@ -287,4 +362,23 @@ export function backToBoard(): void {
   const g = store.current
   if (!g) return
   g.phase = 'board'
+}
+
+/** Stejné týmy, kategorie a pravidla, nová deska od začátku. */
+export function rematch(): void {
+  const g = store.current
+  if (!g) return
+  for (const team of g.teams) team.score = 0
+  for (const key of Object.keys(g.cells)) {
+    g.cells[key] = { status: 'open' }
+  }
+  g.wagerCells = pickWagerCells(Object.keys(g.cells), g.ladder, g.rules.wagerCells)
+  g.history = []
+  g.activeTeamIndex = 0
+  g.turnTeamIndex = 0
+  g.turnResumeIndex = null
+  g.openCell = null
+  g.wager = null
+  g.phase = 'board'
+  g.startedAt = Date.now()
 }

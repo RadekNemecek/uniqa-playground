@@ -68,7 +68,6 @@ function open(e: MouseEvent) {
   background: linear-gradient(178deg, var(--c-tile-top) 0%, var(--c-tile-bottom) 100%);
   color: var(--c-value);
   overflow: hidden;
-  /* Světlo shora, hrana zespodu. Dlaždice se má dát zmáčknout. */
   box-shadow:
     inset 0 1.5px 0 var(--c-tile-sheen),
     inset 0 -2px 0 rgba(0, 0, 0, 0.4),
@@ -78,11 +77,11 @@ function open(e: MouseEvent) {
   transition:
     transform var(--dur-fast) var(--ease-out),
     box-shadow var(--dur-fast) var(--ease-out),
-    filter var(--dur-fast) var(--ease-out);
+    filter var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
   animation: dealIn var(--dur-slow) var(--ease-out) calc(var(--i) * 22ms) both;
 }
 
-/* Lesk, který přejede přes dlaždici při najetí. */
 .cell::after {
   content: '';
   position: absolute;
@@ -92,20 +91,34 @@ function open(e: MouseEvent) {
   transition: translate var(--dur-slow) var(--ease-out);
 }
 
-.cell--open:hover {
-  transform: translateY(-3px);
-  filter: brightness(1.08);
+/* Výběr myší: jediný kurzor na desce, musí jít přečíst z projektoru.
+   Overflow zůstává hidden, ať záře nepřeteče na sousední políčko.
+   Vnější rámeček nese outline, ten se neořezává. */
+.cell--open:hover,
+.cell--open:focus-visible {
+  outline: 3px solid var(--c-brand);
+  outline-offset: 3px;
+  z-index: 1;
+  transform: translateY(-5px) scale(1.06);
+  filter: brightness(1.18);
+  color: var(--c-brand-soft);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.16),
-    inset 0 0 0 1px color-mix(in oklab, var(--c-brand) 55%, transparent),
-    0 6px 0 var(--c-tile-edge),
-    0 16px 32px -12px var(--c-brand-glow);
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    inset 0 0 0 2px color-mix(in oklab, var(--c-brand) 70%, white),
+    0 10px 0 var(--c-tile-edge),
+    0 22px 40px -8px var(--c-brand-glow);
 }
-.cell--open:hover::after { translate: 120% 0; }
+.cell--open:hover .cell__value,
+.cell--open:focus-visible .cell__value {
+  color: var(--c-brand-soft);
+  text-shadow:
+    0 0 22px var(--c-brand-glow),
+    0 0 8px color-mix(in oklab, var(--c-brand) 70%, transparent),
+    0 2px 0 rgba(0, 0, 0, 0.5);
+}
 
-/* Stisk: dlaždice dosedne na hranu, jako by šla opravdu zmáčknout. */
 .cell--open:active {
-  transform: translateY(3px);
+  transform: translateY(3px) scale(1);
   box-shadow:
     inset 0 2px 6px rgba(0, 0, 0, 0.5),
     0 0 0 var(--c-tile-edge);
@@ -117,29 +130,30 @@ function open(e: MouseEvent) {
   font-weight: 800;
   letter-spacing: -0.01em;
   line-height: 1;
-  /* Ražba: tenké světlo nahoře, stín dolů. Číslo pak sedí v ploše,
-     místo aby na ní leželo. */
   text-shadow:
     0 -1px 0 rgba(255, 255, 255, 0.18),
     0 2px 0 rgba(0, 0, 0, 0.45),
     0 4px 22px var(--c-value-glow);
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    text-shadow var(--dur-fast) var(--ease-out);
 }
 
-/* Vyřešená políčka ------------------------------------------------------- */
 .cell--won,
 .cell--lost {
   cursor: default;
   animation: settle var(--dur-slow) var(--ease-out) both;
+  opacity: 0.48;
+  filter: saturate(0.7);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 2px 0 color-mix(in oklab, var(--c-tile-edge) 70%, transparent);
+  transform: none;
 }
 
 .cell--won {
-  /* Barva týmu musí zůstat dost světlá, aby na ní tmavý text držel kontrast. */
   background: linear-gradient(178deg, var(--team) 0%, color-mix(in oklab, var(--team) 76%, black) 100%);
   color: var(--c-text-ink);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.35),
-    0 3px 0 color-mix(in oklab, var(--team) 35%, black),
-    0 8px 18px -8px color-mix(in oklab, var(--team) 50%, transparent);
 }
 .cell__won { display: grid; justify-items: center; gap: 2px; }
 .cell__badge {
@@ -153,10 +167,6 @@ function open(e: MouseEvent) {
 .cell--lost {
   background: var(--c-dead);
   color: #2A3252;
-  /* Zhasnuté políčko je zapadlé dovnitř, ne vystouplé. */
-  box-shadow:
-    inset 0 2px 14px rgba(0, 0, 0, 0.9),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.03);
 }
 
 @keyframes dealIn {
@@ -168,7 +178,6 @@ function open(e: MouseEvent) {
   60% { transform: scale(0.99); }
   100% { transform: none; }
 }
-/* Po dosednutí přes políčko jednou přejede lesk. */
 .cell--won::after { animation: sweep var(--dur-slow) var(--ease-out) var(--dur-fast) both; }
 @keyframes sweep {
   from { translate: -120% 0; }

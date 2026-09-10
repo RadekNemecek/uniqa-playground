@@ -2,12 +2,12 @@
 import { computed, nextTick, ref } from 'vue'
 import type { GameSetup as Setup, Pack } from '@/types'
 import AppHeader from '@/components/AppHeader.vue'
-import UiButton from '@/components/ui/UiButton.vue'
 import GameSetup from '@/games/pojistuj/components/GameSetup.vue'
 import GameBoard from '@/games/pojistuj/components/GameBoard.vue'
 import QuestionStage from '@/games/pojistuj/components/QuestionStage.vue'
 import WagerDialog from '@/games/pojistuj/components/WagerDialog.vue'
 import ResultsScreen from '@/games/pojistuj/components/ResultsScreen.vue'
+import PlayBar from '@/games/pojistuj/components/PlayBar.vue'
 import {
   activeTeam,
   backToBoard,
@@ -19,6 +19,7 @@ import {
   maxWager,
   openQuestion,
   remainingCells,
+  rematch,
   resolveQuestion,
   revealAnswer,
   selectCell,
@@ -129,6 +130,15 @@ async function onAgain() {
   })
   if (ok) endGame()
 }
+
+async function onRematch() {
+  const ok = await confirmAction({
+    title: 'Stejné týmy znovu',
+    text: 'Skóre se vynuluje a deska se rozdá znovu. Týmy, kategorie i pravidla zůstanou.',
+    confirmLabel: 'Hrát znovu',
+  })
+  if (ok) rematch()
+}
 </script>
 
 <template>
@@ -140,13 +150,13 @@ async function onAgain() {
     </template>
 
     <template v-else>
-      <AppHeader compact>
-        <template #tools>
-          <UiButton size="sm" variant="quiet" :disabled="!canUndo" @click="onUndo">Zpět</UiButton>
-          <UiButton size="sm" variant="quiet" @click="showResults">Výsledky</UiButton>
-          <UiButton size="sm" variant="quiet" @click="onEnd">Konec</UiButton>
-        </template>
-      </AppHeader>
+      <PlayBar
+        :can-undo="canUndo"
+        :steal="game.rules.steal"
+        @undo="onUndo"
+        @results="showResults"
+        @end="onEnd"
+      />
 
       <!-- Herní plocha. Jen tady platí nastavení velikosti písma, protože
            tohle je to, co se promítá na plátno. -->
@@ -186,11 +196,13 @@ async function onAgain() {
       />
 
         <!-- Výsledky ----------------------------------------------------- -->
-        <Transition name="fade">
-          <div v-if="game.phase === 'results'" class="results-layer">
-            <ResultsScreen :game="game" @again="onAgain" @board="backToBoard" />
-          </div>
-        </Transition>
+        <Teleport to="body">
+          <Transition name="fade">
+            <div v-if="game.phase === 'results'" class="results-layer">
+              <ResultsScreen :game="game" @again="onAgain" @rematch="onRematch" @board="backToBoard" />
+            </div>
+          </Transition>
+        </Teleport>
       </div>
     </template>
   </div>
@@ -223,7 +235,7 @@ async function onAgain() {
 .results-layer {
   position: fixed;
   inset: 0;
-  z-index: var(--z-stage);
+  z-index: var(--z-results);
   overflow-y: auto;
   background: linear-gradient(180deg, var(--c-surface) 0%, var(--c-abyss) 100%);
 }

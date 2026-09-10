@@ -150,3 +150,13 @@ export function playableCategories(pack: Pack): Category[] {
     pack.ladder.every((v) => isQuestionReady(c.questions.find((q) => q.value === v))),
   )
 }
+
+/** Stav balíčku z pohledu hry: hratelný = aspoň jedna celá kategorie. */
+export type PackReadiness = 'empty' | 'draft' | 'ready'
+
+export function packReadiness(pack: Pack): PackReadiness {
+  const { done } = packProgress(pack)
+  if (done === 0) return 'empty'
+  if (playableCategories(pack).length > 0) return 'ready'
+  return 'draft'
+}

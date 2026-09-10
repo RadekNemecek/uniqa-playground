@@ -10,8 +10,6 @@ export interface Question {
   prompt: string
   /** Správná odpověď, odhaluje se až na povel moderátorky. */
   answer: string
-  /** Nepovinná poznámka pro moderátorku, hráčům se nikdy nezobrazí. */
-  note?: string
 }
 
 export interface Category {
@@ -58,6 +56,8 @@ export interface GameRules {
   penalty: boolean
   /** Umožnit přiznat body jinému týmu, než je na tahu. */
   steal: boolean
+  /** Skóre se při odečtu nezastaví pod nulou. */
+  floorZero: boolean
   /** Počet polí Nepojištěno! na desce. */
   wagerCells: number
   /** Zvuková odezva. */
@@ -78,6 +78,9 @@ export interface HistoryEntry {
   cell: CellState
   scores: Record<string, number>
   activeTeamIndex: number
+  turnTeamIndex: number
+  /** Kam vrátit tah po ruční změně. Null = tah nebyl přepsaný. */
+  turnResumeIndex: number | null
   label: string
 }
 
@@ -95,6 +98,11 @@ export interface GameState {
   wagerCells: string[]
   teams: Team[]
   activeTeamIndex: number
+  /** Aktuální pozice v pořadí tahů. Ruční klik ji posune na zvolený tým,
+   *  aby další tah šel od něj a nikdo nehrál dvakrát po sobě. */
+  turnTeamIndex: number
+  /** Tým, který byl na tahu před ruční změnou. Null = bez přepisu. */
+  turnResumeIndex: number | null
   rules: GameRules
   phase: GamePhase
   /** Otevřené políčko, pokud fáze není `board`. */

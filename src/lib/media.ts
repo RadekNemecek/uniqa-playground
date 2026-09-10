@@ -27,3 +27,5 @@ export function useMediaQuery(query: string): Ref<boolean> {
 export const COARSE_POINTER = '(pointer: coarse)'
 /** Hranice, pod kterou se matice otázek přepíná na seznam. */
 export const NARROW = '(max-width: 720px)'
+/** Desktopový editor: deska + panel otázky vedle sebe. */
+export const WIDE = '(min-width: 900px)'

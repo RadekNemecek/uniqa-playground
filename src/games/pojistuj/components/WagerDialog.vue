@@ -26,9 +26,11 @@ function confirm() {
       <h2 class="wager__title">Nepojištěno!</h2>
 
       <p class="wager__lead">
-        <span class="wager__badge">{{ teamBadge(teamIndex) }}</span>
-        <strong>{{ team.name }}</strong> si volí, kolik bodů vsadí. Za správnou odpověď
-        sázku získá, za špatnou ji ztratí.
+        <span class="wager__who">
+          <span class="wager__badge">{{ teamBadge(teamIndex) }}</span>
+          <strong>{{ team.name }}</strong>
+        </span>
+        si volí, kolik bodů vsadí. Za správnou odpověď sázku získá, za špatnou ji ztratí.
       </p>
 
       <output class="wager__amount">{{ formatScore(amount) }}</output>
@@ -98,20 +100,32 @@ function confirm() {
   color: var(--c-spark);
   text-shadow: 0 4px 30px var(--c-spark-glow);
 }
-.wager__lead { color: var(--c-text-muted); font-size: var(--fs-sm); max-width: 34ch; line-height: var(--lh-body); }
-.wager__badge {
-  display: inline-grid;
-  place-items: center;
-  width: 1.5rem;
-  height: 1.5rem;
+.wager__lead {
+  color: var(--c-text-muted);
+  font-size: var(--fs-sm);
+  max-width: 34ch;
+  line-height: var(--lh-body);
+}
+.wager__who {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
   margin-right: var(--sp-1);
-  vertical-align: -0.3em;
-  border-radius: var(--r-full);
+  vertical-align: middle;
+}
+.wager__badge {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: var(--r-sm);
   background: var(--team);
   color: var(--c-text-ink);
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: 0.75rem;
+  font-size: var(--fs-xs);
+  line-height: 1;
 }
 .wager__lead strong { color: var(--c-text); }
 

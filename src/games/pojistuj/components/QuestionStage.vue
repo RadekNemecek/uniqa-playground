@@ -82,13 +82,13 @@ function onKey(e: KeyboardEvent) {
   }
   if (!revealed.value) {
     // Mezerník hlásí různé prohlížeče různě, proto i e.code.
-    if (e.key === ' ' || e.code === 'Space' || e.key === 'Enter') {
+    if (e.key === ' ' || e.code === 'Space') {
       e.preventDefault()
       reveal()
     }
     return
   }
-  if (e.key === 'Enter' || e.key === ' ' || e.code === 'Space') {
+  if (e.key === ' ' || e.code === 'Space') {
     e.preventDefault()
     resolve(active.value?.id ?? null)
     return
@@ -100,8 +100,11 @@ function onKey(e: KeyboardEvent) {
   }
   const n = Number(e.key)
   if (Number.isInteger(n) && n >= 1 && n <= props.game.teams.length) {
+    const team = props.game.teams[n - 1]!
+    // Bez přebírání smí klávesa 1–6 přiznat body jen týmu na tahu.
+    if (team.id !== active.value?.id && !canSteal.value) return
     e.preventDefault()
-    resolve(props.game.teams[n - 1]!.id)
+    resolve(team.id)
   }
 }
 
@@ -146,9 +149,6 @@ onBeforeUnmount(() => {
         <div v-if="revealed" class="stage__answerWrap">
           <p class="stage__answerLabel">Správná odpověď</p>
           <p class="stage__answer">{{ question.answer }}</p>
-          <p v-if="question.note" class="stage__note">
-            <span>Pro moderátora</span>{{ question.note }}
-          </p>
         </div>
       </Transition>
     </div>
@@ -167,7 +167,7 @@ onBeforeUnmount(() => {
             Odpovídá <strong>{{ active?.name }}</strong>
           </p>
         </div>
-        <p v-if="timedOut" class="stage__timeout">Čas vypršel</p>
+        <p v-if="timedOut" class="stage__timeout">Čas vypršel. Zobraz odpověď a vyhodnoť.</p>
         <UiButton variant="brand" size="xl" @click="reveal">Zobrazit odpověď</UiButton>
         <p class="stage__hint">Mezerník zobrazí odpověď, Esc zavře políčko bez bodování.</p>
       </template>
@@ -346,20 +346,6 @@ onBeforeUnmount(() => {
   font-weight: 700;
   line-height: var(--lh-snug);
   text-wrap: pretty;
-}
-.stage__note {
-  margin-top: var(--sp-2);
-  font-size: var(--fs-sm);
-  color: var(--c-text-faint);
-  line-height: var(--lh-body);
-}
-.stage__note span {
-  display: block;
-  font-size: var(--fs-xs);
-  font-weight: 700;
-  letter-spacing: var(--tracking-caps);
-  text-transform: uppercase;
-  margin-bottom: 2px;
 }
 
 /* Patička ----------------------------------------------------------------- */

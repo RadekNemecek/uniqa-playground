@@ -19,7 +19,6 @@ const emit = defineEmits<{ prev: []; next: []; nextEmpty: []; close: [] }>()
 
 const promptEl = ref<HTMLTextAreaElement | null>(null)
 const answerEl = ref<HTMLTextAreaElement | null>(null)
-const noteOpen = ref(false)
 const previewOpen = ref(false)
 
 /** Textové pole roste s obsahem, ať není potřeba scrollovat uvnitř políčka. */
@@ -37,7 +36,6 @@ function growAll(): void {
 watch(
   () => props.question.id,
   async () => {
-    noteOpen.value = !!props.question.note
     await nextTick()
     growAll()
     promptEl.value?.focus()
@@ -137,19 +135,6 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
       </label>
 
       <div class="extras">
-        <button type="button" class="toggle" :aria-expanded="noteOpen" @click="noteOpen = !noteOpen">
-          <span class="toggle__sign" aria-hidden="true">{{ noteOpen ? '−' : '+' }}</span>
-          Poznámka pro moderátora
-          <em v-if="!noteOpen && question.note" class="toggle__dot" aria-hidden="true"></em>
-        </button>
-        <label v-if="noteOpen" class="f f--tight">
-          <textarea
-            v-model="question.note"
-            rows="2"
-            placeholder="Např. čím odpověď doplnit, na co navázat. Hráči to nikdy neuvidí."
-          />
-        </label>
-
         <button type="button" class="toggle" :aria-expanded="previewOpen" @click="previewOpen = !previewOpen">
           <span class="toggle__sign" aria-hidden="true">{{ previewOpen ? '−' : '+' }}</span>
           Náhled na plátně
@@ -296,7 +281,6 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
   font-size: var(--fs-sm);
   line-height: 1;
 }
-.toggle__dot { width: 6px; height: 6px; border-radius: var(--r-full); background: var(--c-brand); }
 
 .preview {
   display: grid;

@@ -1,159 +1,494 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
-import type { GameState } from '@/types'
+import { computed, onMounted, ref } from 'vue'
+import type { GameState, Team } from '@/types'
+import { cellKey } from '@/types'
 import UiButton from '@/components/ui/UiButton.vue'
 import { teamBadge, teamColor, formatScore } from '@/lib/teams'
 import { confetti } from '@/lib/confetti'
 import { sfx } from '@/lib/sound'
 import { settings } from '@/stores/settings'
+import { count } from '@/lib/format'
 
 const props = defineProps<{ game: GameState }>()
-const emit = defineEmits<{ again: []; board: [] }>()
+const emit = defineEmits<{ again: []; rematch: []; board: [] }>()
+
+const fx = ref<HTMLElement | null>(null)
 
 const ranked = computed(() => [...props.game.teams].sort((a, b) => b.score - a.score))
 const top = computed(() => ranked.value[0]?.score ?? 0)
 const winners = computed(() => ranked.value.filter((t) => t.score === top.value))
+const isTie = computed(() => winners.value.length > 1)
+const winner = computed(() => (!isTie.value ? winners.value[0] : undefined))
+const others = computed(() =>
+  ranked.value.filter((t) => !winners.value.some((w) => w.id === t.id)),
+)
 
-/** Šířka sloupce vůči nejlepšímu skóre. Záporná skóre mají minimum, aby
- *  z grafu nezmizela úplně. */
-function width(score: number): string {
-  const span = Math.max(1, top.value - Math.min(0, ranked.value.at(-1)?.score ?? 0))
-  const base = Math.max(0, score - Math.min(0, ranked.value.at(-1)?.score ?? 0))
-  return `${Math.max(6, (base / span) * 100)}%`
+function teamIndex(t: Team): number {
+  return props.game.teams.findIndex((x) => x.id === t.id)
 }
+
+function cellsLost(): number {
+  return Object.values(props.game.cells).filter((c) => c.status === 'lost').length
+}
+
+interface PieSlice {
+  color: string
+  from: number
+  to: number
+  team?: Team
+  cells: number
+}
+
+/** Koláč na kategorii: podíly týmů + prázdná políčka. */
+const pies = computed(() =>
+  props.game.categories.map((cat) => {
+    const slices: Array<{ team?: Team; cells: number; color: string }> = props.game.teams.map(
+      (t) => {
+        let cells = 0
+        for (const value of props.game.ladder) {
+          const cell = props.game.cells[cellKey(cat.id, value)]
+          if (cell?.status === 'won' && cell.teamId === t.id) cells++
+        }
+        return {
+          team: t,
+          cells,
+          color: `var(${teamColor(t.color).cssVar})`,
+        }
+      },
+    )
+
+    const empty = props.game.ladder.filter((value) => {
+      const cell = props.game.cells[cellKey(cat.id, value)]
+      return cell?.status === 'lost'
+    }).length
+    if (empty > 0) {
+      slices.push({ cells: empty, color: 'var(--c-dead)' })
+    }
+
+    const total = props.game.ladder.length || 1
+    let cursor = 0
+    const painted: PieSlice[] = []
+    for (const s of slices) {
+      if (s.cells <= 0) continue
+      const from = (cursor / total) * 360
+      cursor += s.cells
+      const to = (cursor / total) * 360
+      painted.push({ ...s, from, to })
+    }
+
+    const best = Math.max(0, ...slices.filter((s) => s.team).map((s) => s.cells))
+    const champs = slices.filter((s) => s.team && s.cells === best && best > 0)
+
+    const gradient =
+      painted.length === 0
+        ? 'var(--c-sunken)'
+        : `conic-gradient(${painted
+            .map((s) => `${s.color} ${s.from}deg ${s.to}deg`)
+            .join(', ')})`
+
+    return { cat, gradient, champs, painted, total }
+  }),
+)
 
 onMounted(() => {
   if (settings.sound) sfx.fanfare()
-  confetti(winners.value.map((t) => teamColor(t.color).hex))
+  confetti(
+    winners.value.map((t) => teamColor(t.color).hex),
+    fx.value ?? undefined,
+  )
 })
 </script>
 
 <template>
   <div class="results">
-    <header class="results__head">
-      <p class="results__cheer">
-        <template v-if="winners.length === 1">gratulujeme!</template>
-        <template v-else>shoda, to se nevidí</template>
-      </p>
-      <h1 class="results__title">
-        <template v-if="winners.length === 1">Vyhrává {{ winners[0]!.name }}</template>
-        <template v-else>Remíza</template>
-      </h1>
-      <p class="results__sub">{{ game.packName }}</p>
-    </header>
+    <div ref="fx" class="results__fx" aria-hidden="true"></div>
 
-    <ol class="rank">
-      <li
-        v-for="(t, i) in ranked"
-        :key="t.id"
-        class="rank__row"
-        :style="{ '--team': `var(${teamColor(t.color).cssVar})`, '--i': i }"
-      >
-        <span class="rank__place">{{ i + 1 }}</span>
-        <span class="rank__badge">{{ teamBadge(game.teams.findIndex((x) => x.id === t.id)) }}</span>
-        <span class="rank__name">{{ t.name }}</span>
-        <span class="rank__bar"><span class="rank__fill" :style="{ width: width(t.score) }" /></span>
-        <span class="rank__score" :class="{ 'rank__score--neg': t.score < 0 }">{{ formatScore(t.score) }}</span>
-      </li>
-    </ol>
+    <div class="results__content">
+      <!-- Hero: kdo vyhrál ---------------------------------------------------- -->
+      <header class="hero">
+        <p class="hero__cheer">
+          <template v-if="!isTie">gratulujeme!</template>
+          <template v-else>těsná hra</template>
+        </p>
 
-    <div class="results__actions">
-      <UiButton variant="ghost" @click="emit('board')">Zpět na desku</UiButton>
-      <UiButton variant="brand" size="lg" @click="emit('again')">Nová hra</UiButton>
+        <template v-if="winner">
+          <div
+            class="hero__badge"
+            :style="{ '--team': `var(${teamColor(winner.color).cssVar})` }"
+            aria-hidden="true"
+          >
+            {{ teamBadge(teamIndex(winner)) }}
+          </div>
+          <h1 class="hero__name">{{ winner.name }}</h1>
+          <p class="hero__kicker">vyhrává</p>
+          <p class="hero__score">{{ formatScore(top) }}</p>
+        </template>
+
+        <template v-else>
+          <h1 class="hero__name">Remíza</h1>
+          <p class="hero__score">{{ formatScore(top) }}</p>
+          <ul class="hero__ties">
+            <li
+              v-for="w in winners"
+              :key="w.id"
+              class="hero__tie"
+              :style="{ '--team': `var(${teamColor(w.color).cssVar})` }"
+            >
+              <span class="hero__tie-badge">{{ teamBadge(teamIndex(w)) }}</span>
+              {{ w.name }}
+            </li>
+          </ul>
+        </template>
+
+        <ul v-if="others.length" class="hero__rest" aria-label="Další pořadí">
+          <li
+            v-for="(t, i) in others"
+            :key="t.id"
+            class="hero__rest-item"
+            :style="{ '--team': `var(${teamColor(t.color).cssVar})` }"
+          >
+            <span class="hero__rest-place">{{ winners.length + i + 1 }}.</span>
+            <span class="hero__rest-badge">{{ teamBadge(teamIndex(t)) }}</span>
+            <span class="hero__rest-name">{{ t.name }}</span>
+            <span class="hero__rest-score">{{ formatScore(t.score) }}</span>
+          </li>
+        </ul>
+
+        <p class="hero__meta">
+          {{ game.packName }}
+          · {{ count(Object.keys(game.cells).length, 'otázka', 'otázky', 'otázek') }}
+          <template v-if="cellsLost()">
+            · {{ count(cellsLost(), 'políčko bez odpovědi', 'políčka bez odpovědi', 'políček bez odpovědi') }}
+          </template>
+        </p>
+      </header>
+
+      <!-- Kategorie: malé koláče ---------------------------------------------- -->
+      <section class="cats" aria-label="Kategorie">
+        <h2 class="cats__title">Podle kategorií</h2>
+        <ul class="cats__list">
+          <li
+            v-for="(pie, i) in pies"
+            :key="pie.cat.id"
+            class="cats__item"
+            :style="{ '--i': i }"
+          >
+            <div
+              class="pie"
+              :style="{ background: pie.gradient }"
+              role="img"
+              :aria-label="
+                pie.champs.length === 1 && pie.champs[0]?.team
+                  ? `${pie.cat.name}: ovládl ${pie.champs[0].team.name}`
+                  : pie.champs.length > 1
+                    ? `${pie.cat.name}: vyrovnané`
+                    : `${pie.cat.name}: nikdo`
+              "
+            >
+              <span
+                v-if="pie.champs.length === 1 && pie.champs[0]?.team"
+                class="pie__champ"
+                :style="{ '--team': `var(${teamColor(pie.champs[0].team.color).cssVar})` }"
+              >
+                {{ teamBadge(teamIndex(pie.champs[0].team)) }}
+              </span>
+              <span v-else-if="pie.champs.length > 1" class="pie__champ pie__champ--tie">=</span>
+              <span v-else class="pie__champ pie__champ--empty" aria-hidden="true">−</span>
+            </div>
+            <p class="cats__name">{{ pie.cat.name }}</p>
+          </li>
+        </ul>
+      </section>
+
+      <div class="results__actions">
+        <UiButton variant="ghost" @click="emit('board')">Zpět na desku</UiButton>
+        <UiButton variant="ghost" @click="emit('again')">Jiná sestava</UiButton>
+        <UiButton variant="brand" size="lg" @click="emit('rematch')">Stejné týmy znovu</UiButton>
+      </div>
     </div>
   </div>
 </template>
 
 <style scoped>
 .results {
+  position: relative;
+  isolation: isolate;
   min-height: 100dvh;
-  display: grid;
-  align-content: center;
-  gap: var(--sp-7);
-  padding: var(--sp-7) var(--sp-5);
-  width: min(100%, 64rem);
-  margin-inline: auto;
+  width: 100%;
 }
-.results__head { text-align: center; }
-/* Ruční písmo, třetí a poslední povolené místo. Konec hry je jediný
-   okamžik, kdy aplikace mluví k lidem v místnosti, ne k moderátorce. */
-.results__cheer {
+.results__fx {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.results__content {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: var(--sp-7);
+  padding: var(--sp-6) var(--sp-5) var(--sp-6);
+  min-height: 100dvh;
+  width: min(100%, 56rem);
+  margin-inline: auto;
+  align-content: center;
+  justify-items: center;
+}
+
+/* --- Hero ---------------------------------------------------------------- */
+.hero {
+  display: grid;
+  gap: var(--sp-3);
+  justify-items: center;
+  text-align: center;
+  width: 100%;
+}
+.hero__cheer {
   font-family: var(--font-hand);
   font-weight: 500;
-  font-size: var(--fs-2xl);
+  font-size: clamp(var(--fs-2xl), 1rem + 2vw, 2.5rem);
   line-height: 1;
   color: var(--c-brand);
-  animation: rise var(--dur-slow) var(--ease-out) both;
+  animation: fadeUp var(--dur-slow) var(--ease-out) both;
 }
-.results__title {
-  font-size: var(--fs-hero);
-  font-weight: 800;
-  letter-spacing: -0.035em;
-  margin: var(--sp-3) 0 var(--sp-2);
-  background: linear-gradient(160deg, var(--c-text) 25%, var(--c-brand) 125%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  animation: rise var(--dur-slow) var(--ease-out) both;
-}
-.results__sub { color: var(--c-text-faint); font-size: var(--fs-sm); }
-
-.rank { list-style: none; padding: 0; display: grid; gap: var(--sp-3); }
-.rank__row {
-  --i: 0;
-  display: grid;
-  grid-template-columns: 2rem 2.25rem minmax(6rem, 12rem) 1fr auto;
-  align-items: center;
-  gap: var(--sp-3);
-  padding: var(--sp-3) var(--sp-4);
-  border: 1px solid var(--c-line);
-  border-radius: var(--r-lg);
-  background: var(--c-surface);
-  animation: rise var(--dur-slow) var(--ease-out) calc(120ms + var(--i) * 90ms) both;
-}
-.rank__row:first-child { border-color: color-mix(in oklab, var(--c-brand) 45%, transparent); }
-.rank__place { font-family: var(--font-display); font-weight: 800; color: var(--c-text-faint); text-align: center; }
-.rank__row:first-child .rank__place { color: var(--c-brand); }
-.rank__badge {
+.hero__badge {
   display: grid;
   place-items: center;
-  width: 2.25rem;
-  height: 2.25rem;
+  width: clamp(4.5rem, 3rem + 6vw, 7rem);
+  height: clamp(4.5rem, 3rem + 6vw, 7rem);
+  border-radius: var(--r-xl);
+  background: var(--team);
+  color: var(--c-text-ink);
+  font-family: var(--font-display);
+  font-size: clamp(var(--fs-3xl), 1.5rem + 4vw, 4rem);
+  font-weight: 900;
+  box-shadow:
+    inset 0 2px 0 var(--c-tile-sheen),
+    0 6px 0 color-mix(in oklab, var(--team) 40%, black),
+    0 24px 48px -12px color-mix(in oklab, var(--team) 55%, transparent);
+  animation: pop var(--dur-count) var(--ease-back) var(--dur-fast) both;
+}
+.hero__name {
+  font-family: var(--font-display);
+  font-size: var(--fs-hero);
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: var(--lh-tight);
+  max-width: 18ch;
+  text-wrap: balance;
+  animation: fadeUp var(--dur-slow) var(--ease-out) calc(var(--dur-fast) + 40ms) both;
+}
+.hero__kicker {
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--c-text-muted);
+  margin-top: calc(var(--sp-2) * -1);
+  animation: fadeUp var(--dur-slow) var(--ease-out) calc(var(--dur-fast) + 80ms) both;
+}
+.hero__score {
+  font-family: var(--font-display);
+  font-size: clamp(var(--fs-3xl), 1.2rem + 5vw, 5rem);
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  color: var(--c-brand);
+  text-shadow: 0 0 48px var(--c-brand-glow);
+  animation: pop var(--dur-count) var(--ease-back) calc(var(--dur-base) + 40ms) both;
+}
+.hero__ties {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3) var(--sp-5);
+  justify-content: center;
+}
+.hero__tie {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--fs-xl);
+  font-weight: 800;
+}
+.hero__tie-badge {
+  display: inline-grid;
+  place-items: center;
+  width: var(--sp-6);
+  height: var(--sp-6);
   border-radius: var(--r-md);
   background: var(--team);
   color: var(--c-text-ink);
   font-family: var(--font-display);
-  font-weight: 800;
+  font-weight: 900;
+  font-size: var(--fs-sm);
+  box-shadow:
+    inset 0 1px 0 var(--c-tile-sheen),
+    0 2px 0 color-mix(in oklab, var(--team) 40%, black);
 }
-.rank__name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.rank__bar { height: 10px; border-radius: var(--r-full); background: var(--c-sunken); overflow: hidden; }
-.rank__fill {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, color-mix(in oklab, var(--team) 55%, black), var(--team));
-  animation: grow var(--dur-count) var(--ease-out) calc(260ms + var(--i) * 90ms) both;
-  transform-origin: left center;
+
+.hero__rest {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-4);
+  justify-content: center;
+  margin-top: var(--sp-2);
+  padding-top: var(--sp-4);
+  border-top: 1px solid var(--c-line-soft);
+  width: min(100%, 36rem);
 }
-.rank__score {
+.hero__rest-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--fs-sm);
+  color: var(--c-text-muted);
+}
+.hero__rest-place {
+  font-variant-numeric: tabular-nums;
+  color: var(--c-text-faint);
+  min-width: 1.5ch;
+}
+.hero__rest-badge {
+  display: inline-grid;
+  place-items: center;
+  width: var(--sp-4);
+  height: var(--sp-4);
+  border-radius: var(--r-sm);
+  background: var(--team);
+  color: var(--c-text-ink);
   font-family: var(--font-display);
-  font-size: var(--fs-2xl);
+  font-size: var(--fs-xs);
+  font-weight: 900;
+}
+.hero__rest-name { font-weight: 700; color: var(--c-text); }
+.hero__rest-score {
+  font-family: var(--font-display);
   font-weight: 800;
   font-variant-numeric: tabular-nums;
-  min-width: 4ch;
-  text-align: right;
+  color: var(--c-text-faint);
 }
-.rank__score--neg { color: var(--c-bad); }
 
-.results__actions { display: flex; gap: var(--sp-3); justify-content: center; flex-wrap: wrap; }
+.hero__meta {
+  font-size: var(--fs-sm);
+  color: var(--c-text-faint);
+}
 
-@keyframes rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
-@keyframes grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+/* --- Koláče kategorií ---------------------------------------------------- */
+.cats {
+  display: grid;
+  gap: var(--sp-4);
+  width: 100%;
+  justify-items: center;
+}
+.cats__title {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--c-text-faint);
+}
+.cats__list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--sp-5) var(--sp-6);
+  width: 100%;
+}
+.cats__item {
+  --i: 0;
+  display: grid;
+  gap: var(--sp-2);
+  justify-items: center;
+  width: 6.5rem;
+  animation: fadeUp var(--dur-slow) var(--ease-out) calc(var(--dur-base) + var(--i) * 60ms) both;
+}
+.cats__name {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--c-text-muted);
+  text-align: center;
+  line-height: var(--lh-snug);
+  text-wrap: balance;
+}
+
+.pie {
+  position: relative;
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: var(--r-full);
+  box-shadow:
+    inset 0 0 0 1px var(--c-line-soft),
+    0 8px 20px -10px color-mix(in oklab, var(--c-abyss) 70%, transparent);
+}
+.pie__champ {
+  position: absolute;
+  inset: 22%;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-full);
+  background: var(--team);
+  color: var(--c-text-ink);
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: var(--fs-sm);
+  box-shadow: inset 0 1px 0 var(--c-tile-sheen);
+}
+.pie__champ--tie,
+.pie__champ--empty {
+  background: var(--c-surface-2);
+  color: var(--c-text-faint);
+  box-shadow: none;
+}
+
+.results__actions {
+  display: flex;
+  gap: var(--sp-3);
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(var(--sp-3)); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes pop {
+  from { opacity: 0; transform: scale(0.82); }
+  to { opacity: 1; transform: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .results__cheer, .results__title, .rank__row, .rank__fill { animation: none; }
+  .hero__cheer,
+  .hero__badge,
+  .hero__name,
+  .hero__kicker,
+  .hero__score,
+  .cats__item {
+    animation: none;
+  }
 }
-@media (max-width: 640px) {
-  .rank__row { grid-template-columns: 1.5rem 2rem 1fr auto; }
-  .rank__bar { display: none; }
+
+@media (max-width: 600px) {
+  .results__content {
+    gap: var(--sp-5);
+    padding-block: var(--sp-5);
+    align-content: start;
+  }
+  .cats__item { width: 5.5rem; }
+  .pie {
+    width: 3.75rem;
+    height: 3.75rem;
+  }
+}
+
+@media (pointer: coarse) {
+  .results__actions :deep(.btn) { min-height: 2.75rem; }
 }
 </style>
