@@ -52,7 +52,8 @@ function spawnBurst(colors: string[], options: BurstOptions = {}): void {
       position: 'fixed',
       inset: '0',
       pointerEvents: 'none',
-      zIndex: '110',
+      /* Nad --z-results (120), pod --z-toast. */
+      zIndex: '150',
     } as Partial<CSSStyleDeclaration>)
     document.body.appendChild(canvas)
   }

@@ -182,9 +182,10 @@
   --z-board: 1;
   --z-header: 20;
   --z-stage: 60;
-  --z-modal: 80;
   --z-results: 120;
-  --z-toast: 140;
+  /* Modal musí být nad výsledky: potvrzení „hrát znovu" jde z výherní desky. */
+  --z-modal: 140;
+  --z-toast: 160;
 }
 
 /* ---------------------------------------------------------------------------
