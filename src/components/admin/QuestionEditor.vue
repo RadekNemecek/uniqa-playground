@@ -249,7 +249,9 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
   transition: border-color var(--dur-fast) var(--ease-out);
 }
 .f textarea:hover { border-color: var(--c-surface-3); }
-.f textarea:focus { border-color: var(--c-brand); outline: none; }
+/* Rámeček se obarví navíc, prstenec se neruší. Pravidlo ze `base.css` zní
+   „zaměření je vidět vždy" a textové pole není výjimka. */
+.f textarea:focus { border-color: var(--c-brand); }
 .f textarea::placeholder { color: var(--c-text-faint); }
 
 .f__note { font-size: var(--fs-xs); line-height: 1.5; }

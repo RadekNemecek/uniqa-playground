@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 const props = withDefaults(
   defineProps<{ open: boolean; title: string; size?: 'sm' | 'md' | 'lg'; dismissible?: boolean }>(),
@@ -32,15 +32,34 @@ function onKey(e: KeyboardEvent) {
   }
 }
 
+/** Kam vrátit zaměření, až se okno zavře. */
+let restoreTo: HTMLElement | null = null
+
 watch(
   () => props.open,
-  (open) => {
+  async (open) => {
     document.body.style.overflow = open ? 'hidden' : ''
+
     if (open) {
-      requestAnimationFrame(() => {
-        panel.value?.querySelector<HTMLElement>('input, textarea, button')?.focus()
-      })
+      restoreTo = document.activeElement as HTMLElement | null
+      // nextTick, ne requestAnimationFrame: rámec přišel dřív, než Vue
+      // panel vykreslilo, ref byl prázdný a zaměření zůstalo venku na
+      // tlačítku, které okno otevřelo. Past na Tab se pak vůbec nechytla,
+      // protože se spouští jen zevnitř panelu, a tabulátor procházel
+      // stránku za ztmavením.
+      await nextTick()
+      // Pole napřed, zavírací křížek až jako náhrada. Kdo okno otevře,
+      // chce psát, ne ho hned zavřít.
+      const first =
+        panel.value?.querySelector<HTMLElement>('input, textarea, select') ?? panel.value
+      first?.focus()
+      return
     }
+
+    // Bez tohohle skončí zaměření na <body> a kdo jede od klávesnice,
+    // začíná procházet stránku znovu od začátku.
+    restoreTo?.focus?.()
+    restoreTo = null
   },
 )
 
@@ -56,7 +75,7 @@ onBeforeUnmount(() => {
     <Transition name="modal">
       <div v-if="open" class="modal" role="dialog" aria-modal="true" :aria-label="title">
         <div class="modal__scrim" @click="dismissible && emit('close')" />
-        <div ref="panel" class="modal__panel" :class="`modal__panel--${size}`">
+        <div ref="panel" class="modal__panel" :class="`modal__panel--${size}`" tabindex="-1">
           <header class="modal__head">
             <h2 class="modal__title">{{ title }}</h2>
             <button v-if="dismissible" class="modal__x" type="button" aria-label="Zavřít" @click="emit('close')">
@@ -83,6 +102,9 @@ onBeforeUnmount(() => {
 .modal__scrim { position: absolute; inset: 0; background: var(--c-scrim); backdrop-filter: blur(6px); }
 .modal__panel {
   position: relative;
+  /* Panel je jen náhradní místo pro zaměření, když uvnitř není žádné pole.
+     Prstenec kolem celého okna by nic neřekl, hranici kreslí samo okno.
+     U prvků, do kterých se dá dostat tabulátorem, se prstenec neruší. */
   width: min(100%, 34rem);
   max-height: min(86dvh, 52rem);
   display: flex;
@@ -131,6 +153,8 @@ onBeforeUnmount(() => {
 }
 
 .modal-enter-active, .modal-leave-active { transition: opacity var(--dur-base) var(--ease-out); }
+.modal__panel:focus { outline: none; }
+
 .modal-enter-active .modal__panel { transition: transform var(--dur-base) var(--ease-back); }
 .modal-enter-from, .modal-leave-to { opacity: 0; }
 .modal-enter-from .modal__panel { transform: translateY(12px) scale(0.97); }

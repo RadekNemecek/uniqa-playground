@@ -28,9 +28,15 @@ const emit = defineEmits<{
 
 const narrow = useMediaQuery(NARROW)
 
-function preview(text: string | undefined, limit: number): string {
-  const t = (text ?? '').trim()
-  return t.length > limit ? `${t.slice(0, limit)}…` : t
+/**
+ * Text otázky do náhledu. Zkracuje ho CSS, ne tahle funkce.
+ *
+ * Ořez po znacích tady dřív uřízl i krátkou otázku, která se do buňky
+ * pohodlně vešla, protože buňka je pokaždé jinak široká. `-webkit-line-clamp`
+ * na `.row__text` a `.cell__text` měří skutečné místo.
+ */
+function preview(text: string | undefined): string {
+  return (text ?? '').trim()
 }
 
 function readyIn(categoryId: string): number {
@@ -109,7 +115,7 @@ async function onValueChange(index: number, event: Event) {
             @click="emit('select', cat.id, value)"
           >
             <span v-if="isReady(cat.id, value)" class="row__text">
-              {{ preview(questionOf(cat.id, value)?.prompt, 64) }}
+              {{ preview(questionOf(cat.id, value)?.prompt) }}
             </span>
             <span v-else class="row__empty">Doplnit otázku</span>
             <span class="row__mark" aria-hidden="true">
@@ -217,8 +223,8 @@ async function onValueChange(index: number, event: Event) {
             </svg>
           </span>
 
-          <span v-if="preview(questionOf(cat.id, value)?.prompt, 90)" class="cell__text">
-            {{ preview(questionOf(cat.id, value)?.prompt, 90) }}
+          <span v-if="preview(questionOf(cat.id, value)?.prompt)" class="cell__text">
+            {{ preview(questionOf(cat.id, value)?.prompt) }}
           </span>
           <span v-else class="cell__empty">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
@@ -249,22 +255,22 @@ async function onValueChange(index: number, event: Event) {
 .list { display: grid; gap: var(--sp-5); }
 
 .cat { display: grid; gap: var(--sp-2); }
+/* Název, počet a ovládání na jednom řádku. Pevná mřížka tu dřív držela
+   tlačítkům celý druhý řádek, takže vlevo od nich zůstalo prázdné pásmo
+   přes celou kartu. Zalomí se to teprve tehdy, když se to opravdu nevejde. */
 .cat__head {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-areas:
-    'name count'
-    'tools tools';
-  gap: var(--sp-2);
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  gap: var(--sp-2);
   padding: var(--sp-2);
   border: 1px solid var(--c-line);
   border-radius: var(--r-lg);
   background: var(--c-surface);
 }
 .cat__name {
-  grid-area: name;
-  width: 100%;
+  flex: 1 1 8rem;
+  min-width: 0;
   border: 0;
   background: transparent;
   color: var(--c-text);
@@ -273,10 +279,9 @@ async function onValueChange(index: number, event: Event) {
   font-weight: 700;
   padding: var(--sp-1);
 }
-.cat__name:focus { outline: none; color: var(--c-brand); }
+.cat__name:focus { color: var(--c-brand); }
 .cat__name::placeholder { color: var(--c-text-faint); font-weight: 500; }
 .cat__count {
-  grid-area: count;
   flex: none;
   padding: 2px var(--sp-2);
   border-radius: var(--r-full);
@@ -288,12 +293,9 @@ async function onValueChange(index: number, event: Event) {
 }
 .cat__count--done { background: color-mix(in oklab, var(--c-ok) 22%, transparent); color: var(--c-ok); }
 .cat__tools {
-  grid-area: tools;
+  flex: none;
   display: flex;
-  justify-content: flex-end;
   gap: var(--sp-1);
-  border-top: 1px solid var(--c-line-soft);
-  padding-top: var(--sp-1);
 }
 .cat__tools button {
   display: grid;
@@ -336,7 +338,7 @@ async function onValueChange(index: number, event: Event) {
   text-align: center;
   font-variant-numeric: tabular-nums;
 }
-.row-value__input:focus { outline: none; }
+.row-value__input:focus { border-color: var(--c-brand); }
 .row-value__x {
   display: grid;
   place-items: center;
@@ -442,7 +444,7 @@ async function onValueChange(index: number, event: Event) {
   text-align: center;
   line-height: 1.2;
 }
-.grid__cat-name:focus { outline: none; color: var(--c-brand); }
+.grid__cat-name:focus { color: var(--c-brand); }
 .grid__cat-name::placeholder { color: var(--c-text-faint); font-weight: 500; }
 .grid__cat-tools {
   display: flex;
@@ -502,7 +504,7 @@ async function onValueChange(index: number, event: Event) {
   padding: var(--sp-1);
 }
 .grid__value-input:hover { border-color: var(--c-line); }
-.grid__value-input:focus { outline: none; border-color: var(--c-brand); background: var(--c-sunken-focus); }
+.grid__value-input:focus { border-color: var(--c-brand); background: var(--c-sunken-focus); }
 .grid__value-x {
   display: grid;
   place-items: center;

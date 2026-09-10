@@ -1,8 +1,28 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import AppSettings from '@/components/AppSettings.vue'
 
 withDefaults(defineProps<{ compact?: boolean }>(), { compact: false })
+
+const route = useRoute()
+
+/**
+ * Aplikace má dvě pracovní plochy a hlavička je obě pojmenuje.
+ *
+ * Dřív tu stálo jen „Hrát". Do správy otázek se tím pádem chodilo bočními
+ * dveřmi, ze správy vedla ven jen značka a na „Hrát" se dalo kliknout
+ * i tehdy, když už jsi v ní stál, což neudělalo nic.
+ *
+ * Sekce, ve které člověk je, se nevykreslí jako odkaz. Zvýrazněný odkaz,
+ * který nikam nevede, je slib, co se nesplní.
+ */
+const SEKCE = [
+  { to: '/pojistuj', label: 'Hrát' },
+  { to: '/admin', label: 'Otázky' },
+] as const
+
+const aktivni = computed(() => route.path)
 
 const settingsOpen = ref(false)
 const isFullscreen = ref(false)
@@ -32,8 +52,10 @@ async function toggleFullscreen() {
     </RouterLink>
 
     <nav class="nav" aria-label="Hlavní">
-      <RouterLink to="/pojistuj" class="nav__link">Hrát</RouterLink>
-      <RouterLink to="/admin" class="nav__link">Otázky</RouterLink>
+      <template v-for="s in SEKCE" :key="s.to">
+        <span v-if="aktivni === s.to" class="nav__here" aria-current="page">{{ s.label }}</span>
+        <RouterLink v-else :to="s.to" class="nav__link">{{ s.label }}</RouterLink>
+      </template>
     </nav>
 
     <div class="tools">
@@ -121,7 +143,18 @@ async function toggleFullscreen() {
   transition: color var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out);
 }
 .nav__link:hover { color: var(--c-text); background: var(--c-surface); }
-.nav__link.router-link-active { color: var(--c-text); background: var(--c-surface-2); }
+
+/* Sekce, ve které stojíš. Stejná sazba jako odkaz vedle, ať řádek drží
+   rytmus, ale bez pozadí a bez ukazovátka: podtržení říká „tady jsi",
+   ne „sem klikni". */
+.nav__here {
+  padding: var(--sp-2) var(--sp-4);
+  color: var(--c-text);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  box-shadow: inset 0 -2px 0 var(--c-brand);
+  cursor: default;
+}
 
 .tools { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
 .tool {
@@ -141,7 +174,7 @@ async function toggleFullscreen() {
   /* Na mobilu je z odkazu vidět jen značka, sama o sobě moc úzká na prst. */
   .brand { min-height: 2.75rem; min-width: 2.75rem; }
   .tool { width: 2.75rem; height: 2.75rem; }
-  .nav__link { padding: var(--sp-3) var(--sp-4); }
+  .nav__link, .nav__here { padding: var(--sp-3) var(--sp-4); }
 }
 
 @media (max-width: 720px) {

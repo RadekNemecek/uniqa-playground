@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import type { GameRules, GameSetup, Pack } from '@/types'
 import { packs, packProgress, playableCategories } from '@/stores/packs'
 import { settings } from '@/stores/settings'
@@ -9,6 +10,8 @@ import UiButton from '@/components/ui/UiButton.vue'
 import UiField from '@/components/ui/UiField.vue'
 
 const emit = defineEmits<{ start: [pack: Pack, setup: GameSetup] }>()
+
+const route = useRoute()
 
 const SETUP_KEY = 'playground.setup.v1'
 const MAX_CATEGORIES = 6
@@ -41,8 +44,16 @@ function loadSaved(): SavedSetup | null {
 
 const saved = loadSaved()
 
-const packId = ref<string>(saved?.packId ?? '')
-const selected = ref<Set<string>>(new Set(saved?.categoryIds ?? []))
+/**
+ * Balíček z adresy má přednost před tím, co si příprava pamatuje.
+ *
+ * Tudy chodí „Vyzkoušet v hře" ze správy otázek: kdo si balíček zrovna
+ * upravil, chce zkoušet jeho, ne ten, se kterým se hrálo naposled.
+ */
+const fromQuery = typeof route.query.pack === 'string' ? route.query.pack : ''
+
+const packId = ref<string>(fromQuery || saved?.packId || '')
+const selected = ref<Set<string>>(new Set(fromQuery ? [] : (saved?.categoryIds ?? [])))
 const teams = ref(
   saved?.teams?.length
     ? saved.teams.map((t) => ({ name: t.name, color: t.color }))
@@ -65,6 +76,11 @@ const rules = ref<GameRules>({
 const wagerPicked = ref(saved?.wagerPicked ?? false)
 
 const pack = computed<Pack | undefined>(() => packs.packs.find((p) => p.id === packId.value))
+
+/** Do správy se chodí rovnou k vybranému balíčku, ne na jeho hledání. */
+const editLink = computed(() =>
+  packId.value ? { path: '/admin', query: { pack: packId.value } } : { path: '/admin' },
+)
 const usable = computed(() => (pack.value ? playableCategories(pack.value) : []))
 const incomplete = computed(() =>
   pack.value ? pack.value.categories.filter((c) => !usable.value.some((u) => u.id === c.id)) : [],
@@ -259,11 +275,19 @@ function start() {
     <div class="setup__grid">
       <!-- Balíček a kategorie ------------------------------------------- -->
       <section class="panel">
-        <h2 class="panel__title"><span class="panel__num">1</span> Balíček otázek</h2>
+        <div class="panel__head">
+          <h2 class="panel__title"><span class="panel__num">1</span> Balíček otázek</h2>
+          <!-- Zkratka k tomu balíčku, který se chystáš hrát, ne cesta do
+               správy. Tou je položka Otázky v hlavičce a ta vede vždycky
+               na seznam balíčků. -->
+          <RouterLink v-if="packId" :to="editLink" class="panel__new">
+            Upravit balíček
+          </RouterLink>
+        </div>
 
         <p v-if="packs.packs.length === 0" class="empty">
-          Zatím tu není žádný balíček. Založ ho v sekci
-          <RouterLink to="/admin">Otázky</RouterLink>.
+          Zatím tu není žádný balíček. Založíš ho ve
+          <RouterLink to="/admin">správě otázek</RouterLink>.
         </p>
 
         <div v-else class="pack" :class="{ 'pack--open': packOpen }">
@@ -573,6 +597,30 @@ function start() {
 }
 
 .panel__title { display: flex; align-items: center; gap: var(--sp-3); font-size: var(--fs-lg); }
+.panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+.panel__new {
+  flex: none;
+  padding: var(--sp-2) var(--sp-4);
+  border: 1px solid var(--c-brand);
+  border-radius: var(--r-md);
+  background: var(--c-brand);
+  color: var(--c-on-accent);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  text-decoration: none;
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+.panel__new:hover {
+  background: var(--c-brand-soft);
+  border-color: var(--c-brand-soft);
+}
 .panel__num {
   display: grid;
   place-items: center;
@@ -778,7 +826,7 @@ function start() {
   color: var(--c-text);
   font-size: var(--fs-md);
 }
-.team__name:focus { border-color: var(--c-brand); outline: none; }
+.team__name:focus { border-color: var(--c-brand); }
 .team__x {
   flex: none;
   width: 2rem;
@@ -969,5 +1017,6 @@ function start() {
   .swatch { width: 2.75rem; height: 2.75rem; }
   .segmented button { padding-block: var(--sp-3); }
   .chip { padding: var(--sp-3) var(--sp-4); }
+  .panel__new { min-height: 2.75rem; display: inline-grid; place-items: center; }
 }
 </style>

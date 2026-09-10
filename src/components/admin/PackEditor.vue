@@ -272,24 +272,35 @@ function onExport() {
         </span>
       </p>
 
-      <UiMenu label="Akce balíčku" v-slot="{ close }">
-        <RouterLink role="menuitem" to="/pojistuj" @click="close">Vyzkoušet v hře</RouterLink>
-        <button type="button" role="menuitem" @click="emit('duplicate'); close()">Duplikovat</button>
-        <button type="button" role="menuitem" @click="onExport(); close()">Exportovat JSON</button>
-        <hr />
-        <button type="button" role="menuitem" class="danger" @click="removePack(); close()">Smazat</button>
-      </UiMenu>
     </header>
 
     <div class="ed__ident">
-      <input
-        v-model="draft.name"
-        class="ed__name"
-        type="text"
-        maxlength="60"
-        aria-label="Název balíčku"
-        placeholder="Název balíčku"
-      />
+      <!-- Duplikovat, exportovat a smazat se týká tohohle balíčku, tak
+           stojí u jeho názvu. V horní liště visely nad ním vedle tlačítka
+           Zpět, kde vypadaly jako ovládání celé stránky. -->
+      <div class="ed__ident-row">
+        <input
+          v-model="draft.name"
+          class="ed__name"
+          type="text"
+          maxlength="60"
+          aria-label="Název balíčku"
+          placeholder="Název balíčku"
+        />
+        <UiMenu label="Akce balíčku" v-slot="{ close }">
+          <!-- S balíčkem v adrese. Bez něj odkaz otevřel přípravu s tím
+               balíčkem, se kterým se hrálo naposled, ne s tímhle. -->
+          <RouterLink
+            role="menuitem"
+            :to="{ path: '/pojistuj', query: { pack: draft.id } }"
+            @click="close"
+          >Vyzkoušet v hře</RouterLink>
+          <button type="button" role="menuitem" @click="emit('duplicate'); close()">Duplikovat</button>
+          <button type="button" role="menuitem" @click="onExport(); close()">Exportovat JSON</button>
+          <hr />
+          <button type="button" role="menuitem" class="danger" @click="removePack(); close()">Smazat</button>
+        </UiMenu>
+      </div>
       <input
         v-model="draft.description"
         class="ed__desc"
@@ -435,6 +446,12 @@ function onExport() {
 .ed__saved { display: inline-flex; align-items: center; gap: var(--sp-1); color: var(--c-ok); }
 
 .ed__ident { display: grid; gap: var(--sp-1); }
+.ed__ident-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+.ed__ident-row .ed__name { flex: 1 1 auto; min-width: 0; }
 .ed__name {
   border: 1px solid transparent;
   border-radius: var(--r-md);
@@ -459,7 +476,7 @@ function onExport() {
 }
 .ed__desc:focus { text-overflow: clip; }
 .ed__name:hover, .ed__desc:hover { border-color: var(--c-line); }
-.ed__name:focus, .ed__desc:focus { border-color: var(--c-brand); outline: none; background: var(--c-sunken-focus); }
+.ed__name:focus, .ed__desc:focus { border-color: var(--c-brand); background: var(--c-sunken-focus); }
 
 .ed__progress {
   display: flex;
