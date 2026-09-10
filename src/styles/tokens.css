@@ -58,7 +58,7 @@
   --c-ok-deep:      #17A06A;
   --c-bad:          #E89BAD;  /* chladnější než jiskra, aby se nepletly */
   --c-bad-deep:     #B4325A;
-  --c-dead:         #000A14;  /* políčko, které nikdo neuhodl */
+  --c-dead:         #000A14;  /* políčko Nepojištěno (nikdo neuhodl) */
 
   /* --- Stíny ------------------------------------------------------------- */
   --shadow-sm:   0 1px 2px rgba(0, 0, 0, 0.4);
@@ -68,11 +68,11 @@
   --c-scrim:     rgba(0, 8, 16, 0.76);
 
   /* --- Jiskra ------------------------------------------------------------ */
-  /* Používá se výhradně pro pole Nepojištěno!, protože je to jediný
+  /* Používá se výhradně pro pole Riziko!, protože je to jediný
      okamžik hry, který má být divoký. Po zrušení zlaté je to zároveň
      jediná teplá barva celého systému, takže jakmile se objeví jinde,
      přestane fungovat. --c-spark-deep je doslova červená, kterou UNIQA
-     dává na chyby: pole bez krytí je obarvené varovnou barvou značky. */
+     dává na chyby: rizikové pole je obarvené varovnou barvou značky. */
   --c-spark:      #FF8B70;  /* 6,7:1 na --c-base, tmavý text na ní 6,7:1 */
   --c-spark-mid:  #EE7154;  /* spodek přechodu, tmavý text na něm drží 5,2:1 */
   --c-spark-deep: #D71C4F;  /* UNIQA */

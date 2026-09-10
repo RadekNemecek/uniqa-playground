@@ -281,7 +281,7 @@ const packLabel = computed(() =>
                   '--team': t.team !== null ? `var(${teamColor(t.team).cssVar})` : undefined,
                 }"
               >
-                <template v-if="t.bonus">Nepojištěno!</template>
+                <template v-if="t.bonus">Riziko!</template>
                 <template v-else-if="t.team !== null">{{ teamBadge(t.team) }}</template>
                 <template v-else>{{ t.value }}</template>
               </span>
@@ -306,7 +306,7 @@ const packLabel = computed(() =>
         </h1>
         <p class="title__lead">
           Týmy si volí kategorii a bodovou hodnotu, ty odkrýváš otázky
-          a rozdáváš body. Až šest týmů, časomíra a pole Nepojištěno!
+          a rozdáváš body. Až šest týmů, časomíra a pole Riziko!
         </p>
       </div>
 

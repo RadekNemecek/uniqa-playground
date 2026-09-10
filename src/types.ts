@@ -58,7 +58,7 @@ export interface GameRules {
   steal: boolean
   /** Skóre se při odečtu nezastaví pod nulou. */
   floorZero: boolean
-  /** Počet polí Nepojištěno! na desce. */
+  /** Počet polí Riziko! na desce. */
   wagerCells: number
   /** Zvuková odezva. */
   sound: boolean
@@ -94,7 +94,7 @@ export interface GameState {
   questions: Record<string, Question>
   /** cellKey -> stav políčka. */
   cells: Record<string, CellState>
-  /** cellKey políček označených jako Nepojištěno! */
+  /** cellKey políček označených jako Riziko! */
   wagerCells: string[]
   teams: Team[]
   activeTeamIndex: number
@@ -107,7 +107,7 @@ export interface GameState {
   phase: GamePhase
   /** Otevřené políčko, pokud fáze není `board`. */
   openCell: string | null
-  /** Sázka u pole Nepojištěno! Null znamená běžné políčko. */
+  /** Sázka u pole Riziko! Null znamená běžné políčko. */
   wager: number | null
   startedAt: number
   history: HistoryEntry[]

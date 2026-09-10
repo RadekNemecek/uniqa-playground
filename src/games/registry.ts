@@ -13,7 +13,7 @@ export const GAMES: GameEntry[] = [
     title: 'Pojišťuj!',
     tagline: 'Vědomostní souboj týmů',
     description:
-      'Klasická deska kategorií a bodových hodnot. Jeden až šest týmů, vlastní otázky, časomíra a pole Nepojištěno!, kde tým před otázkou vsadí část svých bodů.',
+      'Klasická deska kategorií a bodových hodnot. Jeden až šest týmů, vlastní otázky, časomíra a pole Riziko!, kde tým před otázkou vsadí část svých bodů.',
     route: '/pojistuj',
   },
 ]

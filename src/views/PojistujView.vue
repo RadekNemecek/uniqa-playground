@@ -36,7 +36,7 @@ import { plural } from '@/lib/format'
 
 /** Obdélník dlaždice, ze které se otázka roztahuje. */
 const origin = ref<DOMRect | null>(null)
-/** Políčko Nepojištěno! čeká na potvrzení sázky. */
+/** Políčko Riziko! čeká na potvrzení sázky. */
 const pendingWager = ref<string | null>(null)
 
 const openCategoryName = computed(() => {
@@ -169,7 +169,7 @@ async function onRematch() {
 
         <GameBoard :game="game" @open="onOpenCell" />
 
-        <!-- Pole Nepojištěno, nejdřív sázka -------------------------------- -->
+        <!-- Pole Riziko, nejdřív sázka -------------------------------- -->
         <WagerDialog
         v-if="pendingWager && activeTeam"
         :team="activeTeam"

@@ -61,15 +61,15 @@ const pies = computed(() =>
       const cell = props.game.cells[cellKey(cat.id, value)]
       if (!cell) continue
       if (cell.status === 'won' && cell.teamId) {
-        // U pole Nepojištěno! platí vsazená částka, ne hodnota políčka.
+        // U pole Riziko! platí vsazená částka, ne hodnota políčka.
         // Tolik bodů z kategorie doopravdy odešlo.
         const gained = Math.max(0, cell.points ?? value)
         won.set(cell.teamId, (won.get(cell.teamId) ?? 0) + gained)
       } else {
         // Neuhodnuté i nezahrané políčko drží svou hodnotu ze žebříčku.
         // Na kruhu je to jeden neutrální díl: dva odstíny tmy by se na
-        // sedmdesáti pixelech stejně nerozeznaly a kolik otázek zůstalo
-        // bez odpovědi, stojí v řádku nad koláči.
+        // sedmdesáti pixelech stejně nerozeznaly a kolik otázek skončilo
+        // jako Nepojištěno, stojí v řádku nad koláči.
         rest += value
       }
     }
@@ -179,7 +179,7 @@ onMounted(() => {
           {{ game.packName }}
           · {{ count(Object.keys(game.cells).length, 'otázka', 'otázky', 'otázek') }}
           <template v-if="cellsLost()">
-            · {{ count(cellsLost(), 'políčko bez odpovědi', 'políčka bez odpovědi', 'políček bez odpovědi') }}
+            · {{ count(cellsLost(), 'Nepojištěno', 'Nepojištěno', 'Nepojištěno') }}
           </template>
         </p>
       </header>

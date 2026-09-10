@@ -20,7 +20,7 @@ const label = computed(() => {
   if (props.state.status === 'open') return `${props.categoryName}, ${props.value} bodů`
   if (props.state.status === 'won')
     return `${props.categoryName}, ${props.value} bodů, získal tým ${props.team?.name}`
-  return `${props.categoryName}, ${props.value} bodů, neuhodl nikdo`
+  return `${props.categoryName}, ${props.value} bodů, Nepojištěno`
 })
 
 function open(e: MouseEvent) {
@@ -47,9 +47,7 @@ function open(e: MouseEvent) {
     </span>
 
     <span v-else class="cell__lost" aria-hidden="true">
-      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-        <path d="M6 6l12 12M18 6L6 18" />
-      </svg>
+      <span class="cell__lostWord">Nepojištěno!</span>
     </span>
   </button>
 </template>
@@ -176,13 +174,32 @@ function open(e: MouseEvent) {
    kontrastu jako pro písmeno týmu; o hierarchii se stará velikost. */
 .cell__points { font-size: var(--fs-xs); font-weight: 700; }
 
-/* Neuhodnuté políčko naopak zhasne. Tady krytí vadit nemůže, křížek je
-   jen ozdoba stavu, ne údaj ke čtení, a proto je i skrytý před odečítačem. */
+/* Neuhodnuté políčko zhasne do --c-dead. Štítek je razítko, ne drobný
+   popis: z projektoru má sedět vedle písmene týmu. Opacity na celý
+   prvek nepoužíváme (stejný problém jako u vyhraných). --c-bad na
+   --c-dead: 9,2:1, chladnější než jiskra u Rizika, ať se nepletou. */
 .cell--lost {
-  opacity: 0.48;
-  filter: saturate(0.7);
   background: var(--c-dead);
-  color: #2A3252;
+  color: var(--c-bad);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 0 0 1px color-mix(in oklab, var(--c-bad) 22%, transparent),
+    0 2px 0 color-mix(in oklab, var(--c-tile-edge) 70%, transparent);
+}
+.cell__lost {
+  display: grid;
+  place-items: center;
+  max-width: 100%;
+  padding-inline: var(--sp-1);
+}
+.cell__lostWord {
+  font-family: var(--font-display);
+  font-size: calc(var(--fs-value) * 0.36);
+  font-weight: 900;
+  letter-spacing: 0.01em;
+  line-height: 1.05;
+  text-align: center;
+  white-space: nowrap;
 }
 
 @keyframes dealIn {

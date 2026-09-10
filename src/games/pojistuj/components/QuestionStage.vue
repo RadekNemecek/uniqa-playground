@@ -134,7 +134,7 @@ onBeforeUnmount(() => {
     <header class="stage__head">
       <div class="stage__id">
         <span class="stage__cat">{{ categoryName }}</span>
-        <span v-if="isWager" class="stage__wagerTag">Nepojištěno!</span>
+        <span v-if="isWager" class="stage__wagerTag">Riziko!</span>
       </div>
       <button type="button" class="stage__close" aria-label="Zavřít bez bodování" @click="emit('cancel')">
         &#215;

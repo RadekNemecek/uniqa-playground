@@ -201,7 +201,7 @@ export function selectCell(key: string): void {
   g.phase = 'question'
 }
 
-/** Potvrzení sázky u pole Nepojištěno! */
+/** Potvrzení sázky u pole Riziko! */
 export function setWager(amount: number): void {
   const g = store.current
   if (!g) return
@@ -273,7 +273,7 @@ export function resolveQuestion(winnerId: string | null): void {
     entry.label = 'Nikdo neuhodl'
   }
 
-  // Sázka se týmu na tahu odečte vždy, to je podstata pole Nepojištěno!.
+  // Sázka se týmu na tahu odečte vždy, to je podstata pole Riziko!.
   // Minusové body mimo sázku se uplatní jen podle nastavení.
   if (activeFailed && active && (wagered || g.rules.penalty)) {
     const taken = deduct(active, points, floorZero)

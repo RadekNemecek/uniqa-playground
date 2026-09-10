@@ -52,10 +52,10 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey, true))
 </script>
 
 <template>
-  <div ref="root" class="wager" role="dialog" aria-modal="true" aria-label="Pole Nepojištěno">
+  <div ref="root" class="wager" role="dialog" aria-modal="true" aria-label="Pole Riziko">
     <div class="wager__panel" :style="{ '--team': `var(${teamColor(team.color).cssVar})` }">
-      <p class="wager__kicker">tohle pole nekryje</p>
-      <h2 class="wager__title">Nepojištěno!</h2>
+      <p class="wager__kicker">tohle pole je rizikové</p>
+      <h2 class="wager__title">Riziko!</h2>
 
       <p class="wager__lead">
         <span class="wager__who">
@@ -122,7 +122,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey, true))
   animation: pop var(--dur-slow) var(--ease-back) both;
 }
 /* Ruční písmo, druhé ze tří povolených míst. Úřední rubrika nad slovem
-   Nepojištěno! by tu vtip zabila. */
+   Riziko! by tu vtip zabila. */
 .wager__kicker {
   font-family: var(--font-hand);
   font-weight: 500;

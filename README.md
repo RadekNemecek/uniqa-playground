@@ -2,7 +2,7 @@
 
 Interaktivní hry pro školení týmů. První hra je **Pojišťuj!**: deska
 kategorií a bodových hodnot, jeden až šest týmů, vlastní otázky, časomíra
-a pole **Nepojištěno!**, kde tým před otázkou vsadí část svých bodů. Běží
+a pole **Riziko!**, kde tým před otázkou vsadí část svých bodů. Běží
 jako statická webová aplikace, hostovaná na GitHub Pages.
 
 Projekt je stavěný tak, aby další hra byla přírůstek, ne přestavba: hry jsou
@@ -28,8 +28,9 @@ Při prvním spuštění se založí ukázkový balíček otázek.
 3. Na desce klikneš na políčko, zobrazí se otázka. Správnou odpověď
    neznáš, odhalíš ji dalším kliknutím nebo mezerníkem.
 4. Vyhodnotíš **Správně** nebo **Špatně**. Při správné odpovědi se políčko
-   obarví barvou týmu a body přiskočí, při špatné políčko zčerná.
-   Na poli **Nepojištěno!** si tým nejdřív vsadí, kolik bodů riskuje.
+   obarví barvou týmu a body přiskočí, při špatné se políčko označí
+   jako **Nepojištěno**. Na poli **Riziko!** si tým nejdřív vsadí, kolik
+   bodů riskuje.
 5. Když odpověděl jiný tým, použij pruh *Body přiznat jinému týmu*.
    Objeví se jen tehdy, když je v pravidlech zapnuté **Přebrání jiným týmem**.
 
@@ -72,9 +73,9 @@ i pro správu otázek: hraje se na projektoru a správa má vypadat jako
 součást hry, ne jako cizí nástroj.
 
 **Zlatá v systému není**, UNIQA žádnou nemá. Hodnoty na dlaždicích jsou
-bílé, akcent je modrý a jediná teplá barva patří poli **Nepojištěno!**
+bílé, akcent je modrý a jediná teplá barva patří poli **Riziko!**
 Jeho hrana je červená UNIQA, tedy barva, kterou pojišťovna dává na chyby.
-Pole bez krytí je obarvené vlastní varovnou barvou značky.
+Rizikové pole je obarvené vlastní varovnou barvou značky.
 
 ## Logo UNIQA
 

@@ -71,7 +71,7 @@ const rules = ref<GameRules>({
   sound: true,
 })
 
-/** Dokud si počet polí Nepojištěno! nezvolí moderátorka sama, drží se na
+/** Dokud si počet polí Riziko! nezvolí moderátorka sama, drží se na
  *  maximu, které deska unese. */
 const wagerPicked = ref(saved?.wagerPicked ?? false)
 
@@ -447,7 +447,7 @@ function start() {
         </UiField>
 
         <UiField
-          label="Pole Nepojištěno!"
+          label="Pole Riziko!"
           hint="Na těchto polích tým před otázkou vsadí část svých bodů."
         >
           <div class="segmented">
@@ -536,7 +536,7 @@ function start() {
           · {{ count(teams.length, 'tým', 'týmy', 'týmů') }}
           <template v-if="rules.timerSeconds"> · {{ rules.timerSeconds }}&nbsp;s</template>
           <template v-if="rules.wagerCells">
-            · {{ count(rules.wagerCells, 'Nepojištěno!', 'Nepojištěno!', 'Nepojištěno!') }}
+            · {{ count(rules.wagerCells, 'Riziko!', 'Riziko!', 'Riziko!') }}
           </template>
         </p>
       </div>

@@ -56,7 +56,7 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
 - **Hravost patří do hry a na rozcestník, ne do správy otázek.** Tam se
   pracuje, ozdoby by překážely. Ve hře je hmota dlaždic, pohyb a jiskra
   vítaná, protože z tabulky dělá herní desku.
-- **`--c-spark` je vyhrazená pro pole Nepojištěno!** Je to jediný divoký
+- **`--c-spark` je vyhrazená pro pole Riziko!** Je to jediný divoký
   okamžik hry a po zrušení zlaté zároveň jediná teplá barva systému.
   Jakmile se objeví i jinde, přestane fungovat. Má tři stupně, protože na
   `--c-spark-deep`, což je červená UNIQA, tmavý text neprojde: plochy
