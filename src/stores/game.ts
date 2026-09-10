@@ -273,6 +273,12 @@ export function resolveQuestion(winnerId: string | null): void {
     entry.label = 'Nikdo neuhodl'
   }
 
+  // Kdo otázku prohrál: tým na tahu, který neodpověděl správně.
+  // Platí i při přebrání, jinak by ve výsledcích chybělo Nepojištěno.
+  if (activeFailed && active) {
+    g.cells[key] = { ...g.cells[key], failedByTeamId: active.id }
+  }
+
   // Sázka se týmu na tahu odečte vždy, to je podstata pole Riziko!.
   // Minusové body mimo sázku se uplatní jen podle nastavení.
   if (activeFailed && active && (wagered || g.rules.penalty)) {

@@ -45,6 +45,8 @@ export interface CellState {
   status: CellStatus
   /** Tým, kterému se body připsaly. Jen u `won`. */
   teamId?: string
+  /** Tým na tahu, který otázku neuhodl. U `lost` i u `won` po přebrání. */
+  failedByTeamId?: string
   /** Kolik bodů políčko nakonec přineslo nebo vzalo. */
   points?: number
 }
