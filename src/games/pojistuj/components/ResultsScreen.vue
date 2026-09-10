@@ -36,48 +36,69 @@ interface PieSlice {
   from: number
   to: number
   team?: Team
-  cells: number
+  points: number
 }
 
-/** Koláč na kategorii: podíly týmů + prázdná políčka. */
+/**
+ * Koláč na kategorii: kolik bodů si z ní který tým odnesl.
+ *
+ * Váží se body, ne počet políček. Žebříček jde od 200 do 1000, takže dvě
+ * levná políčka nejsou totéž co jedno drahé; podle počtu by odznak přiznal
+ * kategorii týmu, který z ní vytěžil míň.
+ *
+ * Díly se musí sečíst do celého kruhu. `conic-gradient` poslední barvu
+ * roztáhne až do 360 stupňů, takže když díly skončí dřív, zbytek kruhu si
+ * vezme ten tým, který byl v pořadí poslední: kategorie se třemi pětinami
+ * pro jeden tým se kreslila jako jeho plný kruh.
+ */
 const pies = computed(() =>
   props.game.categories.map((cat) => {
-    const slices: Array<{ team?: Team; cells: number; color: string }> = props.game.teams.map(
-      (t) => {
-        let cells = 0
-        for (const value of props.game.ladder) {
-          const cell = props.game.cells[cellKey(cat.id, value)]
-          if (cell?.status === 'won' && cell.teamId === t.id) cells++
-        }
-        return {
-          team: t,
-          cells,
-          color: `var(${teamColor(t.color).cssVar})`,
-        }
-      },
-    )
+    const won = new Map<string, number>()
+    /** Body, které si z kategorie neodnesl nikdo. */
+    let rest = 0
 
-    const empty = props.game.ladder.filter((value) => {
+    for (const value of props.game.ladder) {
       const cell = props.game.cells[cellKey(cat.id, value)]
-      return cell?.status === 'lost'
-    }).length
-    if (empty > 0) {
-      slices.push({ cells: empty, color: 'var(--c-dead)' })
+      if (!cell) continue
+      if (cell.status === 'won' && cell.teamId) {
+        // U pole Nepojištěno! platí vsazená částka, ne hodnota políčka.
+        // Tolik bodů z kategorie doopravdy odešlo.
+        const gained = Math.max(0, cell.points ?? value)
+        won.set(cell.teamId, (won.get(cell.teamId) ?? 0) + gained)
+      } else {
+        // Neuhodnuté i nezahrané políčko drží svou hodnotu ze žebříčku.
+        // Na kruhu je to jeden neutrální díl: dva odstíny tmy by se na
+        // sedmdesáti pixelech stejně nerozeznaly a kolik otázek zůstalo
+        // bez odpovědi, stojí v řádku nad koláči.
+        rest += value
+      }
     }
 
-    const total = props.game.ladder.length || 1
+    const slices: Array<{ team?: Team; points: number; color: string }> = props.game.teams.map(
+      (t) => ({
+        team: t,
+        points: won.get(t.id) ?? 0,
+        color: `var(${teamColor(t.color).cssVar})`,
+      }),
+    )
+    if (rest > 0) {
+      slices.push({ points: rest, color: 'var(--c-sunken)' })
+    }
+
+    // Jmenovatel jde ze součtu dílů, takže kruh vždycky doběhne do 360.
+    const total = slices.reduce((sum, s) => sum + s.points, 0)
     let cursor = 0
     const painted: PieSlice[] = []
     for (const s of slices) {
-      if (s.cells <= 0) continue
+      if (s.points <= 0 || total === 0) continue
       const from = (cursor / total) * 360
-      cursor += s.cells
+      cursor += s.points
       const to = (cursor / total) * 360
       painted.push({ ...s, from, to })
     }
 
-    const best = Math.max(0, ...slices.filter((s) => s.team).map((s) => s.cells))
-    const champs = slices.filter((s) => s.team && s.cells === best && best > 0)
+    const best = Math.max(0, ...slices.filter((s) => s.team).map((s) => s.points))
+    const champs = slices.filter((s) => s.team && s.points === best && best > 0)
 
     const gradient =
       painted.length === 0
