@@ -31,17 +31,20 @@ Při prvním spuštění se založí ukázkový balíček otázek.
    obarví barvou týmu a body přiskočí, při špatné políčko zčerná.
    Na poli **Nepojištěno!** si tým nejdřív vsadí, kolik bodů riskuje.
 5. Když odpověděl jiný tým, použij pruh *Body přiznat jinému týmu*.
+   Objeví se jen tehdy, když je v pravidlech zapnuté **Přebrání jiným týmem**.
 
 ### Klávesnice
 
+Zkratky platí nad otevřenou otázkou. Po desce se chodí tabulátorem, políčka
+jsou obyčejná tlačítka.
+
 | klávesa | co dělá |
 |---|---|
-| šipky | pohyb po desce |
-| Enter | otevře políčko, potom potvrdí správnou odpověď |
-| mezerník | odhalí správnou odpověď |
-| 1 az 6 | přizná body danému týmu |
+| mezerník | odhalí odpověď, podruhé ji přizná týmu na tahu |
 | N nebo 0 | neuhodl nikdo |
+| 1 až 6 | přizná body danému týmu, pokud je zapnuté přebírání |
 | Esc | zavře políčko bez bodování |
+| ? | vypíše tenhle přehled přímo ve hře |
 
 Tlačítko **Zpět** vrátí poslední bodování včetně stavu políčka. Rozehraná hra
 přežije obnovení stránky i pád prohlížeče.
@@ -120,3 +123,8 @@ src/
   lib/              úložiště, Firebase, animace, zvuk, konfety
   styles/tokens.css jediné místo pro barvy, mezery, písma a časování
 ```
+
+## Autor
+
+Postavil [Radek Němeček](https://radeknemecek.cz/), weby, firemní aplikace
+a AI automatizace.

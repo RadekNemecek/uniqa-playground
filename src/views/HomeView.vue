@@ -294,7 +294,7 @@ const packLabel = computed(() =>
 
       <!-- Titulek --------------------------------------------------------- -->
       <div class="title">
-        <p class="title__kicker">vědomostní hra pro školení</p>
+        <p class="title__kicker">vědomostní hra pro týmy</p>
         <h1 ref="wordmark" class="wordmark" :class="{ 'wordmark--painted': gradientReady }" aria-label="Pojišťuj!">
           <span
             v-for="(ch, i) in letters"
@@ -334,6 +334,16 @@ const packLabel = computed(() =>
                jejího svolení, tak tu zatím stojí jen věta. Nenápadně,
                protože to není nabídka ani razítko. -->
           <span class="bottom__made">Vytvořeno pro tým UNIQA</span>
+          <span aria-hidden="true">&middot;</span>
+          <!-- Podpis autora. Jediné místo v aplikaci, kde odkaz ven je:
+               na desce ani ve správě otázek nemá co dělat. Odkaz je
+               obyčejný, bez rel="nofollow", aby ho vyhledávače počítaly. -->
+          <a
+            class="bottom__by"
+            href="https://radeknemecek.cz/"
+            target="_blank"
+            rel="noopener"
+          >Postavil Radek Němeček</a>
         </p>
       </div>
     </main>
@@ -591,6 +601,10 @@ const packLabel = computed(() =>
 }
 .bottom__meta a { color: var(--c-text-muted); font-weight: 600; text-decoration: none; }
 .bottom__made { color: var(--c-text-faint); }
+/* Podpis drží váhu okolního textu, ne odkazu vedle sebe. Má být k nalezení,
+   ne k přehlédnutí, a hlavně ne hlasitější než věta o UNIQA. */
+.bottom__meta a.bottom__by { color: var(--c-text-faint); font-weight: 500; }
+.bottom__meta a.bottom__by:hover { color: var(--c-text); }
 .bottom__meta a:hover { color: var(--c-text); text-decoration: underline; text-underline-offset: 0.25em; }
 
 @media (pointer: coarse) {

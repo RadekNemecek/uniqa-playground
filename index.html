@@ -11,13 +11,38 @@
     <meta name="description" content="Pojišťuj!: vědomostní hra pro školení týmů. Vlastní otázky, až šest týmů, časomíra." />
 
     <!-- Odkaz se sdílí v Teams a v mailu, tak ať není holý. Obrázek je
-         zatím čtvercová ikona aplikace. Široká karta 1200x630 chybí. -->
+         zatím čtvercová ikona aplikace. Široká karta 1200x630 chybí.
+
+         Adresy musí být absolutní. Náhled si nekreslí prohlížeč, ale server
+         Teamsů nebo pošty, a ten relativní cestu nemá k čemu vztáhnout:
+         karta by zůstala bez obrázku. Když se aplikace přestěhuje jinam,
+         mění se tyhle dva řádky. -->
     <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://radeknemecek.github.io/uniqa-playground/" />
     <meta property="og:title" content="Pojišťuj! Vědomostní hra pro školení týmů" />
     <meta property="og:description" content="Deska kategorií a bodových hodnot, až šest týmů, vlastní otázky, časomíra a pole Nepojištěno!, kde tým před otázkou vsadí část svých bodů." />
-    <meta property="og:image" content="icon-512.png" />
+    <meta property="og:image" content="https://radeknemecek.github.io/uniqa-playground/icon-512.png" />
     <meta property="og:locale" content="cs_CZ" />
     <meta name="twitter:card" content="summary" />
+
+    <!-- Autorství strojově. Aplikace je SPA, takže robot, který nespustí
+         skripty, vidí jen tenhle soubor. Odkaz v patě rozcestníku je pro
+         lidi, tohle je jeho protějšek. -->
+    <meta name="author" content="Radek Němeček" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Pojišťuj!",
+        "applicationCategory": "GameApplication",
+        "inLanguage": "cs",
+        "author": {
+          "@type": "Person",
+          "name": "Radek Němeček",
+          "url": "https://radeknemecek.cz/"
+        }
+      }
+    </script>
 
     <title>Playground</title>
   </head>
