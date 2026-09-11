@@ -493,7 +493,8 @@ const packLabel = computed(() =>
   font-weight: 500;
   font-size: clamp(var(--fs-lg), 0.8rem + 1.4vw, var(--fs-3xl));
   letter-spacing: 0.01em;
-  line-height: 1;
+  /* Caveat má hluboké spodní tahy; 1 je ořízne. */
+  line-height: 1.15;
   color: var(--c-brand);
   animation: rise var(--dur-slow) var(--ease-out) both;
 }
@@ -502,7 +503,7 @@ const packLabel = computed(() =>
   display: flex;
   /* Spodní mezera se počítá z velikosti písma, aby dotah „j" nikdy
      nedosedl na odstavec pod titulkem. */
-  margin: clamp(var(--sp-2), 1.6vh, var(--sp-4)) 0 0.1em;
+  margin: clamp(var(--sp-2), 1.6vh, var(--sp-4)) 0 0.05em;
   /* Titulek má nést celou stránku, proto se roztahuje podle šířky i výšky
      okna. Strop v obou osách brání tomu, aby na širokém nebo nízkém
      monitoru přerostl plochu. */
@@ -512,9 +513,11 @@ const packLabel = computed(() =>
      Strop v obou osách brání přerůstu na širokém či nízkém monitoru. */
   font-size: clamp(2.5rem, min(21vw, 34vh), 18rem);
   font-weight: 900;
-  /* Řádkování musí nechat místo dotahu, „Pojišťuj!" má dvě „j". Nahoře
-     si zase háčky nad „š" a „ť" berou víc místa než celé „Riskuj". */
-  line-height: 1.02;
+  /* Řádkování musí nechat místo dotahu: „Pojišťuj!" má dvě „j" a po
+     nasazení background-clip se vše mimo box písmene stane neviditelným.
+     1,02 nestačilo, tečky u „j" mizely. Nahoře si háčky nad „š" a „ť"
+     berou víc místa než celé „Riskuj". */
+  line-height: 1.18;
   /* Lato Black snese těsnější sazbu než Inter, ale ne o moc: při -0,03em
      se „ť" dotýkalo následujícího „u". */
   letter-spacing: -0.02em;
@@ -542,8 +545,10 @@ const packLabel = computed(() =>
     var(--c-text) 46%,
     color-mix(in oklab, var(--c-brand) 40%, var(--c-text)) 100%
   );
-  background-size: var(--gw, 100%) 100%;
-  background-position: var(--gx, 0) 0;
+  /* Výška pozadí musí pokrýt i dotahy; 100 % boxu nestačí, když glyf
+     přesahuje line-height. */
+  background-size: var(--gw, 100%) 1.2em;
+  background-position: var(--gx, 0) 50%;
   background-repeat: no-repeat;
   -webkit-background-clip: text;
   background-clip: text;

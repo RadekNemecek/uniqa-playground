@@ -146,8 +146,8 @@ onUnmounted(() => {
 
     <div class="results__content">
       <p class="results__cheer">
-        <template v-if="!isTie">gratulujeme!</template>
-        <template v-else>těsná hra</template>
+        <template v-if="!isTie">Gratulujeme!</template>
+        <template v-else>Těsná hra</template>
       </p>
 
       <section
@@ -281,7 +281,8 @@ onUnmounted(() => {
   font-family: var(--font-hand);
   font-weight: 500;
   font-size: clamp(var(--fs-2xl), 1rem + 2.2vw, 2.75rem);
-  line-height: 1;
+  /* Caveat má hluboké spodní tahy (g, y); 1 je ořízne. */
+  line-height: 1.15;
   color: var(--c-brand);
   margin: 0;
   animation: fadeUp var(--dur-slow) var(--ease-out) both;
