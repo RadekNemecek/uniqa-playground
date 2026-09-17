@@ -1,29 +1,18 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { useRoute } from 'vue-router'
 import AppSettings from '@/components/AppSettings.vue'
+import { GAMES } from '@/games/registry'
 
-withDefaults(defineProps<{ compact?: boolean }>(), { compact: false })
+const props = withDefaults(
+  defineProps<{
+    compact?: boolean
+    game?: string
+    section?: 'play' | 'questions'
+  }>(),
+  { compact: false, game: '', section: undefined },
+)
 
-const route = useRoute()
-
-/**
- * Aplikace má dvě pracovní plochy a hlavička je obě pojmenuje.
- *
- * Dřív tu stálo jen „Hrát". Do správy otázek se tím pádem chodilo bočními
- * dveřmi, ze správy vedla ven jen značka a na „Hrát" se dalo kliknout
- * i tehdy, když už jsi v ní stál, což neudělalo nic.
- *
- * Sekce, ve které člověk je, se nevykreslí jako odkaz. Zvýrazněný odkaz,
- * který nikam nevede, je slib, co se nesplní.
- */
-const SEKCE = [
-  { to: '/pojistuj', label: 'Hrát' },
-  { to: '/admin', label: 'Otázky' },
-] as const
-
-const aktivni = computed(() => route.path)
-
+const currentGame = computed(() => GAMES.find((entry) => entry.slug === props.game) ?? null)
 const settingsOpen = ref(false)
 const isFullscreen = ref(false)
 
@@ -37,26 +26,49 @@ async function toggleFullscreen() {
       isFullscreen.value = true
     }
   } catch {
-    /* prohlížeč to nemusí povolit, není to chyba hry */
+    /* Prohlížeč může celou obrazovku odmítnout. */
   }
 }
 </script>
 
 <template>
   <header class="head" :class="{ 'head--compact': compact }">
-    <RouterLink to="/" class="brand" aria-label="Playground, domů">
-      <span class="brand__mark" aria-hidden="true">
-        <span></span><span></span><span></span><span></span>
-      </span>
-      <span class="brand__name">Playground</span>
-    </RouterLink>
+    <div class="identity">
+      <RouterLink to="/" class="brand" aria-label="Playground, vybrat jinou hru">
+        <span class="brand__mark" aria-hidden="true">
+          <span></span><span></span><span></span><span></span>
+        </span>
+        <span class="brand__name">Playground</span>
+      </RouterLink>
 
-    <nav class="nav" aria-label="Hlavní">
-      <template v-for="s in SEKCE" :key="s.to">
-        <span v-if="aktivni === s.to" class="nav__here" aria-current="page">{{ s.label }}</span>
-        <RouterLink v-else :to="s.to" class="nav__link">{{ s.label }}</RouterLink>
+      <template v-if="currentGame">
+        <span class="identity__slash" aria-hidden="true"></span>
+        <RouterLink to="/" class="identity__game" title="Vybrat jinou hru">
+          {{ currentGame.title }}
+        </RouterLink>
       </template>
+    </div>
+
+    <nav v-if="currentGame" class="nav" :aria-label="`Navigace hry ${currentGame.title}`">
+      <RouterLink
+        :to="currentGame.route"
+        class="nav__item"
+        :class="{ 'nav__item--active': section === 'play' }"
+        :aria-current="section === 'play' ? 'page' : undefined"
+      >
+        Hrát
+      </RouterLink>
+      <RouterLink
+        :to="currentGame.editRoute"
+        class="nav__item"
+        :class="{ 'nav__item--active': section === 'questions' }"
+        :aria-current="section === 'questions' ? 'page' : undefined"
+      >
+        Otázky
+      </RouterLink>
     </nav>
+
+    <p v-else class="head__context">Vyber si hru</p>
 
     <div class="tools">
       <button type="button" class="tool" title="Celá obrazovka" aria-label="Celá obrazovka" @click="toggleFullscreen">
@@ -82,106 +94,90 @@ async function toggleFullscreen() {
 .head {
   position: relative;
   z-index: var(--z-header);
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  flex-wrap: wrap;
-  gap: var(--sp-2) var(--sp-5);
-  padding: var(--sp-4) var(--sp-5);
+  gap: var(--sp-4);
   width: min(100% - var(--sp-6), var(--page-max));
+  min-height: var(--header-h);
   margin-inline: auto;
+  padding-block: var(--sp-3);
 }
-.head--compact { padding-block: var(--sp-3); }
+.head--compact { min-height: var(--header-h-compact); padding-block: var(--sp-2); }
 
-.brand { display: inline-flex; align-items: center; gap: var(--sp-3); text-decoration: none; color: var(--c-text); }
+.identity { display: flex; align-items: center; min-width: 0; gap: var(--sp-3); }
+.brand { display: inline-flex; flex: none; align-items: center; gap: var(--sp-3); color: var(--c-text); text-decoration: none; }
 .brand__mark {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 2px;
-  width: 22px;
-  height: 22px;
+  gap: var(--mark-gap);
+  width: var(--mark-size);
+  height: var(--mark-size);
 }
-.brand__mark span {
-  border-radius: 2px;
-  /* Zhasnutá dlaždice se míchá ze značky a plochy, aby držela stejnou
-     váhu na bílé i na tmavě modré. Samotná --c-surface-3 by se ve světlé
-     vrstvě do bílé ztratila. */
-  background: color-mix(in oklab, var(--c-brand) 30%, var(--c-surface));
-  /* Zlatá dlaždice pomalu obchází mřížku dokola. Je to jediná ozdoba
-     v hlavičce a je schválně tak pomalá, aby si jí člověk všiml až
-     napodruhé a nerušila ho. */
-  animation: hop 9s steps(1, end) infinite;
-}
-.brand__mark span:nth-child(1) { animation-delay: 0s; }
-.brand__mark span:nth-child(2) { animation-delay: 2.25s; }
-.brand__mark span:nth-child(4) { animation-delay: 4.5s; }
-.brand__mark span:nth-child(3) { animation-delay: 6.75s; }
+.brand__mark span { border-radius: var(--r-xs); background: color-mix(in oklab, var(--c-brand) 30%, var(--c-surface)); }
+.brand__mark span:first-child { background: var(--c-brand); }
+.brand__name { font-weight: 900; font-size: var(--fs-lg); letter-spacing: -0.02em; }
 
-@keyframes hop {
-  0%, 25% { background: var(--c-brand); }
-  25.01%, 100% { background: color-mix(in oklab, var(--c-brand) 30%, var(--c-surface)); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .brand__mark span { animation: none; }
-  .brand__mark span:nth-child(1) { background: var(--c-brand); }
-}
-.brand__name {
-  font-family: var(--font-display);
+.identity__slash { width: var(--separator-w); height: var(--sp-6); background: var(--c-line); transform: rotate(18deg); }
+.identity__game {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--c-text-muted);
+  font-size: var(--fs-sm);
   font-weight: 700;
-  font-size: var(--fs-lg);
-  letter-spacing: -0.02em;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
+.identity__game:hover { color: var(--c-text); }
 
-.nav { display: flex; gap: var(--sp-1); margin-left: auto; }
-.nav__link {
-  padding: var(--sp-2) var(--sp-4);
+.nav {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--sp-1);
+  padding: var(--sp-1);
+  border: 1px solid var(--c-line-soft);
+  border-radius: var(--r-full);
+  background: color-mix(in oklab, var(--c-sunken) 74%, transparent);
+}
+.nav__item {
+  padding: var(--sp-2) var(--sp-5);
   border-radius: var(--r-full);
   color: var(--c-text-muted);
   font-size: var(--fs-sm);
-  font-weight: 600;
+  font-weight: 700;
+  text-align: center;
   text-decoration: none;
   transition: color var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out);
 }
-.nav__link:hover { color: var(--c-text); background: var(--c-surface); }
+.nav__item:hover { color: var(--c-text); }
+.nav__item--active { background: var(--c-surface-2); color: var(--c-text); box-shadow: var(--shadow-sm); }
 
-/* Sekce, ve které stojíš. Stejná sazba jako odkaz vedle, ať řádek drží
-   rytmus, ale bez pozadí a bez ukazovátka: podtržení říká „tady jsi",
-   ne „sem klikni". */
-.nav__here {
-  padding: var(--sp-2) var(--sp-4);
-  color: var(--c-text);
-  font-size: var(--fs-sm);
-  font-weight: 700;
-  box-shadow: inset 0 -2px 0 var(--c-brand);
-  cursor: default;
-}
-
-.tools { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.head__context { justify-self: center; color: var(--c-text-faint); font-size: var(--fs-sm); font-weight: 700; }
+.tools { display: flex; justify-self: end; align-items: center; gap: var(--sp-2); }
 .tool {
   display: grid;
   place-items: center;
-  width: 2.25rem;
-  height: 2.25rem;
+  width: var(--control-sm);
+  height: var(--control-sm);
   border: 1px solid var(--c-line);
   border-radius: var(--r-md);
-  background: transparent;
+  background: color-mix(in oklab, var(--c-surface) 55%, transparent);
   color: var(--c-text-muted);
-  transition: all var(--dur-fast) var(--ease-out);
+  transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out);
 }
 .tool:hover { color: var(--c-text); border-color: var(--c-surface-3); background: var(--c-surface); }
 
-@media (pointer: coarse) {
-  /* Na mobilu je z odkazu vidět jen značka, sama o sobě moc úzká na prst. */
-  .brand { min-height: 2.75rem; min-width: 2.75rem; }
-  .tool { width: 2.75rem; height: 2.75rem; }
-  .nav__link, .nav__here { padding: var(--sp-3) var(--sp-4); }
+@media (max-width: 760px) {
+  .head { grid-template-columns: minmax(0, 1fr) auto; }
+  .nav { grid-row: 2; grid-column: 1 / -1; width: 100%; }
+  .head__context { display: none; }
+  .brand__name { display: none; }
 }
 
-@media (max-width: 720px) {
-  .head { gap: var(--sp-2) var(--sp-3); }
-  .brand__name { display: none; }
-  .nav { margin-left: auto; }
-  /* Na úzké obrazovce se ovládání radši zalomí, než aby přetékalo. */
-  .tools { flex: 1 0 100%; justify-content: flex-end; }
+@media (pointer: coarse) {
+  .brand { min-height: var(--control-touch); min-width: var(--control-touch); }
+  .tool { width: var(--control-touch); height: var(--control-touch); }
+  .nav__item { min-height: var(--control-touch); padding-block: var(--sp-3); }
 }
 </style>

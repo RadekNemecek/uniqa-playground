@@ -7,12 +7,15 @@ import App from '@/App.vue'
 import { router } from '@/router'
 import { applySettings } from '@/stores/settings'
 import { restoreGame } from '@/stores/game'
+import { restoreQuizHost } from '@/stores/quizHost'
 import { setDb } from '@/lib/db'
+import { setSessionDbFactory } from '@/lib/sessionDb'
 import { isFirebaseConfigured } from '@/lib/firebase.config'
 import { toast } from '@/stores/ui'
 
 applySettings()
 restoreGame()
+restoreQuizHost()
 
 /**
  * Jak dlouho se čeká na Firestore, než se hra pustí bez něj.
@@ -40,6 +43,12 @@ async function boot(): Promise<void> {
     try {
       const { createFirestoreDb } = await import('@/lib/firebase')
       setDb(await Promise.race([createFirestoreDb(), timeout(BOOT_TIMEOUT)]))
+      // Živá session kvízu jede po stejném spojení. Bez Firestore se
+      // telefony nemají kam připojit a kvíz se promítá bez nich.
+      setSessionDbFactory(async () => {
+        const { createQuizSessionDb } = await import('@/lib/firebaseSession')
+        return createQuizSessionDb()
+      })
     } catch (e) {
       // Radši lokální režim než rozbitá hra deset minut před školením.
       offline = true

@@ -1,0 +1,447 @@
+<script setup lang="ts">
+import { computed, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import AppHeader from '@/components/AppHeader.vue'
+import AdminGate from '@/components/admin/AdminGate.vue'
+import QuizPackEditor from '@/games/kviz/components/QuizPackEditor.vue'
+import HostReport from '@/games/kviz/components/HostReport.vue'
+import UiButton from '@/components/ui/UiButton.vue'
+import UiMenu from '@/components/ui/UiMenu.vue'
+import { db } from '@/lib/db'
+import { downloadQuizPack, readQuizPackFile } from '@/games/kviz/packIo'
+import {
+  createDemoQuizPack,
+  createQuizPack,
+  deleteQuizPack,
+  duplicateQuizPack,
+  initQuizPacks,
+  quizPackProgress,
+  reloadQuizPacks,
+  quizPackReadiness,
+  quizPacks,
+  saveQuizPack,
+} from '@/stores/quizPacks'
+import { confirmAction, toast } from '@/stores/ui'
+import { count } from '@/lib/format'
+import { sessionDb } from '@/lib/sessionDb'
+import { downloadReport } from '@/games/kviz/report'
+import type { QuizReport, QuizReportSummary } from '@/games/kviz/types'
+
+const route = useRoute()
+const router = useRouter()
+
+const unlocked = ref(db().isUnlocked())
+const fileInput = ref<HTMLInputElement | null>(null)
+
+/* --- Uložená vyhodnocení -------------------------------------------------- */
+
+const reports = ref<QuizReportSummary[]>([])
+const openReport = ref<QuizReport | null>(null)
+
+/**
+ * Vyhodnocení leží jen ve sdílené databázi, protože bez telefonů žádné
+ * nevzniká. Bez ní se oddíl prostě neukáže.
+ */
+async function loadReports(): Promise<void> {
+  const conn = await sessionDb()
+  if (!conn) return
+  try {
+    reports.value = await conn.listReports()
+  } catch (e) {
+    console.error('Čtení vyhodnocení selhalo:', e)
+  }
+}
+
+async function showReport(reportId: string): Promise<void> {
+  const conn = await sessionDb()
+  if (!conn) return
+  openReport.value = await conn.loadReport(reportId)
+  if (!openReport.value) toast('Vyhodnocení se nepodařilo načíst.', 'bad')
+}
+
+async function removeReport(row: QuizReportSummary): Promise<void> {
+  const ok = await confirmAction({
+    title: 'Smazat vyhodnocení',
+    text: 'Smaže se i s přezdívkami účastníků. Vrátit to nejde.',
+    confirmLabel: 'Smazat',
+    danger: true,
+  })
+  if (!ok) return
+  const conn = await sessionDb()
+  if (!conn) return
+  await conn.deleteReport(row.id)
+  reports.value = reports.value.filter((r) => r.id !== row.id)
+  toast('Vyhodnocení smazáno.', 'ok')
+}
+
+function reportDate(at: number): string {
+  return new Intl.DateTimeFormat('cs-CZ', { dateStyle: 'medium', timeStyle: 'short' }).format(at)
+}
+
+/** Po odemčení se musí sledování nasadit znovu: listener, který
+ *  Firestore zamítl, už nic nepošle. */
+async function onUnlocked(): Promise<void> {
+  unlocked.value = true
+  await reloadQuizPacks()
+  await loadReports()
+}
+
+onMounted(() => {
+  void initQuizPacks()
+  void loadReports()
+})
+
+const currentId = computed(() => {
+  const raw = route.query.pack
+  return typeof raw === 'string' ? raw : ''
+})
+
+const current = computed(() => quizPacks.packs.find((p) => p.id === currentId.value))
+
+// Smazaný balíček nesmí nechat viset otevřený editor.
+watch([() => quizPacks.packs, currentId], () => {
+  if (!currentId.value) return
+  if (!quizPacks.packs.some((p) => p.id === currentId.value)) {
+    void router.replace({ name: 'kviz-otazky', query: {} })
+  }
+})
+
+function openPack(id: string): void {
+  void router.push({ name: 'kviz-otazky', query: { pack: id } })
+}
+
+function closePack(): void {
+  void router.push({ name: 'kviz-otazky', query: {} })
+}
+
+async function onCreate(): Promise<void> {
+  const pack = await createQuizPack()
+  toast('Balíček založen. Pojmenuj ho a vyplň otázky.', 'ok')
+  openPack(pack.id)
+}
+
+async function onCreateDemo(): Promise<void> {
+  const pack = await createDemoQuizPack()
+  toast('Ukázkový kvíz založen. Klidně ho přepiš vlastními otázkami.', 'ok')
+  openPack(pack.id)
+}
+
+async function onDuplicate(id?: string): Promise<void> {
+  const source = id ? quizPacks.packs.find((p) => p.id === id) : current.value
+  if (!source) return
+  const copy = await duplicateQuizPack(source)
+  toast('Kopie vytvořena.', 'ok')
+  openPack(copy.id)
+}
+
+async function onRemove(id?: string): Promise<void> {
+  const target = id ? quizPacks.packs.find((p) => p.id === id) : current.value
+  if (!target) return
+  const ok = await confirmAction({
+    title: 'Smazat balíček',
+    text: `Balíček „${target.name}" se smaže i se všemi otázkami. Vrátit to nejde.`,
+    confirmLabel: 'Smazat balíček',
+    danger: true,
+  })
+  if (!ok) return
+  const name = target.name
+  await deleteQuizPack(target.id)
+  toast(`Balíček „${name}" smazán.`, 'ok')
+  if (currentId.value === target.id) closePack()
+}
+
+function onExport(id: string): void {
+  const pack = quizPacks.packs.find((p) => p.id === id)
+  if (!pack) return
+  downloadQuizPack(pack)
+  toast('Balíček stažen jako JSON.', 'ok')
+}
+
+function triggerImport(): void {
+  fileInput.value?.click()
+}
+
+async function onImportFile(event: Event): Promise<void> {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file) return
+  try {
+    const pack = await readQuizPackFile(file)
+    await saveQuizPack(pack)
+    toast(`Balíček „${pack.name}" importován.`, 'ok')
+    openPack(pack.id)
+  } catch (e) {
+    toast(e instanceof Error ? e.message : 'Import se nepovedl.', 'bad')
+  }
+}
+
+function lock(): void {
+  db().lock()
+  unlocked.value = false
+  closePack()
+}
+
+function badge(id: string): { text: string; tone: 'ok' | 'warn' | 'muted' } {
+  const pack = quizPacks.packs.find((p) => p.id === id)
+  if (!pack) return { text: '', tone: 'muted' }
+  const readiness = quizPackReadiness(pack)
+  if (readiness === 'ready') return { text: 'Připravený', tone: 'ok' }
+  if (readiness === 'draft') return { text: 'Doplnit', tone: 'warn' }
+  return { text: 'Prázdný', tone: 'muted' }
+}
+</script>
+
+<template>
+  <div class="admin">
+    <template v-if="!unlocked">
+      <AppHeader game="kviz" section="questions" />
+      <AdminGate @unlocked="onUnlocked" />
+    </template>
+
+    <template v-else>
+      <AppHeader game="kviz" section="questions">
+        <template #tools>
+          <UiMenu label="Účet správy" v-slot="{ close }">
+            <button type="button" role="menuitem" @click="lock(); close()">Zamknout</button>
+          </UiMenu>
+        </template>
+      </AppHeader>
+
+      <main class="admin__body page">
+        <!-- Knihovna -------------------------------------------------------- -->
+        <section v-if="!current && !openReport" class="library">
+          <header class="library__head">
+            <div>
+              <p class="eyebrow">Na kolik to dáš?</p>
+              <h1 class="library__title">Balíčky otázek</h1>
+              <p class="library__lead">
+                Otázka, čtyři možnosti, jedna správná. Kvíz má vlastní balíčky,
+                s deskou Pojišťuj! se nemíchají.
+              </p>
+            </div>
+            <div class="library__actions">
+              <UiButton size="sm" variant="ghost" @click="triggerImport">Importovat</UiButton>
+              <UiButton size="sm" variant="brand" @click="onCreate">Nový</UiButton>
+            </div>
+          </header>
+
+          <input
+            ref="fileInput"
+            type="file"
+            accept="application/json,.json"
+            class="library__file"
+            @change="onImportFile"
+          />
+
+          <div v-if="quizPacks.packs.length === 0" class="library__blank">
+            <p class="library__empty">
+              Zatím tu není žádný balíček. Založ prázdný tlačítkem Nový, naimportuj JSON,
+              nebo si napřed prohlédni ukázku.
+            </p>
+            <UiButton size="sm" variant="ghost" @click="onCreateDemo">
+              Vytvořit ukázkový kvíz
+            </UiButton>
+          </div>
+
+          <ul v-else class="library__items">
+            <li v-for="p in quizPacks.packs" :key="p.id" class="card">
+              <button type="button" class="card__main" @click="openPack(p.id)">
+                <span class="card__name">{{ p.name }}</span>
+                <span class="card__badge" :class="`card__badge--${badge(p.id).tone}`">
+                  {{ badge(p.id).text }}
+                </span>
+                <span class="card__meta">
+                  {{ quizPackProgress(p).done }} z {{ quizPackProgress(p).total }} otázek hotových
+                </span>
+                <span class="card__bar" aria-hidden="true">
+                  <span
+                    :style="{
+                      width: `${quizPackProgress(p).total ? (quizPackProgress(p).done / quizPackProgress(p).total) * 100 : 0}%`,
+                    }"
+                  />
+                </span>
+              </button>
+
+              <UiMenu label="Akce balíčku" v-slot="{ close }">
+                <button type="button" role="menuitem" @click="openPack(p.id); close()">Otevřít</button>
+                <button type="button" role="menuitem" @click="onDuplicate(p.id); close()">Duplikovat</button>
+                <button type="button" role="menuitem" @click="onExport(p.id); close()">Exportovat JSON</button>
+                <hr />
+                <button type="button" role="menuitem" class="danger" @click="onRemove(p.id); close()">Smazat</button>
+              </UiMenu>
+            </li>
+          </ul>
+          <!-- Uložená vyhodnocení ------------------------------------------ -->
+          <section v-if="reports.length" class="reports">
+            <h2 class="reports__title">Vyhodnocení odehraných kvízů</h2>
+            <p class="reports__lead">
+              Jsou v nich přezdívky účastníků. Smaž je, až je nebudeš potřebovat.
+            </p>
+            <ul class="reports__items">
+              <li v-for="r in reports" :key="r.id">
+                <button type="button" class="rrow" @click="showReport(r.id)">
+                  <span class="rrow__date">{{ reportDate(r.finishedAt) }}</span>
+                  <span class="rrow__meta">
+                    {{ count(r.questionCount, 'otázka', 'otázky', 'otázek') }} ·
+                    {{ count(r.playerCount, 'hráč', 'hráči', 'hráčů') }} ·
+                    {{ r.packNames.join(', ') }}
+                  </span>
+                </button>
+                <button type="button" class="rrow__x" :aria-label="`Smazat vyhodnocení z ${reportDate(r.finishedAt)}`" @click="removeReport(r)">
+                  Smazat
+                </button>
+              </li>
+            </ul>
+          </section>
+        </section>
+
+        <!-- Otevřené vyhodnocení -------------------------------------------- -->
+        <div v-else-if="openReport" class="viewer">
+          <HostReport
+            :report="openReport"
+            @close="openReport = null"
+            @download="downloadReport(openReport)"
+          />
+        </div>
+
+        <!-- Editor ---------------------------------------------------------- -->
+        <QuizPackEditor
+          v-else-if="current"
+          :key="current.id"
+          :pack="current"
+          @back="closePack"
+          @duplicate="onDuplicate()"
+          @remove="onRemove()"
+        />
+      </main>
+    </template>
+  </div>
+</template>
+
+<style scoped>
+.admin { min-height: 100dvh; }
+.admin__body { padding-block: var(--sp-5) var(--sp-8); }
+
+.library { display: grid; gap: var(--sp-5); align-content: start; max-width: 40rem; }
+.library__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-4);
+}
+.library__title { font-size: var(--fs-2xl); margin-top: var(--sp-1); }
+.library__lead {
+  margin-top: var(--sp-1);
+  font-size: var(--fs-sm);
+  color: var(--c-text-muted);
+  line-height: var(--lh-body);
+  max-width: 28rem;
+}
+.library__actions { display: flex; gap: var(--sp-2); }
+.library__file { display: none; }
+.library__blank { display: grid; gap: var(--sp-3); max-width: 28rem; }
+.library__empty { font-size: var(--fs-sm); color: var(--c-text-faint); line-height: var(--lh-body); }
+
+.library__items { list-style: none; padding: 0; display: grid; gap: var(--sp-2); }
+
+.card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--sp-2);
+  align-items: stretch;
+  padding: var(--sp-2);
+  border: 1px solid var(--c-line);
+  border-radius: var(--r-lg);
+  background: var(--c-surface);
+  transition: border-color var(--dur-fast) var(--ease-out);
+}
+.card:hover { border-color: var(--c-surface-3); }
+
+.card__main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'name badge'
+    'meta meta'
+    'bar bar';
+  gap: var(--sp-1) var(--sp-3);
+  text-align: left;
+  padding: var(--sp-2) var(--sp-3);
+  border: 0;
+  border-radius: var(--r-md);
+  background: transparent;
+  color: var(--c-text);
+}
+.card__main:hover { background: color-mix(in oklab, var(--c-brand) 7%, transparent); }
+.card__name { grid-area: name; font-weight: 700; font-size: var(--fs-md); }
+.card__badge {
+  grid-area: badge;
+  align-self: start;
+  padding: var(--sp-1) var(--sp-2);
+  border-radius: var(--r-full);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  background: var(--c-surface-2);
+  color: var(--c-text-faint);
+}
+.card__badge--ok { background: color-mix(in oklab, var(--c-ok) 22%, transparent); color: var(--c-ok); }
+.card__badge--warn { background: color-mix(in oklab, var(--c-brand) 18%, transparent); color: var(--c-brand); }
+.card__meta { grid-area: meta; font-size: var(--fs-xs); color: var(--c-text-faint); }
+.card__bar {
+  grid-area: bar;
+  display: block;
+  height: 3px;
+  border-radius: var(--r-full);
+  background: var(--c-sunken);
+  overflow: hidden;
+  margin-top: var(--sp-1);
+}
+.card__bar span {
+  display: block;
+  height: 100%;
+  background: var(--c-brand);
+  transition: width var(--dur-base) var(--ease-out);
+}
+
+/* Uložená vyhodnocení ------------------------------------------------------ */
+.reports { display: grid; gap: var(--sp-2); margin-top: var(--sp-4); padding-top: var(--sp-5); border-top: 1px solid var(--c-line-soft); }
+.reports__title { font-size: var(--fs-lg); }
+.reports__lead { font-size: var(--fs-xs); color: var(--c-text-faint); line-height: var(--lh-body); }
+.reports__items { list-style: none; padding: 0; display: grid; gap: var(--sp-2); margin-top: var(--sp-2); }
+.reports__items li { display: flex; align-items: center; gap: var(--sp-2); }
+.rrow {
+  flex: 1;
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--c-line);
+  border-radius: var(--r-lg);
+  background: var(--c-surface);
+  color: var(--c-text);
+  text-align: left;
+  transition: border-color var(--dur-fast) var(--ease-out);
+}
+.rrow:hover { border-color: var(--c-surface-3); }
+.rrow__date { font-weight: 700; }
+.rrow__meta { font-size: var(--fs-xs); color: var(--c-text-faint); overflow-wrap: anywhere; }
+.rrow__x {
+  flex: none;
+  padding: var(--sp-2) var(--sp-3);
+  border: 1px solid var(--c-line);
+  border-radius: var(--r-md);
+  background: transparent;
+  color: var(--c-text-faint);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+}
+.rrow__x:hover { color: var(--c-bad); border-color: color-mix(in oklab, var(--c-bad) 45%, transparent); }
+
+.viewer { height: min(80vh, 50rem); }
+
+@media (pointer: coarse) {
+  .rrow__x { min-height: 44px; }
+}
+</style>

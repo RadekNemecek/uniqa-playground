@@ -1,672 +1,506 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import AppHeader from '@/components/AppHeader.vue'
-import { endGame, hasGame, game } from '@/stores/game'
-import { packs } from '@/stores/packs'
+import { game, hasGame } from '@/stores/game'
+import { hasQuiz, quiz } from '@/stores/quizHost'
 import { count } from '@/lib/format'
-import { teamBadge, teamColor } from '@/lib/teams'
-import { prefersReducedMotion } from '@/lib/motion'
-import { confirmAction } from '@/stores/ui'
+import { GAMES, type GameEntry } from '@/games/registry'
+import { hasSessionDb } from '@/lib/sessionDb'
 
 const router = useRouter()
 
-async function startFresh() {
-  if (hasGame.value) {
-    const ok = await confirmAction({
-      title: 'Nová hra',
-      text: 'Rozehraná hra se ukončí a otevře se příprava nové.',
-      confirmLabel: 'Nová hra',
-      danger: true,
-    })
-    if (!ok) return
-    endGame()
+interface GameCard {
+  entry: GameEntry
+  resume: string | null
+  warn: string | null
+}
+
+function resumeLabel(entry: GameEntry): string | null {
+  if (entry.slug === 'pojistuj' && hasGame.value && game.value) {
+    return `${game.value.packName} · ${count(game.value.teams.length, 'tým', 'týmy', 'týmů')}`
   }
-  void router.push('/pojistuj')
-}
 
-/* --- Studiová stěna v pozadí ---------------------------------------------
-   Deska vyplňuje celou plochu za titulkem, natočená a ztlumená. Sama se
-   pomalu hraje a světlo chodí za políčkem, se kterým se zrovna něco děje.
-   Uprostřed ji tlumí vinětace, aby text držel kontrast. */
-
-const LADDER = [200, 400, 600, 800, 1000, 1200]
-const TEAMS = 3
-
-interface Tile {
-  id: number
-  row: number
-  col: number
-  value: number
-  team: number | null
-  bonus: boolean
-  flipping: boolean
-}
-
-/**
- * Dlaždice mají pevný tvar, mění se jejich počet.
- *
- * Původně měla mřížka pevný počet sloupců a řad, takže se na užším okně
- * dlaždice zúžily do stojatých obdélníků. Rozměr se teď odvozuje z úhlopříčky
- * okna, poměr stran zůstává stejný a do plochy se vejde tolik dlaždic,
- * kolik jich je potřeba.
- */
-const grid = reactive({ cols: 0, rows: 0, tile: 0, gap: 0 })
-const tiles = reactive<Tile[]>([])
-
-const RATIO = 1.6
-/** Kolik plochy stěna přesahuje přes okno, viz odsazení .wall__space. */
-const OVERSCAN_X = 1.24
-const OVERSCAN_Y = 1.32
-
-function layout(): void {
-  const diagonal = Math.hypot(window.innerWidth, window.innerHeight)
-  const tile = Math.round(Math.min(Math.max(190, diagonal * 0.155), 340))
-  const gap = Math.max(8, Math.round(tile * 0.06))
-  const cols = Math.max(4, Math.ceil((window.innerWidth * OVERSCAN_X + gap) / (tile + gap)))
-  const rows = Math.max(3, Math.ceil((window.innerHeight * OVERSCAN_Y + gap) / (tile / RATIO + gap)))
-
-  if (cols === grid.cols && rows === grid.rows && tile === grid.tile) return
-  grid.cols = cols
-  grid.rows = rows
-  grid.tile = tile
-  grid.gap = gap
-  rebuild()
-}
-
-/** Přestaví mřížku a zachová stav políček, která zůstala na svém místě. */
-function rebuild(): void {
-  const next: Tile[] = []
-  for (let row = 0; row < grid.rows; row++) {
-    for (let col = 0; col < grid.cols; col++) {
-      const kept = tiles.find((t) => t.row === row && t.col === col)
-      next.push(
-        kept ?? {
-          id: 0,
-          row,
-          col,
-          value: LADDER[row % LADDER.length]!,
-          team: null,
-          bonus: false,
-          flipping: false,
-        },
-      )
-    }
+  if (entry.slug === 'kviz' && hasQuiz.value && quiz.value) {
+    const state = quiz.value
+    if (state.phase === 'lobby') return `Čekárna · ${count(state.questions.length, 'otázka', 'otázky', 'otázek')}`
+    if (state.phase === 'final') return 'Výsledky poslední hry'
+    return `Otázka ${Math.min(state.index + 1, state.questions.length)} z ${state.questions.length}`
   }
-  for (const t of next) {
-    t.id = t.row * grid.cols + t.col
-    t.value = LADDER[t.row % LADDER.length]!
-    t.bonus = false
-  }
-  const bonus = next.find((t) => t.row === 1 && t.col === Math.max(0, grid.cols - 3))
-  if (bonus) {
-    bonus.bonus = true
-    bonus.team = null
-  }
-  tiles.splice(0, tiles.length, ...next)
+
+  return null
 }
 
-const playable = computed(() => tiles.filter((t) => !t.bonus))
-
-/* --- Světlo chodí za děním ------------------------------------------------ */
-const spot = reactive({ x: 50, y: 45 })
-
-/* --- Deska se hraje sama --------------------------------------------------- */
-let timer = 0
-let nextTeam = 0
-
-function flip(tile: Tile, change: () => void): void {
-  spot.x = ((tile.col + 0.5) / grid.cols) * 100
-  spot.y = ((tile.row + 0.5) / grid.rows) * 100
-  tile.flipping = true
-  window.setTimeout(() => {
-    change()
-    tile.flipping = false
-  }, 200)
-}
-
-function tick(): void {
-  const claimed = playable.value.filter((t) => t.team !== null)
-  const free = playable.value.filter((t) => t.team === null)
-
-  // Stěna nesmí zčernat celá, jinak přestane být čitelná jako deska.
-  const shouldClaim = claimed.length < Math.max(6, Math.round(playable.value.length * 0.12)) && free.length > 0
-  const pool = shouldClaim ? free : claimed
-  const tile = pool[Math.floor(Math.random() * pool.length)]
-  if (!tile) return
-
-  flip(tile, () => {
-    if (shouldClaim) {
-      tile.team = nextTeam % TEAMS
-      nextTeam++
-    } else {
-      tile.team = null
-    }
-  })
-}
-
-/* --- Naklonění za kurzorem ------------------------------------------------- */
-const tilt = reactive({ x: 0, y: 0 })
-let raf = 0
-
-function onPointer(e: PointerEvent): void {
-  if (prefersReducedMotion()) return
-  cancelAnimationFrame(raf)
-  raf = requestAnimationFrame(() => {
-    tilt.x = (e.clientY / window.innerHeight - 0.5) * -3
-    tilt.y = (e.clientX / window.innerWidth - 0.5) * 5
-  })
-}
-
-const wallStyle = computed(() => ({
-  transform: `rotateX(calc(9deg + ${tilt.x}deg)) rotateY(calc(-7deg + ${tilt.y}deg)) scale(1.04)`,
-}))
-const spotStyle = computed(() => ({ left: `${spot.x}%`, top: `${spot.y}%` }))
-
-/* --- Životní cyklus -------------------------------------------------------- */
-const started = ref(false)
-
-function start(): void {
-  if (prefersReducedMotion() || timer) return
-  timer = window.setInterval(() => {
-    if (document.visibilityState === 'visible') tick()
-  }, 1900)
-}
-
-function stop(): void {
-  window.clearInterval(timer)
-  timer = 0
-}
-
-function onVisibility(): void {
-  if (document.visibilityState === 'hidden') stop()
-  else if (started.value) start()
-}
-
-onMounted(() => {
-  // Až po načtení písma, jinak by odskoky písmen seděly na náhradní řez.
-  layout()
-  void document.fonts.ready.then(paintWordmark)
-  window.addEventListener('resize', onResize)
-  window.setTimeout(() => {
-    started.value = true
-    start()
-  }, 1800)
-  document.addEventListener('visibilitychange', onVisibility)
-  window.addEventListener('pointermove', onPointer, { passive: true })
-})
-
-onBeforeUnmount(() => {
-  stop()
-  cancelAnimationFrame(raf)
-  window.clearTimeout(resizeTimer)
-  window.removeEventListener('resize', onResize)
-  document.removeEventListener('visibilitychange', onVisibility)
-  window.removeEventListener('pointermove', onPointer)
-})
-
-/** Titulek se skládá po písmenech, každé se otočí jako dlaždice na desce. */
-const letters = [...'Pojišťuj!']
-
-/**
- * Přechod přes celé slovo, ne přes každé písmeno.
- *
- * Písmena musí být samostatné prvky kvůli otáčení, takže každé z nich má
- * vlastní pozadí. Aby dohromady daly jeden spojitý přechod, dostane každé
- * pozadí šířku celého nápisu a posune se o svůj vlastní odskok. Přechod
- * na rodiči by kvůli transformaci písmen nesedl.
- */
-const wordmark = ref<HTMLElement | null>(null)
-const gradientReady = ref(false)
-
-function paintWordmark(): void {
-  const el = wordmark.value
-  if (!el || el.offsetWidth === 0) return
-  // offsetLeft, ne getBoundingClientRect: písmena se při nástupu otáčejí
-  // a jejich vykreslený obdélník je kvůli perspektivě posunutý. Odskok
-  // musí vycházet z rozvržení, ne z toho, kde zrovna jsou.
-  for (const letter of el.querySelectorAll<HTMLElement>('.wordmark__l')) {
-    letter.style.setProperty('--gw', `${el.offsetWidth}px`)
-    letter.style.setProperty('--gx', `${el.offsetLeft - letter.offsetLeft}px`)
-  }
-  gradientReady.value = true
-}
-
-let resizeTimer = 0
-function onResize(): void {
-  window.clearTimeout(resizeTimer)
-  resizeTimer = window.setTimeout(() => {
-    layout()
-    paintWordmark()
-  }, 140)
-}
-
-const packLabel = computed(() =>
-  packs.packs.length
-    ? `${count(packs.packs.length, 'balíček', 'balíčky', 'balíčků')} otázek připraveno`
-    : 'Zatím bez otázek',
+const cards = computed<GameCard[]>(() =>
+  GAMES.map((entry) => ({
+    entry,
+    resume: resumeLabel(entry),
+    warn:
+      entry.needsShared && !hasSessionDb()
+        ? 'Telefony se teď nepřipojí. Hru můžeš dál vést jen z plátna.'
+        : null,
+  })),
 )
+
+function open(entry: GameEntry): void {
+  void router.push(entry.route)
+}
 </script>
 
 <template>
   <div class="home">
     <AppHeader />
 
-    <main class="hero">
-      <!-- Deska v pozadí ------------------------------------------------- -->
-      <div class="wall" aria-hidden="true">
-        <div class="wall__x">
-          <div class="wall__space">
-            <span class="wall__spot" :style="spotStyle"></span>
-            <div
-              class="wall__grid"
-              :style="{
-                ...wallStyle,
-                '--cols': grid.cols,
-                '--tile': `${grid.tile}px`,
-                '--gap': `${grid.gap}px`,
-              }"
-            >
-              <span
-                v-for="t in tiles"
-                :key="t.id"
-                class="tile"
-                :class="{
-                  'tile--team': t.team !== null,
-                  'tile--bonus': t.bonus,
-                  'tile--flip': t.flipping,
-                }"
-                :style="{
-                  '--d': t.row + t.col,
-                  '--team': t.team !== null ? `var(${teamColor(t.team).cssVar})` : undefined,
-                }"
-              >
-                <template v-if="t.bonus">Riziko!</template>
-                <template v-else-if="t.team !== null">{{ teamBadge(t.team) }}</template>
-                <template v-else>{{ t.value }}</template>
-              </span>
-            </div>
-          </div>
+    <main>
+      <section class="hero page" aria-labelledby="home-title">
+        <div class="hero__copy">
+          <p class="hero__kicker">Školení, do kterého se zapojí všichni</p>
+          <h1 id="home-title" class="hero__title">Co si dnes zahrajete?</h1>
         </div>
-      </div>
 
-      <div class="vignette" aria-hidden="true"></div>
+        <div class="playfield" aria-hidden="true">
+          <div class="playfield__ring"></div>
+          <span class="playfield__orbit playfield__orbit--score">
+            <span class="playfield__token playfield__token--score">400</span>
+          </span>
+          <span class="playfield__orbit playfield__orbit--team">
+            <span class="playfield__token playfield__token--team">A</span>
+          </span>
+          <span class="playfield__orbit playfield__orbit--shape">
+            <span class="playfield__token playfield__token--shape">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 3 22 20H2z" />
+              </svg>
+            </span>
+          </span>
+          <span class="playfield__orbit playfield__orbit--answer">
+            <span class="playfield__token playfield__token--answer">B</span>
+          </span>
+          <span class="playfield__core">
+            <strong>Hrajte</strong>
+            <small>společně</small>
+          </span>
+        </div>
+      </section>
 
-      <!-- Titulek --------------------------------------------------------- -->
-      <div class="title">
-        <p class="title__kicker">vědomostní hra pro týmy</p>
-        <h1 ref="wordmark" class="wordmark" :class="{ 'wordmark--painted': gradientReady }" aria-label="Pojišťuj!">
-          <span
-            v-for="(ch, i) in letters"
-            :key="i"
-            class="wordmark__l"
-            :style="{ '--n': i }"
-            aria-hidden="true"
-          >{{ ch }}</span>
-        </h1>
-        <p class="title__lead">
-          Týmy si volí kategorii a bodovou hodnotu, ty odkrýváš otázky
-          a rozdáváš body. Až šest týmů, časomíra a pole Riziko!
-        </p>
-      </div>
+      <section class="choice page" aria-label="Vyber hru">
+        <ul class="games">
+          <li
+            v-for="(card, index) in cards"
+            :key="card.entry.slug"
+            class="game-card"
+            :class="`game-card--${card.entry.slug}`"
+          >
+            <div class="game-card__preview" aria-hidden="true">
+              <template v-if="card.entry.slug === 'pojistuj'">
+                <div class="mini-board">
+                  <span class="mini-board__category">Majetek</span>
+                  <span class="mini-board__category">Život</span>
+                  <span class="mini-board__category">Auto</span>
+                  <template v-for="value in [200, 400, 600]" :key="value">
+                    <span v-for="column in 3" :key="`${value}-${column}`" class="mini-board__tile">
+                      {{ value }}
+                    </span>
+                  </template>
+                </div>
+                <span class="preview-label">Týmy si volí pole</span>
+              </template>
 
-      <!-- Spodní lišta ---------------------------------------------------- -->
-      <div class="bottom">
-        <RouterLink v-if="hasGame && game" to="/pojistuj" class="resume">
-          <span class="resume__dot" aria-hidden="true"></span>
-          Pokračovat v rozehrané hře: {{ game.packName }},
-          {{ count(game.teams.length, 'tým', 'týmy', 'týmů') }}
-        </RouterLink>
+              <template v-else>
+                <div class="mini-quiz">
+                  <div class="mini-quiz__top">
+                    <span>Otázka 7 z 10</span>
+                    <span class="mini-quiz__time">14 s</span>
+                  </div>
+                  <p>Která odpověď platí?</p>
+                  <div class="mini-quiz__options">
+                    <span class="mini-option mini-option--a">A</span>
+                    <span class="mini-option mini-option--b">B</span>
+                    <span class="mini-option mini-option--c">C</span>
+                    <span class="mini-option mini-option--d">D</span>
+                  </div>
+                </div>
+                <span class="preview-label">Každý odpovídá za sebe</span>
+              </template>
+            </div>
 
-        <button type="button" class="cta" @click="startFresh">
-          {{ hasGame ? 'Nová hra' : 'Spustit hru' }}
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
-            <path d="M5 12h13M12 5l7 7-7 7" />
-          </svg>
-        </button>
+            <div class="game-card__body">
+              <div class="game-card__index">0{{ index + 1 }}</div>
+              <div class="game-card__heading">
+                <p class="game-card__tagline">{{ card.entry.tagline }}</p>
+                <h3>{{ card.entry.title }}</h3>
+              </div>
+              <p class="game-card__description">{{ card.entry.description }}</p>
 
-        <p class="bottom__meta">
-          <RouterLink to="/admin">Připravit otázky</RouterLink>
-          <span aria-hidden="true">&middot;</span>
-          <span>{{ packLabel }}</span>
-          <span aria-hidden="true">&middot;</span>
-          <!-- Přiznání ke značce bez loga. Logo UNIQA se nesmí použít bez
-               jejího svolení, tak tu zatím stojí jen věta. Nenápadně,
-               protože to není nabídka ani razítko. -->
-          <span class="bottom__made">Vytvořeno pro tým UNIQA</span>
-          <span aria-hidden="true">&middot;</span>
-          <!-- Podpis autora. Jediné místo v aplikaci, kde odkaz ven je:
-               na desce ani ve správě otázek nemá co dělat. Odkaz je
-               obyčejný, bez rel="nofollow", aby ho vyhledávače počítaly. -->
-          <a
-            class="bottom__by"
-            href="https://radeknemecek.cz/"
-            target="_blank"
-            rel="noopener"
-          >Postavil Radek Němeček</a>
-        </p>
-      </div>
+              <div class="game-card__meta">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <rect x="3" y="4" width="18" height="14" rx="2" />
+                  <path d="M8 22h8M12 18v4" />
+                </svg>
+                {{ card.entry.needs }}
+              </div>
+
+              <p v-if="card.warn" class="game-card__warn">{{ card.warn }}</p>
+
+              <div class="game-card__actions">
+                <button type="button" class="game-card__play" @click="open(card.entry)">
+                  {{ card.resume ? 'Pokračovat' : 'Připravit hru' }}
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+                    <path d="M5 12h13M12 5l7 7-7 7" />
+                  </svg>
+                </button>
+                <RouterLink :to="card.entry.editRoute" class="game-card__questions">
+                  Spravovat otázky
+                </RouterLink>
+              </div>
+
+              <p v-if="card.resume" class="game-card__resume">
+                <span aria-hidden="true"></span>
+                Rozehráno: {{ card.resume }}
+              </p>
+            </div>
+          </li>
+        </ul>
+      </section>
     </main>
   </div>
 </template>
 
 <style scoped>
-.home { min-height: 100dvh; display: flex; flex-direction: column; }
-
-.hero {
+.home {
   position: relative;
-  flex: 1;
-  display: grid;
-  grid-template-rows: 1fr auto;
-  justify-items: center;
-  padding: var(--sp-4) var(--sp-5) var(--sp-6);
-  isolation: isolate;
+  min-height: 100dvh;
+  overflow: clip;
+  background:
+    radial-gradient(circle at 82% 8%, color-mix(in oklab, var(--c-brand) 16%, transparent), transparent 30%),
+    radial-gradient(circle at 10% 38%, color-mix(in oklab, var(--c-team-2) 8%, transparent), transparent 34%);
 }
 
-/* Stěna --------------------------------------------------------------------
-   Vyplňuje celou obrazovku včetně plochy pod záhlavím. Je fixovaná, takže
-   nezasahuje do rozvržení. Mřížka schválně přesahuje přes okraje okna, aby
-   po natočení do prostoru nikde nezbyl prázdný pruh. Okraje se nemaskují,
-   deska má obrazovku pokrýt celou, tmu na text dělá vinětace. */
-.wall {
-  position: fixed;
-  inset: 0;
-  z-index: -2;
-  pointer-events: none;
-  /* Deska je symbol, ne obsah. Ztlumená a lehce odbarvená ustoupí do
-     pozadí a nepere se s titulkem. */
-  opacity: 0.42;
-  filter: saturate(0.85);
-}
-
-.wall__space {
+.home::before {
+  content: '';
   position: absolute;
-  inset: -16% -12%;
-  perspective: 1700px;
-  perspective-origin: 50% 42%;
-}
-
-.wall__grid {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  /* Pevná šířka sloupce a výška řady odvozená z poměru stran. Díky tomu
-     má dlaždice pořád stejný tvar, ať je okno jakkoli široké. */
-  grid-template-columns: repeat(var(--cols), var(--tile));
-  grid-auto-rows: calc(var(--tile) / 1.6);
-  gap: var(--gap);
-  justify-content: center;
-  align-content: center;
-  transform-style: preserve-3d;
-  transition: transform 900ms var(--ease-out);
-  animation: wallIn 1.6s var(--ease-out) both;
-}
-
-.wall__spot {
-  position: absolute;
-  width: 34%;
-  aspect-ratio: 1;
-  translate: -50% -50%;
-  border-radius: 50%;
-  background: radial-gradient(
-    circle,
-    color-mix(in oklab, var(--c-light) 55%, transparent) 0%,
-    color-mix(in oklab, var(--c-light) 18%, transparent) 45%,
-    transparent 70%
-  );
-  filter: blur(30px);
-  transition: left 1.5s var(--ease-out), top 1.5s var(--ease-out);
-}
-
-.tile {
-  --d: 0;
-  display: grid;
-  place-items: center;
-  min-width: 0;
-  border-radius: clamp(6px, 0.7vw, 14px);
-  background: linear-gradient(178deg, var(--c-tile-top) 0%, var(--c-tile-bottom) 100%);
-  box-shadow:
-    inset 0 1.5px 0 var(--c-tile-sheen),
-    inset 0 -2px 0 rgba(0, 0, 0, 0.4),
-    0 5px 0 var(--c-tile-edge),
-    0 14px 22px -10px rgba(0, 0, 0, 0.8);
-  color: var(--c-value);
-  font-size: calc(var(--tile) * 0.115);
-  font-weight: 800;
-  text-shadow: 0 -1px 0 rgba(255, 255, 255, 0.16), 0 2px 0 rgba(0, 0, 0, 0.45);
-  /* Nástup jde po úhlopříčce, ne po pořadí, aby se u velké desky
-     nečekalo několik sekund na poslední dlaždici. */
-  animation: dealTile var(--dur-slow) var(--ease-out) calc(180ms + var(--d) * 34ms) both;
-  transition:
-    transform 200ms var(--ease-both),
-    background var(--dur-base) var(--ease-out),
-    color var(--dur-base) var(--ease-out),
-    box-shadow var(--dur-base) var(--ease-out);
-}
-.tile--flip { transform: rotateX(88deg); }
-.tile--team {
-  background: linear-gradient(178deg, var(--team) 0%, color-mix(in oklab, var(--team) 76%, black) 100%);
-  color: var(--c-text-ink);
-  box-shadow:
-    inset 0 1.5px 0 rgba(255, 255, 255, 0.35),
-    0 5px 0 color-mix(in oklab, var(--team) 30%, black),
-    0 16px 30px -12px color-mix(in oklab, var(--team) 55%, transparent);
-  text-shadow: none;
-}
-.tile--bonus {
-  background: linear-gradient(178deg, var(--c-spark) 0%, var(--c-spark-mid) 100%);
-  box-shadow:
-    inset 0 1.5px 0 rgba(255, 255, 255, 0.35),
-    0 5px 0 var(--c-spark-deep),
-    0 16px 30px -12px var(--c-spark-glow);
-  color: var(--c-text-ink);
-  font-size: calc(var(--tile) * 0.062);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  text-shadow: none;
-  animation:
-    dealTile var(--dur-slow) var(--ease-out) calc(180ms + var(--d) * 34ms) both,
-    beacon 3s var(--ease-both) 2s infinite;
-}
-
-/* Vinětace: tma pod titulkem a pod záhlavím, aby text držel kontrast.
-   Gradienty končí průhledně uvnitř své plochy, takže nemají viditelný okraj. */
-.vignette {
-  position: fixed;
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background:
-    radial-gradient(62% 58% at 50% 46%, var(--c-abyss) 0%, color-mix(in oklab, var(--c-abyss) 88%, transparent) 42%, transparent 74%),
-    linear-gradient(180deg, var(--c-abyss) 0%, color-mix(in oklab, var(--c-abyss) 55%, transparent) 9%, transparent 20%),
-    linear-gradient(0deg, var(--c-abyss) 0%, transparent 26%);
+  background-image:
+    linear-gradient(color-mix(in oklab, var(--c-line) 20%, transparent) var(--separator-w), transparent var(--separator-w)),
+    linear-gradient(90deg, color-mix(in oklab, var(--c-line) 20%, transparent) var(--separator-w), transparent var(--separator-w));
+  background-size: var(--sp-9) var(--sp-9);
+  mask-image: linear-gradient(to bottom, transparent, var(--c-text) 18%, transparent 70%);
 }
 
-/* Titulek ------------------------------------------------------------------- */
-.title { position: relative; z-index: 1; align-self: center; display: grid; justify-items: center; text-align: center; }
-
-/* Ruční písmo. Jedno ze tří míst v aplikaci, kde smí být, a je tu proto,
-   že hned pod ním stojí devět písmen v Lato Black. Bez téhle vsuvky by
-   rozcestník byl jen velký nápis. */
-.title__kicker {
-  font-family: var(--font-hand);
-  font-weight: 500;
-  font-size: clamp(var(--fs-lg), 0.8rem + 1.4vw, var(--fs-3xl));
-  letter-spacing: 0.01em;
-  /* Caveat má hluboké spodní tahy; 1 je ořízne. */
-  line-height: 1.15;
-  color: var(--c-brand);
-  animation: rise var(--dur-slow) var(--ease-out) both;
-}
-
-.wordmark {
-  display: flex;
-  /* Spodní mezera se počítá z velikosti písma, aby dotah „j" nikdy
-     nedosedl na odstavec pod titulkem. */
-  margin: clamp(var(--sp-2), 1.6vh, var(--sp-4)) 0 0.05em;
-  /* Titulek má nést celou stránku, proto se roztahuje podle šířky i výšky
-     okna. Strop v obou osách brání tomu, aby na širokém nebo nízkém
-     monitoru přerostl plochu. */
-  /* „Pojišťuj!" je devět znaků a v Lato Black měří 3,5 em na šířku.
-     Změřeno v prohlížeči, ne odhadnuto. Při 21vw zabere nápis zhruba
-     tři čtvrtiny okna, což je poměr, na kterém stálo i „Riskuj".
-     Strop v obou osách brání přerůstu na širokém či nízkém monitoru. */
-  font-size: clamp(2.5rem, min(21vw, 34vh), 18rem);
-  font-weight: 900;
-  /* Řádkování musí nechat místo dotahu: „Pojišťuj!" má dvě „j" a po
-     nasazení background-clip se vše mimo box písmene stane neviditelným.
-     1,02 nestačilo, tečky u „j" mizely. Nahoře si háčky nad „š" a „ť"
-     berou víc místa než celé „Riskuj". */
-  line-height: 1.18;
-  /* Lato Black snese těsnější sazbu než Inter, ale ne o moc: při -0,03em
-     se „ť" dotýkalo následujícího „u". */
-  letter-spacing: -0.02em;
-  perspective: 900px;
-}
-.wordmark__l {
-  display: inline-block;
-  /* Jednolitá barva, ne přechod. Přechod na písmu je otřepaný a hlavně
-     seděl na každém písmenu zvlášť, takže se barvy střídaly devětkrát
-     přes jedno slovo. Přechod se nasazuje až po změření, viz níž. */
-  color: var(--c-text);
-  /* Žádný posunutý stín, ten dělá z písma plastiku. Jen tmavá svatozář
-     bez odsazení, aby nápis držel čitelnost i nad světlou dlaždicí. */
-  text-shadow: 0 0 0.3em color-mix(in oklab, var(--c-abyss) 70%, transparent);
-  /* Písmena se otáčejí jako dlaždice na desce. */
-  animation: letterIn 760ms var(--ease-back) calc(200ms + var(--n) * 58ms) both;
-}
-
-/* Přechod se nasadí, až když jsou změřené odskoky písmen. Do té doby drží
-   plná barva, aby nebyl vidět přechod opakovaný na každém písmenu. */
-.wordmark--painted .wordmark__l {
-  background-image: linear-gradient(
-    96deg,
-    var(--c-text) 0%,
-    var(--c-text) 46%,
-    color-mix(in oklab, var(--c-brand) 40%, var(--c-text)) 100%
-  );
-  /* Výška pozadí musí pokrýt i dotahy; 100 % boxu nestačí, když glyf
-     přesahuje line-height. */
-  background-size: var(--gw, 100%) 1.2em;
-  background-position: var(--gx, 0) 50%;
-  background-repeat: no-repeat;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-.title__lead {
-  max-width: 46ch;
-  font-size: clamp(var(--fs-md), 0.9rem + 0.5vw, var(--fs-xl));
-  color: var(--c-text-muted);
-  text-wrap: balance;
-  animation: rise var(--dur-slow) var(--ease-out) 820ms both;
-}
-
-/* Spodní lišta -------------------------------------------------------------- */
-.bottom {
-  position: relative;
-  z-index: 1;
-  align-self: end;
+.hero {
   display: grid;
-  justify-items: center;
-  gap: var(--sp-4);
-  animation: rise var(--dur-slow) var(--ease-out) 980ms both;
+  grid-template-columns: minmax(0, 1.15fr) minmax(var(--home-aside-min), 0.85fr);
+  align-items: center;
+  gap: var(--sp-8);
+  min-height: min(var(--home-hero-min), calc(100dvh - var(--header-h)));
+  padding-block: var(--sp-7) var(--sp-5);
 }
 
-.cta {
+.hero__copy { max-width: var(--content-narrow); }
+.hero__kicker {
+  margin-bottom: var(--sp-4);
+  color: var(--c-brand);
+  font-family: var(--font-hand);
+  font-size: var(--fs-3xl);
+  font-weight: 500;
+  line-height: var(--lh-snug);
+}
+.hero__title {
+  max-width: 11ch;
+  font-size: var(--fs-home-hero);
+  letter-spacing: -0.045em;
+}
+
+.playfield {
+  position: relative;
+  justify-self: center;
+  width: min(100%, var(--home-visual));
+  aspect-ratio: 1;
+  border-radius: var(--r-full);
+}
+.playfield::before,
+.playfield::after,
+.playfield__ring {
+  content: '';
+  position: absolute;
+  inset: var(--sp-7);
+  border: var(--separator-w) solid color-mix(in oklab, var(--c-brand) 32%, transparent);
+  border-radius: var(--r-full);
+}
+.playfield::before { inset: var(--sp-3); opacity: 0.35; }
+.playfield::after { inset: var(--sp-9); opacity: 0.55; }
+.playfield__ring {
+  inset: var(--sp-6);
+  border-style: dashed;
+}
+.playfield__core {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  box-shadow: var(--shadow-lg);
+}
+.playfield__core {
+  inset: 31%;
+  align-content: center;
+  border: var(--separator-w) solid var(--c-line);
+  border-radius: var(--r-full);
+  background: radial-gradient(circle at 38% 28%, var(--c-surface-3), var(--c-surface));
+  text-align: center;
+  animation: coreGlow var(--dur-breathe) var(--ease-both) infinite alternate;
+}
+.playfield__core strong { font-size: var(--fs-xl); }
+.playfield__core small { color: var(--c-text-muted); font-size: var(--fs-xs); }
+.playfield__orbit {
+  position: absolute;
+  inset: var(--sp-3);
+  animation: orbit var(--dur-orbit) linear infinite;
+}
+.playfield__orbit--team,
+.playfield__orbit--answer { inset: var(--sp-7); animation-duration: var(--dur-orbit-slow); }
+.playfield__orbit--score { animation-delay: var(--dur-orbit-score-delay); }
+.playfield__orbit--shape { animation-delay: var(--dur-orbit-shape-delay); }
+.playfield__orbit--team { animation-delay: var(--dur-orbit-team-delay); }
+.playfield__orbit--answer { animation-delay: var(--dur-orbit-answer-delay); }
+.playfield__token {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  width: var(--home-token);
+  aspect-ratio: 1;
+  border: var(--separator-w) solid color-mix(in oklab, var(--c-text) 18%, transparent);
+  border-radius: var(--r-xl);
+  font-size: var(--fs-xl);
+  font-weight: 900;
+  transform: translate(-50%, -50%);
+  animation: counterOrbit var(--dur-orbit) linear infinite;
+}
+.playfield__orbit--team .playfield__token,
+.playfield__orbit--answer .playfield__token { animation-duration: var(--dur-orbit-slow); }
+.playfield__orbit--score .playfield__token { animation-delay: var(--dur-orbit-score-delay); }
+.playfield__orbit--shape .playfield__token { animation-delay: var(--dur-orbit-shape-delay); }
+.playfield__orbit--team .playfield__token { animation-delay: var(--dur-orbit-team-delay); }
+.playfield__orbit--answer .playfield__token { animation-delay: var(--dur-orbit-answer-delay); }
+.playfield__token svg { width: 46%; }
+.playfield__token--score { background: linear-gradient(160deg, var(--c-tile-top), var(--c-tile-bottom)); color: var(--c-value); }
+.playfield__token--team { background: var(--c-team-1); color: var(--c-text-ink); }
+.playfield__token--shape { background: var(--c-team-3); color: var(--c-text-ink); }
+.playfield__token--answer { background: var(--c-team-4); color: var(--c-text-ink); }
+
+.choice { padding-block: var(--sp-5) var(--sp-9); }
+
+.games {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-5);
+  padding: 0;
+  list-style: none;
+}
+.game-card {
+  min-width: 0;
+  overflow: hidden;
+  border: var(--separator-w) solid var(--c-line);
+  border-radius: var(--r-xl);
+  background: color-mix(in oklab, var(--c-surface) 92%, transparent);
+  box-shadow: var(--shadow-md);
+  transition: border-color var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out);
+}
+.game-card:hover { border-color: var(--c-brand); transform: translateY(calc(var(--sp-1) * -1)); box-shadow: var(--shadow-lg); }
+.game-card__preview {
+  position: relative;
+  min-height: var(--home-preview-h);
+  padding: var(--sp-5);
+  overflow: hidden;
+  border-bottom: var(--separator-w) solid var(--c-line);
+  background:
+    linear-gradient(145deg, color-mix(in oklab, var(--c-surface-3) 82%, transparent), var(--c-sunken)),
+    var(--c-surface-2);
+}
+.preview-label {
+  position: absolute;
+  right: var(--sp-4);
+  bottom: var(--sp-4);
+  padding: var(--sp-1) var(--sp-3);
+  border-radius: var(--r-full);
+  background: color-mix(in oklab, var(--c-abyss) 78%, transparent);
+  color: var(--c-text-muted);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+}
+
+.mini-board {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--sp-2);
+  width: 84%;
+  transform: perspective(var(--home-perspective)) rotateX(7deg) rotateZ(-2deg);
+  transform-origin: bottom left;
+}
+.mini-board__category {
+  overflow: hidden;
+  color: var(--c-text-muted);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mini-board__tile {
+  display: grid;
+  place-items: center;
+  min-height: var(--sp-7);
+  border-radius: var(--r-md);
+  background: linear-gradient(180deg, var(--c-tile-top), var(--c-tile-bottom));
+  box-shadow: inset 0 var(--separator-w) 0 var(--c-tile-sheen), 0 var(--sp-1) 0 var(--c-tile-edge);
+  color: var(--c-value);
+  font-size: var(--fs-sm);
+  font-weight: 900;
+  transition: transform var(--dur-base) var(--ease-out);
+}
+.game-card:hover .mini-board__tile:nth-child(8) { transform: translateY(calc(var(--sp-2) * -1)); }
+
+.mini-quiz { display: grid; gap: var(--sp-3); width: 86%; }
+.mini-quiz__top { display: flex; justify-content: space-between; color: var(--c-text-faint); font-size: var(--fs-xs); font-weight: 700; }
+.mini-quiz__time { color: var(--c-brand); }
+.mini-quiz > p { color: var(--c-text); font-size: var(--fs-lg); font-weight: 900; }
+.mini-quiz__options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-2); }
+.mini-option {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: var(--sp-7);
+  padding-inline: var(--sp-3);
+  border-radius: var(--r-md);
+  color: var(--c-text-ink);
+  font-size: var(--fs-sm);
+  font-weight: 900;
+  transition: transform var(--dur-base) var(--ease-out);
+}
+.mini-option--a { background: var(--c-team-1); }
+.mini-option--b { background: var(--c-team-3); }
+.mini-option--c { background: var(--c-team-4); }
+.mini-option--d { background: var(--c-team-5); }
+.game-card:hover .mini-option--b { transform: translateX(var(--sp-2)); }
+
+.game-card__body { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--sp-4); padding: var(--sp-6); }
+.game-card__index {
+  padding-top: var(--sp-1);
+  color: var(--c-brand);
+  font-size: var(--fs-xs);
+  font-weight: 900;
+  letter-spacing: var(--tracking-caps);
+}
+.game-card__heading h3 { margin-top: var(--sp-1); font-size: var(--fs-2xl); }
+.game-card__tagline { color: var(--c-brand); font-size: var(--fs-xs); font-weight: 900; letter-spacing: var(--tracking-wide); text-transform: uppercase; }
+.game-card__description { grid-column: 2; color: var(--c-text-muted); line-height: var(--lh-body); }
+.game-card__meta {
+  grid-column: 2;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  color: var(--c-text-faint);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+}
+.game-card__meta svg { width: var(--fs-lg); flex: none; }
+.game-card__warn {
+  grid-column: 2;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-md);
+  background: color-mix(in oklab, var(--c-bad) 14%, transparent);
+  color: var(--c-bad);
+  font-size: var(--fs-xs);
+}
+.game-card__actions { grid-column: 2; display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; margin-top: var(--sp-2); }
+.game-card__play {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: var(--sp-3);
-  padding: var(--sp-5) var(--sp-8);
+  min-height: var(--control-touch);
+  padding: var(--sp-3) var(--sp-5);
   border: 0;
-  border-radius: var(--r-full);
-  background: linear-gradient(180deg, var(--c-brand) 0%, var(--c-brand-deep) 100%);
+  border-radius: var(--r-md);
+  background: linear-gradient(180deg, var(--c-brand), var(--c-brand-deep));
   color: var(--c-on-accent);
-  font-family: inherit;
-  font-size: clamp(var(--fs-lg), 0.9rem + 0.6vw, 1.6rem);
-  font-weight: 800;
-  letter-spacing: -0.01em;
-  text-decoration: none;
-  cursor: pointer;
-  box-shadow: 0 5px 0 rgba(0, 0, 0, 0.5), 0 20px 40px -14px var(--c-brand-glow);
+  font-weight: 900;
+  box-shadow: 0 var(--sp-1) 0 color-mix(in oklab, var(--c-brand-deep) 45%, var(--c-abyss));
   transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
 }
-.cta:hover { transform: translateY(-3px); box-shadow: 0 8px 0 rgba(0, 0, 0, 0.5), 0 28px 52px -16px var(--c-brand-glow); }
-.cta:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(0, 0, 0, 0.5); }
-
-.bottom__meta {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-3);
-  flex-wrap: wrap;
-  justify-content: center;
+.game-card__play:hover { transform: translateY(calc(var(--sp-1) * -0.5)); }
+.game-card__play:active { transform: translateY(var(--sp-1)); box-shadow: none; }
+.game-card__play svg { width: var(--fs-lg); }
+.game-card__questions {
+  display: grid;
+  place-items: center;
+  min-height: var(--control-touch);
+  padding-inline: var(--sp-4);
+  border-radius: var(--r-md);
+  color: var(--c-text-muted);
   font-size: var(--fs-sm);
-  color: var(--c-text-faint);
-}
-.bottom__meta a { color: var(--c-text-muted); font-weight: 600; text-decoration: none; }
-.bottom__made { color: var(--c-text-faint); }
-/* Podpis drží váhu okolního textu, ne odkazu vedle sebe. Má být k nalezení,
-   ne k přehlédnutí, a hlavně ne hlasitější než věta o UNIQA. */
-.bottom__meta a.bottom__by { color: var(--c-text-faint); font-weight: 500; }
-.bottom__meta a.bottom__by:hover { color: var(--c-text); }
-.bottom__meta a:hover { color: var(--c-text); text-decoration: underline; text-underline-offset: 0.25em; }
-
-@media (pointer: coarse) {
-  .bottom__meta a { min-height: 2.75rem; display: inline-flex; align-items: center; padding-inline: var(--sp-2); }
-}
-
-.resume {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-3);
-  padding: var(--sp-2) var(--sp-4);
-  border: 1px solid color-mix(in oklab, var(--c-brand) 42%, transparent);
-  border-radius: var(--r-full);
-  background: color-mix(in oklab, var(--c-brand) 10%, var(--c-abyss));
-  color: var(--c-text);
-  font-size: var(--fs-sm);
+  font-weight: 700;
   text-decoration: none;
-  transition: border-color var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out);
 }
-.resume:hover { border-color: var(--c-brand); background: color-mix(in oklab, var(--c-brand) 18%, var(--c-abyss)); }
-.resume__dot {
-  width: 8px;
-  height: 8px;
-  border-radius: var(--r-full);
-  background: var(--c-brand);
-  box-shadow: 0 0 0 4px color-mix(in oklab, var(--c-brand) 22%, transparent);
-}
+.game-card__questions:hover { background: var(--c-surface-2); color: var(--c-text); }
+.game-card__resume { grid-column: 2; display: flex; align-items: center; gap: var(--sp-2); color: var(--c-text-muted); font-size: var(--fs-xs); }
+.game-card__resume span { width: var(--sp-2); height: var(--sp-2); border-radius: var(--r-full); background: var(--c-ok); box-shadow: 0 0 0 var(--sp-1) color-mix(in oklab, var(--c-ok) 18%, transparent); }
 
-@keyframes rise {
-  from { opacity: 0; transform: translateY(14px); }
-  to { opacity: 1; transform: none; }
-}
-@keyframes letterIn {
-  from { opacity: 0; transform: rotateX(-92deg) translateY(0.22em); }
-  to { opacity: 1; transform: none; }
-}
-@keyframes wallIn {
-  from { opacity: 0; transform: rotateX(9deg) rotateY(-7deg) scale(1.18); }
-  to { opacity: 1; }
-}
-@keyframes dealTile {
-  from { opacity: 0; transform: translateY(18px) scale(0.92); }
-  to { opacity: 1; transform: none; }
-}
-@keyframes beacon {
-  0%, 100% { filter: brightness(1); }
-  50% { filter: brightness(1.3); }
+@keyframes orbit { to { transform: rotate(1turn); } }
+@keyframes counterOrbit { to { transform: translate(-50%, -50%) rotate(-1turn); } }
+@keyframes coreGlow {
+  to {
+    border-color: color-mix(in oklab, var(--c-brand) 58%, var(--c-line));
+    box-shadow: var(--shadow-lg), 0 0 var(--sp-8) color-mix(in oklab, var(--c-brand-glow) 70%, transparent);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .title__kicker, .wordmark__l, .title__lead, .bottom, .tile, .wall__grid { animation: none; }
-  .tile, .wall__grid, .wall__spot { transition: none; }
+  .playfield__orbit,
+  .playfield__token,
+  .playfield__core,
+  .playfield__ring { animation: none; }
+  .game-card:hover,
+  .game-card:hover .mini-board__tile:nth-child(8),
+  .game-card:hover .mini-option--b,
+  .game-card__play:hover { transform: none; }
 }
 
-@media (max-width: 700px) {
-  .wall { opacity: 0.4; }
-  .wordmark { letter-spacing: -0.04em; }
-  .cta { padding: var(--sp-4) var(--sp-6); }
+@media (max-width: 960px) {
+  .hero { grid-template-columns: minmax(0, 1fr) minmax(var(--home-aside-mid), 0.55fr); gap: var(--sp-5); }
+  .games { grid-template-columns: minmax(0, 1fr); }
+  .game-card { display: grid; grid-template-columns: minmax(var(--home-card-side-min), 0.8fr) minmax(0, 1.2fr); }
+  .game-card__preview { min-height: 100%; border-right: var(--separator-w) solid var(--c-line); border-bottom: 0; }
+}
+
+@media (max-width: 720px) {
+  .hero { grid-template-columns: minmax(0, 1fr); min-height: 0; padding-block: var(--sp-7); }
+  .hero__copy { text-align: center; }
+  .hero__title { margin-inline: auto; }
+  .playfield { width: min(64vw, var(--home-visual-mobile)); }
+  .game-card { display: block; }
+  .game-card__preview { min-height: var(--home-preview-h); border-right: 0; border-bottom: var(--separator-w) solid var(--c-line); }
+}
+
+@media (max-width: 480px) {
+  .game-card__preview { padding: var(--sp-4); }
+  .game-card__body { grid-template-columns: minmax(0, 1fr); padding: var(--sp-5); }
+  .game-card__index { display: none; }
+  .game-card__description,
+  .game-card__meta,
+  .game-card__warn,
+  .game-card__actions,
+  .game-card__resume { grid-column: 1; }
+  .game-card__actions { align-items: stretch; }
+  .game-card__play,
+  .game-card__questions { width: 100%; }
+}
+
+/* Dotyková pravidla jsou poslední, aby je pozdější breakpoint nepřepsal. */
+@media (pointer: coarse) {
+  .game-card__play,
+  .game-card__questions { min-height: var(--control-touch); }
 }
 </style>

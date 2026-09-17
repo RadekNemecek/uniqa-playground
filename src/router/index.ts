@@ -22,10 +22,30 @@ export const router = createRouter({
       meta: { title: 'Pojišťuj!' },
     },
     {
+      path: '/kviz',
+      name: 'kviz',
+      component: () => import('@/views/KvizView.vue'),
+      meta: { title: 'Na kolik to dáš?' },
+    },
+    {
+      path: '/kviz/otazky',
+      name: 'kviz-otazky',
+      component: () => import('@/views/KvizAdminView.vue'),
+      meta: { title: 'Otázky | Na kolik to dáš?' },
+    },
+    {
       path: '/admin',
       name: 'admin',
       component: () => import('@/views/AdminView.vue'),
-      meta: { title: 'Správa otázek' },
+      meta: { title: 'Otázky | Pojišťuj!' },
+    },
+    // Adresa pro hráče. Je krátká schválně: nese ji QR kód na plátně
+    // a čím kratší adresa, tím řidší kód a tím dál se dá načíst.
+    {
+      path: '/k/:code',
+      name: 'kviz-hrat',
+      component: () => import('@/views/KvizJoinView.vue'),
+      meta: { title: 'Na kolik to dáš?' },
     },
     // Hra se dřív jmenovala Riskuj. Záložky a zástupci PWA na starou
     // adresu musí dál fungovat.

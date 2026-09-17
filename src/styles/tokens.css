@@ -131,6 +131,9 @@
   --fs-prompt: clamp(1.5rem, 0.9rem + 1.4vw + 1.4vh, 4rem);
   --fs-answer: clamp(1.25rem, 0.7rem + 1vw + 1.2vh, 2.75rem);
   --fs-hero:   clamp(2.5rem, 1.5rem + 4.5vw, 6rem);
+  --fs-countdown: clamp(8rem, 3rem + 14vw, 18rem);
+  --fs-phone-option: clamp(4rem, 2rem + 18vw, 8rem);
+  --fs-home-hero: clamp(4rem, 2rem + 5.5vw, 8.5rem);
 
   /* Násobič velikosti písma. Mimo herní plochu zůstává na jedné. */
   --scale: 1;
@@ -156,6 +159,7 @@
   /* --- Poloměry ---------------------------------------------------------- */
   /* UNIQA jede na 4 a 8 px, rozhraní se tomu drží. Dlaždice desky má
      vlastní token, protože je to objekt ve hře, ne prvek webu. */
+  --r-xs:   2px;
   --r-sm:   4px;
   --r-md:   8px;
   --r-lg:   12px;
@@ -171,6 +175,16 @@
   --dur-stage:   620ms;   /* dlaždice -> celá obrazovka */
   --dur-reveal:  720ms;   /* setření závěsem */
   --dur-count:   900ms;   /* odpočet skóre */
+  --dur-ambient: 24s;     /* pomalý dekorativní pohyb mimo herní plochu */
+  --dur-orbit: 28s;
+  --dur-orbit-slow: 36s;
+  --dur-breathe: 8s;
+  --dur-podium-sequence: 10s;
+  --dur-podium-place: 900ms;
+  --dur-orbit-score-delay: -4s;
+  --dur-orbit-shape-delay: -18s;
+  --dur-orbit-team-delay: -10s;
+  --dur-orbit-answer-delay: -28s;
 
   --ease-out:  cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in:   cubic-bezier(0.7, 0, 0.84, 0);
@@ -179,6 +193,30 @@
 
   /* --- Rozvržení --------------------------------------------------------- */
   --page-max: 1440px;
+  --content-narrow: 48rem;
+  --header-h: 4.75rem;
+  --header-h-compact: 4rem;
+  --control-sm: 2.5rem;
+  --control-touch: 2.75rem;
+  --mark-size: 1.5rem;
+  --mark-gap: 2px;
+  --separator-w: 1px;
+  --home-visual: 28rem;
+  --home-visual-mobile: 20rem;
+  --home-token: 4.5rem;
+  --home-preview-h: 14rem;
+  --home-perspective: 40rem;
+  --home-hero-min: 34rem;
+  --home-aside-min: 18rem;
+  --home-aside-mid: 14rem;
+  --home-card-side-min: 17rem;
+  --quiz-lobby-qr-col: 28rem;
+  --quiz-qr-max: 34rem;
+  --quiz-qr-vmax: 54vh;
+  --quiz-lobby-room-min: 24rem;
+  --quiz-stage-max: 84rem;
+  --quiz-prompt-max: 64rem;
+  --quiz-stage-footer: 5rem;
   --z-board: 1;
   --z-header: 20;
   --z-stage: 60;
@@ -210,6 +248,7 @@
   --fs-prompt: calc(clamp(1.5rem, 0.9rem + 1.4vw + 1.4vh, 4rem) * var(--scale));
   --fs-answer: calc(clamp(1.25rem, 0.7rem + 1vw + 1.2vh, 2.75rem) * var(--scale));
   --fs-hero:   calc(clamp(2.5rem, 1.5rem + 4.5vw, 6rem) * var(--scale));
+  --fs-countdown: calc(clamp(8rem, 3rem + 14vw, 18rem) * var(--scale));
 }
 
 /* Uživatel, který nechce pohyb, ho nedostane. Trvání jdou na nulu, takže
@@ -223,5 +262,11 @@
     --dur-stage:   1ms;
     --dur-reveal:  1ms;
     --dur-count:   1ms;
+    --dur-ambient: 1ms;
+    --dur-orbit: 1ms;
+    --dur-orbit-slow: 1ms;
+    --dur-breathe: 1ms;
+    --dur-podium-sequence: 1ms;
+    --dur-podium-place: 1ms;
   }
 }

@@ -13,6 +13,7 @@ import {
   type Firestore,
 } from 'firebase/firestore'
 import type { Pack } from '@/types'
+import type { QuizPack } from '@/games/kviz/types'
 import type { PlaygroundDb } from '@/lib/db'
 import { FIREBASE_CONFIG } from '@/lib/firebase.config'
 import { hashSecret } from '@/lib/hash'
@@ -43,7 +44,8 @@ function withTimeout<T>(op: Promise<T>, ms = 8000): Promise<T> {
  * 2. Při odemčení pošle otisk hesla do `unlocks/{uid}`.
  * 3. Pravidlo ten zápis povolí jen tehdy, když se otisk shoduje s tím
  *    v `config/admin`, který nikdo přečíst nesmí.
- * 4. Zápis do balíčků smí jen ten, kdo `unlocks/{uid}` má.
+ * 4. Zápis do balíčků smí jen ten, kdo `unlocks/{uid}` má. Čtení je
+ *    veřejné, aby šla připravená hra spustit bez hesla do editoru.
  *
  * Po prvním úspěšném odemčení si otisk necháme i lokálně, aby se dalo
  * odemknout i bez sítě. Skutečné oprávnění stejně rozhodují pravidla.
@@ -69,11 +71,16 @@ class FirestoreDb implements PlaygroundDb {
       // Offline vrstva: hra i seznam balíčků fungují bez sítě a po
       // obnovení připojení se změny samy dosynchronizují.
       localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+      // Firemní proxy a captive portály na konferenční wifi umí streamování
+      // rozbít tak, že se spojení tváří jako navázané a mlčí. Autodetekce
+      // přepne na dlouhý polling, který proleze i tudy.
+      experimentalAutoDetectLongPolling: true,
     })
     this.auth = getAuth(app)
     const credential = await signInAnonymously(this.auth)
     this.uid = credential.user.uid
     this.unlocked = sessionStorage.getItem(KEY_UNLOCK) === '1'
+    handle = { db: this.db, uid: this.uid }
   }
 
   watchPacks(onChange: (packs: Pack[]) => void): () => void {
@@ -90,6 +97,28 @@ class FirestoreDb implements PlaygroundDb {
 
   async deletePack(packId: string): Promise<void> {
     await this.write(deleteDoc(doc(this.db, 'packs', packId)), 'Smazání balíčku')
+  }
+
+  /** Balíčky kvízu čte příprava hry veřejně. Zápisy dál hlídají pravidla. */
+  watchQuizPacks(onChange: (packs: QuizPack[]) => void, onDenied?: () => void): () => void {
+    return onSnapshot(
+      collection(this.db, 'quizPacks'),
+      (snap) => onChange(snap.docs.map((d) => d.data() as QuizPack)),
+      (err) => {
+        // Zamítnuté čtení znamená stará nebo chybně publikovaná pravidla.
+        // Listener po zamítnutí umře a sám se nezotaví.
+        if (err.code === 'permission-denied') onDenied?.()
+        else console.error('Čtení balíčků kvízu selhalo:', err)
+      },
+    )
+  }
+
+  async saveQuizPack(pack: QuizPack): Promise<void> {
+    await this.write(setDoc(doc(this.db, 'quizPacks', pack.id), pack), 'Uložení balíčku kvízu')
+  }
+
+  async deleteQuizPack(packId: string): Promise<void> {
+    await this.write(deleteDoc(doc(this.db, 'quizPacks', packId)), 'Smazání balíčku kvízu')
   }
 
   /**
@@ -184,6 +213,19 @@ class FirestoreDb implements PlaygroundDb {
     this.unlocked = false
     sessionStorage.removeItem(KEY_UNLOCK)
   }
+}
+
+/** Živé spojení pro ostatní části aplikace, hlavně pro session kvízu.
+ *  Null, dokud se Firestore nerozjede. */
+export interface FirebaseHandle {
+  db: Firestore
+  uid: string
+}
+
+let handle: FirebaseHandle | null = null
+
+export function firebaseHandle(): FirebaseHandle | null {
+  return handle
 }
 
 export async function createFirestoreDb(): Promise<PlaygroundDb> {

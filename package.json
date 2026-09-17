@@ -3,9 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Playground: interaktivní školicí hry. První hra: Pojišťuj!",
+  "description": "Playground: interaktivní školicí hry Pojišťuj! a Na kolik to dáš?",
   "scripts": {
     "dev": "vite",
+    "dev:lan": "vite --host",
     "dev:local": "VITE_LOCAL_ONLY=1 vite --port 5185 --strictPort",
     "build": "vue-tsc --noEmit && vite build && node scripts/postbuild.mjs",
     "build:only": "vite build && node scripts/postbuild.mjs",
@@ -15,6 +16,7 @@
   },
   "dependencies": {
     "firebase": "^12.18.0",
+    "qrcode-generator": "^2.0.4",
     "vue": "^3.5.13",
     "vue-router": "^4.5.0"
   },

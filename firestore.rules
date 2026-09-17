@@ -52,6 +52,151 @@ service cloud.firestore {
       allow write: if isUnlocked();
     }
 
+    // Připravené balíčky kvízu jsou dostupné při přípravě hry bez hesla.
+    // Heslo chrání jen jejich změny ve správě otázek.
+    match /quizPacks/{packId} {
+      allow read: if true;
+      allow write: if isUnlocked();
+    }
+
+    /* --- Živá hra kvízu -------------------------------------------------- */
+
+    // Session se při každém zápisu hráče čte pravidlem. Firestore si
+    // výsledek `get()` v rámci jednoho požadavku pamatuje, takže opakované
+    // volání stojí jedno čtení, ne pět.
+    function session(code) {
+      return get(/databases/$(database)/documents/quiz/$(code)).data;
+    }
+
+    function isPlaying(code) {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/quiz/$(code)/players/$(request.auth.uid));
+    }
+
+    // Běžící hra. Čte ji každý, kdo zná kód, ale není v ní jediné písmeno
+    // otázky ani stopa po správné možnosti. Kdo kód uhodne, dozví se
+    // nanejvýš, že někde běží sedmá otázka.
+    match /quiz/{code} {
+      allow get: if true;
+      // Seznam běžících her patří jen správě, jinak by šlo projít kódy
+      // hromadně a zjistit, kde se zrovna hraje.
+      allow list: if isUnlocked();
+
+      // Hru může otevřít kterýkoli anonymně přihlášený moderátor. Heslo
+      // chrání úpravu otázek, ne použití připraveného balíčku.
+      // Vlastnictví se zapisuje hned a už se nemění.
+      allow create: if request.auth != null
+                    && request.resource.data.hostUid == request.auth.uid
+                    && request.resource.data.code == code
+                    && request.resource.data.phase == 'lobby'
+                    && request.resource.data.schema == 1
+                    && request.resource.data.round is int
+                    && request.resource.data.expiresAt is timestamp
+                    && request.resource.data.expiresAt > request.time;
+
+      // Měnit smí jen vlastník a nesmí si přepsat ani vlastnictví, ani kód.
+      // Poslední podmínka je pojistka proti chybě v kódu hry: dokud otázka
+      // běží, nesmí se do session dostat nic o odhalení. Chyba tak skončí
+      // odmítnutým zápisem, ne vyzrazenou odpovědí.
+      allow update: if request.auth != null
+                    && resource.data.hostUid == request.auth.uid
+                    && request.resource.data.hostUid == resource.data.hostUid
+                    && request.resource.data.code == resource.data.code
+                    && (request.resource.data.phase != 'question'
+                        || !('reveal' in request.resource.data));
+
+      // Uklidit smí vlastník, a po vypršení kdokoli: jinak by zabraný kód
+      // držela mrtvá hra navěky a nikdo by ho nedostal zpátky.
+      allow delete: if (request.auth != null && resource.data.hostUid == request.auth.uid)
+                    || resource.data.expiresAt < request.time;
+    }
+
+    // Soupiska. Body v ní schválně nejsou, ty počítá moderátorka a posílá
+    // je v session, takže hráči tu není co měnit.
+    match /quiz/{code}/players/{uid} {
+      allow get: if request.auth != null
+                 && (request.auth.uid == uid || session(code).hostUid == request.auth.uid);
+      allow list: if request.auth != null && session(code).hostUid == request.auth.uid;
+
+      // Identita hráče je jeho anonymní uid. Po obnovení stránky pokračuje
+      // tentýž hráč a druhou kartu si založit nemůže.
+      allow create: if request.auth != null
+                    && request.auth.uid == uid
+                    && session(code).acceptsPlayers == true
+                    && session(code).expiresAt > request.time
+                    && request.resource.data.keys()
+                         .hasOnly(['nick', 'joinedAt', 'joinedAtIndex', 'expiresAt'])
+                    && request.resource.data.nick is string
+                    && request.resource.data.nick.size() >= 1
+                    && request.resource.data.nick.size() <= 20
+                    && request.resource.data.joinedAt == request.time
+                    && request.resource.data.joinedAtIndex == session(code).index
+                    && request.resource.data.expiresAt == session(code).expiresAt;
+
+      // Přejmenovat nebo vyhodit hráče smí jen moderátorka.
+      allow update, delete: if request.auth != null
+                            && session(code).hostUid == request.auth.uid;
+    }
+
+    // Odpověď. Jeden dokument na hráče a otázku, id složené z kola, otázky
+    // a hráče. Druhá odpověď na tutéž otázku by byla update, a ten tu nemá
+    // povolený nikdo.
+    match /quiz/{code}/answers/{answerId} {
+      // Cizí odpověď si hráč nepřečte. Ani svoji nepotřebuje, co zmáčkl
+      // ví jeho telefon sám.
+      allow get, list: if request.auth != null && session(code).hostUid == request.auth.uid;
+
+      allow create: if isPlaying(code)
+        && answerId == string(session(code).round) + '_'
+                     + request.resource.data.qid + '_' + request.auth.uid
+        && request.resource.data.keys()
+             .hasOnly(['uid', 'round', 'qid', 'choice', 'elapsedMs', 'at', 'expiresAt'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.round == session(code).round
+        && request.resource.data.qid == session(code).qid
+        && request.resource.data.expiresAt is timestamp
+        && request.resource.data.expiresAt <= session(code).expiresAt
+        && request.resource.data.choice is int
+        && request.resource.data.choice >= 0
+        && request.resource.data.choice <= 3
+        && request.resource.data.elapsedMs is int
+        && request.resource.data.elapsedMs >= 0
+        && request.resource.data.elapsedMs <= session(code).limitMs
+        // Čas odpovědi razítkuje server, ne telefon.
+        && request.resource.data.at == request.time
+        // Otázka musí běžet. Dopředu se odpovídat nedá.
+        && session(code).phase == 'question'
+        && request.time > session(code).askedAt
+        // A nesmí být po termínu. Hlídá to server, ne moderátorčin
+        // prohlížeč: kdyby jí uprostřed otázky vypadla síť a fázi
+        // nepřepnula, pozdní odpověď stejně neprojde.
+        && request.time < session(code).askedAt + duration.value(
+             session(code).preRollMs + session(code).limitMs + 2000, 'ms')
+        // Kdo hlásí nulu, musel zapsat hned. Rozdíl mezi časem serveru
+        // a ohlášeným časem je tím omezený shora: podhodnotit se dá
+        // nanejvýš o zbytek latence, tedy o dvě vteřiny, ne o výhru.
+        && request.time < session(code).askedAt + duration.value(
+             session(code).preRollMs + request.resource.data.elapsedMs + 2000, 'ms');
+
+      // Opravit nebo smazat odpověď smí jen moderátorka.
+      allow update, delete: if request.auth != null
+                            && session(code).hostUid == request.auth.uid;
+    }
+
+    // Vyhodnocení po hře. Jsou v něm přezdívky účastníků, proto ho čte
+    // jen odemčená správa. Zapsané se už nemění, aby se výsledky nedaly
+    // přepsat zpětně. Maže se ručně, automaticky nevyprší.
+    match /quizReports/{reportId} {
+      allow get: if request.auth != null
+                 && (isUnlocked() || resource.data.hostUid == request.auth.uid);
+      allow list: if isUnlocked();
+      allow create: if request.auth != null
+                    && request.resource.data.hostUid == request.auth.uid
+                    && request.resource.data.schema == 1;
+      allow update: if false;
+      allow delete: if isUnlocked();
+    }
+
     // Připraveno pro budoucí moderátorský druhý pohled. Zavřené záměrně:
     // dokud tudy nic nepíše, nemá být kam ukládat cizí data.
     match /games/{gameId} {

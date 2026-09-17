@@ -180,12 +180,12 @@ function readinessLabel(id: string): { text: string; tone: 'ok' | 'warn' | 'mute
 <template>
   <div class="admin">
     <template v-if="!unlocked">
-      <AppHeader />
+      <AppHeader game="pojistuj" section="questions" />
       <AdminGate @unlocked="unlocked = true" />
     </template>
 
     <template v-else>
-      <AppHeader>
+      <AppHeader game="pojistuj" section="questions">
         <template #tools>
           <UiMenu label="Účet správy" v-slot="{ close }">
             <button type="button" role="menuitem" @click="openPassword(); close()">Změnit heslo</button>
@@ -199,6 +199,7 @@ function readinessLabel(id: string): { text: string; tone: 'ok' | 'warn' | 'mute
         <section v-if="!current" class="library">
           <header class="library__head">
             <div>
+              <p class="eyebrow">Pojišťuj!</p>
               <h1 class="library__title">Balíčky otázek</h1>
               <p class="library__lead">
                 Připrav desku před hrou. Hratelná je jen kategorie, která má vyplněné všechny otázky.

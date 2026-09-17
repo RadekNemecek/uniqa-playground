@@ -31,7 +31,9 @@ export default defineConfig({
         start_url: '.',
         scope: '.',
         display: 'standalone',
-        orientation: 'landscape',
+        // Na šířku se promítá, ale hráč drží telefon na výšku. Zámek
+        // orientace by mu obrazovku otočil na bok.
+        orientation: 'any',
         background_color: '#001A31',
         theme_color: '#001A31',
         categories: ['education', 'games'],

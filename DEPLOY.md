@@ -44,10 +44,17 @@ Ověření: v seznamu poskytovatelů má být u *Anonymous* stav **Enabled**.
 
 Co pravidla dělají:
 
-- balíčky otázek smí **číst kdokoli**, kdo má odkaz na hru,
+- balíčky desky Pojišťuj! smí **číst kdokoli**, kdo má odkaz na hru,
 - **zapisovat** smí jen ten, kdo prokázal znalost hesla do správy,
 - otisk hesla v `config/admin` **nesmí přečíst nikdo**, ani přihlášený
-  klient. Pravidla si ho přečíst umí, a na tom je celá ochrana postavená.
+  klient. Pravidla si ho přečíst umí, a na tom je celá ochrana postavená,
+- připravené balíčky kvízu Na kolik to dáš? smí **číst kdokoli**, aby šla
+  hra připravit a spustit bez hesla. Vytvářet, upravovat a mazat je smí
+  jen odemčená správa,
+- běžící hru kvízu si přečte každý, kdo zná pětiznakový kód, ale není
+  v ní znění otázky ani správná možnost, dokud ji moderátorka neodhalí,
+- hráč smí zapsat **jednu** odpověď na otázku a jen dokud otázka běží.
+  Pozdní odpověď odmítne server, ne prohlížeč moderátorky.
 
 Konzole u řádků s `get()` a `exists()` může hlásit varování o počtu čtení.
 Je to v pořádku, tyhle dotazy se dělají jen při zápisu.
@@ -105,13 +112,44 @@ npm run dev
 | `config` | `admin` | `keyHash`, otisk hesla |
 | `config` | `public` | `initialized: true` |
 | `unlocks` | dlouhé id | `keyHash`, doklad o odemčení tvé relace |
-| `packs` | `p_...` | samotný balíček otázek |
+| `packs` | `p_...` | balíček otázek pro desku Pojišťuj! |
+| `quizPacks` | `kp_...` | balíček otázek pro kvíz Na kolik to dáš? |
+| `quizReports` | `r_...` | vyhodnocení odehraného kvízu |
 
 6. Poslední zkouška: otevři stejnou adresu v jiném prohlížeči nebo
    v anonymním okně. Balíček se musí objevit, aniž bys tam cokoli dělal.
    Tím je ověřené, že data opravdu žijí v cloudu a kolegové je uvidí.
 
-### 1.6 Když to nejede
+### 1.6 Úklid po kvízu
+
+Každá odehraná hra kvízu založí dokument v kolekci `quiz` a pod ním
+podkolekce `players` a `answers`. Tlačítko **Ukončit a uklidit** na konci
+hry je všechny smaže.
+
+Pojistka pro případ, že školitelka jen zavřela notebook, je **TTL
+politika**. Ve Firestore ji najdeš pod **Firestore Database → Time-to-live
+(TTL)** a nastavuje se pro každou skupinu kolekcí zvlášť:
+
+| skupina kolekcí | pole |
+|---|---|
+| `quiz` | `expiresAt` |
+| `players` | `expiresAt` |
+| `answers` | `expiresAt` |
+
+Nastav všechny tři. **Smazání dokumentu ve Firestore nemaže jeho
+podkolekce**, takže bez politiky nad `players` a `answers` by po hrách
+zůstávaly osiřelé dokumenty, které se v konzoli ani neukážou.
+
+Vyhodnocení v kolekci `quizReports` se **nemaže samo**. Jsou v něm
+přezdívky účastníků, takže se maže ručně tlačítkem u seznamu na adrese
+`/kviz/otazky`. Když je budeš chtít držet jen omezenou dobu, přidej TTL
+politiku i nad `quizReports` a do dokumentu doplň pole s datem vypršení.
+
+Session platí osm hodin. Po vypršení ji smí uklidit kdokoli, takže
+zabraný kód se sám uvolní i tehdy, když se původní počítač už nikdy
+nepřipojí.
+
+### 1.7 Když to nejede
 
 | co vidíš | co s tím |
 |---|---|
@@ -120,6 +158,9 @@ npm run dev
 | Uložení otázky se nepovede | Nejsi odemčený, nebo pravidla nejsou publikovaná. |
 | Správa nabízí „Zadej heslo", i když jsi žádné nenastavil | Heslo už kdysi nastavené bylo. Smaž dokument `config/admin` i `config/public` v konzoli a načti stránku znovu. |
 | Aplikace jede, ale data se nesdílí | Konfigurace není vyplněná, běží lokální režim. Zkontroluj `projectId` v `src/lib/firebase.config.ts`. |
+| V kvízu chybí volba „Telefony hráčů" | Sdílená databáze není dostupná. Kvíz půjde promítat, telefony se nepřipojí. |
+| Kvíz hlásí, že balíčky nejdou načíst | Nejsou publikovaná aktuální pravidla pro veřejné čtení `quizPacks`, krok 1.3. |
+| Hráči se nepřipojí, ale kód na plátně je | Nejsou publikovaná pravidla pro `quiz`, krok 1.3. |
 
 Aplikace je schválně stavěná tak, že když se k Firebase nedostane,
 spadne do lokálního režimu a **hraje se dál**. Deset minut před školením

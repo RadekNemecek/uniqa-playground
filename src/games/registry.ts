@@ -2,9 +2,17 @@
 export interface GameEntry {
   slug: string
   title: string
+  /** Krátká věta pod názvem. Co to je, ne jak se to ovládá. */
   tagline: string
   description: string
   route: string
+  /** Kde se pro hru chystají otázky. */
+  editRoute: string
+  /** Co hra potřebuje, aby šla vést. Ukáže se na dlaždici. */
+  needs: string
+  /** Hraje se s telefony účastníků, takže bez sdílené databáze
+   *  se dá jen promítat. */
+  needsShared: boolean
 }
 
 export const GAMES: GameEntry[] = [
@@ -13,7 +21,21 @@ export const GAMES: GameEntry[] = [
     title: 'Pojišťuj!',
     tagline: 'Vědomostní souboj týmů',
     description:
-      'Klasická deska kategorií a bodových hodnot. Jeden až šest týmů, vlastní otázky, časomíra a pole Riziko!, kde tým před otázkou vsadí část svých bodů.',
+      'Klasická deska kategorií a bodových hodnot. Týmy si volí políčko, ty odkrýváš otázky a rozdáváš body. Až šest týmů, časomíra a pole Riziko!, kde tým před otázkou vsadí část svých bodů.',
     route: '/pojistuj',
+    editRoute: '/admin',
+    needs: 'Notebook a plátno',
+    needsShared: false,
+  },
+  {
+    slug: 'kviz',
+    title: 'Na kolik to dáš?',
+    tagline: 'Rychlý kvíz pro každého v místnosti',
+    description:
+      'Otázka, čtyři možnosti a jedna správná odpověď. Účastníci hlasují z telefonů, sbírají body za správnost i rychlost a po každém kole si společně projdete vysvětlení.',
+    route: '/kviz',
+    editRoute: '/kviz/otazky',
+    needs: 'Plátno a telefony účastníků',
+    needsShared: true,
   },
 ]

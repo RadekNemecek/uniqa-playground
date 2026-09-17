@@ -1,9 +1,20 @@
 # Playground
 
-Interaktivní hry pro školení týmů. První hra je **Pojišťuj!**: deska
-kategorií a bodových hodnot, jeden až šest týmů, vlastní otázky, časomíra
-a pole **Riziko!**, kde tým před otázkou vsadí část svých bodů. Běží
-jako statická webová aplikace, hostovaná na GitHub Pages.
+Interaktivní hry pro školení týmů. Běží jako statická webová aplikace,
+hostovaná na GitHub Pages.
+
+**Pojišťuj!** je deska kategorií a bodových hodnot. Jeden až šest týmů,
+vlastní otázky, časomíra a pole **Riziko!**, kde tým před otázkou vsadí
+část svých bodů. Vede se z notebooku na plátno, účastníci nemají v ruce nic.
+
+**Na kolik to dáš?** je kvíz. Otázka, čtyři možnosti, jedna správná a časomíra.
+Účastníci se připojí telefonem přes QR kód a odpovídají sami za sebe, body
+dostávají podle rychlosti. Po odhalení se ukáže poučka a po poslední otázce
+vyhodnocení, ze kterého je vidět, co tým neumí.
+
+Každá hra má **vlastní balíčky otázek a vlastní správu**. Deska chce znění
+a odpověď, kvíz čtyři možnosti; společná sada by znamenala, že každá otázka
+nese pole, která druhá hra nepoužije.
 
 Projekt je stavěný tak, aby další hra byla přírůstek, ne přestavba: hry jsou
 moduly v `src/games/`, evidované v `src/games/registry.ts`.
@@ -19,7 +30,7 @@ Aplikace naběhne bez jakéhokoli nastavení. Dokud není vyplněná konfigurace
 Firebase, ukládá data do prohlížeče (režim `local`), takže se dá hned zkoušet.
 Při prvním spuštění se založí ukázkový balíček otázek.
 
-## Jak se hra vede
+## Jak se vede Pojišťuj!
 
 1. **Otázky** připravíš předem v sekci *Otázky*. Deska v editoru vypadá
    stejně jako ta, kterou uvidí hráči: klikneš na políčko a napíšeš k němu
@@ -49,6 +60,51 @@ jsou obyčejná tlačítka.
 
 Tlačítko **Zpět** vrátí poslední bodování včetně stavu políčka. Rozehraná hra
 přežije obnovení stránky i pád prohlížeče.
+
+## Jak se vede Na kolik to dáš?
+
+1. **Otázky** připravíš v sekci *Otázky* na adrese `/kviz/otazky`. Kvíz má
+   vlastní balíčky, s deskou Pojišťuj! se nemíchají.
+2. **Hrát** otevře přípravu: zaškrtneš balíčky, počet otázek a čas na
+   odpověď. Pořadí otázek i možností se zamíchá.
+3. Na plátně se objeví **kód a QR**. Účastníci se připojí telefonem, zadají
+   přezdívku a jejich jména naskáčou do soupisky.
+4. **Mezerník** vede celou hru: zamkne odpovídání, odhalí správnou možnost
+   i poučku, ukáže průběžný žebříček a pustí další otázku. Na plátně je
+   vždycky vidět, co udělá další stisk.
+5. Po poslední otázce je vyhlášení a **vyhodnocení**: otázky seřazené od
+   nejhůř zvládnuté a tabulka, kdo co škrtl. Dá se stáhnout jako CSV.
+
+Každá otázka má tříveřinovou předehru. Na plátně se drží „Připrav se",
+aby se telefony stihly dozvědět, že otázka běží, a odemkly tlačítka ve
+stejný okamžik. Bez ní by hra odměňovala rychlejší wifi.
+
+Po vypršení limitu už odpovědět nejde. Hlídají to tři vrstvy nezávisle na
+sobě: telefon si zamkne tlačítka sám, moderátorský počítač přepne fázi
+a server odmítne pozdní zápis, i kdyby moderátorce vypadla síť.
+
+Bez sdílené databáze se telefony nemají kam připojit. Kvíz pak jde
+promítat a body si počítáš sama, což je plnohodnotný způsob, jak ho vést,
+a zároveň záchrana, když na školení umře wifi.
+
+### Zkoušení kvízu na vlastním počítači
+
+Nasazená aplikace má veřejnou adresu a QR kód prostě funguje. Při zkoušení
+z notebooku ale `localhost` znamená „tenhle stroj", takže by se telefon po
+načtení kódu pokusil spojit sám se sebou.
+
+```bash
+npm run dev:lan
+```
+
+Vite vypíše vedle místní adresy i **Network**, například
+`http://192.168.2.136:5173/uniqa-playground/`. Otevři Playground na ní a QR
+kód se opraví sám. Kdyby ses přesto ocitla na `localhost`, čekárna to
+vypíše červeně, takže na to nepřijdeš až před plnou místností.
+
+Síťová adresa je z pohledu prohlížeče jiné místo než `localhost`. Pro hraní
+to ničemu nevadí, připravené balíčky jsou dostupné bez hesla. Pokud chceš
+na síťové adrese otázky také upravovat, správu tam odemkni zvlášť.
 
 ## Nasazení a sdílení otázek
 
@@ -91,6 +147,8 @@ ikon `scripts/make-icons.mjs`.
 
 ## Příprava otázek
 
+### Pojišťuj!
+
 Balíček je jedna herní deska: kategorie tvoří sloupce, bodové hodnoty řádky.
 V editoru se dá obojí přidávat, přejmenovat i přeskládat.
 
@@ -101,11 +159,25 @@ na tu, která ještě chybí, `Ctrl+Enter` udělá totéž z klávesnice.
 Do hry jde jen kategorie, která má vyplněné všechny otázky i odpovědi.
 Nedodělané kategorie se v přípravě hry samy nenabídnou.
 
+### Na kolik to dáš?
+
+Balíček je seznam otázek, ne mřížka. U každé je znění, čtyři možnosti
+s puntíkem u té správné a nepovinná poučka, která se ukáže po odhalení.
+Otázky se dají přeskládat šipkami. Ukládá se samo.
+
+Do kvízu jde jen otázka, která má znění i všechny čtyři možnosti.
+Nedodělané se prostě nelosují.
+
+Oba druhy balíčků se dají stáhnout jako JSON, poslat kolegyni a zase
+naimportovat. Import je shovívavý: co chybí, dopíše prázdné, aby se dalo
+dodělat ve správě, místo aby soubor odmítl celý.
+
 ## Skripty
 
 | příkaz | co dělá |
 |---|---|
 | `npm run dev` | vývojový server |
+| `npm run dev:lan` | totéž, ale dostupné i z telefonů na stejné wifi |
 | `npm run dev:local` | totéž, ale data zůstanou jen v prohlížeči, sdílená databáze se nedotkne |
 | `npm run build` | kontrola typů a produkční sestavení |
 | `npm run preview` | náhled produkčního sestavení |
@@ -116,12 +188,13 @@ Nedodělané kategorie se v přípravě hry samy nenabídnou.
 
 ```
 src/
-  games/pojistuj/   hra Pojišťuj!: komponenty a ukázkový balíček
+  games/pojistuj/   deska: komponenty a ukázkový balíček
+  games/kviz/       kvíz: komponenty, losování, bodování, vyhodnocení
   games/registry.ts seznam her na rozcestníku
-  components/admin/ správa balíčků a otázek
+  components/admin/ správa balíčků desky
   components/ui/    sdílené prvky rozhraní
-  stores/           stav: balíčky, hra, nastavení, oznámení
-  lib/              úložiště, Firebase, animace, zvuk, konfety
+  stores/           stav: balíčky, hra, živá session, nastavení, oznámení
+  lib/              úložiště, Firebase, živá session, animace, zvuk, konfety
   styles/tokens.css jediné místo pro barvy, mezery, písma a časování
 ```
 

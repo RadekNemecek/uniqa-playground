@@ -1,4 +1,5 @@
 import type { Pack } from '@/types'
+import type { QuizPack } from '@/games/kviz/types'
 import { hashSecret } from '@/lib/hash'
 
 /**
@@ -19,6 +20,17 @@ export interface PlaygroundDb {
   savePack(pack: Pack): Promise<void>
   deletePack(packId: string): Promise<void>
 
+  /**
+   * Balíčky kvízu. Vlastní sada, oddělená od desky: každá hra spravuje
+   * své otázky sama, protože se ptají na jiný tvar odpovědi.
+   *
+   * `onDenied` se ozve při chybně publikovaných pravidlech Firestore.
+   * Čtení připravených balíčků je veřejné, heslo chrání jen zápisy.
+   */
+  watchQuizPacks(onChange: (packs: QuizPack[]) => void, onDenied?: () => void): () => void
+  saveQuizPack(pack: QuizPack): Promise<void>
+  deleteQuizPack(packId: string): Promise<void>
+
   /** Je už heslo do administrace vůbec nastavené? */
   hasPassword(): Promise<boolean>
   /** Nastaví heslo. Pokud už existuje, vyžaduje znalost toho starého. */
@@ -35,6 +47,7 @@ export interface PlaygroundDb {
 /* ------------------------------------------------------------------------ */
 
 const KEY_PACKS = 'playground.packs.v1'
+const KEY_QUIZ_PACKS = 'playground.kviz.packs.v1'
 const KEY_SECRET = 'playground.secret.v1'
 const KEY_UNLOCK = 'playground.unlocked.v1'
 
@@ -53,9 +66,25 @@ function writePacks(packs: Pack[]): void {
   localStorage.setItem(KEY_PACKS, JSON.stringify(packs))
 }
 
+function readQuizPacks(): QuizPack[] {
+  try {
+    const raw = localStorage.getItem(KEY_QUIZ_PACKS)
+    if (!raw) return []
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? (parsed as QuizPack[]) : []
+  } catch {
+    return []
+  }
+}
+
+function writeQuizPacks(packs: QuizPack[]): void {
+  localStorage.setItem(KEY_QUIZ_PACKS, JSON.stringify(packs))
+}
+
 class LocalDb implements PlaygroundDb {
   readonly kind = 'local' as const
   private listeners = new Set<(packs: Pack[]) => void>()
+  private quizListeners = new Set<(packs: QuizPack[]) => void>()
   private unlocked = false
 
   async ready(): Promise<void> {
@@ -63,6 +92,7 @@ class LocalDb implements PlaygroundDb {
     // Změna z jiné záložky se musí propsat i sem.
     window.addEventListener('storage', (e) => {
       if (e.key === KEY_PACKS) this.emit()
+      if (e.key === KEY_QUIZ_PACKS) this.emitQuiz()
     })
   }
 
@@ -91,6 +121,33 @@ class LocalDb implements PlaygroundDb {
   async deletePack(packId: string): Promise<void> {
     writePacks(readPacks().filter((p) => p.id !== packId))
     this.emit()
+  }
+
+  private emitQuiz(): void {
+    const packs = readQuizPacks()
+    for (const fn of this.quizListeners) fn(packs)
+  }
+
+  watchQuizPacks(onChange: (packs: QuizPack[]) => void): () => void {
+    this.quizListeners.add(onChange)
+    onChange(readQuizPacks())
+    return () => {
+      this.quizListeners.delete(onChange)
+    }
+  }
+
+  async saveQuizPack(pack: QuizPack): Promise<void> {
+    const packs = readQuizPacks()
+    const at = packs.findIndex((p) => p.id === pack.id)
+    if (at >= 0) packs[at] = pack
+    else packs.push(pack)
+    writeQuizPacks(packs)
+    this.emitQuiz()
+  }
+
+  async deleteQuizPack(packId: string): Promise<void> {
+    writeQuizPacks(readQuizPacks().filter((p) => p.id !== packId))
+    this.emitQuiz()
   }
 
   async hasPassword(): Promise<boolean> {

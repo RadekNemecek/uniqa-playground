@@ -5,6 +5,7 @@ import TimerBar from './TimerBar.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import { teamBadge, teamColor, formatScore } from '@/lib/teams'
 import { flipFrom } from '@/lib/motion'
+import { fitToScreen as fit, refitOnResize } from '@/lib/fit'
 import { sfx } from '@/lib/sound'
 import { settings } from '@/stores/settings'
 
@@ -33,29 +34,10 @@ const active = computed(() => props.game.teams[props.game.activeTeamIndex] ?? nu
 const others = computed(() => props.game.teams.filter((t) => t.id !== active.value?.id))
 const canSteal = computed(() => props.game.rules.steal && others.value.length > 0)
 
-/**
- * Otázka a odpověď se musí vejít na jednu obrazovku, protože moderátorka
- * na projektoru nescrolluje. Odhad podle počtu znaků byl vždycky buď moc
- * opatrný, nebo o kus vedle, tak se to prostě změří: začneme na plné
- * velikosti a ubíráme, dokud se obsah nevejde. Vyjde tím největší písmo,
- * které se do dané obrazovky vejde, ať je otázka jakkoli dlouhá.
- */
+/** Měření je společné s kvízem, viz `src/lib/fit.ts`. */
 const body = ref<HTMLElement | null>(null)
-const FIT_MIN = 0.42
-const FIT_STEP = 0.04
-
-async function fitToScreen(): Promise<void> {
-  await nextTick()
-  const el = body.value
-  if (!el) return
-
-  let fit = 1
-  el.style.setProperty('--fit', String(fit))
-  while (el.scrollHeight > el.clientHeight + 1 && fit > FIT_MIN) {
-    fit = Math.round((fit - FIT_STEP) * 100) / 100
-    el.style.setProperty('--fit', String(fit))
-  }
-}
+const fitToScreen = (): Promise<void> => fit(body)
+let stopRefit: (() => void) | null = null
 
 watch(() => [props.question.id, props.game.phase], fitToScreen)
 
@@ -108,24 +90,17 @@ function onKey(e: KeyboardEvent) {
   }
 }
 
-let resizeTimer = 0
-function onResize() {
-  window.clearTimeout(resizeTimer)
-  resizeTimer = window.setTimeout(fitToScreen, 120)
-}
-
 onMounted(async () => {
   if (settings.sound) sfx.open()
   await nextTick()
   if (stage.value && props.origin) flipFrom(stage.value, props.origin)
   void fitToScreen()
   window.addEventListener('keydown', onKey)
-  window.addEventListener('resize', onResize)
+  stopRefit = refitOnResize(() => void fitToScreen())
 })
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onKey)
-  window.removeEventListener('resize', onResize)
-  window.clearTimeout(resizeTimer)
+  stopRefit?.()
 })
 </script>
 
