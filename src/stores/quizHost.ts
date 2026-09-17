@@ -27,9 +27,12 @@ const STORAGE_KEY = 'playground.kviz.host.v1'
  * stopky běžely od doručení, hra by odměňovala pomalou wifi. Předehra
  * rozptyl doručení schová: plátno i telefony se rozsvítí naráz.
  *
- * Nástup patří před každou otázku. Firestore musí změnu nejdřív doručit
- * telefonům; bez náskoku by plátno spustilo časomíru okamžitě a pomalejší
- * telefon by mohl dostat tlačítka až ve chvíli, kdy už je zamčeno.
+ * Nástup patří jen před první otázku kola, tam místnost ztichne a ještě
+ * se dojíždí připojování. Další otázky pouští moderátorka mezerníkem ve
+ * chvíli, kdy je místnost připravená, a odpočet by jen zdržoval. Cenou je,
+ * že se telefonům odemkne až s doručeným snímkem: pomalejší wifi tím
+ * přijde o kus limitu. Body to nezkreslí, doba se počítá od serverového
+ * razítka a zpoždění doručení se z ní odečte.
  */
 const PRE_ROLL_MS = 5000
 
@@ -327,7 +330,8 @@ export function advance(): void {
     case 'question':
       // Odpočet je nástup otázky, ne část odpovídání. Opakovaný stisk
       // mezerníku během něj nesmí otázku zamknout dřív, než ji lidé uvidí.
-      if (s.askedAt && Date.now() < s.askedAt + PRE_ROLL_MS) break
+      // Běží jen u první otázky, dál se na nic nečeká.
+      if (s.index === 0 && s.askedAt && Date.now() < s.askedAt + PRE_ROLL_MS) break
       void lockAnswers()
       break
     case 'locked':
@@ -426,7 +430,7 @@ export async function nextQuestion(): Promise<void> {
     phase: 'question',
     index: s.index,
     qid: s.questions[s.index]?.qid ?? '',
-    preRollMs: PRE_ROLL_MS,
+    preRollMs: 0,
     reveal: null,
     stampAskedAt: true,
   })
@@ -487,5 +491,8 @@ export function dropPhones(): void {
   live.offline = false
 }
 
-/** Předehra v milisekundách. Bez telefonů není co synchronizovat. */
-export const preRollMs = computed(() => (store.current?.code ? PRE_ROLL_MS : 0))
+/** Předehra v milisekundách. Patří jen před první otázku kola a bez
+ *  telefonů není co synchronizovat. */
+export const preRollMs = computed(() =>
+  store.current?.code && store.current.index === 0 ? PRE_ROLL_MS : 0,
+)

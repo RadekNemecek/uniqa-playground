@@ -77,9 +77,10 @@ přežije obnovení stránky i pád prohlížeče.
 5. Po poslední otázce je vyhlášení a **vyhodnocení**: otázky seřazené od
    nejhůř zvládnuté a tabulka, kdo co škrtl. Dá se stáhnout jako CSV.
 
-Každá otázka má pětivteřinovou předehru. Na plátně se drží „Připrav se",
-aby se telefony stihly dozvědět, že otázka běží, a odemkly tlačítka ve
-stejný okamžik. Bez ní by hra odměňovala rychlejší wifi.
+První otázka má pětivteřinovou předehru. Na plátně se drží „Připrav se",
+aby se telefony stihly dozvědět, že hra začala, a odemkly tlačítka ve
+stejný okamžik. Další otázky pouštíš mezerníkem, když je místnost
+připravená, a naskočí rovnou.
 
 Po vypršení limitu už odpovědět nejde. Hlídají to tři vrstvy nezávisle na
 sobě: telefon si zamkne tlačítka sám, moderátorský počítač přepne fázi
