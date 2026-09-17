@@ -170,13 +170,11 @@ service cloud.firestore {
         // A nesmí být po termínu. Hlídá to server, ne moderátorčin
         // prohlížeč: kdyby jí uprostřed otázky vypadla síť a fázi
         // nepřepnula, pozdní odpověď stejně neprojde.
+        // `elapsedMs` se proti času serveru neporovnává. Telefon se může
+        // o začátku otázky dozvědět se zpožděním a taková kontrola by pak
+        // odmítla poctivou odpověď. Konec limitu dál určuje server.
         && request.time < session(code).askedAt + duration.value(
-             session(code).preRollMs + session(code).limitMs + 2000, 'ms')
-        // Kdo hlásí nulu, musel zapsat hned. Rozdíl mezi časem serveru
-        // a ohlášeným časem je tím omezený shora: podhodnotit se dá
-        // nanejvýš o zbytek latence, tedy o dvě vteřiny, ne o výhru.
-        && request.time < session(code).askedAt + duration.value(
-             session(code).preRollMs + request.resource.data.elapsedMs + 2000, 'ms');
+             session(code).preRollMs + session(code).limitMs + 2000, 'ms');
 
       // Opravit nebo smazat odpověď smí jen moderátorka.
       allow update, delete: if request.auth != null

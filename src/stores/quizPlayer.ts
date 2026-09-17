@@ -29,6 +29,8 @@ interface PlayerState {
   answeredQid: string
   /** Kdy se odemkla tlačítka, podle monotónního času prohlížeče. */
   unlockedAt: number | null
+  /** Lokální pojistka konce limitu, nezávislá na doručení další fáze. */
+  expired: boolean
   /** Body z minulého snímku, aby šel ukázat přírůstek. */
   lastScore: number
   /** Je hráč na soupisce? Null, dokud to nevíme. */
@@ -47,6 +49,7 @@ const state = reactive<PlayerState>({
   send: 'idle',
   answeredQid: '',
   unlockedAt: null,
+  expired: false,
   lastScore: 0,
   onRoster: null,
 })
@@ -54,6 +57,7 @@ const state = reactive<PlayerState>({
 let conn: QuizSessionDb | null = null
 let stop: Array<() => void> = []
 let unlockTimer = 0
+let expiryTimer = 0
 
 export const player = state
 
@@ -112,11 +116,13 @@ function detach(): void {
 export function leaveGame(): void {
   detach()
   window.clearTimeout(unlockTimer)
+  window.clearTimeout(expiryTimer)
   state.session = null
   state.choice = null
   state.send = 'idle'
   state.answeredQid = ''
   state.unlockedAt = null
+  state.expired = false
   state.onRoster = null
 }
 
@@ -151,6 +157,7 @@ function onSession(session: QuizSession | null): void {
     state.send = 'idle'
     state.answeredQid = ''
     state.unlockedAt = null
+    state.expired = false
     state.lastScore = session.scores[state.uid] ?? 0
   }
 
@@ -169,12 +176,24 @@ function onSession(session: QuizSession | null): void {
  */
 function scheduleUnlock(session: QuizSession): void {
   window.clearTimeout(unlockTimer)
+  window.clearTimeout(expiryTimer)
   const now = Date.now()
   const target = (session.askedAt ?? now) + session.preRollMs
   const wait = Math.min(Math.max(target - now, 0), session.preRollMs)
   unlockTimer = window.setTimeout(() => {
-    // Monotónní čas: doba odpovědi se nesmí opírat o hodiny telefonu.
-    state.unlockedAt = performance.now()
+    // Když snímek dorazil až po začátku odpovídání, započte se i zpoždění.
+    // Server tak nedostane uměle krátký čas a telefon nabídne jen skutečně
+    // zbývající část limitu. Další měření už běží monotónně.
+    const elapsedOnArrival = Math.min(Math.max(Date.now() - target, 0), session.limitMs)
+    state.unlockedAt = performance.now() - elapsedOnArrival
+    const remaining = session.limitMs - elapsedOnArrival
+    if (remaining <= 0) {
+      state.expired = true
+      return
+    }
+    expiryTimer = window.setTimeout(() => {
+      state.expired = true
+    }, remaining)
   }, wait)
 }
 
@@ -183,9 +202,9 @@ export const locked = computed(() => {
   if (!s || s.phase !== 'question') return true
   if (state.unlockedAt === null) return true
   if (state.choice !== null) return true
-  // Po vypršení limitu se zamyká i bez zprávy od moderátorky. Server by
-  // pozdní odpověď stejně odmítl, ale hráč to má vědět hned.
-  return performance.now() - state.unlockedAt > s.limitMs
+  // Reaktivní časovač zamkne tlačítka i bez zprávy od moderátorky. Samotné
+  // `performance.now()` v computed by Vue znovu nepřepočítalo.
+  return state.expired
 })
 
 export async function answer(choice: number): Promise<void> {
@@ -205,7 +224,8 @@ export async function answer(choice: number): Promise<void> {
       expiresAt: s.expiresAt,
     })
     state.send = 'sent'
-  } catch {
+  } catch (e) {
+    console.error('Odeslání odpovědi selhalo:', e)
     state.send = 'failed'
   }
 }

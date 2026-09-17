@@ -31,7 +31,7 @@ const LIFETIME_MS = 8 * 60 * 60 * 1000
 
 /** Kolik se čeká na potvrzení odpovědi serverem. Na konferenční wifi je
  *  to dost i na pomalý telefon, a zároveň to nenechá hráče viset. */
-const ANSWER_TIMEOUT = 4000
+const ANSWER_TIMEOUT = 12000
 
 const delay = (ms: number): Promise<void> => new Promise((r) => window.setTimeout(r, ms))
 
@@ -246,6 +246,7 @@ class FirestoreSessionDb implements QuizSessionDb {
   ): () => void {
     return onSnapshot(
       doc(this.db, 'quiz', code),
+      { includeMetadataChanges: true },
       (snap) => onChange(snap.exists() ? toSession(snap.data()) : null, snap.metadata.fromCache),
       (err) => {
         console.error('Čtení hry selhalo:', err)
@@ -293,7 +294,7 @@ class FirestoreSessionDb implements QuizSessionDb {
 
   /**
    * Odpověď se **nesmí odeslat naslepo**. Firestore ji lokálně přijme
-   * a server ji o pět minut později odmítne, aniž by si toho kdokoli
+   * a server ji později odmítne, aniž by si toho kdokoli
    * všiml, takže hráč musí na potvrzení počkat a při neúspěchu to vidět.
    */
   async sendAnswer(code: string, draft: AnswerDraft): Promise<void> {

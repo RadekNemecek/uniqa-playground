@@ -27,8 +27,9 @@ const STORAGE_KEY = 'playground.kviz.host.v1'
  * stopky běžely od doručení, hra by odměňovala pomalou wifi. Předehra
  * rozptyl doručení schová: plátno i telefony se rozsvítí naráz.
  *
- * Nástup patří jen před první otázku. Další otázky už navazují bez čekání,
- * proto se jejich `preRollMs` přepne na nulu i v živé session.
+ * Nástup patří před každou otázku. Firestore musí změnu nejdřív doručit
+ * telefonům; bez náskoku by plátno spustilo časomíru okamžitě a pomalejší
+ * telefon by mohl dostat tlačítka až ve chvíli, kdy už je zamčeno.
  */
 const PRE_ROLL_MS = 5000
 
@@ -326,7 +327,7 @@ export function advance(): void {
     case 'question':
       // Odpočet je nástup otázky, ne část odpovídání. Opakovaný stisk
       // mezerníku během něj nesmí otázku zamknout dřív, než ji lidé uvidí.
-      if (s.index === 0 && s.askedAt && Date.now() < s.askedAt + PRE_ROLL_MS) break
+      if (s.askedAt && Date.now() < s.askedAt + PRE_ROLL_MS) break
       void lockAnswers()
       break
     case 'locked':
@@ -425,7 +426,7 @@ export async function nextQuestion(): Promise<void> {
     phase: 'question',
     index: s.index,
     qid: s.questions[s.index]?.qid ?? '',
-    preRollMs: 0,
+    preRollMs: PRE_ROLL_MS,
     reveal: null,
     stampAskedAt: true,
   })
@@ -486,5 +487,5 @@ export function dropPhones(): void {
   live.offline = false
 }
 
-/** Předehra v milisekundách. Patří jen před první otázku kola. */
-export const preRollMs = computed(() => (store.current?.index === 0 ? PRE_ROLL_MS : 0))
+/** Předehra v milisekundách. Bez telefonů není co synchronizovat. */
+export const preRollMs = computed(() => (store.current?.code ? PRE_ROLL_MS : 0))
