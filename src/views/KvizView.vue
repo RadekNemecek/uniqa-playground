@@ -18,7 +18,6 @@ import {
   endQuiz,
   hasQuiz,
   kickPlayer,
-  lockAnswers,
   offline,
   players,
   preRollMs,
@@ -49,13 +48,15 @@ const counts = computed(() => {
   return choiceCounts.value
 })
 
-// Když odpověděli všichni připojení hráči, není na co čekat. Odpovídání
-// se samo zamkne, ale správnou možnost pořád odhalí až moderátorka
-// mezerníkem, aby stihla pracovat s místností.
+// Když odpověděli všichni připojení hráči, není na co čekat a odhalí se
+// rovnou správná možnost. Je to stejné vyústění jako po vypršení limitu,
+// jen dřív: hlasování je uzavřené tak jako tak a čekat na mezerník by
+// jen drželo místnost u obrazovky, která už nic nového neřekne.
+// Na další otázku automatika nepostoupí, tu pouští vždy moderátorka.
 watch(
   [() => quiz.value?.phase, answeredNow, () => players.value.length, () => quiz.value?.index],
   ([phase, answered, total]) => {
-    if (phase === 'question' && total > 0 && answered >= total) void lockAnswers()
+    if (phase === 'question' && total > 0 && answered >= total) void revealAnswer()
   },
 )
 

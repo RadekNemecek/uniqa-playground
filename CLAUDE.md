@@ -143,8 +143,11 @@ políčko na 65 px. Je to kompromis, hra se vede z notebooku.
 
 Obě hry se posouvají **mezerníkem**. Moderátorka nesahá na myš a nemusí se
 učit nové klávesy. Na plátně je u každé fáze vidět, co udělá další stisk,
-aby se nedalo omylem přeskočit odhalení. Po vypršení časového limitu se
-správná odpověď odhalí automaticky a špatné se ztlumí. Automatika ale nikdy
+aby se nedalo omylem přeskočit odhalení. Správná odpověď se odhalí
+automaticky a špatné se ztlumí ve dvou případech: po vypršení časového
+limitu a ve chvíli, kdy odpoví všichni připojení hráči. Hlasování je tehdy
+uzavřené tak jako tak a čekat na mezerník by jen drželo místnost
+u obrazovky, která už nic nového neřekne. Automatika ale nikdy
 nepostupuje na další otázku.
 
 ## Měření velikosti

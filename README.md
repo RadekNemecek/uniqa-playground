@@ -71,11 +71,13 @@ přežije obnovení stránky i pád prohlížeče.
    přezdívku a jejich jména naskáčou do soupisky.
 4. **Mezerník** vede celou hru: zamkne odpovídání, odhalí správnou možnost
    i poučku, ukáže průběžný žebříček a pustí další otázku. Na plátně je
-   vždycky vidět, co udělá další stisk.
+   vždycky vidět, co udělá další stisk. Jakmile odpoví všichni, odhalí se
+   správná možnost sama, a stejně tak po vypršení limitu. Na další otázku
+   se ale nikdy nepostoupí bez tebe.
 5. Po poslední otázce je vyhlášení a **vyhodnocení**: otázky seřazené od
    nejhůř zvládnuté a tabulka, kdo co škrtl. Dá se stáhnout jako CSV.
 
-Každá otázka má tříveřinovou předehru. Na plátně se drží „Připrav se",
+Každá otázka má pětivteřinovou předehru. Na plátně se drží „Připrav se",
 aby se telefony stihly dozvědět, že otázka běží, a odemkly tlačítka ve
 stejný okamžik. Bez ní by hra odměňovala rychlejší wifi.
 

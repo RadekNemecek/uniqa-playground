@@ -161,7 +161,13 @@ function onSession(session: QuizSession | null): void {
     state.lastScore = session.scores[state.uid] ?? 0
   }
 
-  if (session.phase === 'question' && state.unlockedAt === null) scheduleUnlock(session)
+  // Bez razítka od serveru se neodemyká. Dokud `askedAt` chybí, otázka
+  // teprve vzniká a předehra nemá od čeho měřit: telefon by odemkl hned
+  // a tlačítka by naskočila dřív, než se otázka objeví na plátně.
+  // Razítko dorazí dalším snímkem a odemčení se naplánuje až podle něj.
+  if (session.phase === 'question' && session.askedAt !== null && state.unlockedAt === null) {
+    scheduleUnlock(session)
+  }
 }
 
 /**
