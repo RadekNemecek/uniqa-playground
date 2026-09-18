@@ -10,9 +10,9 @@ vlastní otázky, časomíra a pole **Riziko!**, kde tým před otázkou vsadí
 **Na kolik to dáš?** je kvíz. Otázka se čtyřmi možnostmi, nebo tvrzení, na
 které se odpovídá Pravda, nebo Nepravda; u obojího běží časomíra. Účastníci
 se připojí telefonem přes QR kód, vyberou si zvíře a odpovídají sami za
-sebe, body dostávají podle rychlosti. Po odhalení se ukáže poučka a graf,
-kolik lidí zvolilo kterou možnost, a po poslední otázce vyhodnocení, ze
-kterého je vidět, co tým neumí.
+sebe, body dostávají podle rychlosti. Po odhalení se na každé možnosti
+ukáže, kolik lidí ji zvolilo, uprostřed plátna poučka, a po poslední
+otázce vyhodnocení, ze kterého je vidět, co tým neumí.
 
 Každá hra má **vlastní balíčky otázek a vlastní správu**. Deska chce znění
 a odpověď, kvíz možnosti, mezi kterými se vybírá; společná sada by znamenala,
@@ -72,7 +72,7 @@ přežije obnovení stránky i pád prohlížeče.
 3. Na plátně se objeví **kód a QR**. Účastníci se připojí telefonem, dostanou
    zvíře, které si můžou vyměnit, zadají přezdívku a naskáčou do soupisky.
 4. **Mezerník** vede celou hru: zamkne odpovídání, odhalí správnou možnost,
-   poučku i graf odpovědí, ukáže tři nejlepší a pustí další otázku. Na plátně je
+   poučku i rozložení hlasů, ukáže tři nejlepší a pustí další otázku. Na plátně je
    vždycky vidět, co udělá další stisk. Jakmile odpoví všichni, odhalí se
    správná možnost sama, a stejně tak po vypršení limitu. Na další otázku
    se ale nikdy nepostoupí bez tebe.

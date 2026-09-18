@@ -91,28 +91,29 @@ function commitRename(uid: string): void {
 
       <ul v-else class="room__list">
         <li v-for="p in players" :key="p.uid" class="who">
-          <template v-if="editing === p.uid">
-            <input
-              v-model="draftNick"
-              class="who__input"
-              type="text"
-              maxlength="20"
-              :aria-label="`Přezdívka hráče ${p.nick}`"
-              @keydown.enter="commitRename(p.uid)"
-              @keydown.esc="editing = null"
-              @blur="commitRename(p.uid)"
-            />
-          </template>
-          <template v-else>
-            <PlayerAvatar class="who__ava" :id="p.avatar" />
-            <span class="who__nick">{{ p.nick }}</span>
+          <PlayerAvatar class="who__ava" :id="p.avatar" :decorative="false" />
+
+          <input
+            v-if="editing === p.uid"
+            v-model="draftNick"
+            class="who__input"
+            type="text"
+            maxlength="20"
+            :aria-label="`Přezdívka hráče ${p.nick}`"
+            @keydown.enter="commitRename(p.uid)"
+            @keydown.esc="editing = null"
+            @blur="commitRename(p.uid)"
+          />
+          <span v-else class="who__nick">{{ p.nick }}</span>
+
+          <div class="who__tools">
             <button type="button" class="who__tool" :aria-label="`Přejmenovat ${p.nick}`" @click="startRename(p)">
               Přejmenovat
             </button>
             <button type="button" class="who__tool who__tool--danger" :aria-label="`Vyhodit ${p.nick}`" @click="emit('kick', p.uid)">
               Vyhodit
             </button>
-          </template>
+          </div>
         </li>
       </ul>
 
@@ -185,29 +186,34 @@ function commitRename(uid: string): void {
 .room__count span { color: var(--c-text-muted); font-size: var(--fs-sm); font-weight: 700; }
 .room__empty { color: var(--c-text-faint); }
 
+/* Soupiska je mřížka karet, ne řádek jmen. Zvíře na kartě je to, podle
+   čeho se člověk hledá z druhého konce místnosti, jméno je až druhé. */
 .room__list {
   list-style: none;
   padding: 0;
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--quiz-lobby-card), 1fr));
   align-content: start;
-  gap: var(--sp-2);
+  gap: var(--sp-3);
   min-height: 0;
   overflow-y: auto;
 }
 .who {
-  display: inline-flex;
-  align-items: center;
+  display: grid;
+  justify-items: center;
+  align-content: start;
   gap: var(--sp-2);
-  padding: var(--sp-2) var(--sp-3);
+  padding: var(--sp-3) var(--sp-2);
   border: 1px solid var(--c-line);
-  border-radius: var(--r-full);
+  border-radius: var(--r-lg);
   background: var(--c-surface);
-  /* Jméno nastupuje, aby bylo poznat, že někdo právě přišel. */
+  text-align: center;
+  /* Karta nastupuje, aby bylo poznat, že někdo právě přišel. */
   animation: pop var(--dur-base) var(--ease-back) both;
 }
-.who__ava { --ava-size: 1.75rem; }
-.who__nick { font-weight: 700; }
+.who__ava { --ava-size: var(--quiz-lobby-ava); }
+.who__nick { font-weight: 700; line-height: var(--lh-snug); overflow-wrap: anywhere; }
+.who__tools { display: flex; gap: var(--sp-2); }
 .who__tool {
   border: 0;
   background: transparent;
@@ -217,12 +223,14 @@ function commitRename(uid: string): void {
 .who__tool:hover { color: var(--c-text); }
 .who__tool--danger:hover { color: var(--c-bad); }
 .who__input {
+  width: 100%;
   padding: var(--sp-1) var(--sp-2);
   border: 1px solid var(--c-brand);
   border-radius: var(--r-md);
   background: var(--c-sunken);
   color: var(--c-text);
   font-weight: 700;
+  text-align: center;
 }
 
 .room__foot { display: grid; gap: var(--sp-2); justify-items: start; }
@@ -235,6 +243,10 @@ function commitRename(uid: string): void {
 
 @media (prefers-reduced-motion: reduce) {
   .who { animation: none; }
+}
+
+@media (pointer: coarse) {
+  .who__tool { min-height: 44px; }
 }
 
 @media (max-width: 860px) {

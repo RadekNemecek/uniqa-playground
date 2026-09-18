@@ -9,6 +9,11 @@ import { nextTick, type Ref } from 'vue'
  *
  * Styly si výsledek berou přes `var(--fit)`, typicky jako násobek
  * velikosti písma a šířky řádku.
+ *
+ * Pozor na animace uvnitř měřeného obsahu: nástup, který prvek posune
+ * pod dolní okraj, se do `scrollHeight` započítá a měření ho přečte jako
+ * přetečení, které nezmizí ani při nejmenším písmu. Nástupy proto smí
+ * jen zesvětlovat a zvětšovat do místa, ne posouvat ven.
  */
 export const FIT_MIN = 0.42
 export const FIT_STEP = 0.04
@@ -24,6 +29,18 @@ export async function fitToScreen(el: Ref<HTMLElement | null>): Promise<void> {
     fit = Math.round((fit - FIT_STEP) * 100) / 100
     node.style.setProperty('--fit', String(fit))
   }
+}
+
+/**
+ * Přeměření, jakmile dorazí písmo.
+ *
+ * Při studeném startu se první obrazovka vysází náhradním písmem, které
+ * se láme jinak. Změřeno je tedy něco jiného, než co za okamžik uvidí
+ * místnost, a otázka zůstane zbytečně zmenšená, dokud někdo nehne oknem.
+ * Prohlížeč bez `document.fonts` nic nepokazí, jen se neměří podruhé.
+ */
+export function refitOnFonts(run: () => void): void {
+  document.fonts?.ready.then(run).catch(() => {})
 }
 
 /**

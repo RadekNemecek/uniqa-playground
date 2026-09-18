@@ -112,7 +112,7 @@ function word(i: number): string {
 .key:disabled { cursor: default; }
 
 @keyframes key-in {
-  from { opacity: 0; transform: translateY(0.75rem) scale(0.96); }
+  from { opacity: 0; transform: scale(0.94); }
   to { opacity: 1; transform: none; }
 }
 

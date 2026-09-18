@@ -3,7 +3,7 @@ import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import PlayerAvatar from './PlayerAvatar.vue'
 import { confetti } from '@/lib/confetti'
-import { duration, prefersReducedMotion } from '@/lib/motion'
+import { countTo, duration, prefersReducedMotion } from '@/lib/motion'
 import { formatScore, TEAM_COLORS } from '@/lib/teams'
 import { count } from '@/lib/format'
 import { QUIZ_OPTIONS } from '../options'
@@ -52,22 +52,50 @@ function tint(s: QuizStanding): string {
   return `var(${QUIZ_OPTIONS[at % QUIZ_OPTIONS.length]!.color.cssVar})`
 }
 
-const visible = ref<string[]>(prefersReducedMotion() ? topThree.value.map((s) => s.uid) : [])
+/**
+ * Vyhlášení po beatech.
+ *
+ * Napětí nedělá čekání, ale to, že se něco děje: nejdřív se ohlásí místo
+ * a vyroste prázdný stupeň, teprve pak na něj dosedne jméno se zvířetem
+ * a body se dopočítají nahoru. Prázdná obrazovka mezi místy není napětí,
+ * je to jen prodleva, proto je každý beat krátký a pořád se něco hýbe.
+ */
+const CUE_MS = 700
+const HOLD_MS = 1200
+
+const cued = ref<string[]>([])
+const visible = ref<string[]>([])
 const activePlace = ref<number | null>(null)
-const sequenceDone = ref(prefersReducedMotion())
+const sequenceDone = ref(false)
+/** Body, jak se zrovna dopočítávají. Klíč je uid. */
+const counted = ref<Record<string, number>>({})
 const timers: number[] = []
+const stopCounts: Array<() => void> = []
+
+const ORDINAL = ['', 'První místo', 'Druhé místo', 'Třetí místo']
 
 const headline = computed(() => {
   if (visible.value.includes(topThree.value[0]?.uid ?? '')) {
     if (winners.value.length === 0) return 'Konec'
-    if (winners.value.length === 1) return `Vyhrál ${winners.value[0]!.nick}`
+    // Přítomný čas, protože nevíme, jestli je za přezdívkou on, nebo ona.
+    if (winners.value.length === 1) return `Vyhrává ${winners.value[0]!.nick}`
     return 'Shoda na prvním místě'
   }
-  return activePlace.value ? `${activePlace.value}. místo` : 'Výsledky'
+  if (activePlace.value === 1) return 'A vítězem je…'
+  if (activePlace.value) return `${ORDINAL[activePlace.value] ?? 'Další místo'}…`
+  return 'Výsledky'
 })
+
+function isCued(s: QuizStanding): boolean {
+  return cued.value.includes(s.uid)
+}
 
 function isVisible(s: QuizStanding): boolean {
   return visible.value.includes(s.uid)
+}
+
+function scoreOf(s: QuizStanding): number {
+  return counted.value[s.uid] ?? s.score
 }
 
 function celebrate(): void {
@@ -77,38 +105,83 @@ function celebrate(): void {
   )
 }
 
+/** Všechno naráz. Používá to mezerník i režim bez pohybu: moderátorka
+ *  nemá čekat na animaci, když chce výsledky hned. */
+function finish(): void {
+  timers.forEach((t) => window.clearTimeout(t))
+  timers.length = 0
+  stopCounts.forEach((stop) => stop())
+  stopCounts.length = 0
+  cued.value = topThree.value.map((s) => s.uid)
+  visible.value = [...cued.value]
+  counted.value = Object.fromEntries(topThree.value.map((s) => [s.uid, s.score]))
+  activePlace.value = null
+  if (!sequenceDone.value && winners.value.length > 0) celebrate()
+  sequenceDone.value = true
+}
+
+function land(standing: QuizStanding): void {
+  const ms = duration('--dur-count', 900)
+  visible.value = [...visible.value, standing.uid]
+  counted.value = { ...counted.value, [standing.uid]: 0 }
+  stopCounts.push(
+    countTo(0, standing.score, ms, (value) => {
+      counted.value = { ...counted.value, [standing.uid]: value }
+    }),
+  )
+  // Odpočet jede na snímcích a ty se v schované záložce nekreslí. Kdyby
+  // moderátorka mezitím přepnula okno, zůstala by na bedně nula, proto
+  // se výsledná hodnota dosadí i natvrdo.
+  timers.push(
+    window.setTimeout(() => {
+      counted.value = { ...counted.value, [standing.uid]: standing.score }
+    }, ms + 100),
+  )
+}
+
+/** Mezerník vyhlášení doskáče na konec. Na plátně se čeká jen tehdy,
+ *  když to moderátorce vyhovuje. */
+function onKey(e: KeyboardEvent): void {
+  if (sequenceDone.value) return
+  if (e.key === ' ' || e.code === 'Space') finish()
+}
+
 onMounted(async () => {
   await nextTick()
-  if (prefersReducedMotion()) {
-    if (winners.value.length > 0) celebrate()
+  window.addEventListener('keydown', onKey)
+
+  if (prefersReducedMotion() || topThree.value.length === 0) {
+    finish()
     return
   }
 
+  // Od posledního místa k prvnímu. Každé dostane svůj nástup a chvíli
+  // stání, než se ohlásí to další.
   const order = [...topThree.value].reverse()
-  if (order.length === 0) {
-    sequenceDone.value = true
-    return
-  }
-  const whole = duration('--dur-podium-sequence', 10000)
-  const firstAt = 0.12
-  const lastAt = 0.68
-
   order.forEach((standing, index) => {
-    const share = order.length === 1 ? lastAt : firstAt + (lastAt - firstAt) * (index / (order.length - 1))
-    timers.push(window.setTimeout(() => {
-      visible.value = [...visible.value, standing.uid]
-      activePlace.value = place(standing)
-    }, whole * share))
+    const cueAt = index * (CUE_MS + HOLD_MS)
+    timers.push(
+      window.setTimeout(() => {
+        cued.value = [...cued.value, standing.uid]
+        activePlace.value = place(standing)
+      }, cueAt),
+    )
+    timers.push(window.setTimeout(() => land(standing), cueAt + CUE_MS))
   })
 
+  const done = order.length * (CUE_MS + HOLD_MS) - HOLD_MS + CUE_MS
   timers.push(window.setTimeout(() => {
     if (winners.value.length > 0) celebrate()
-  }, whole * 0.76))
+  }, done))
   timers.push(window.setTimeout(() => {
     sequenceDone.value = true
-  }, whole * 0.96))
+  }, done + duration('--dur-count', 900)))
 })
-onUnmounted(() => timers.forEach((timer) => window.clearTimeout(timer)))
+onUnmounted(() => {
+  window.removeEventListener('keydown', onKey)
+  timers.forEach((timer) => window.clearTimeout(timer))
+  stopCounts.forEach((stop) => stop())
+})
 </script>
 
 <template>
@@ -127,13 +200,15 @@ onUnmounted(() => timers.forEach((timer) => window.clearTimeout(timer)))
         v-for="s in podium"
         :key="s.uid"
         class="slot"
-        :class="{ 'slot--champ': place(s) === 1, 'slot--shown': isVisible(s) }"
+        :class="{ 'slot--champ': place(s) === 1, 'slot--cued': isCued(s), 'slot--shown': isVisible(s) }"
         :style="{ '--tint': tint(s), '--h': height(s) }"
         :aria-hidden="!isVisible(s)"
       >
+        <!-- Stupeň vyroste první a chvíli stojí prázdný. Až pak na něj
+             dosedne zvíře se jménem a body se dopočítají nahoru. -->
         <PlayerAvatar class="slot__ava" :id="s.avatar" />
         <span class="slot__nick">{{ s.nick }}</span>
-        <span class="slot__score">{{ formatScore(s.score) }}</span>
+        <span class="slot__score">{{ formatScore(scoreOf(s)) }}</span>
         <span class="slot__riser" aria-hidden="true">
           <span class="slot__place">{{ place(s) }}</span>
         </span>
@@ -211,19 +286,30 @@ onUnmounted(() => timers.forEach((timer) => window.clearTimeout(timer)))
   min-width: 0;
   height: 100%;
   opacity: 0;
-  transform: translateY(var(--sp-5)) scale(0.96);
 }
-.slot--shown {
+/* Ohlášené místo: stojí tu prázdný stupeň, jméno ještě ne. */
+.slot--cued { opacity: 1; }
+.slot--cued .slot__ava,
+.slot--cued .slot__nick,
+.slot--cued .slot__score { visibility: hidden; opacity: 0; }
+.slot--shown .slot__ava,
+.slot--shown .slot__nick,
+.slot--shown .slot__score {
+  visibility: visible;
   opacity: 1;
-  transform: none;
-  animation: podiumPlace var(--dur-podium-place) var(--ease-back) both;
+  animation: podiumPlace var(--dur-podium-place) var(--ease-back) backwards;
 }
-.slot__ava { --ava-size: 3.5rem; align-self: end; }
+.slot__ava {
+  --ava-size: 3.5rem;
+  align-self: end;
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
 .slot--champ .slot__ava { --ava-size: 5rem; }
 .slot__nick {
   font-size: var(--fs-lg);
   font-weight: 700;
   overflow-wrap: anywhere;
+  transition: opacity var(--dur-fast) var(--ease-out);
 }
 .slot--champ .slot__nick { font-size: var(--fs-2xl); }
 .slot__score {
@@ -232,6 +318,7 @@ onUnmounted(() => timers.forEach((timer) => window.clearTimeout(timer)))
   font-weight: 900;
   color: var(--c-brand);
   font-variant-numeric: tabular-nums;
+  transition: opacity var(--dur-fast) var(--ease-out);
 }
 
 /* Sloup roste zdola nahoru, poměrem k nejlepšímu výsledku. */
@@ -248,7 +335,7 @@ onUnmounted(() => timers.forEach((timer) => window.clearTimeout(timer)))
   transform-origin: bottom center;
   transform: scaleY(0);
 }
-.slot--shown .slot__riser { animation: rise var(--dur-podium-place) var(--ease-back) both; }
+.slot--cued .slot__riser { animation: rise var(--dur-podium-place) var(--ease-back) both; }
 .slot__place {
   font-family: var(--font-display);
   font-size: var(--fs-2xl);
@@ -272,9 +359,22 @@ onUnmounted(() => timers.forEach((timer) => window.clearTimeout(timer)))
 .place-enter-from { opacity: 0; transform: translateY(var(--sp-2)); }
 .place-leave-to { opacity: 0; transform: translateY(calc(var(--sp-2) * -1)); }
 
+/* Ohlášené místo lehce dýchá, dokud na něj někdo nedosedne. Je to
+   jediný pohyb v tu chvíli a drží místnost u obrazovky. */
+.slot--cued:not(.slot--shown) .slot__riser { animation: rise var(--dur-podium-place) var(--ease-back) both, waiting var(--dur-breathe) ease-in-out var(--dur-podium-place) infinite; }
+
+@keyframes waiting {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.18); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .slot,
-  .slot__riser { animation: none; transform: none; }
+  .slot__ava,
+  .slot__nick,
+  .slot__score,
+  .slot__riser,
+  .slot--cued:not(.slot--shown) .slot__riser { animation: none; transform: none; }
 }
 
 @media (max-width: 720px) {

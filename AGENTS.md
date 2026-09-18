@@ -74,10 +74,14 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
   tvrzení má vědět, kam sáhnout. Slova Pravda a Nepravda nese
   `BOOLEAN_LABELS`, nepíše je autorka a do balíčku se neukládají. Balíček
   bez pole `kind` je čtveřice možností, přepisovat se kvůli tomu nemusí.
-- **Po odhalení se ukazuje, jak kdo odpovídal.** Sloupec na možnost, se
-  stejným písmenem i odstínem jako dlaždice. Místo si graf drží od začátku
-  otázky a jen se odkryje: `fitToScreen()` měří jednou a obsah se při
-  odhalení nesmí pohnout.
+- **Po odhalení nese rozložení hlasů sama dlaždice.** Ne graf vedle ní:
+  pět prvků na jednom plátně nikdo nepřečte. Dlaždici přeteče pruh
+  z inkoustu podle počtu hlasů a číslo na kraji. Otázka se zároveň smrskne
+  na řádek nad středem, protože visela na plátně celý limit, a uvolněný
+  střed dostane poučka, kvůli které se kvíz hraje. Pruh i číslo si drží
+  místo od začátku otázky a jen se odkryjí: `fitToScreen()` měří jednou
+  a obsah se při odhalení nesmí pohnout. Když otázka poučku nemá, zůstane
+  uprostřed ona, prázdný střed by byl horší než zopakování.
 - **Průběžně se vyhlašují jen tři místa.** Delší seznam se z posledního
   stolu nepřečte. Celé pořadí je ve vyhodnocení a svoje místo vidí každý
   na svém telefonu.
@@ -173,6 +177,12 @@ nepostupuje na další otázku.
 
 `src/lib/fit.ts` ubírá `--fit`, dokud se obsah nevejde. Používá ho deska
 i kvíz. Velikost textu se neodhaduje z počtu znaků, měří se.
+
+Nástupová animace uvnitř měřeného obsahu nesmí prvek posunout pod dolní
+okraj. Takový posun se započítá do `scrollHeight`, měření ho přečte jako
+přetečení a zmenší celou obrazovku na minimum, ze kterého se sama
+nevrátí. Nástupy proto jen zesvětlují a zvětšují do místa. Písmo dorazí
+až po prvním vykreslení, takže se po něm měří znovu (`refitOnFonts`).
 
 ## Přidání další hry
 

@@ -130,6 +130,10 @@
   --fs-cat:    clamp(1.05rem, 0.7rem + 0.85vw + 0.55vh, 1.85rem);
   --fs-prompt: clamp(1.5rem, 0.9rem + 1.4vw + 1.4vh, 4rem);
   --fs-answer: clamp(1.25rem, 0.7rem + 1vw + 1.2vh, 2.75rem);
+  /* Poučka po odhalení. Drží střed plátna, takže je větší než možnosti:
+     v tu chvíli je to hlavní věc na obrazovce. Menší než otázka zůstává,
+     je to věta k přečtení, ne titulek. */
+  --fs-note:   clamp(1.35rem, 0.8rem + 1.1vw + 1.2vh, 3.25rem);
   --fs-hero:   clamp(2.5rem, 1.5rem + 4.5vw, 6rem);
   --fs-countdown: clamp(8rem, 3rem + 14vw, 18rem);
   --fs-phone-option: clamp(4rem, 2rem + 18vw, 8rem);
@@ -217,13 +221,12 @@
   --quiz-qr-max: 34rem;
   --quiz-qr-vmax: 54vh;
   --quiz-lobby-room-min: 24rem;
+  /* Karta hráče v čekárně a zvíře na ní. */
+  --quiz-lobby-card: 8.5rem;
+  --quiz-lobby-ava: 4rem;
   --quiz-stage-max: 84rem;
   --quiz-prompt-max: 64rem;
   --quiz-stage-footer: 5rem;
-  /* Graf rozložení odpovědí pod možnostmi. Místo si drží od začátku
-     otázky, aby se obsah při odhalení nepřeměřoval. */
-  --quiz-chart-h: 10rem;
-  --quiz-chart-bar: 4.5rem;
   --z-board: 1;
   --z-header: 20;
   --z-stage: 60;
@@ -254,6 +257,7 @@
   --fs-cat:    calc(clamp(1.05rem, 0.7rem + 0.85vw + 0.55vh, 1.85rem) * var(--scale));
   --fs-prompt: calc(clamp(1.5rem, 0.9rem + 1.4vw + 1.4vh, 4rem) * var(--scale));
   --fs-answer: calc(clamp(1.25rem, 0.7rem + 1vw + 1.2vh, 2.75rem) * var(--scale));
+  --fs-note:   calc(clamp(1.35rem, 0.8rem + 1.1vw + 1.2vh, 3.25rem) * var(--scale));
   --fs-hero:   calc(clamp(2.5rem, 1.5rem + 4.5vw, 6rem) * var(--scale));
   --fs-countdown: calc(clamp(8rem, 3rem + 14vw, 18rem) * var(--scale));
 }

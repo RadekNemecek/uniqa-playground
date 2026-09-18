@@ -2,8 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import TimerBar from '@/games/pojistuj/components/TimerBar.vue'
 import OptionChip from './OptionChip.vue'
-import ChoiceChart from './ChoiceChart.vue'
-import { fitToScreen, refitOnResize } from '@/lib/fit'
+import { fitToScreen, refitOnFonts, refitOnResize } from '@/lib/fit'
 import type { QuizPhase, QuizQuestion } from '../types'
 
 const props = defineProps<{
@@ -76,12 +75,32 @@ function scheduleReady(): void {
 
 const running = computed(() => props.phase === 'question' && ready.value)
 
-/** Vyhodnocení mění jen jas chybných možností. Správná i zamčené volby
- *  zůstávají přesně ve stejné podobě a na stejném místě. */
-function stateOf(i: number): 'idle' | 'wrong' {
+/** Vyhodnocení ztlumí chybné možnosti a označí správnou. Rozvržení
+ *  zůstává stejné, dlaždice se nikam neposunou. */
+function stateOf(i: number): 'idle' | 'wrong' | 'right' {
   if (!revealed.value) return 'idle'
-  return i === props.question.correctIndex ? 'idle' : 'wrong'
+  return i === props.question.correctIndex ? 'right' : 'wrong'
 }
+
+/** Nejsilnější možnost. Od ní se odvíjí délka pruhů, aby byl rozdíl vidět
+ *  i tehdy, když odpovídalo pět lidí. */
+const peak = computed(() => Math.max(1, ...(props.counts ?? [0])))
+
+function votesFor(i: number): number | null {
+  return revealed.value && props.counts ? (props.counts[i] ?? 0) : null
+}
+
+function shareFor(i: number): number {
+  return revealed.value && props.counts ? (props.counts[i] ?? 0) / peak.value : 0
+}
+
+/**
+ * Po odhalení se střed obrazovky uvolní pro poučku, kvůli které se kvíz
+ * hraje, a otázka se smrskne na jeden řádek nad ní. Visela na plátně celý
+ * limit, takže ji nikdo nepotřebuje číst znovu. Když poučka není, zůstane
+ * uprostřed otázka: prázdný střed by byl horší než opakování.
+ */
+const noteUp = computed(() => revealed.value && props.question.note.trim().length > 0)
 
 /** Co udělá mezerník. Na plátně to musí být vidět, aby se nedalo omylem
  *  přeskočit odhalení. */
@@ -113,6 +132,7 @@ watch(() => props.question.qid, () => {
 onMounted(() => {
   scheduleReady()
   void fit()
+  refitOnFonts(() => void fit())
   stopRefit = refitOnResize(() => void fit())
 })
 onBeforeUnmount(() => {
@@ -142,35 +162,41 @@ onBeforeUnmount(() => {
          otázky i možností proběhne znovu a plátno dá poznat, že se něco
          změnilo. -->
     <div v-else :key="question.qid" ref="body" class="stage__body">
-      <p class="stage__prompt">{{ question.prompt }}</p>
-
-      <!-- Místo pro vysvětlení se rezervuje od začátku. Při vyhodnocení
-           se jen odkryje, takže odpovědi neposkočí ani se nepřeměří. -->
-      <p
-        v-if="question.note"
-        class="stage__note"
-        :class="{ 'stage__note--hidden': !revealed }"
-        :aria-hidden="!revealed"
-      >
-        {{ question.note }}
+      <!-- Ohlédnutí za otázkou. Místo si drží od začátku, aby se obsah
+           při odhalení nepohnul a nemusel přeměřovat. -->
+      <p v-if="question.note" class="stage__recap" :class="{ 'stage__recap--hidden': !noteUp }" :aria-hidden="!noteUp">
+        {{ question.prompt }}
       </p>
+
+      <!-- Otázka a poučka sdílejí jednu buňku, takže se řádek změří na tu
+           vyšší z nich a přepnutí nikam neposune dlaždice pod ním. -->
+      <div class="stage__focus">
+        <p class="stage__prompt" :class="{ 'stage__prompt--away': noteUp }" :aria-hidden="noteUp">
+          {{ question.prompt }}
+        </p>
+        <p
+          v-if="question.note"
+          class="stage__note"
+          :class="{ 'stage__note--hidden': !noteUp }"
+          :aria-hidden="!noteUp"
+        >
+          {{ question.note }}
+        </p>
+      </div>
 
       <ul class="stage__options">
         <li v-for="(text, i) in question.options" :key="i" :style="{ '--d': i }">
-          <OptionChip :index="i" :text="text" :state="stateOf(i)" />
+          <OptionChip
+            :index="i"
+            :text="text"
+            :state="stateOf(i)"
+            :kind="question.kind"
+            :with-votes="players > 0"
+            :votes="votesFor(i)"
+            :share="shareFor(i)"
+          />
         </li>
       </ul>
-
-      <!-- Jak kdo odpovídal. Bez telefonů není co kreslit, takže si graf
-           v takové hře ani nedrží místo. -->
-      <ChoiceChart
-        v-if="players > 0"
-        :counts="counts"
-        :slots="question.options.length"
-        :correct-index="question.correctIndex"
-        :kind="question.kind"
-        :revealed="revealed && counts !== null"
-      />
     </div>
 
     <footer class="stage__foot">
@@ -249,12 +275,37 @@ onBeforeUnmount(() => {
 .stage__body {
   --fit: 1;
   display: grid;
-  grid-template-rows: minmax(0, 1fr) auto auto auto;
+  grid-template-rows: auto minmax(0, 1fr) auto;
   gap: calc(var(--sp-5) * var(--fit));
   width: 100%;
   min-height: 0;
   overflow: hidden;
 }
+
+/* Otázka po odhalení. Jeden řádek, ať je jasné, k čemu se poučka pod ní
+   vztahuje, a nic víc: přečetla se, dokud se odpovídalo. */
+.stage__recap {
+  justify-self: center;
+  max-width: min(100%, calc(80ch / var(--fit)));
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: calc(var(--fs-lg) * var(--fit));
+  font-weight: 700;
+  color: var(--c-text-muted);
+  transition: opacity var(--dur-base) var(--ease-out);
+}
+.stage__recap--hidden { visibility: hidden; opacity: 0; }
+
+/* Otázka a poučka stojí v jedné buňce přes sebe. Řádek se tím změří na
+   tu vyšší z nich a přepnutí po odhalení s ničím nehne. */
+.stage__focus {
+  display: grid;
+  align-items: center;
+  justify-items: center;
+  min-height: 0;
+}
+.stage__focus > * { grid-area: 1 / 1; }
 
 .stage__prompt {
   align-self: center;
@@ -270,10 +321,15 @@ onBeforeUnmount(() => {
   /* Otázka nastoupí první, možnosti za ní. Je to jediný pohyb, který
      na plátně smí být: čte ho celá místnost naráz. */
   animation: prompt-in var(--dur-slow) var(--ease-out) backwards;
+  transition: opacity var(--dur-base) var(--ease-out);
 }
+.stage__prompt--away { visibility: hidden; opacity: 0; }
 
+/* Nástupy se zvětšují do místa, nikdy neposouvají mimo svůj obdélník.
+   Posun dolů by při měření vyčníval pod okraj, fitToScreen by ho četl
+   jako přetečení a zmenšil celou obrazovku na minimum. */
 @keyframes prompt-in {
-  from { opacity: 0; transform: translateY(-0.5rem); }
+  from { opacity: 0; transform: scale(0.98); }
   to { opacity: 1; transform: none; }
 }
 
@@ -300,21 +356,23 @@ onBeforeUnmount(() => {
 }
 
 @keyframes option-in {
-  from { opacity: 0; transform: translateY(0.75rem); }
+  from { opacity: 0; transform: scale(0.96); }
   to { opacity: 1; transform: none; }
 }
 
-/* Poučka je to, kvůli čemu se kvíz na školení hraje, takže se musí dát
-   přečíst i zezadu. Šířka je omezená na měřítko řádku, ne na šířku desky:
+/* Poučka je to, kvůli čemu se kvíz na školení hraje. Po odhalení sedí
+   uprostřed plátna a jde na ni celé uvolněné místo, takže se dá přečíst
+   i ze zadní řady. Šířka je omezená na měřítko řádku, ne na šířku desky:
    dlouhý řádek se z dálky čte hůř než malé písmo. */
 .stage__note {
+  align-self: center;
   justify-self: center;
-  max-width: min(100%, calc(52ch / var(--fit)));
-  padding: calc(var(--sp-3) * var(--fit)) calc(var(--sp-5) * var(--fit));
+  max-width: min(100%, calc(34ch / var(--fit)));
+  padding: calc(var(--sp-5) * var(--fit)) calc(var(--sp-6) * var(--fit));
   border-left: var(--sp-1) solid var(--c-brand);
   border-radius: var(--r-md);
   background: color-mix(in oklab, var(--c-brand) 10%, transparent);
-  font-size: calc(var(--fs-lg) * var(--fit));
+  font-size: calc(var(--fs-note) * var(--fit));
   line-height: var(--lh-body);
   text-align: left;
   text-wrap: pretty;
