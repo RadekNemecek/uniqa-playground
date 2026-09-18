@@ -42,6 +42,11 @@ Ověření: v seznamu poskytovatelů má být u *Anonymous* stav **Enabled**.
    [`firestore.rules`](firestore.rules) z tohohle repozitáře.
 3. **Publish**. Nahoře se musí objevit potvrzení, že jsou pravidla nasazená.
 
+Pravidla se občas změní spolu s aplikací. Když přibude něco, co hráč
+zapisuje, je potřeba je publikovat znovu, jinak server nový zápis odmítne.
+Naposledy se to stalo s **avatarem hráče**: karta na soupisce má navíc pole
+`avatar`.
+
 Co pravidla dělají:
 
 - balíčky desky Pojišťuj! smí **číst kdokoli**, kdo má odkaz na hru,
@@ -161,6 +166,7 @@ nepřipojí.
 | V kvízu chybí volba „Telefony hráčů" | Sdílená databáze není dostupná. Kvíz půjde promítat, telefony se nepřipojí. |
 | Kvíz hlásí, že balíčky nejdou načíst | Nejsou publikovaná aktuální pravidla pro veřejné čtení `quizPacks`, krok 1.3. |
 | Hráči se nepřipojí, ale kód na plátně je | Nejsou publikovaná pravidla pro `quiz`, krok 1.3. |
+| Všichni hráči mají v čekárně stejné zvíře | Pravidla jsou starší než aplikace a pole `avatar` odmítají, telefon se proto připojí bez něj. Publikuj pravidla znovu, krok 1.3. |
 
 Aplikace je schválně stavěná tak, že když se k Firebase nedostane,
 spadne do lokálního režimu a **hraje se dál**. Deset minut před školením

@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import QrCode from './QrCode.vue'
+import PlayerAvatar from './PlayerAvatar.vue'
 import { count } from '@/lib/format'
 import type { QuizPlayer } from '../types'
 
@@ -103,6 +104,7 @@ function commitRename(uid: string): void {
             />
           </template>
           <template v-else>
+            <PlayerAvatar class="who__ava" :id="p.avatar" />
             <span class="who__nick">{{ p.nick }}</span>
             <button type="button" class="who__tool" :aria-label="`Přejmenovat ${p.nick}`" @click="startRename(p)">
               Přejmenovat
@@ -204,6 +206,7 @@ function commitRename(uid: string): void {
   /* Jméno nastupuje, aby bylo poznat, že někdo právě přišel. */
   animation: pop var(--dur-base) var(--ease-back) both;
 }
+.who__ava { --ava-size: 1.75rem; }
 .who__nick { font-weight: 700; }
 .who__tool {
   border: 0;

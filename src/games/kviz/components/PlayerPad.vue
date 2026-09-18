@@ -1,26 +1,49 @@
 <script setup lang="ts">
-import { quizOption, optionLabel, OPTION_COUNT } from '../options'
+import { computed } from 'vue'
+import { BOOLEAN_LABELS, optionCountFor, optionLabel, quizOption } from '../options'
+import type { QuizKind } from '../types'
 
-defineProps<{ locked: boolean; chosen: number | null }>()
+const props = withDefaults(
+  defineProps<{
+    locked: boolean
+    chosen: number | null
+    /** Tvar otázky. U tvrzení jsou tlačítka dvě a nesou slova. */
+    kind?: QuizKind
+  }>(),
+  { kind: 'choice' },
+)
+
 const emit = defineEmits<{ pick: [index: number] }>()
 
-const slots = Array.from({ length: OPTION_COUNT }, (_, i) => i)
+const slots = computed(() => Array.from({ length: optionCountFor(props.kind) }, (_, i) => i))
+
+/**
+ * Znění na tlačítku. U čtveřice možností tam žádné není, texty jsou na
+ * plátně. U tvrzení ano: Pravda a Nepravda nejsou obsah otázky, jsou to
+ * dvě stálá slova, a bez nich by hráč hádal, co znamená A.
+ */
+function word(i: number): string {
+  return props.kind === 'boolean' ? (BOOLEAN_LABELS[i] ?? '') : ''
+}
 </script>
 
 <template>
-  <div class="pad">
+  <div class="pad" :class="{ 'pad--two': kind === 'boolean' }">
     <button
       v-for="i in slots"
       :key="i"
       type="button"
       class="key"
       :class="{ 'key--off': locked && chosen !== i, 'key--on': chosen === i }"
-      :style="{ '--tint': `var(${quizOption(i).color.cssVar})` }"
+      :style="{ '--tint': `var(${quizOption(i).color.cssVar})`, '--d': i }"
       :disabled="locked"
-      :aria-label="optionLabel(i)"
+      :aria-label="optionLabel(i, kind)"
       @click="emit('pick', i)"
     >
-      <span class="key__letter" aria-hidden="true">{{ quizOption(i).letter }}</span>
+      <span v-if="word(i)" class="key__word" aria-hidden="true">{{ word(i) }}</span>
+      <span class="key__letter" :class="{ 'key__letter--small': word(i) }" aria-hidden="true">
+        {{ quizOption(i).letter }}
+      </span>
     </button>
   </div>
 </template>
@@ -37,10 +60,15 @@ const slots = Array.from({ length: OPTION_COUNT }, (_, i) => i)
   min-height: 0;
 }
 
+/* Tvrzení má dvě možnosti, tedy dva pruhy přes celou šířku. Palec je
+   trefí i poslepu a slovo se vejde na jeden řádek. */
+.pad--two { grid-template-columns: minmax(0, 1fr); }
+
 .key {
   display: grid;
   place-items: center;
   align-content: center;
+  gap: var(--sp-2);
   min-height: 0;
   border: var(--separator-w) solid color-mix(in oklab, var(--c-text-ink) 30%, var(--tint));
   border-radius: var(--r-xl);
@@ -51,12 +79,24 @@ const slots = Array.from({ length: OPTION_COUNT }, (_, i) => i)
     transform var(--dur-fast) var(--ease-both),
     opacity var(--dur-base) var(--ease-out),
     border-color var(--dur-base) var(--ease-out);
+  /* Tlačítka nastupují po sobě, aby bylo znát, že přišla nová otázka.
+     Výplň je `backwards`, ne `both`: dojetá animace by jinak držela
+     `transform: none` a přebila zvětšení zvolené dlaždice. */
+  animation: key-in var(--dur-base) var(--ease-back) calc(var(--d) * 50ms) backwards;
 }
 .key:active:not(:disabled) { transform: scale(0.96); }
 
 .key__letter {
   font-family: var(--font-display);
   font-size: var(--fs-phone-option);
+  font-weight: 900;
+  line-height: 1;
+}
+/* U tvrzení nese tlačítko slovo a písmeno je jen druhý rozlišovací znak. */
+.key__letter--small { font-size: var(--fs-lg); opacity: 0.7; }
+.key__word {
+  font-family: var(--font-display);
+  font-size: var(--fs-phone-word);
   font-weight: 900;
   line-height: 1;
 }
@@ -71,7 +111,13 @@ const slots = Array.from({ length: OPTION_COUNT }, (_, i) => i)
 .key--off { opacity: 0.25; }
 .key:disabled { cursor: default; }
 
+@keyframes key-in {
+  from { opacity: 0; transform: translateY(0.75rem) scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .key { animation: none; }
   .key--on { transform: none; }
   .key:active:not(:disabled) { transform: none; }
 }

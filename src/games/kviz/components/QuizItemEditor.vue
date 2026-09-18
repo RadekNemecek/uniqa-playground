@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
-import { OPTION_COUNT, quizOption } from '../options'
-import type { QuizItem } from '../types'
+import { BOOLEAN_LABELS, OPTION_COUNT, kindOf, quizOption } from '../options'
+import type { QuizItem, QuizKind } from '../types'
 
 const props = defineProps<{ item: QuizItem }>()
 const emit = defineEmits<{ remove: []; collapse: [] }>()
@@ -17,6 +17,19 @@ function grow(el: HTMLTextAreaElement | null): void {
 }
 
 const slots = computed(() => Array.from({ length: OPTION_COUNT }, (_, i) => i))
+
+const kind = computed(() => kindOf(props.item))
+
+/**
+ * Přepnutí tvaru otázky. Napsané možnosti se nemažou: tvrzení je nečte
+ * a přepnutí zpátky je vrátí i s textem. Mění se jen správná odpověď,
+ * u tvrzení jsou na výběr dvě.
+ */
+function setKind(next: QuizKind): void {
+  if (kind.value === next) return
+  props.item.kind = next
+  if (next === 'boolean' && props.item.correctIndex > 1) props.item.correctIndex = 0
+}
 
 function setOption(i: number, value: string): void {
   const next = [...props.item.options]
@@ -54,6 +67,27 @@ watch(() => props.item.id, async () => {
 <template>
   <div class="item">
     <header class="item__head">
+      <div class="kinds" role="group" aria-label="Tvar otázky">
+        <button
+          type="button"
+          class="kinds__pick"
+          :class="{ 'kinds__pick--on': kind === 'choice' }"
+          :aria-pressed="kind === 'choice'"
+          @click="setKind('choice')"
+        >
+          Čtyři možnosti
+        </button>
+        <button
+          type="button"
+          class="kinds__pick"
+          :class="{ 'kinds__pick--on': kind === 'boolean' }"
+          :aria-pressed="kind === 'boolean'"
+          @click="setKind('boolean')"
+        >
+          Pravda, nepravda
+        </button>
+      </div>
+
       <div class="item__tools">
         <button type="button" class="tool" @click="emit('collapse')">Sbalit</button>
         <button type="button" class="tool tool--danger" @click="emit('remove')">Smazat</button>
@@ -61,18 +95,52 @@ watch(() => props.item.id, async () => {
     </header>
 
     <label class="f">
-      <span class="f__label">Otázka <em>uvidí ji celá místnost</em></span>
+      <span class="f__label">
+        {{ kind === 'boolean' ? 'Tvrzení' : 'Otázka' }}
+        <em>uvidí ho celá místnost</em>
+      </span>
       <textarea
         ref="promptEl"
         v-model="item.prompt"
         rows="2"
-        placeholder="Např. Co kryje povinné ručení?"
+        :placeholder="
+          kind === 'boolean'
+            ? 'Např. Povinné ručení kryje i škodu na vlastním voze.'
+            : 'Např. Co kryje povinné ručení?'
+        "
         @input="grow(promptEl)"
       />
       <span v-if="promptNote" class="f__note">{{ promptNote }}</span>
     </label>
 
-    <fieldset class="opts">
+    <fieldset v-if="kind === 'boolean'" class="opts">
+      <legend class="f__label">
+        Platí to? <em>vyber, co je správně</em>
+      </legend>
+
+      <div class="two">
+        <button
+          v-for="(word, i) in BOOLEAN_LABELS"
+          :key="word"
+          type="button"
+          class="two__pick"
+          :class="{ 'two__pick--on': item.correctIndex === i }"
+          :aria-pressed="item.correctIndex === i"
+          :style="{ '--tint': `var(${quizOption(i).color.cssVar})` }"
+          @click="item.correctIndex = i"
+        >
+          <span class="two__letter" aria-hidden="true">{{ quizOption(i).letter }}</span>
+          {{ word }}
+        </button>
+      </div>
+
+      <p class="f__note">
+        Na telefonu jsou dvě tlačítka se slovy, Pravda je vždycky A. Pořadí
+        se u tvrzení nemíchá, aby hráč po druhé otázce věděl, kam sáhnout.
+      </p>
+    </fieldset>
+
+    <fieldset v-else class="opts">
       <legend class="f__label">
         Možnosti <em>tečku dej té správné</em>
       </legend>
@@ -125,7 +193,48 @@ watch(() => props.item.id, async () => {
 <style scoped>
 .item { display: grid; gap: var(--sp-4); padding: var(--sp-5); }
 
-.item__head { display: flex; justify-content: flex-end; gap: var(--sp-3); }
+.item__head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-3); }
+
+/* Tvar otázky. Přepínač je vlevo nahoře, protože rozhoduje o tom, co
+   je pod ním, a autorka ho volí dřív než cokoli jiného. */
+.kinds { display: inline-flex; padding: 2px; border: 1px solid var(--c-line); border-radius: var(--r-md); background: var(--c-sunken); }
+.kinds__pick {
+  padding: var(--sp-2) var(--sp-3);
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--c-text-faint);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  transition: all var(--dur-fast) var(--ease-out);
+}
+.kinds__pick:hover { color: var(--c-text); }
+.kinds__pick--on { background: var(--c-surface-2); color: var(--c-text); }
+
+/* Pravda a nepravda. Nese je barva i písmeno, stejně jako na telefonu,
+   aby se editor a hra shodly na tom, co je A. */
+.two { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.two__pick {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-4);
+  border: 1px solid var(--c-line);
+  border-radius: var(--r-md);
+  background: var(--c-sunken);
+  color: var(--c-text-muted);
+  font-weight: 700;
+  transition: all var(--dur-fast) var(--ease-out);
+}
+.two__pick:hover { color: var(--c-text); border-color: var(--c-surface-3); }
+.two__letter { font-family: var(--font-display); font-weight: 900; color: var(--tint); }
+/* Zvolená není poznat jen barvou: má plnou plochu a tmavý text na ní. */
+.two__pick--on {
+  border-color: var(--tint);
+  background: var(--tint);
+  color: var(--c-text-ink);
+}
+.two__pick--on .two__letter { color: var(--c-text-ink); }
 .item__tools { display: flex; gap: var(--sp-2); }
 .tool {
   padding: var(--sp-2) var(--sp-3);
@@ -212,6 +321,8 @@ watch(() => props.item.id, async () => {
 
 @media (pointer: coarse) {
   .tool { min-height: 44px; }
+  .kinds__pick,
+  .two__pick { min-height: 44px; }
   .opt__dot { width: 1.5rem; height: 1.5rem; }
   .opt__radio { min-width: 44px; min-height: 44px; }
 }

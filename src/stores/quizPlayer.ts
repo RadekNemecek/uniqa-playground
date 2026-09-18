@@ -1,5 +1,6 @@
 import { computed, reactive } from 'vue'
 import { sessionDb, type QuizSessionDb } from '@/lib/sessionDb'
+import { randomAvatarId } from '@/games/kviz/avatars'
 import type { QuizSession } from '@/games/kviz/types'
 
 const STORAGE_KEY = 'playground.kviz.me.v1'
@@ -16,6 +17,8 @@ export type SendState = 'idle' | 'sending' | 'sent' | 'failed'
 interface PlayerState {
   code: string
   nick: string
+  /** Zvíře hráče. Přiřadí se samo, hráč ho může před připojením vyměnit. */
+  avatar: string
   uid: string
   session: QuizSession | null
   /** Session se nenašla. Jiný stav než „ještě nedorazila". */
@@ -40,6 +43,7 @@ interface PlayerState {
 const state = reactive<PlayerState>({
   code: '',
   nick: '',
+  avatar: randomAvatarId(),
   uid: '',
   session: null,
   missing: false,
@@ -66,6 +70,7 @@ export const player = state
 interface Saved {
   code: string
   nick: string
+  avatar?: string
 }
 
 function readSaved(): Saved | null {
@@ -83,11 +88,22 @@ export function rememberedNick(code: string): string {
   return saved?.code === code ? saved.nick : ''
 }
 
+/** Zvíře z minulého připojení. Prázdné, když hráč v téhle hře ještě nebyl. */
+export function rememberedAvatar(code: string): string {
+  const saved = readSaved()
+  return saved?.code === code ? (saved.avatar ?? '') : ''
+}
+
+export function pickAvatar(id: string): void {
+  state.avatar = id
+}
+
 /* --- Připojení ------------------------------------------------------------ */
 
 export async function watchGame(code: string): Promise<void> {
   state.code = code
   state.nick = rememberedNick(code)
+  state.avatar = rememberedAvatar(code) || state.avatar
   conn ??= await sessionDb()
   if (!conn) {
     state.missing = true
@@ -103,7 +119,10 @@ export async function watchGame(code: string): Promise<void> {
     conn.watchMe(code, (me) => {
       state.onRoster = me !== null
       // Moderátorka může hráče přejmenovat, telefon to má vzít na vědomí.
-      if (me) state.nick = me.nick
+      if (me) {
+        state.nick = me.nick
+        if (me.avatar) state.avatar = me.avatar
+      }
     }),
   ]
 }
@@ -131,9 +150,12 @@ export async function join(nick: string): Promise<boolean> {
   state.joining = true
   state.joinError = ''
   try {
-    await conn.joinAsPlayer(state.code, nick.trim())
+    await conn.joinAsPlayer(state.code, nick.trim(), state.avatar)
     state.nick = nick.trim()
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ code: state.code, nick: state.nick }))
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ code: state.code, nick: state.nick, avatar: state.avatar }),
+    )
     return true
   } catch (e) {
     state.joinError = e instanceof Error ? e.message : 'Připojení se nepovedlo.'

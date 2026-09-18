@@ -1,7 +1,7 @@
 import { id } from '@/lib/id'
 import { clone } from '@/lib/clone'
-import { OPTION_COUNT } from './options'
-import type { QuizItem, QuizPack } from './types'
+import { BOOLEAN_COUNT, OPTION_COUNT } from './options'
+import type { QuizItem, QuizKind, QuizPack } from './types'
 
 /** Stáhne balíček kvízu jako JSON soubor. */
 export function downloadQuizPack(pack: QuizPack): void {
@@ -66,12 +66,16 @@ function readItem(raw: unknown, index: number): QuizItem {
   const given = Array.isArray(o.options) ? o.options : []
   const options = Array.from({ length: OPTION_COUNT }, (_, i) => String(given[i] ?? '').trim())
 
+  // Neznámý tvar je čtveřice možností. Starší soubory pole nemají vůbec.
+  const kind: QuizKind = o.kind === 'boolean' ? 'boolean' : 'choice'
+  const max = kind === 'boolean' ? BOOLEAN_COUNT : OPTION_COUNT
   const correct = Math.round(Number(o.correctIndex))
   return {
     id: id('i'),
+    kind,
     prompt: String(o.prompt ?? '').trim(),
     options,
-    correctIndex: Number.isFinite(correct) && correct >= 0 && correct < OPTION_COUNT ? correct : 0,
+    correctIndex: Number.isFinite(correct) && correct >= 0 && correct < max ? correct : 0,
     note: String(o.note ?? '').trim().slice(0, 400),
   }
 }

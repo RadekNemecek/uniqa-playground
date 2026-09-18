@@ -132,9 +132,42 @@ const ROWS: Row[] = [
   ],
 ]
 
+/** Tvrzení: znění, jestli platí, a poučka. Na plátně i na telefonu se
+ *  odpovídá Pravda, nebo Nepravda. */
+type Claim = [prompt: string, holds: boolean, note: string]
+
+const CLAIMS: Claim[] = [
+  [
+    'Povinné ručení kryje i škodu na vlastním voze viníka.',
+    false,
+    'Kryje jen škodu způsobenou někomu jinému. Na vlastní vůz je havarijní pojištění.',
+  ],
+  [
+    'Čím vyšší spoluúčast si klient sjedná, tím nižší platí pojistné.',
+    true,
+    'Klient tím na sebe bere malé škody a pojišťovně zůstávají ty velké.',
+  ],
+  [
+    'Pojistná částka je nejvyšší možné plnění, které pojišťovna vyplatí.',
+    true,
+    'Přes pojistnou částku pojišťovna neplní, i kdyby škoda byla vyšší.',
+  ],
+  [
+    'Zelená karta nahrazuje pojistnou smlouvu.',
+    false,
+    'Zelená karta je jen doklad o povinném ručení, smlouvu nenahrazuje.',
+  ],
+  [
+    'Pojistnou smlouvu lze vypovědět do dvou měsíců od jejího uzavření.',
+    true,
+    'Výpovědní doba je osmidenní a pojištění zanikne jejím uplynutím.',
+  ],
+]
+
 /**
  * Ukázkový balíček kvízu. Založí se tlačítkem ve správě, aby si šlo hru
- * vyzkoušet dřív, než vznikne vlastní obsah.
+ * vyzkoušet dřív, než vznikne vlastní obsah. Jsou v něm oba tvary otázky,
+ * ať je na první pohled vidět, že jdou míchat.
  */
 export function demoQuizPack(): QuizPack {
   const now = Date.now()
@@ -143,14 +176,26 @@ export function demoQuizPack(): QuizPack {
     name: 'Ukázkový kvíz',
     description:
       'Obecné otázky z pojišťovnictví a práce s klientem. Slouží k vyzkoušení hry, nahraď ho vlastním obsahem.',
-    items: ROWS.map(([prompt, correct, wrong, note]) => ({
-      id: id('i'),
-      prompt,
-      // Správná je na prvním místě, protože se ve hře stejně zamíchá.
-      options: [correct, ...wrong],
-      correctIndex: 0,
-      note,
-    })),
+    items: [
+      ...ROWS.map(([prompt, correct, wrong, note]) => ({
+        id: id('i'),
+        kind: 'choice' as const,
+        prompt,
+        // Správná je na prvním místě, protože se ve hře stejně zamíchá.
+        options: [correct, ...wrong],
+        correctIndex: 0,
+        note,
+      })),
+      ...CLAIMS.map(([prompt, holds, note]) => ({
+        id: id('i'),
+        kind: 'boolean' as const,
+        prompt,
+        // Tvrzení znění možností nečte, Pravda je vždycky 0.
+        options: [],
+        correctIndex: holds ? 0 : 1,
+        note,
+      })),
+    ],
     createdAt: now,
     updatedAt: now,
   }

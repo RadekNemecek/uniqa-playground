@@ -60,6 +60,7 @@ function toSession(data: DocumentData): QuizSession {
     total: Number(data.total ?? 0),
     index: Number(data.index ?? 0),
     qid: String(data.qid ?? ''),
+    kind: data.kind === 'boolean' ? 'boolean' : 'choice',
     phase: data.phase ?? 'lobby',
     askedAt: millis(data.askedAt),
     preRollMs: Number(data.preRollMs ?? 0),
@@ -104,6 +105,7 @@ class FirestoreSessionDb implements QuizSessionDb {
         total: init.total,
         index: 0,
         qid: init.qid,
+        kind: init.kind,
         phase: 'lobby' as const,
         askedAt: null,
         preRollMs: init.preRollMs,
@@ -142,6 +144,7 @@ class FirestoreSessionDb implements QuizSessionDb {
           snap.docs.map((d) => ({
             uid: d.id,
             nick: String(d.data().nick ?? ''),
+            avatar: String(d.data().avatar ?? ''),
             joinedAt: millis(d.data().joinedAt) ?? 0,
             joinedAtIndex: Number(d.data().joinedAtIndex ?? 0),
             expiresAt: millis(d.data().expiresAt) ?? 0,
@@ -255,22 +258,32 @@ class FirestoreSessionDb implements QuizSessionDb {
     )
   }
 
-  async joinAsPlayer(code: string, nick: string): Promise<void> {
+  async joinAsPlayer(code: string, nick: string, avatar: string): Promise<void> {
     const session = await getDoc(doc(this.db, 'quiz', code))
     if (!session.exists()) throw new Error('Taková hra neběží. Zkontroluj kód.')
     const data = session.data()
     if (data.acceptsPlayers !== true) throw new Error('Hra už nepřijímá další hráče.')
 
-    await withTimeout(
-      setDoc(doc(this.db, 'quiz', code, 'players', this.uid), {
-        nick: nick.slice(0, 20),
-        joinedAt: serverTimestamp(),
-        joinedAtIndex: Number(data.index ?? 0),
-        expiresAt: data.expiresAt,
-      }),
-      12000,
-      'Připojení',
-    )
+    const ref = doc(this.db, 'quiz', code, 'players', this.uid)
+    const card = {
+      nick: nick.slice(0, 20),
+      joinedAt: serverTimestamp(),
+      joinedAtIndex: Number(data.index ?? 0),
+      expiresAt: data.expiresAt,
+    }
+
+    try {
+      await withTimeout(setDoc(ref, { ...card, avatar: avatar.slice(0, 16) }), 12000, 'Připojení')
+    } catch (e) {
+      // Pravidla se publikují ručně a můžou být starší než aplikace.
+      // Ta starší neznají pole `avatar` a kartu s ním odmítnou celou.
+      // Hrát se dá i bez zvířete, takže se hráč připojí aspoň bez něj;
+      // horší než hráč bez obrázku je hráč, který se před plnou místností
+      // nepřipojí vůbec. Návod na publikování pravidel je v DEPLOY.md.
+      if ((e as { code?: string }).code !== 'permission-denied') throw e
+      console.error('Pravidla neznají avatar hráče, připojuji bez něj:', e)
+      await withTimeout(setDoc(ref, card), 12000, 'Připojení')
+    }
   }
 
   watchMe(code: string, onChange: (me: QuizPlayer | null) => void): () => void {
@@ -282,6 +295,7 @@ class FirestoreSessionDb implements QuizSessionDb {
             ? {
                 uid: this.uid,
                 nick: String(snap.data().nick ?? ''),
+                avatar: String(snap.data().avatar ?? ''),
                 joinedAt: millis(snap.data().joinedAt) ?? 0,
                 joinedAtIndex: Number(snap.data().joinedAtIndex ?? 0),
                 expiresAt: millis(snap.data().expiresAt) ?? 0,

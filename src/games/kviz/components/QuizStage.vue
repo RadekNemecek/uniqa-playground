@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import TimerBar from '@/games/pojistuj/components/TimerBar.vue'
 import OptionChip from './OptionChip.vue'
+import ChoiceChart from './ChoiceChart.vue'
 import { fitToScreen, refitOnResize } from '@/lib/fit'
 import type { QuizPhase, QuizQuestion } from '../types'
 
@@ -75,9 +76,6 @@ function scheduleReady(): void {
 
 const running = computed(() => props.phase === 'question' && ready.value)
 
-/** Nejvyšší sloupec rozložení. Od něj se odvíjí výška ostatních. */
-const peak = computed(() => Math.max(1, ...(props.counts ?? [0])))
-
 /** Vyhodnocení mění jen jas chybných možností. Správná i zamčené volby
  *  zůstávají přesně ve stejné podobě a na stejném místě. */
 function stateOf(i: number): 'idle' | 'wrong' {
@@ -140,7 +138,10 @@ onBeforeUnmount(() => {
       <p class="prep__num">{{ countdown }}</p>
     </div>
 
-    <div v-else ref="body" class="stage__body">
+    <!-- Klíč je otázka: s každou novou se tělo vymění, takže nástup
+         otázky i možností proběhne znovu a plátno dá poznat, že se něco
+         změnilo. -->
+    <div v-else :key="question.qid" ref="body" class="stage__body">
       <p class="stage__prompt">{{ question.prompt }}</p>
 
       <!-- Místo pro vysvětlení se rezervuje od začátku. Při vyhodnocení
@@ -155,19 +156,21 @@ onBeforeUnmount(() => {
       </p>
 
       <ul class="stage__options">
-        <li v-for="(text, i) in question.options" :key="i">
+        <li v-for="(text, i) in question.options" :key="i" :style="{ '--d': i }">
           <OptionChip :index="i" :text="text" :state="stateOf(i)" />
-          <span
-            v-if="players > 0"
-            class="tally"
-            :class="{ 'tally--hidden': !revealed || !counts }"
-            :style="{ '--fill': `${(counts?.[i] ?? 0) / peak}` }"
-          >
-            <span class="tally__bar" aria-hidden="true"></span>
-            <span class="tally__num">{{ counts?.[i] ?? 0 }}</span>
-          </span>
         </li>
       </ul>
+
+      <!-- Jak kdo odpovídal. Bez telefonů není co kreslit, takže si graf
+           v takové hře ani nedrží místo. -->
+      <ChoiceChart
+        v-if="players > 0"
+        :counts="counts"
+        :slots="question.options.length"
+        :correct-index="question.correctIndex"
+        :kind="question.kind"
+        :revealed="revealed && counts !== null"
+      />
     </div>
 
     <footer class="stage__foot">
@@ -246,7 +249,7 @@ onBeforeUnmount(() => {
 .stage__body {
   --fit: 1;
   display: grid;
-  grid-template-rows: minmax(0, 1fr) auto auto;
+  grid-template-rows: minmax(0, 1fr) auto auto auto;
   gap: calc(var(--sp-5) * var(--fit));
   width: 100%;
   min-height: 0;
@@ -264,6 +267,14 @@ onBeforeUnmount(() => {
   line-height: var(--lh-tight);
   text-align: center;
   text-wrap: balance;
+  /* Otázka nastoupí první, možnosti za ní. Je to jediný pohyb, který
+     na plátně smí být: čte ho celá místnost naráz. */
+  animation: prompt-in var(--dur-slow) var(--ease-out) backwards;
+}
+
+@keyframes prompt-in {
+  from { opacity: 0; transform: translateY(-0.5rem); }
+  to { opacity: 1; transform: none; }
 }
 
 .stage__options {
@@ -282,35 +293,20 @@ onBeforeUnmount(() => {
 }
 .stage__options > li {
   display: grid;
-  grid-template-rows: 1fr auto;
   min-width: 0;
+  /* Možnosti nastupují po sobě, zleva doprava. Je to krátký pohyb, jen
+     aby bylo znát, že přišla nová otázka. */
+  animation: option-in var(--dur-base) var(--ease-out) calc(var(--d) * 70ms) backwards;
+}
+
+@keyframes option-in {
+  from { opacity: 0; transform: translateY(0.75rem); }
+  to { opacity: 1; transform: none; }
 }
 
 /* Poučka je to, kvůli čemu se kvíz na školení hraje, takže se musí dát
    přečíst i zezadu. Šířka je omezená na měřítko řádku, ne na šířku desky:
    dlouhý řádek se z dálky čte hůř než malé písmo. */
-/* Rozložení voleb. Sloupec roste od nejvyššího výsledku, aby byl rozdíl
-   vidět i tehdy, když odpovídalo pět lidí. */
-.tally {
-  display: flex;
-  align-items: center;
-  gap: calc(var(--sp-2) * var(--fit));
-  margin-top: calc(var(--sp-1) * var(--fit));
-  padding-left: calc(var(--sp-3) * var(--fit));
-  font-size: calc(var(--fs-sm) * var(--fit));
-  color: var(--c-text-faint);
-}
-.tally__bar {
-  height: calc(0.4rem * var(--fit));
-  width: calc(var(--fill) * 100%);
-  min-width: 2px;
-  border-radius: var(--r-full);
-  background: var(--c-brand-deep);
-  transition: width var(--dur-base) var(--ease-out);
-}
-.tally__num { font-variant-numeric: tabular-nums; }
-.tally--hidden { visibility: hidden; }
-
 .stage__note {
   justify-self: center;
   max-width: min(100%, calc(52ch / var(--fit)));
@@ -345,6 +341,11 @@ onBeforeUnmount(() => {
   text-align: center;
   color: var(--c-text-faint);
   letter-spacing: 0.02em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage__prompt,
+  .stage__options > li { animation: none; }
 }
 
 @media (max-width: 720px) {

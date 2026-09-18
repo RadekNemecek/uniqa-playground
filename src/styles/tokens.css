@@ -133,6 +133,9 @@
   --fs-hero:   clamp(2.5rem, 1.5rem + 4.5vw, 6rem);
   --fs-countdown: clamp(8rem, 3rem + 14vw, 18rem);
   --fs-phone-option: clamp(4rem, 2rem + 18vw, 8rem);
+  /* Pravda a Nepravda na tlačítku telefonu. Menší než holé písmeno,
+     protože nese celé slovo, a pořád čitelné na délku paže. */
+  --fs-phone-word:   clamp(2rem, 1rem + 7vw, 3.5rem);
   --fs-home-hero: clamp(4rem, 2rem + 5.5vw, 8.5rem);
 
   /* Násobič velikosti písma. Mimo herní plochu zůstává na jedné. */
@@ -217,6 +220,10 @@
   --quiz-stage-max: 84rem;
   --quiz-prompt-max: 64rem;
   --quiz-stage-footer: 5rem;
+  /* Graf rozložení odpovědí pod možnostmi. Místo si drží od začátku
+     otázky, aby se obsah při odhalení nepřeměřoval. */
+  --quiz-chart-h: 10rem;
+  --quiz-chart-bar: 4.5rem;
   --z-board: 1;
   --z-header: 20;
   --z-stage: 60;

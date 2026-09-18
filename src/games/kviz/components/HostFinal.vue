@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import UiButton from '@/components/ui/UiButton.vue'
+import PlayerAvatar from './PlayerAvatar.vue'
 import { confetti } from '@/lib/confetti'
 import { duration, prefersReducedMotion } from '@/lib/motion'
 import { formatScore, TEAM_COLORS } from '@/lib/teams'
@@ -130,6 +131,7 @@ onUnmounted(() => timers.forEach((timer) => window.clearTimeout(timer)))
         :style="{ '--tint': tint(s), '--h': height(s) }"
         :aria-hidden="!isVisible(s)"
       >
+        <PlayerAvatar class="slot__ava" :id="s.avatar" />
         <span class="slot__nick">{{ s.nick }}</span>
         <span class="slot__score">{{ formatScore(s.score) }}</span>
         <span class="slot__riser" aria-hidden="true">
@@ -201,7 +203,7 @@ onUnmounted(() => timers.forEach((timer) => window.clearTimeout(timer)))
 }
 .slot {
   display: grid;
-  grid-template-rows: auto auto 1fr;
+  grid-template-rows: auto auto auto 1fr;
   justify-items: center;
   gap: var(--sp-1);
   flex: 1 1 0;
@@ -216,11 +218,12 @@ onUnmounted(() => timers.forEach((timer) => window.clearTimeout(timer)))
   transform: none;
   animation: podiumPlace var(--dur-podium-place) var(--ease-back) both;
 }
+.slot__ava { --ava-size: 3.5rem; align-self: end; }
+.slot--champ .slot__ava { --ava-size: 5rem; }
 .slot__nick {
   font-size: var(--fs-lg);
   font-weight: 700;
   overflow-wrap: anywhere;
-  align-self: end;
 }
 .slot--champ .slot__nick { font-size: var(--fs-2xl); }
 .slot__score {

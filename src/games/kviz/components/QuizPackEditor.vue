@@ -9,7 +9,7 @@ import { emptyQuizItem, isItemReady, quizPackProgress } from '@/stores/quizPacks
 import { confirmAction, toast } from '@/stores/ui'
 import { count } from '@/lib/format'
 import { downloadQuizPack } from '../packIo'
-import { quizOption } from '../options'
+import { BOOLEAN_LABELS, kindOf, quizOption } from '../options'
 import type { QuizPack } from '../types'
 
 /** Strop je tu proto, aby se balíček vešel do jednoho dokumentu a aby se
@@ -120,10 +120,13 @@ function toggle(id: string): void {
   openId.value = openId.value === id ? null : id
 }
 
-/** Náhled správné odpovědi do sbaleného řádku. */
+/** Náhled správné odpovědi do sbaleného řádku. U tvrzení je to slovo,
+ *  ne text možnosti: ty se u něj nečtou. */
 function correctText(id: string): string {
   const item = draft.value.items.find((q) => q.id === id)
-  return item?.options[item.correctIndex]?.trim() ?? ''
+  if (!item) return ''
+  if (kindOf(item) === 'boolean') return BOOLEAN_LABELS[item.correctIndex] ?? ''
+  return item.options[item.correctIndex]?.trim() ?? ''
 }
 
 function exportPack(): void {
@@ -187,7 +190,9 @@ function exportPack(): void {
                 </span>
                 {{ correctText(item.id) }}
               </span>
-              <span v-else class="qrow__todo">Chybí znění nebo možnosti</span>
+              <span v-else class="qrow__todo">
+                {{ kindOf(item) === 'boolean' ? 'Chybí znění tvrzení' : 'Chybí znění nebo možnosti' }}
+              </span>
             </span>
           </button>
 

@@ -1,6 +1,14 @@
 /* Datové typy kvízu. */
 
 /**
+ * Tvar otázky. `choice` je klasická čtveřice možností, `boolean` tvrzení,
+ * na které se odpovídá Pravda, nebo Nepravda. Dva tvary v jednom balíčku
+ * jsou schválně: školení se tím rozhýbe a tvrzení se píšou rychleji než
+ * čtyři věrohodné možnosti.
+ */
+export type QuizKind = 'choice' | 'boolean'
+
+/**
  * Balíček otázek kvízu.
  *
  * Kvíz má vlastní zásobu otázek, oddělenou od desky Pojišťuj!. Obě hry
@@ -14,9 +22,21 @@
  */
 export interface QuizItem {
   id: string
+  /**
+   * Tvar otázky. `choice` je čtveřice možností, `boolean` tvrzení, na které
+   * se odpovídá Pravda, nebo Nepravda. Chybí u balíčků, které vznikly dřív,
+   * a tam se čte jako `choice`; kvůli jednomu poli se staré balíčky
+   * nepřepisují.
+   */
+  kind?: QuizKind
   prompt: string
   /** Čtyři možnosti. Ve hře se jejich pořadí zamíchá. */
   options: string[]
+  /**
+   * Která možnost je správná. U tvrzení je 0 Pravda a 1 Nepravda; `options`
+   * se u nich nečtou, znění obou možností je dané a nese ho `BOOLEAN_LABELS`.
+   * Zůstanou proto uložené i po přepnutí tvaru a přepnutí zpátky je vrátí.
+   */
   correctIndex: number
   /** Poučka po odhalení. Prázdná, když ji autorka nenapsala. */
   note: string
@@ -46,8 +66,10 @@ export type QuizPhase = 'lobby' | 'question' | 'locked' | 'reveal' | 'scores' | 
  */
 export interface QuizQuestion {
   qid: string
+  kind: QuizKind
   prompt: string
-  /** Čtyři možnosti v pořadí, ve kterém se ukážou. */
+  /** Možnosti v pořadí, ve kterém se ukážou. U tvrzení jsou vždy dvě
+   *  a nemíchají se: Pravda je vždycky A. */
   options: string[]
   correctIndex: number
   /** Poučka po odhalení. Prázdná, když ji autorka nenapsala. */
@@ -84,6 +106,8 @@ export interface QuizHostState {
   scores: Record<string, number>
   /** Přezdívky zamrazené k uid, aby vyhodnocení přežilo i odchod hráče. */
   nicks: Record<string, string>
+  /** Zvířata zamrazená k uid, ze stejného důvodu jako přezdívky. */
+  avatars: Record<string, string>
   /** Od které otázky kdo hraje. Kdo přišel později, nemá se počítat jako
    *  ten, kdo otázku nezvládl. */
   joinIndex: Record<string, number>
@@ -120,6 +144,10 @@ export interface QuizSession {
   total: number
   index: number
   qid: string
+  /** Tvar běžící otázky. Telefon podle něj ví, kolik má nabídnout tlačítek
+   *  a jestli na nich mají být slova Pravda a Nepravda. Znění otázky ani
+   *  správná odpověď v tom nejsou. */
+  kind: QuizKind
   phase: QuizSessionPhase
   /** Čas serveru, ne moderátorčina počítače. Od něj se odvíjí předehra
    *  i to, co pravidla uznají za včasnou odpověď. */
@@ -148,12 +176,16 @@ export interface QuizReveal {
 export interface QuizStanding {
   uid: string
   nick: string
+  /** Zvíře hráče. Prázdné u hráče, který se připojil starším telefonem. */
+  avatar: string
   score: number
 }
 
 export interface QuizPlayer {
   uid: string
   nick: string
+  /** Identifikátor zvířete z `avatars.ts`. Vybírá se při připojení. */
+  avatar: string
   joinedAt: number
   /** Od které otázky hraje. Otázky před tím se ve vyhodnocení počítají
    *  jako „nebyl", ne jako chyba. */

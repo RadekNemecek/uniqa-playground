@@ -2,7 +2,7 @@ import { reactive } from 'vue'
 import { db } from '@/lib/db'
 import { id } from '@/lib/id'
 import { clone } from '@/lib/clone'
-import { OPTION_COUNT } from '@/games/kviz/options'
+import { BOOLEAN_COUNT, OPTION_COUNT, kindOf } from '@/games/kviz/options'
 import type { QuizItem, QuizPack } from '@/games/kviz/types'
 import { demoQuizPack } from '@/games/kviz/demoPack'
 
@@ -67,6 +67,7 @@ export const quizPacks = state
 export function emptyQuizItem(): QuizItem {
   return {
     id: id('i'),
+    kind: 'choice',
     prompt: '',
     options: Array.from({ length: OPTION_COUNT }, () => ''),
     correctIndex: 0,
@@ -125,11 +126,15 @@ export async function deleteQuizPack(packId: string): Promise<void> {
 
 /* --- Odvozené údaje ------------------------------------------------------ */
 
-/** Otázka je hotová, když má znění i všechny čtyři možnosti. Poučka je
- *  ozdoba pro školení, ne podmínka. */
+/** Otázka je hotová, když má znění i všechny čtyři možnosti. U tvrzení
+ *  stačí znění, obě možnosti jsou dané. Poučka je ozdoba pro školení,
+ *  ne podmínka. */
 export function isItemReady(item: QuizItem | undefined): boolean {
   if (!item) return false
   if (item.prompt.trim().length === 0) return false
+  if (kindOf(item) === 'boolean') {
+    return item.correctIndex >= 0 && item.correctIndex < BOOLEAN_COUNT
+  }
   if (item.options.length !== OPTION_COUNT) return false
   if (!item.options.every((o) => o.trim().length > 0)) return false
   return item.correctIndex >= 0 && item.correctIndex < OPTION_COUNT

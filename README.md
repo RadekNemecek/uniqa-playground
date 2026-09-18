@@ -7,14 +7,16 @@ hostovaná na GitHub Pages.
 vlastní otázky, časomíra a pole **Riziko!**, kde tým před otázkou vsadí
 část svých bodů. Vede se z notebooku na plátno, účastníci nemají v ruce nic.
 
-**Na kolik to dáš?** je kvíz. Otázka, čtyři možnosti, jedna správná a časomíra.
-Účastníci se připojí telefonem přes QR kód a odpovídají sami za sebe, body
-dostávají podle rychlosti. Po odhalení se ukáže poučka a po poslední otázce
-vyhodnocení, ze kterého je vidět, co tým neumí.
+**Na kolik to dáš?** je kvíz. Otázka se čtyřmi možnostmi, nebo tvrzení, na
+které se odpovídá Pravda, nebo Nepravda; u obojího běží časomíra. Účastníci
+se připojí telefonem přes QR kód, vyberou si zvíře a odpovídají sami za
+sebe, body dostávají podle rychlosti. Po odhalení se ukáže poučka a graf,
+kolik lidí zvolilo kterou možnost, a po poslední otázce vyhodnocení, ze
+kterého je vidět, co tým neumí.
 
 Každá hra má **vlastní balíčky otázek a vlastní správu**. Deska chce znění
-a odpověď, kvíz čtyři možnosti; společná sada by znamenala, že každá otázka
-nese pole, která druhá hra nepoužije.
+a odpověď, kvíz možnosti, mezi kterými se vybírá; společná sada by znamenala,
+že každá otázka nese pole, která druhá hra nepoužije.
 
 Projekt je stavěný tak, aby další hra byla přírůstek, ne přestavba: hry jsou
 moduly v `src/games/`, evidované v `src/games/registry.ts`.
@@ -67,10 +69,10 @@ přežije obnovení stránky i pád prohlížeče.
    vlastní balíčky, s deskou Pojišťuj! se nemíchají.
 2. **Hrát** otevře přípravu: zaškrtneš balíčky, počet otázek a čas na
    odpověď. Pořadí otázek i možností se zamíchá.
-3. Na plátně se objeví **kód a QR**. Účastníci se připojí telefonem, zadají
-   přezdívku a jejich jména naskáčou do soupisky.
-4. **Mezerník** vede celou hru: zamkne odpovídání, odhalí správnou možnost
-   i poučku, ukáže průběžný žebříček a pustí další otázku. Na plátně je
+3. Na plátně se objeví **kód a QR**. Účastníci se připojí telefonem, dostanou
+   zvíře, které si můžou vyměnit, zadají přezdívku a naskáčou do soupisky.
+4. **Mezerník** vede celou hru: zamkne odpovídání, odhalí správnou možnost,
+   poučku i graf odpovědí, ukáže tři nejlepší a pustí další otázku. Na plátně je
    vždycky vidět, co udělá další stisk. Jakmile odpoví všichni, odhalí se
    správná možnost sama, a stejně tak po vypršení limitu. Na další otázku
    se ale nikdy nepostoupí bez tebe.
@@ -164,12 +166,14 @@ Nedodělané kategorie se v přípravě hry samy nenabídnou.
 
 ### Na kolik to dáš?
 
-Balíček je seznam otázek, ne mřížka. U každé je znění, čtyři možnosti
-s puntíkem u té správné a nepovinná poučka, která se ukáže po odhalení.
-Otázky se dají přeskládat šipkami. Ukládá se samo.
+Balíček je seznam otázek, ne mřížka. U každé je znění, nepovinná poučka,
+která se ukáže po odhalení, a podle zvoleného tvaru buď čtyři možnosti
+s puntíkem u té správné, nebo volba mezi Pravda a Nepravda. Přepínač tvaru
+je nahoře v otázce a oba druhy se v jednom balíčku klidně střídají. Otázky
+se dají přeskládat šipkami. Ukládá se samo.
 
-Do kvízu jde jen otázka, která má znění i všechny čtyři možnosti.
-Nedodělané se prostě nelosují.
+Do kvízu jde jen otázka, která má znění a u čtveřice i všechny čtyři
+možnosti. Nedodělané se prostě nelosují.
 
 Oba druhy balíčků se dají stáhnout jako JSON, poslat kolegyni a zase
 naimportovat. Import je shovívavý: co chybí, dopíše prázdné, aby se dalo

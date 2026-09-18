@@ -1,12 +1,18 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import PlayerAvatar from './PlayerAvatar.vue'
 import { formatScore } from '@/lib/teams'
 import { count } from '@/lib/format'
 import type { QuizStanding } from '../types'
 
 const props = defineProps<{ standings: QuizStanding[]; index: number; total: number }>()
 
-const TOP = 5
+/**
+ * Průběžně se ukazuje jen bedna, tedy tři jména. Delší seznam se z druhého
+ * konce místnosti stejně nečte a hru zdržuje; kdo je čtvrtý, se dozví na
+ * svém telefonu a celé pořadí je na konci ve vyhodnocení.
+ */
+const TOP = 3
 const shown = computed(() => props.standings.slice(0, TOP))
 const rest = computed(() => Math.max(0, props.standings.length - shown.value.length))
 /** Od nejvyššího skóre se odvíjí délka pruhů. */
@@ -29,6 +35,7 @@ const peak = computed(() => Math.max(1, props.standings[0]?.score ?? 1))
         :style="{ '--fill': `${s.score / peak}`, '--d': i }"
       >
         <span class="line__rank">{{ i + 1 }}</span>
+        <PlayerAvatar class="line__ava" :id="s.avatar" />
         <span class="line__nick">{{ s.nick }}</span>
         <span class="line__bar" aria-hidden="true"></span>
         <span class="line__score">{{ formatScore(s.score) }}</span>
@@ -81,7 +88,7 @@ const peak = computed(() => Math.max(1, props.standings[0]?.score ?? 1))
 
 .line {
   display: grid;
-  grid-template-columns: 2.5rem minmax(6rem, 14rem) minmax(0, 1fr) auto;
+  grid-template-columns: 2.5rem auto minmax(6rem, 14rem) minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--sp-3);
   font-size: var(--fs-xl);
@@ -95,6 +102,8 @@ const peak = computed(() => Math.max(1, props.standings[0]?.score ?? 1))
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
+.line__ava { --ava-size: 2.25rem; }
+.line--lead .line__ava { --ava-size: 3rem; }
 .line__nick { font-weight: 700; overflow-wrap: anywhere; }
 .line__bar {
   height: 0.75rem;

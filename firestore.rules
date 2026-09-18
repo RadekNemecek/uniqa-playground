@@ -125,10 +125,16 @@ service cloud.firestore {
                     && session(code).acceptsPlayers == true
                     && session(code).expiresAt > request.time
                     && request.resource.data.keys()
-                         .hasOnly(['nick', 'joinedAt', 'joinedAtIndex', 'expiresAt'])
+                         .hasOnly(['nick', 'avatar', 'joinedAt', 'joinedAtIndex', 'expiresAt'])
                     && request.resource.data.nick is string
                     && request.resource.data.nick.size() >= 1
                     && request.resource.data.nick.size() <= 20
+                    // Zvíře je jen identifikátor z aplikace. Kdo pole
+                    // nepošle vůbec, je telefon s uloženou starší verzí
+                    // a hrát mu to bránit nemá.
+                    && (!('avatar' in request.resource.data)
+                        || (request.resource.data.avatar is string
+                            && request.resource.data.avatar.size() <= 16))
                     && request.resource.data.joinedAt == request.time
                     && request.resource.data.joinedAtIndex == session(code).index
                     && request.resource.data.expiresAt == session(code).expiresAt;

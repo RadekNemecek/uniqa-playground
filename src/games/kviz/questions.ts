@@ -1,5 +1,5 @@
 import { isItemReady } from '@/stores/quizPacks'
-import { OPTION_COUNT } from './options'
+import { BOOLEAN_LABELS, OPTION_COUNT, kindOf } from './options'
 import type { QuizItem, QuizPack, QuizQuestion, QuizSetup } from './types'
 
 /** Zamíchání na místě by měnilo předlohu, proto vždy nová kopie. */
@@ -70,11 +70,27 @@ export function buildQuestions(
 
   return shuffle(picked).map(({ item, packName }) => ({
     qid: item.id,
+    kind: kindOf(item),
     prompt: item.prompt,
-    ...shuffleOptions(item),
+    ...framedOptions(item),
     note: item.note,
     packName,
   }))
+}
+
+/**
+ * Možnosti tak, jak půjdou na plátno. Tvrzení se nemíchá: Pravda je
+ * vždycky A. Předvídatelné pořadí je u dvou možností přednost, ne
+ * nedbalost, protože hráč na telefonu nevidí jejich znění.
+ */
+function framedOptions(item: QuizItem): { options: string[]; correctIndex: number } {
+  if (kindOf(item) === 'boolean') {
+    return {
+      options: [...BOOLEAN_LABELS],
+      correctIndex: item.correctIndex === 1 ? 1 : 0,
+    }
+  }
+  return shuffleOptions(item)
 }
 
 function withItems(list: Pool[], keep: (item: QuizItem) => boolean): Pool[] {

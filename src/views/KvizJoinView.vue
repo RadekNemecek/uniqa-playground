@@ -2,9 +2,11 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import PlayerPad from '@/games/kviz/components/PlayerPad.vue'
+import PlayerAvatar from '@/games/kviz/components/PlayerAvatar.vue'
 import UiButton from '@/components/ui/UiButton.vue'
-import { quizOption } from '@/games/kviz/options'
+import { BOOLEAN_LABELS, quizOption } from '@/games/kviz/options'
 import { normalizeCode } from '@/games/kviz/code'
+import { AVATARS, avatarFor } from '@/games/kviz/avatars'
 import { formatScore } from '@/lib/teams'
 import {
   answer,
@@ -15,6 +17,7 @@ import {
   locked,
   myGain,
   myRank,
+  pickAvatar,
   player,
   playerCount,
   rememberedNick,
@@ -25,6 +28,8 @@ import {
 
 const route = useRoute()
 const nick = ref('')
+/** Nabídka zvířat. Zavřená, dokud hráči přidělené nevadí. */
+const zooOpen = ref(false)
 
 const code = computed(() => normalizeCode(String(route.params.code ?? '')))
 const session = computed(() => player.session)
@@ -51,6 +56,21 @@ const view = computed(() => {
       return 'waiting'
   }
 })
+
+/** Co bylo správně. U tvrzení slovo, u čtveřice možností písmeno: znění
+ *  možností telefon nemá a mít nemá, ta jsou na plátně. */
+const correctWord = computed(() => {
+  const at = session.value?.reveal?.correctIndex ?? 0
+  if (session.value?.kind === 'boolean') return BOOLEAN_LABELS[at] ?? ''
+  return quizOption(at).letter
+})
+
+const myAvatar = computed(() => avatarFor(player.avatar))
+
+function choose(id: string): void {
+  pickAvatar(id)
+  zooOpen.value = false
+}
 
 async function submit(): Promise<void> {
   if (nick.value.trim().length === 0) return
@@ -91,6 +111,30 @@ onBeforeUnmount(leaveGame)
     <!-- Přezdívka -------------------------------------------------------- -->
     <form v-else-if="view === 'join'" class="card" @submit.prevent="submit">
       <h1 class="card__title">Jak ti mám říkat?</h1>
+
+      <!-- Zvíře je přidělené, výběr je nabídka, ne úkol. Kdo si ho měnit
+           nechce, jen vyplní jméno a jede dál. -->
+      <button type="button" class="me" :aria-expanded="zooOpen" @click="zooOpen = !zooOpen">
+        <PlayerAvatar class="me__ava" :id="player.avatar" />
+        <span class="me__name">{{ myAvatar.label }}</span>
+        <span class="me__swap">{{ zooOpen ? 'Zavřít nabídku' : 'Vybrat jiné zvíře' }}</span>
+      </button>
+
+      <ul v-if="zooOpen" class="zoo">
+        <li v-for="a in AVATARS" :key="a.id">
+          <button
+            type="button"
+            class="zoo__pick"
+            :class="{ 'zoo__pick--on': a.id === player.avatar }"
+            :aria-pressed="a.id === player.avatar"
+            :aria-label="a.label"
+            @click="choose(a.id)"
+          >
+            <PlayerAvatar :id="a.id" />
+          </button>
+        </li>
+      </ul>
+
       <input
         v-model="nick"
         class="card__input"
@@ -110,6 +154,7 @@ onBeforeUnmount(leaveGame)
 
     <!-- Čekárna ----------------------------------------------------------- -->
     <section v-else-if="view === 'waiting'" class="card">
+      <PlayerAvatar class="card__ava" :id="player.avatar" />
       <p class="card__eyebrow">{{ player.nick }}</p>
       <h1 class="card__title">Jsi ve hře</h1>
       <p class="card__lead">Dívej se na plátno. Otázka se objeví tam, tady budou tlačítka.</p>
@@ -132,7 +177,13 @@ onBeforeUnmount(leaveGame)
       </p>
       <p v-else class="stage__msg stage__msg--go">Vyber možnost</p>
 
-      <PlayerPad class="stage__pad" :locked="locked" :chosen="player.choice" @pick="answer" />
+      <PlayerPad
+        class="stage__pad"
+        :locked="locked"
+        :chosen="player.choice"
+        :kind="session?.kind ?? 'choice'"
+        @pick="answer"
+      />
 
       <UiButton v-if="player.send === 'failed'" variant="danger" block @click="retry">
         Zkusit odeslat znovu
@@ -141,6 +192,7 @@ onBeforeUnmount(leaveGame)
 
     <!-- Výsledek otázky --------------------------------------------------- -->
     <section v-else-if="view === 'result'" class="card" :class="wasRight === null ? '' : wasRight ? 'card--ok' : 'card--bad'">
+      <PlayerAvatar class="card__ava" :id="player.avatar" />
       <p class="card__eyebrow">{{ player.nick }}</p>
       <h1 class="card__title">
         <template v-if="wasRight === null">Neodpověděl jsi</template>
@@ -151,7 +203,7 @@ onBeforeUnmount(leaveGame)
       <p v-if="session?.reveal" class="card__correct">
         Správně bylo
         <span class="card__letter" :style="{ color: `var(${quizOption(session.reveal.correctIndex).color.cssVar})` }">
-          {{ quizOption(session.reveal.correctIndex).letter }}
+          {{ correctWord }}
         </span>
       </p>
 
@@ -162,6 +214,7 @@ onBeforeUnmount(leaveGame)
 
     <!-- Konec ------------------------------------------------------------- -->
     <section v-else class="card">
+      <PlayerAvatar class="card__ava" :id="player.avatar" />
       <p class="card__eyebrow">{{ player.nick }}</p>
       <h1 class="card__title">{{ myRank }}. místo</h1>
       <p class="card__score">{{ formatScore(session?.scores[player.uid] ?? 0) }} bodů</p>
@@ -218,6 +271,43 @@ onBeforeUnmount(leaveGame)
   text-align: center;
 }
 .card__input:focus { border-color: var(--c-brand); }
+.card__ava { --ava-size: 4rem; }
+
+/* Vlastní zvíře. Je to tlačítko, protože na něj jde ťuknout a vyměnit ho,
+   ale nevypadá jako formulář: hlavní úkol téhle obrazovky je jméno. */
+.me {
+  display: grid;
+  justify-items: center;
+  gap: var(--sp-1);
+  padding: var(--sp-2);
+  border: 0;
+  background: transparent;
+  color: var(--c-text);
+}
+.me__ava { --ava-size: 6rem; }
+.me__name { font-weight: 700; }
+.me__swap { font-size: var(--fs-xs); color: var(--c-brand); text-decoration: underline; }
+
+.zoo {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--sp-2);
+  width: min(100%, 20rem);
+}
+.zoo__pick {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  padding: var(--sp-1);
+  border: var(--separator-w) solid transparent;
+  border-radius: var(--r-lg);
+  background: transparent;
+}
+.zoo__pick :deep(.ava) { --ava-size: 100%; }
+/* Vybrané zvíře pozná i ten, kdo barvy nerozezná: má rámeček a plochu. */
+.zoo__pick--on { border-color: var(--c-brand); background: var(--c-surface-2); }
 .card__correct { color: var(--c-text-muted); }
 .card__letter { font-family: var(--font-display); font-weight: 900; font-size: var(--fs-xl); }
 .card__gain {
@@ -254,4 +344,9 @@ onBeforeUnmount(leaveGame)
 }
 .stage__msg--go { color: var(--c-brand); }
 .stage__pad { min-height: 0; }
+
+@media (pointer: coarse) {
+  .me,
+  .zoo__pick { min-height: 44px; }
+}
 </style>

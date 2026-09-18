@@ -3,7 +3,6 @@ import { id } from '@/lib/id'
 import { buildQuestions } from '@/games/kviz/questions'
 import { buildReport } from '@/games/kviz/report'
 import { pointsFor } from '@/games/kviz/scoring'
-import { OPTION_COUNT } from '@/games/kviz/options'
 import { randomCode } from '@/games/kviz/code'
 import { sessionDb, type QuizSessionDb, type SessionPatch } from '@/lib/sessionDb'
 import type {
@@ -36,8 +35,9 @@ const STORAGE_KEY = 'playground.kviz.host.v1'
  */
 const PRE_ROLL_MS = 5000
 
-/** Kolik jmen se vejde na průběžný žebříček. */
-const TOP_COUNT = 5
+/** Kolik jmen nese průběžný žebříček. Bedna, ne celá listina: na plátně
+ *  se delší seznam z posledního stolu nepřečte. */
+const TOP_COUNT = 3
 
 interface Wrapper {
   current: QuizHostState | null
@@ -75,7 +75,13 @@ export function restoreQuizHost(): void {
   store.restored = true
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) store.current = JSON.parse(raw) as QuizHostState
+    if (raw) {
+      const saved = JSON.parse(raw) as QuizHostState
+      // Hra rozehraná před avatary je pole nemá a bez něj by zápis
+      // o kus dál spadl na nedefinovaném objektu.
+      saved.avatars ??= {}
+      store.current = saved
+    }
   } catch {
     localStorage.removeItem(STORAGE_KEY)
   }
@@ -123,14 +129,14 @@ function answersFor(qid: string): QuizAnswer[] {
   return live.answers.filter((a) => a.round === s.round && a.qid === qid)
 }
 
-/** Kolik voleb padlo na kterou možnost u běžící otázky. Na plátno se
- *  pouští až po zamčení. */
+/** Kolik voleb padlo na kterou možnost u běžící otázky. Délka odpovídá
+ *  otázce, tvrzení má dvě možnosti. Na plátno se pouští až po zamčení. */
 export const choiceCounts = computed<number[]>(() => {
-  const out = Array.from({ length: OPTION_COUNT }, () => 0)
   const q = currentQuestion.value
+  const out = Array.from({ length: q?.options.length ?? 0 }, () => 0)
   if (!q) return out
   for (const a of answersFor(q.qid)) {
-    if (a.choice >= 0 && a.choice < OPTION_COUNT) out[a.choice]! += 1
+    if (a.choice >= 0 && a.choice < out.length) out[a.choice]! += 1
   }
   return out
 })
@@ -140,7 +146,12 @@ export const standings = computed<QuizStanding[]>(() => {
   const s = store.current
   if (!s) return []
   return Object.entries(s.scores)
-    .map(([uid, score]) => ({ uid, nick: s.nicks[uid] ?? 'Hráč', score }))
+    .map(([uid, score]) => ({
+      uid,
+      nick: s.nicks[uid] ?? 'Hráč',
+      avatar: s.avatars[uid] ?? '',
+      score,
+    }))
     .sort((a, b) => b.score - a.score || a.nick.localeCompare(b.nick, 'cs'))
 })
 
@@ -165,6 +176,7 @@ function freshState(
     expiresAt,
     scores: {},
     nicks: {},
+    avatars: {},
     joinIndex: {},
     scoredQids: [],
     reportId: null,
@@ -185,6 +197,7 @@ export async function startQuiz(packs: QuizPack[], setup: QuizSetup): Promise<Qu
         round: 1,
         total: questions.length,
         qid: questions[0]?.qid ?? '',
+        kind: questions[0]?.kind ?? 'choice',
         preRollMs: PRE_ROLL_MS,
         limitMs: setup.limitSeconds * 1000,
       })
@@ -216,6 +229,7 @@ export async function attachSession(): Promise<void> {
       if (!state) return
       for (const p of list) {
         state.nicks[p.uid] = p.nick
+        state.avatars[p.uid] = p.avatar
         // Od které otázky kdo hraje. Kdo přišel později, se nesmí počítat
         // jako ten, kdo otázku před svým příchodem nezvládl.
         state.joinIndex[p.uid] ??= p.joinedAtIndex
@@ -292,6 +306,7 @@ export async function rematchQuiz(packs: QuizPack[]): Promise<void> {
     total: questions.length,
     index: 0,
     qid: questions[0]?.qid ?? '',
+    kind: questions[0]?.kind ?? 'choice',
     phase: next.phase === 'lobby' ? 'lobby' : 'question',
     acceptsPlayers: true,
     reveal: null,
@@ -359,7 +374,13 @@ export async function beginPlay(): Promise<void> {
   if (s.code && live.players.length === 0) return
   s.phase = 'question'
   s.askedAt = Date.now()
-  await push({ phase: 'question', index: s.index, qid: s.questions[s.index]?.qid ?? '', stampAskedAt: true })
+  await push({
+    phase: 'question',
+    index: s.index,
+    qid: s.questions[s.index]?.qid ?? '',
+    kind: s.questions[s.index]?.kind ?? 'choice',
+    stampAskedAt: true,
+  })
 }
 
 /** Zamknout odpovídání. Volá to i časomíra, když limit doběhne. */
@@ -430,6 +451,7 @@ export async function nextQuestion(): Promise<void> {
     phase: 'question',
     index: s.index,
     qid: s.questions[s.index]?.qid ?? '',
+    kind: s.questions[s.index]?.kind ?? 'choice',
     preRollMs: 0,
     reveal: null,
     stampAskedAt: true,

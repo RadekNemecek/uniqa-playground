@@ -1,6 +1,5 @@
 import { id } from '@/lib/id'
 import { pointsFor } from './scoring'
-import { OPTION_COUNT } from './options'
 import type {
   QuizAnswer,
   QuizHostState,
@@ -37,7 +36,8 @@ export function buildReport(state: QuizHostState, answers: QuizAnswer[], hostUid
 
   state.questions.forEach((q, index) => {
     const row: Array<QuizReportCell | null> = players.map(() => null)
-    const byChoice = Array.from({ length: OPTION_COUNT }, () => 0)
+    // Délka podle otázky: tvrzení má dvě možnosti, ne čtyři.
+    const byChoice = Array.from({ length: q.options.length }, () => 0)
     let answered = 0
     let correct = 0
     let sumMs = 0
@@ -48,7 +48,7 @@ export function buildReport(state: QuizHostState, answers: QuizAnswer[], hostUid
       const hit = a.choice === q.correctIndex
       const points = pointsFor(hit, a.elapsedMs, limitMs)
       row[column] = { c: a.choice, ms: a.elapsedMs, p: points }
-      if (a.choice >= 0 && a.choice < OPTION_COUNT) byChoice[a.choice]! += 1
+      if (a.choice >= 0 && a.choice < byChoice.length) byChoice[a.choice]! += 1
       answered += 1
       players[column]!.answered += 1
       if (hit) {

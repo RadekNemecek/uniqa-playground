@@ -1,6 +1,7 @@
 import { shallowRef } from 'vue'
 import type {
   QuizAnswer,
+  QuizKind,
   QuizPlayer,
   QuizReport,
   QuizReportSummary,
@@ -57,7 +58,7 @@ export interface QuizSessionDb {
     code: string,
     onChange: (session: QuizSession | null, fromCache: boolean) => void,
   ): () => void
-  joinAsPlayer(code: string, nick: string): Promise<void>
+  joinAsPlayer(code: string, nick: string, avatar: string): Promise<void>
   /**
    * Sleduje vlastní kartu na soupisce. Cizí hráč se přečíst nedá, svoje
    * ano, a je to jediná spolehlivá odpověď na otázku, jestli je hráč ve
@@ -78,6 +79,7 @@ export interface SessionInit {
   round: number
   total: number
   qid: string
+  kind: QuizKind
   preRollMs: number
   limitMs: number
 }
@@ -87,6 +89,7 @@ export interface SessionPatch {
   phase?: QuizSession['phase']
   index?: number
   qid?: string
+  kind?: QuizKind
   total?: number
   round?: number
   acceptsPlayers?: boolean

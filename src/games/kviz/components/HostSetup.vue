@@ -81,7 +81,7 @@ function start(): void {
         <p v-if="quizPacks.denied">
           Databáze čtení odmítla. Zkontroluj publikovaná pravidla Firestore a načti stránku znovu.
         </p>
-        <p v-else>Ke spuštění stačí jedna hotová otázka se čtyřmi možnostmi.</p>
+        <p v-else>Ke spuštění stačí jedna hotová otázka nebo jedno tvrzení.</p>
       </div>
       <RouterLink v-if="!quizPacks.denied" to="/kviz/otazky" class="empty__action">Přejít k otázkám</RouterLink>
     </section>

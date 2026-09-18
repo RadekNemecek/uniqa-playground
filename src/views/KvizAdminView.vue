@@ -216,8 +216,8 @@ function badge(id: string): { text: string; tone: 'ok' | 'warn' | 'muted' } {
               <p class="eyebrow">Na kolik to dáš?</p>
               <h1 class="library__title">Balíčky otázek</h1>
               <p class="library__lead">
-                Otázka, čtyři možnosti, jedna správná. Kvíz má vlastní balíčky,
-                s deskou Pojišťuj! se nemíchají.
+                Otázka se čtyřmi možnostmi, nebo tvrzení na pravda a nepravda.
+                Kvíz má vlastní balíčky, s deskou Pojišťuj! se nemíchají.
               </p>
             </div>
             <div class="library__actions">

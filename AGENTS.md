@@ -66,6 +66,28 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
   na azur je z dálky moc blízko, a písek, jediná teplá barva palety.
   Definice je v `src/games/kviz/options.ts` a platí stejně na plátně
   i na telefonu.
+- **Kvíz zná dva tvary otázky.** Čtveřici možností a tvrzení, na které se
+  odpovídá Pravda, nebo Nepravda. Tvar se volí u každé otázky zvlášť a oba
+  se v jednom balíčku i v jedné hře běžně střídají, losování mezi nimi
+  nerozlišuje. Co se u tvrzení nemíchá, je pořadí jeho dvou možností:
+  Pravda je vždycky A. Hráč na telefonu jejich znění nevidí a po druhém
+  tvrzení má vědět, kam sáhnout. Slova Pravda a Nepravda nese
+  `BOOLEAN_LABELS`, nepíše je autorka a do balíčku se neukládají. Balíček
+  bez pole `kind` je čtveřice možností, přepisovat se kvůli tomu nemusí.
+- **Po odhalení se ukazuje, jak kdo odpovídal.** Sloupec na možnost, se
+  stejným písmenem i odstínem jako dlaždice. Místo si graf drží od začátku
+  otázky a jen se odkryje: `fitToScreen()` měří jednou a obsah se při
+  odhalení nesmí pohnout.
+- **Průběžně se vyhlašují jen tři místa.** Delší seznam se z posledního
+  stolu nepřečte. Celé pořadí je ve vyhodnocení a svoje místo vidí každý
+  na svém telefonu.
+- **Avatar nic nekóduje.** Zvíře hráče rozlišuje tvar a jméno, odstín pod
+  ním je jen plocha. Proto avatar nepatří k běžící otázce vedle možností
+  A až D, kde barva význam má. Kresby jsou v repozitáři
+  (`src/games/kviz/avatars.ts`), ne stažená sada: žádná cizí licence
+  a stejný výtvarný jazyk jako zbytek aplikace. Zvíře se vybírá před
+  připojením; kartu hráče smí pak měnit jen moderátorka, takže je dané
+  na celou hru.
 - **Do živé session se nikdy nezapisuje odtikávající čas.** Pošle se
   `askedAt` a `limitMs` jednou a telefony odpočítávají samy. Firestore drží
   zhruba jeden zápis za sekundu na dokument a vzniklá latence by zkreslila
