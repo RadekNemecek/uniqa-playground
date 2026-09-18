@@ -20,6 +20,15 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
   Barvy týmů drží aspoň 7:1 vůči `--c-text-ink`, aby na nich mohl být tmavý
   text.
 - **Tým se nikdy nerozlišuje jen barvou.** Vždy je vedle ní i písmeno.
+- **Slovo se nikdy nedělí na konci řádku.** Ani podle slovníku.
+  „ODPOVĚDNOSTNÍ" rozseknuté na dva řádky se z posledního stolu přečte
+  jako dvě slova a chvíli trvá, než si to člověk srovná. Když se text do
+  boxu nevejde, ubere se na velikosti: `v-fit-text` z `src/lib/fitText.ts`
+  měří šířku i výšku a snižuje `--fit-text`, dokud se obsah nevejde.
+  Styl si to bere jako násobek tokenu, takže velikost dál vychází
+  z tokenu, ne ze syrové hodnoty. `overflow-wrap: anywhere` se nepoužívá.
+  Výjimka je jediná, adresa pod QR kódem: to není slovo, opisuje se po
+  znacích a zmenšit ji nejde, ze zadní řady by ji nikdo nepřepsal.
 - **Deska i otázka se vejdou na jednu obrazovku.** Na projektoru se
   nescrolluje. Velikost otázky a odpovědi neodhaduj z počtu znaků, měř ji:
   `fitToScreen()` v `QuestionStage.vue` ubírá, dokud se obsah nevejde.
@@ -272,6 +281,13 @@ přebije celá listina.
 
 `src/lib/fit.ts` ubírá `--fit`, dokud se obsah nevejde. Používá ho deska
 i kvíz. Velikost textu se neodhaduje z počtu znaků, měří se.
+
+Totéž o patro níž dělá `src/lib/fitText.ts` s jedním boxem: direktiva
+`v-fit-text` ubírá `--fit-text`, dokud se text vejde do své plochy. Slouží
+k tomu, aby se nemusela dělit slova. Přeměřuje se jen při změně **šířky**
+boxu, protože měření samo mění výšku a observer by se točil dokola.
+Přetečení do šířky se nepozná ze `scrollWidth`, viditelně přeteklý text se
+do něj nepočítá, měří se proto rozsah textu přes `Range`.
 
 Nástupová animace uvnitř měřeného obsahu nesmí prvek posunout pod dolní
 okraj. Takový posun se započítá do `scrollHeight`, měření ho přečte jako

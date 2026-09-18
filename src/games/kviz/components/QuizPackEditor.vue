@@ -182,8 +182,8 @@ function exportPack(): void {
           <button type="button" class="qrow__toggle" :aria-expanded="openId === item.id" @click="toggle(item.id)">
             <span class="qrow__num">{{ i + 1 }}</span>
             <span class="qrow__text">
-              <span class="qrow__prompt">{{ item.prompt.trim() || 'Nová otázka' }}</span>
-              <span v-if="isItemReady(item)" class="qrow__answer">
+              <span v-fit-text class="qrow__prompt">{{ item.prompt.trim() || 'Nová otázka' }}</span>
+              <span v-if="isItemReady(item)" v-fit-text class="qrow__answer">
                 <span class="qrow__letter" :style="{ color: `var(${quizOption(item.correctIndex).color.cssVar})` }">
                   {{ quizOption(item.correctIndex).letter }}
                 </span>
@@ -326,14 +326,14 @@ function exportPack(): void {
 .qrow__prompt {
   font-weight: 600;
   line-height: var(--lh-snug);
-  overflow-wrap: anywhere;
+  font-size: calc(1em * var(--fit-text, 1));
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-.qrow__answer { font-size: var(--fs-xs); color: var(--c-text-muted); overflow-wrap: anywhere; }
+.qrow__answer { font-size: calc(var(--fs-xs) * var(--fit-text, 1)); color: var(--c-text-muted); }
 .qrow__letter { font-family: var(--font-display); font-weight: 900; margin-right: var(--sp-1); }
 .qrow__todo { font-size: var(--fs-xs); color: var(--c-text-faint); }
 

@@ -288,7 +288,7 @@ function badge(id: string): { text: string; tone: 'ok' | 'warn' | 'muted' } {
               <li v-for="r in reports" :key="r.id">
                 <button type="button" class="rrow" @click="showReport(r.id)">
                   <span class="rrow__date">{{ reportDate(r.finishedAt) }}</span>
-                  <span class="rrow__meta">
+                  <span v-fit-text class="rrow__meta">
                     {{ count(r.questionCount, 'otázka', 'otázky', 'otázek') }} ·
                     {{ count(r.playerCount, 'hráč', 'hráči', 'hráčů') }} ·
                     {{ r.packNames.join(', ') }}
@@ -432,7 +432,7 @@ function badge(id: string): { text: string; tone: 'ok' | 'warn' | 'muted' } {
 }
 .rrow:hover { border-color: var(--c-surface-3); }
 .rrow__date { font-weight: 700; }
-.rrow__meta { font-size: var(--fs-xs); color: var(--c-text-faint); overflow-wrap: anywhere; }
+.rrow__meta { font-size: calc(var(--fs-xs) * var(--fit-text, 1)); color: var(--c-text-faint); }
 .rrow__x {
   flex: none;
   padding: var(--sp-2) var(--sp-3);

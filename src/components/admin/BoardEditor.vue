@@ -218,7 +218,7 @@ async function onValueChange(index: number, event: Event) {
             <UiIcon name="check" size="xs" />
           </span>
 
-          <span v-if="preview(questionOf(cat.id, value)?.prompt)" class="cell__text">
+          <span v-if="preview(questionOf(cat.id, value)?.prompt)" v-fit-text class="cell__text">
             {{ preview(questionOf(cat.id, value)?.prompt) }}
           </span>
           <span v-else class="cell__empty">
@@ -588,7 +588,7 @@ async function onValueChange(index: number, event: Event) {
 }
 
 .cell__text {
-  overflow-wrap: anywhere;
+  font-size: calc(1em * var(--fit-text, 1));
   display: -webkit-box;
   -webkit-line-clamp: 3;
   line-clamp: 3;

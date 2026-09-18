@@ -59,8 +59,8 @@ function rate(run: PojistujRun): number {
           @click="open = open === run.id ? null : run.id"
         >
           <span class="run__when">{{ whenAgo(run.finishedAt) }}</span>
-          <span class="run__name">{{ run.groupName || 'Bez názvu skupiny' }}</span>
-          <span class="run__pack">{{ run.packName }}</span>
+          <span v-fit-text class="run__name">{{ run.groupName || 'Bez názvu skupiny' }}</span>
+          <span v-fit-text class="run__pack">{{ run.packName }}</span>
           <span class="run__rate">{{ rate(run) }} % uhodnuto</span>
         </button>
 
@@ -81,7 +81,7 @@ function rate(run: PojistujRun): number {
               :style="{ '--team': `var(${teamColor(t.color).cssVar})` }"
             >
               <span class="detail__badge">{{ teamBadge(i) }}</span>
-              <span class="detail__teamName">{{ t.name }}</span>
+              <span v-fit-text class="detail__teamName">{{ t.name }}</span>
               <span class="detail__score">{{ formatScore(t.score) }}</span>
             </li>
           </ol>
@@ -92,7 +92,7 @@ function rate(run: PojistujRun): number {
             </p>
             <ul class="cats">
               <li v-for="c in run.categories" :key="c.name" class="cat">
-                <span class="cat__name">{{ c.name }}</span>
+                <span v-fit-text class="cat__name">{{ c.name }}</span>
                 <span class="cat__bar" aria-hidden="true">
                   <span
                     class="cat__fill"
@@ -137,8 +137,8 @@ function rate(run: PojistujRun): number {
   text-align: left;
 }
 .run__when { font-size: var(--fs-xs); color: var(--c-text-faint); }
-.run__name { font-weight: 700; overflow-wrap: anywhere; }
-.run__pack { font-size: var(--fs-sm); color: var(--c-text-muted); overflow-wrap: anywhere; }
+.run__name { font-weight: 700; font-size: calc(1em * var(--fit-text, 1)); }
+.run__pack { font-size: calc(var(--fs-sm) * var(--fit-text, 1)); color: var(--c-text-muted); }
 .run__rate { font-size: var(--fs-sm); color: var(--c-text-muted); white-space: nowrap; }
 
 .detail {
@@ -162,7 +162,7 @@ function rate(run: PojistujRun): number {
   font-weight: 900;
   font-size: var(--fs-xs);
 }
-.detail__teamName { flex: 1 1 auto; overflow-wrap: anywhere; }
+.detail__teamName { flex: 1 1 auto; font-size: calc(1em * var(--fit-text, 1)); }
 .detail__score { font-weight: 700; font-variant-numeric: tabular-nums; }
 
 .detail__weak { font-size: var(--fs-sm); color: var(--c-text-muted); margin-bottom: var(--sp-3); }
@@ -174,7 +174,7 @@ function rate(run: PojistujRun): number {
   gap: var(--sp-2);
   font-size: var(--fs-xs);
 }
-.cat__name { overflow-wrap: anywhere; color: var(--c-text-muted); }
+.cat__name { font-size: calc(1em * var(--fit-text, 1)); color: var(--c-text-muted); }
 .cat__bar { height: var(--sp-2); border-radius: var(--r-full); background: var(--c-bg-field); overflow: hidden; }
 .cat__fill { display: block; height: 100%; background: var(--c-ok); border-radius: var(--r-full); }
 .cat__n { color: var(--c-text-faint); font-variant-numeric: tabular-nums; }

@@ -37,7 +37,7 @@ const revealed = computed(() => props.votes !== null)
     :style="{ '--tint': `var(${option.color.cssVar})`, '--share': String(share ?? 0) }"
   >
     <span class="chip__letter" aria-hidden="true">{{ option.letter }}</span>
-    <span v-if="text" class="chip__text">{{ text }}</span>
+    <span v-if="text" v-fit-text class="chip__text">{{ text }}</span>
 
     <!-- Fajfka se objeví jen u správné, ale místo si drží obě: dlaždice se
          po odhalení nesmí přesázet. -->
@@ -104,7 +104,9 @@ const revealed = computed(() => props.votes !== null)
 
 .chip__text {
   min-width: 0;
-  overflow-wrap: anywhere;
+  /* Slovo se nedělí. Když se do dlaždice nevejde, ubere `v-fit-text`
+     na velikosti; rozseknuté slovo se z místnosti čte jako dvě. */
+  font-size: calc(var(--fs-answer) * var(--fit, 1) * var(--fit-text, 1));
   font-weight: 700;
   line-height: var(--lh-snug);
   text-wrap: balance;

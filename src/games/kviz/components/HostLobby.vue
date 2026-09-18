@@ -104,7 +104,7 @@ function commitRename(uid: string): void {
             @keydown.esc="editing = null"
             @blur="commitRename(p.uid)"
           />
-          <span v-else class="who__nick">{{ p.nick }}</span>
+          <span v-else v-fit-text class="who__nick">{{ p.nick }}</span>
 
           <div class="who__tools">
             <button type="button" class="who__tool" :aria-label="`Přejmenovat ${p.nick}`" @click="startRename(p)">
@@ -172,7 +172,16 @@ function commitRename(uid: string): void {
   font-family: ui-monospace, monospace;
   color: var(--c-text);
 }
-.lobby__url { max-width: var(--content-narrow); font-size: var(--fs-xs); color: var(--c-text-faint); overflow-wrap: anywhere; text-align: center; }
+/* Jediné místo, kde se řetězec dělit smí. Adresa není slovo, čte se po
+   znacích a opisuje z plátna, a zmenšit ji pod tuhle velikost by znamenalo,
+   že ji ze zadní řady nikdo nepřepíše. */
+.lobby__url {
+  max-width: var(--content-narrow);
+  font-size: var(--fs-xs);
+  color: var(--c-text-faint);
+  overflow-wrap: anywhere;
+  text-align: center;
+}
 
 /* Kód se čte z druhého konce místnosti, proto jde na doraz a po znacích. */
 .lobby__code {
@@ -221,7 +230,12 @@ function commitRename(uid: string): void {
   animation: pop var(--dur-base) var(--ease-back) both;
 }
 .who__ava { --ava-size: var(--quiz-lobby-ava); }
-.who__nick { font-weight: 700; line-height: var(--lh-snug); overflow-wrap: anywhere; }
+/* Přezdívku nikdo neláme uprostřed, ubere se na velikosti. */
+.who__nick {
+  font-weight: 700;
+  line-height: var(--lh-snug);
+  font-size: calc(var(--fs-md) * var(--fit-text, 1));
+}
 .who__tools { display: flex; gap: var(--sp-2); }
 .who__tool {
   border: 0;

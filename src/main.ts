@@ -9,6 +9,7 @@ import { applySettings } from '@/stores/settings'
 import { restoreGame } from '@/stores/game'
 import { restoreQuizHost } from '@/stores/quizHost'
 import { setDb } from '@/lib/db'
+import { vFitText } from '@/lib/fitText'
 import { setSessionDbFactory } from '@/lib/sessionDb'
 import { isFirebaseConfigured } from '@/lib/firebase.config'
 import { markLocalOnly, toast } from '@/stores/ui'
@@ -56,7 +57,7 @@ async function boot(): Promise<void> {
     }
   }
 
-  createApp(App).use(router).mount('#app')
+  createApp(App).use(router).directive('fit-text', vFitText).mount('#app')
 
   // Až po připojení, jinak by oznámení odešlo dřív, než je co ho zobrazí.
   // Mlčky přepnout do lokálního režimu nejde: uživatelce by beze slova

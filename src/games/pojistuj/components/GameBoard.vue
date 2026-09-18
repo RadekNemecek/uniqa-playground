@@ -132,7 +132,7 @@ function onGridKey(e: KeyboardEvent): void {
       @keydown="onGridKey"
     >
       <div v-for="cat in game.categories" :key="cat.id" class="board__cat">
-        <span>{{ cat.name }}</span>
+        <span v-fit-text>{{ cat.name }}</span>
       </div>
 
       <div v-for="(c, i) in flat" :key="c.key" class="board__cell">
@@ -271,7 +271,6 @@ function onGridKey(e: KeyboardEvent): void {
 }
 .board__cat span {
   font-family: var(--font-display);
-  font-size: var(--fs-cat);
   font-weight: 800;
   letter-spacing: 0.02em;
   text-transform: uppercase;
@@ -283,13 +282,10 @@ function onGridKey(e: KeyboardEvent): void {
   line-clamp: 3;
   overflow: hidden;
   max-width: 100%;
-  /* Dlouhé slovo se musí zlomit. Samotné ořezání na tři řádky ho neuhlídá:
-     „ODPOVĚDNOSTNÍ" je širší než sloupec, přeteče a uřízne se uprostřed,
-     aniž by to bylo při přípravě hry poznat. Dělení se zkusí nejdřív podle
-     slovníku (stránka má lang="cs"), teprve když ani to nestačí, zlomí se
-     slovo kdekoli. */
-  hyphens: auto;
-  overflow-wrap: anywhere;
+  /* Dlouhé slovo se nedělí, ani podle slovníku. „ODPOVĚDNOSTNÍ" rozseknuté
+     na dva řádky se z posledního stolu čte jako dvě slova. Když je širší
+     než sloupec, ubere `v-fit-text` na velikosti, dokud se nevejde. */
+  font-size: calc(var(--fs-cat) * var(--fit-text, 1));
 }
 
 .board__cell { display: contents; }

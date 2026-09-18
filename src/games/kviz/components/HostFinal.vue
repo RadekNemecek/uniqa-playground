@@ -207,7 +207,7 @@ onUnmounted(() => {
         <!-- Stupeň vyroste první a chvíli stojí prázdný. Až pak na něj
              dosedne zvíře se jménem a body se dopočítají nahoru. -->
         <PlayerAvatar class="slot__ava" :id="s.avatar" />
-        <span class="slot__nick">{{ s.nick }}</span>
+        <span v-fit-text class="slot__nick">{{ s.nick }}</span>
         <span class="slot__score">{{ formatScore(scoreOf(s)) }}</span>
         <span class="slot__riser" aria-hidden="true">
           <span class="slot__place">{{ place(s) }}</span>
@@ -312,12 +312,11 @@ onUnmounted(() => {
 }
 .slot--champ .slot__ava { --ava-size: 5rem; }
 .slot__nick {
-  font-size: var(--fs-lg);
+  font-size: calc(var(--fs-lg) * var(--fit-text, 1));
   font-weight: 700;
-  overflow-wrap: anywhere;
   transition: opacity var(--dur-fast) var(--ease-out);
 }
-.slot--champ .slot__nick { font-size: var(--fs-2xl); }
+.slot--champ .slot__nick { font-size: calc(var(--fs-2xl) * var(--fit-text, 1)); }
 .slot__score {
   font-family: var(--font-display);
   font-size: var(--fs-xl);

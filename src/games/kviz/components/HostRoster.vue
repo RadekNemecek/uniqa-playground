@@ -57,7 +57,7 @@ function commit(uid: string): void {
           @keydown.esc="editing = null"
           @blur="commit(p.uid)"
         />
-        <span v-else class="row__nick">{{ p.nick }}</span>
+        <span v-else v-fit-text class="row__nick">{{ p.nick }}</span>
 
         <div class="row__tools">
           <UiButton size="sm" variant="quiet" @click="startRename(p)">Přejmenovat</UiButton>
@@ -85,7 +85,7 @@ function commit(uid: string): void {
   background: var(--c-bg-card);
 }
 .row__ava { --ava-size: var(--control-lg); }
-.row__nick { font-weight: 700; overflow-wrap: anywhere; }
+.row__nick { font-weight: 700; font-size: calc(var(--fs-md) * var(--fit-text, 1)); }
 .row__tools { display: flex; gap: var(--sp-1); }
 .row__input {
   width: 100%;

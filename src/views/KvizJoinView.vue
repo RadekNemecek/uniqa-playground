@@ -255,7 +255,7 @@ onBeforeUnmount(leaveGame)
     <!-- Čekárna ----------------------------------------------------------- -->
     <section v-else-if="view === 'waiting'" class="card">
       <PlayerAvatar class="card__ava" :id="player.avatar" />
-      <p class="card__eyebrow">{{ player.nick }}</p>
+      <p v-fit-text class="card__eyebrow">{{ player.nick }}</p>
       <h1 class="card__title">Jsi ve hře</h1>
       <p class="card__lead">Dívej se na plátno. Otázka se objeví tam, tady budou tlačítka.</p>
 
@@ -277,7 +277,7 @@ onBeforeUnmount(leaveGame)
     <!-- Otázka ------------------------------------------------------------ -->
     <section v-else-if="view === 'play' || view === 'locked'" class="stage">
       <header class="stage__bar">
-        <span class="stage__nick">{{ player.nick }}</span>
+        <span v-fit-text class="stage__nick">{{ player.nick }}</span>
         <span class="stage__pos">{{ (session?.index ?? 0) + 1 }} / {{ session?.total }}</span>
       </header>
 
@@ -311,7 +311,7 @@ onBeforeUnmount(leaveGame)
     <section v-else-if="view === 'result'" class="result" :class="verdict.tone">
       <p class="result__who">
         <PlayerAvatar class="result__ava" :id="player.avatar" />
-        <span>{{ player.nick }}</span>
+        <span v-fit-text class="result__nick">{{ player.nick }}</span>
       </p>
 
       <h1 class="result__verdict">{{ verdict.word }}</h1>
@@ -346,13 +346,13 @@ onBeforeUnmount(leaveGame)
       <!-- Poučka se na telefony posílala od začátku a nikdy se nezobrazila.
            Je to obsah, kvůli kterému se kvíz hraje, a zahazoval se zrovna
            na zařízení, do kterého se všichni koukají. -->
-      <p v-if="session?.reveal?.note" class="result__note">{{ session.reveal.note }}</p>
+      <p v-if="session?.reveal?.note" v-fit-text class="result__note">{{ session.reveal.note }}</p>
     </section>
 
     <!-- Konec ------------------------------------------------------------- -->
     <section v-else class="card">
       <PlayerAvatar class="card__ava" :id="player.avatar" />
-      <p class="card__eyebrow">{{ player.nick }}</p>
+      <p v-fit-text class="card__eyebrow">{{ player.nick }}</p>
       <h1 class="card__title">{{ myRank }}. místo</h1>
       <p class="card__score">{{ formatScore(session?.scores[player.uid] ?? 0) }} bodů</p>
       <p class="card__lead">Výsledky jsou na plátně.</p>
@@ -380,7 +380,7 @@ onBeforeUnmount(leaveGame)
   padding: var(--sp-5);
 }
 .card__eyebrow {
-  font-size: var(--fs-xs);
+  font-size: calc(var(--fs-xs) * var(--fit-text, 1));
   font-weight: 700;
   letter-spacing: var(--tracking-caps);
   text-transform: uppercase;
@@ -510,12 +510,14 @@ onBeforeUnmount(leaveGame)
   align-items: center;
   gap: var(--sp-2);
   font-size: var(--fs-xs);
+  max-width: 100%;
   font-weight: 700;
   letter-spacing: var(--tracking-caps);
   text-transform: uppercase;
   color: var(--c-text-faint);
 }
 .result__ava { --ava-size: 1.75rem; }
+.result__nick { min-width: 0; font-size: calc(1em * var(--fit-text, 1)); }
 
 .result__verdict {
   font-size: var(--fs-3xl);
@@ -586,7 +588,7 @@ onBeforeUnmount(leaveGame)
   border-top: var(--border-w) solid var(--c-border-soft);
   max-width: 24rem;
   color: var(--c-text-muted);
-  font-size: var(--fs-sm);
+  font-size: calc(var(--fs-sm) * var(--fit-text, 1));
   line-height: var(--lh-body);
 }
 
@@ -603,7 +605,11 @@ onBeforeUnmount(leaveGame)
   font-size: var(--fs-sm);
   color: var(--c-text-faint);
 }
-.stage__nick { font-weight: 700; color: var(--c-text-muted); }
+.stage__nick {
+  font-weight: 700;
+  color: var(--c-text-muted);
+  font-size: calc(1em * var(--fit-text, 1));
+}
 .stage__msg {
   text-align: center;
   font-size: var(--fs-lg);

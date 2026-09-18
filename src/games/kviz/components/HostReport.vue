@@ -80,7 +80,7 @@ function isTrap(q: QuizReportQuestion, at: number): boolean {
           <span>{{ q.correct }} z {{ q.present }}</span>
         </p>
         <div class="q__text">
-          <p class="q__prompt">{{ q.index + 1 }}. {{ q.prompt }}</p>
+          <p v-fit-text class="q__prompt">{{ q.index + 1 }}. {{ q.prompt }}</p>
           <p class="q__answer">
             <span class="q__letter" :style="{ color: `var(${quizOption(q.correctIndex).color.cssVar})` }">
               {{ quizOption(q.correctIndex).letter }}
@@ -205,7 +205,7 @@ function isTrap(q: QuizReportQuestion, at: number): boolean {
 .q__rate strong { font-family: var(--font-display); font-size: var(--fs-lg); font-variant-numeric: tabular-nums; }
 .q__rate span { font-size: var(--fs-xs); color: var(--c-text-faint); }
 .q__text { min-width: 0; }
-.q__prompt { font-weight: 600; line-height: var(--lh-snug); overflow-wrap: anywhere; }
+.q__prompt { font-weight: 600; line-height: var(--lh-snug); font-size: calc(1em * var(--fit-text, 1)); }
 .q__answer { margin-top: var(--sp-1); font-size: var(--fs-sm); color: var(--c-text-muted); }
 .q__letter { font-family: var(--font-display); font-weight: 900; margin-right: var(--sp-1); }
 .q__time { margin-left: var(--sp-2); color: var(--c-text-faint); }
