@@ -227,9 +227,9 @@
   --quiz-stage-max: 84rem;
   --quiz-prompt-max: 64rem;
   --quiz-stage-footer: 5rem;
-  /* Pás s časomírou nad otázkou. Nese ho i fáze bez ní, aby obsah pod
-     ním nepoposkočil. */
-  --quiz-timer-h: 3.5rem;
+  /* Pás s časomírou nad otázkou. Drží ho i fáze bez ní, aby obsah pod
+     ním nepoposkočil. Stejný v obou hrách. */
+  --stage-timer-h: 3.5rem;
   --z-board: 1;
   --z-header: 20;
   --z-stage: 60;

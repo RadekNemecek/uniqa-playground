@@ -133,6 +133,18 @@ onBeforeUnmount(() => {
       </p>
     </div>
 
+    <!-- Časomíra patří nad otázku, stejně jako v kvízu: místnost čte
+         otázku a ubývající čas má mít v témže pohledu. Pás si drží výšku
+         i po odhalení, aby otázka pod ním nepoposkočila. -->
+    <div v-if="game.rules.timerSeconds > 0" class="stage__time">
+      <TimerBar
+        v-if="!revealed"
+        :seconds="game.rules.timerSeconds"
+        running
+        @expired="timedOut = true"
+      />
+    </div>
+
     <div ref="body" class="stage__body">
       <p class="stage__prompt">{{ question.prompt }}</p>
 
@@ -147,16 +159,12 @@ onBeforeUnmount(() => {
     <footer class="stage__foot">
       <!-- Fáze otázky: běží čas, odpověď je schovaná ---------------------- -->
       <template v-if="!revealed">
-        <div v-if="game.rules.timerSeconds > 0" class="stage__timer">
-          <TimerBar
-            :seconds="game.rules.timerSeconds"
-            running
-            @expired="timedOut = true"
-          />
-          <p v-if="timedOut" class="stage__timeout">Čas vypršel. Zobraz odpověď a vyhodnoť.</p>
-        </div>
         <UiButton variant="brand" size="xl" @click="reveal">Zobrazit odpověď</UiButton>
-        <p class="stage__hint">Mezerník zobrazí odpověď, Esc zavře políčko bez bodování.</p>
+        <!-- Konec času je na jednom řádku s nápovědou, ne navíc pod
+             časomírou: řádek navíc by posunul otázku nad patičkou
+             a ta je změřená na jednu obrazovku. -->
+        <p v-if="timedOut" class="stage__timeout">Čas vypršel. Zobraz odpověď a vyhodnoť.</p>
+        <p v-else class="stage__hint">Mezerník zobrazí odpověď, Esc zavře políčko bez bodování.</p>
       </template>
 
       <!-- Fáze vyhodnocení ------------------------------------------------ -->
@@ -218,11 +226,19 @@ onBeforeUnmount(() => {
   inset: 0;
   z-index: var(--z-stage);
   display: grid;
-  grid-template-rows: auto auto 1fr auto;
+  grid-template-rows: auto auto auto 1fr auto;
   background:
     radial-gradient(80% 60% at 50% 0%, color-mix(in oklab, var(--c-brand) 7%, transparent), transparent 70%),
     linear-gradient(180deg, var(--c-surface) 0%, var(--c-abyss) 100%);
   will-change: transform, opacity;
+}
+
+/* Časomíra ---------------------------------------------------------------- */
+.stage__time {
+  display: flex;
+  align-items: center;
+  min-height: var(--stage-timer-h);
+  padding-inline: var(--sp-6);
 }
 
 /* Hlavička ---------------------------------------------------------------- */
@@ -392,22 +408,15 @@ onBeforeUnmount(() => {
   border-top: 1px solid var(--c-line-soft);
   background: color-mix(in oklab, var(--c-abyss) 55%, transparent);
 }
-.stage__timer {
-  display: grid;
-  gap: var(--sp-2);
-  width: min(100%, 42rem);
-  padding: var(--sp-4) var(--sp-5);
-  border-radius: var(--r-xl);
-  border: 1px solid var(--c-line);
-  background: var(--c-surface);
-}
+/* Konec času nese stejný řádek jako nápověda, tedy i stejnou velikost:
+   jiná by patičku o pár pixelů posunula a otázka nad ní je změřená. */
 .stage__timeout {
   font-family: var(--font-display);
   font-weight: 800;
   color: var(--c-bad);
   letter-spacing: var(--tracking-wide);
   text-transform: uppercase;
-  font-size: var(--fs-sm);
+  font-size: var(--fs-xs);
   text-align: center;
 }
 .stage__hint { font-size: var(--fs-xs); color: var(--c-text-faint); }

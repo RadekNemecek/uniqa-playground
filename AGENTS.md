@@ -168,9 +168,11 @@ políčko na 65 px. Je to kompromis, hra se vede z notebooku.
 ## Ovládání na plátně
 
 Obě hry se posouvají **mezerníkem**. Moderátorka nesahá na myš a nemusí se
-učit nové klávesy. Časomíra kvízu je **nad otázkou**: místnost čte otázku
-a ubývající čas má mít v témže pohledu. Pás si drží výšku i mimo běžící
-otázku, aby obsah pod ním nepoposkočil. Na plátně je u každé fáze vidět, co udělá další stisk,
+učit nové klávesy. Časomíra je v obou hrách **nad otázkou**: místnost čte
+otázku a ubývající čas má mít v témže pohledu. Pás si drží výšku i mimo
+běžící otázku, aby obsah pod ním nepoposkočil, a nic dalšího do něj
+nepřibývá: řádek navíc by posunul obsah, který je změřený na jednu
+obrazovku. Na plátně je u každé fáze vidět, co udělá další stisk,
 aby se nedalo omylem přeskočit odhalení. Po vypršení časového limitu se
 správná odpověď odhalí automaticky a špatné se ztlumí. Automatika ale nikdy
 nepostupuje na další otázku.

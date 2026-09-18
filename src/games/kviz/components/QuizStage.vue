@@ -258,7 +258,7 @@ onBeforeUnmount(() => {
 .stage__time {
   display: flex;
   align-items: center;
-  min-height: var(--quiz-timer-h);
+  min-height: var(--stage-timer-h);
 }
 
 /* Předehra ----------------------------------------------------------------- */
