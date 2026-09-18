@@ -22,6 +22,17 @@ export interface QuizSessionDb {
   /** Anonymní identita zařízení. Přežívá obnovení stránky. */
   myUid(): string
 
+  /**
+   * Zahodí spojení a naváže nové.
+   *
+   * Firestore streamuje změny jedním dlouhým spojením. Když ho prohlížeč
+   * uspí, přepne se síť nebo ho po cestě zahodí proxy, klient o tom
+   * nemusí vědět: snímky prostě přestanou chodit a poslední fáze zůstane
+   * na obrazovce, jako by se nic nedělo. Tohle je jediný spolehlivý
+   * způsob, jak ho donutit začít znovu, bez obnovení stránky.
+   */
+  resync(): Promise<void>
+
   /* --- Moderátorka ------------------------------------------------------- */
 
   /** Zabere volný kód a založí session. Vrací obsazený kód. */
@@ -100,7 +111,6 @@ export interface SessionPatch {
   /** Null pole z dokumentu odstraní. */
   reveal?: QuizSession['reveal'] | null
   scores?: Record<string, number>
-  top?: QuizSession['top']
 }
 
 export interface AnswerDraft {

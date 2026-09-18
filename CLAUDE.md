@@ -82,9 +82,17 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
   místo od začátku otázky a jen se odkryjí: `fitToScreen()` měří jednou
   a obsah se při odhalení nesmí pohnout. Když otázka poučku nemá, zůstane
   uprostřed ona, prázdný střed by byl horší než zopakování.
-- **Průběžně se vyhlašují jen tři místa.** Delší seznam se z posledního
-  stolu nepřečte. Celé pořadí je ve vyhodnocení a svoje místo vidí každý
-  na svém telefonu.
+- **Průběžné pořadí se na plátno nedostane vůbec.** Ani bedna. Z místnosti
+  se čte špatně, zdržuje mezi otázkami a každý stejně hledá jen sebe.
+  Po odhalení jde mezerník rovnou na další otázku. Své místo, posun proti
+  minulé otázce i odstup na lepšího vidí každý na svém telefonu hned po
+  odhalení, celé pořadí je ve vyhodnocení.
+- **Pořadí se během hry neukáže nikde, ani na telefonu.** Průběžné
+  umístění svádí hráče porovnávat se s ostatními místo s otázkou a půlce
+  místnosti říká, že se nemá cenu snažit. Body stoupají každému, pořadí
+  jen třem. Telefon po odhalení ukáže verdikt, zisk a vlastní body, nic
+  z toho není žebříček. Kdo je kolikátý, padne až na výsledkové tabuli.
+  Texty jsou bez rodu, za přezdívkou nevíme, jestli je on, nebo ona.
 - **Avatar nic nekóduje.** Zvíře hráče rozlišuje tvar a jméno, odstín pod
   ním je jen plocha. Proto avatar nepatří k běžící otázce vedle možností
   A až D, kde barva význam má. Kresby jsou v repozitáři
@@ -201,6 +209,25 @@ v cizím zařízení se k `localStorage` moderátorčina notebooku nedostane.
 pak jede v režimu bez telefonů. Není to degradace, je to druhý způsob, jak
 ho vést, a zároveň záchrana při výpadku wifi.
 
+Firestore **neumí pole v poli**. Matice „kdo co zmáčkl" ve vyhodnocení
+je přesně to, takže se na hranici úložiště převádí: řádek jde do databáze
+zabalený v objektu (`encodeReport` a `decodeReport` v `firebaseSession.ts`).
+V aplikaci zůstává maticí. Bez toho odmítne Firestore celý dokument ještě
+před pravidly a moderátorce zbyde jen stažená tabulka.
+
+Telefon hráče jede na **paměťové mezipaměti**, ne na trvalé. Volí se podle
+adresy při startu (`isPlayerDevice()` v `firebase.ts`). Trvalá mezipaměť
+s volbou hlavní karty tam škodí: spojení drží jediná karta a když ji
+prohlížeč na pozadí uspí, ostatní zamrznou na poslední uložené fázi.
+Offline režim tam k ničemu není, bez sítě se stejně odpovědět nedá.
+
+Spojení umí tiše umřít, aniž by to klient ohlásil. Telefon proto sleduje,
+jestli snímek přišel ze serveru, nebo z mezipaměti, a když se drží
+mezipaměti, řekne to hráči a spojení kříší sám: napřed `resync()`, pak
+nasadí listenery znovu, protože `onSnapshot` po chybě umře a sám se
+nezotaví. Prázdný snímek z mezipaměti se zahazuje, „hra neběží" smí říct
+jen server.
+
 Smazání dokumentu ve Firestore **nemaže jeho podkolekce**. Po session musí
 zmizet i `players` a `answers`, jinak zůstanou osiřelé dokumenty, které se
 v konzoli ani neukážou.
@@ -237,7 +264,9 @@ automaticky a špatné se ztlumí ve dvou případech: po vypršení časového
 limitu a ve chvíli, kdy odpoví všichni připojení hráči. Hlasování je tehdy
 uzavřené tak jako tak a čekat na mezerník by jen drželo místnost
 u obrazovky, která už nic nového neřekne. Automatika ale nikdy
-nepostupuje na další otázku.
+nepostupuje na další otázku. Po poslední otázce vede mezerník z odhalení
+rovnou na vyhlášení: průběžné pořadí by ukázalo bednu, kterou vzápětí
+přebije celá listina.
 
 ## Měření velikosti
 

@@ -112,7 +112,10 @@ const hint = computed(() => {
     case 'locked':
       return 'Mezerník odhalí správnou odpověď'
     default:
-      return 'Mezerník pokračuje dál'
+      // Po poslední otázce se jde rovnou na vyhlášení, ne na další otázku.
+      return props.index >= props.total - 1
+        ? 'Mezerník vyhlásí výsledky'
+        : 'Mezerník pokračuje dál'
   }
 })
 

@@ -18,6 +18,7 @@ import {
   locked,
   myGain,
   myRank,
+  myScore,
   pickAvatar,
   player,
   playerCount,
@@ -79,7 +80,6 @@ const view = computed(() => {
     case 'locked':
       return 'locked'
     case 'reveal':
-    case 'scores':
       return 'result'
     case 'final':
       return 'final'
@@ -97,6 +97,23 @@ const correctWord = computed(() => {
 })
 
 const myAvatar = computed(() => avatarFor(player.avatar))
+
+/* --- Výsledek otázky ------------------------------------------------------
+   Pořadí tu není a nebude. Průběžné umístění svádí hráče porovnávat se
+   s ostatními místo s otázkou a půlce místnosti říká, že se nemá cenu
+   snažit. Body stoupají každému, pořadí jen třem. Kdo je kolikátý, se
+   vyhlašuje až na výsledkové tabuli. ------------------------------------- */
+
+/** Jak dopadla odpověď. Nese to slovo i barvu, samotný odstín by na
+ *  telefonu na slunci u okna nestačil. */
+const verdict = computed(() => {
+  // Bez rodu. Za přezdívkou nevíme, jestli je on, nebo ona, a „neodpověděl
+  // jsi" to půlce místnosti říká špatně.
+  if (wasRight.value === null) return { word: 'Bez odpovědi', tone: '' }
+  return wasRight.value
+    ? { word: 'Správně', tone: 'result--ok' }
+    : { word: 'Vedle', tone: 'result--bad' }
+})
 
 function choose(id: string): void {
   pickAvatar(id)
@@ -133,6 +150,16 @@ onBeforeUnmount(leaveGame)
 
 <template>
   <main id="obsah" class="play">
+    <!-- Vypadlé spojení ---------------------------------------------------
+         Zamrzlý telefon vypadá úplně stejně jako telefon, na kterém se
+         zrovna nic neděje. Bez tohohle pásu zbývalo hráči jediné: hádat,
+         a pak stránku obnovit ručně. Pás stojí mimo tok, aby obrazovku
+         pod sebou neposunul. -->
+    <p v-if="player.stale" class="drop" role="status">
+      <span>Spojení vypadlo, obnovuju…</span>
+      <button type="button" @click="retryConnect">Zkusit hned</button>
+    </p>
+
     <!-- Zadání kódu ------------------------------------------------------
          Kdo QR nenačte (odlesk projektoru, zadní řada, starší telefon),
          musel dřív přepisovat celou adresu z nejmenšího písma na plátně.
@@ -234,7 +261,10 @@ onBeforeUnmount(leaveGame)
 
       <!-- Známka života. Statická karta bez jediného pohybu vypadá při
            pětiminutovém dobíhání sálu jako zamrzlý telefon. -->
-      <p class="alive"><span class="alive__dot" aria-hidden="true"></span> Spojení běží</p>
+      <p class="alive" :class="{ 'alive--off': player.stale }">
+        <span class="alive__dot" aria-hidden="true"></span>
+        {{ player.stale ? 'Spojení vypadlo' : 'Spojení běží' }}
+      </p>
       <p v-if="playerCount > 0" class="card__hint">
         {{ count(playerCount, 'hráč je', 'hráči jsou', 'hráčů je') }} připojeno
       </p>
@@ -274,31 +304,49 @@ onBeforeUnmount(leaveGame)
       </UiButton>
     </section>
 
-    <!-- Výsledek otázky --------------------------------------------------- -->
-    <section v-else-if="view === 'result'" class="card" :class="wasRight === null ? '' : wasRight ? 'card--ok' : 'card--bad'">
-      <PlayerAvatar class="card__ava" :id="player.avatar" />
-      <p class="card__eyebrow">{{ player.nick }}</p>
-      <h1 class="card__title">
-        <template v-if="wasRight === null">Neodpověděl jsi</template>
-        <template v-else-if="wasRight">Správně</template>
-        <template v-else>Vedle</template>
-      </h1>
-
-      <p v-if="session?.reveal" class="card__correct">
-        Správně bylo
-        <span class="card__letter" :style="{ color: `var(${quizOption(session.reveal.correctIndex).color.cssVar})` }">
-          {{ correctWord }}
-        </span>
+    <!-- Výsledek otázky ---------------------------------------------------
+         Průběžné pořadí se na plátno nedostane, takže tahle obrazovka nese
+         celou zpětnou vazbu: jak to dopadlo, kolik to vyneslo, kde hráč
+         stojí, kam se pohnul a co má na dosah. -->
+    <section v-else-if="view === 'result'" class="result" :class="verdict.tone">
+      <p class="result__who">
+        <PlayerAvatar class="result__ava" :id="player.avatar" />
+        <span>{{ player.nick }}</span>
       </p>
 
-      <p v-if="myGain > 0" class="card__gain">+{{ formatScore(myGain) }}</p>
-      <p class="card__score">{{ formatScore(session?.scores[player.uid] ?? 0) }} bodů</p>
-      <p class="card__lead">{{ myRank }}. z {{ playerCount }}</p>
+      <h1 class="result__verdict">{{ verdict.word }}</h1>
+
+      <!-- Co bylo správně. Po trefě je to zbytečné potvrzování toho, co
+           hráč právě viděl na plátně. -->
+      <p v-if="wasRight !== true && session?.reveal" class="result__correct">
+        Správně bylo
+        <span
+          class="result__letter"
+          :style="{ color: `var(${quizOption(session.reveal.correctIndex).color.cssVar})` }"
+        >{{ correctWord }}</span>
+      </p>
+
+      <!-- Kdo neodpověděl, má to v nadpisu; druhý řádek o nule by byl jen
+           opakování. Kdo odpověděl špatně, tam nulu vidět má. -->
+      <p
+        v-if="wasRight !== null"
+        class="result__gain"
+        :class="{ 'result__gain--zero': myGain === 0 }"
+      >
+        {{ myGain > 0 ? `+${formatScore(myGain)}` : 'Bez bodů' }}
+      </p>
+
+      <!-- Jediné číslo, se kterým se hráč měří: svoje vlastní, kolo po
+           kole. Pořadí sem nepatří, to se dozví až na výsledkové tabuli. -->
+      <dl class="stats">
+        <dt class="stat__label">Body celkem</dt>
+        <dd class="stat__value">{{ formatScore(myScore) }}</dd>
+      </dl>
 
       <!-- Poučka se na telefony posílala od začátku a nikdy se nezobrazila.
            Je to obsah, kvůli kterému se kvíz hraje, a zahazoval se zrovna
            na zařízení, do kterého se všichni koukají. -->
-      <p v-if="session?.reveal?.note" class="card__note">{{ session.reveal.note }}</p>
+      <p v-if="session?.reveal?.note" class="result__note">{{ session.reveal.note }}</p>
     </section>
 
     <!-- Konec ------------------------------------------------------------- -->
@@ -379,16 +427,6 @@ onBeforeUnmount(leaveGame)
 }
 .code-input:focus-visible { border-color: var(--c-brand); }
 
-/* Poučka po odhalení. Odsazená čárou, aby nesplynula s body. */
-.card__note {
-  margin-top: var(--sp-3);
-  padding-top: var(--sp-3);
-  border-top: var(--border-w) solid var(--c-border-soft);
-  max-width: 24rem;
-  color: var(--c-text-muted);
-  font-size: var(--fs-sm);
-  line-height: var(--lh-body);
-}
 .card__ava { --ava-size: 4rem; }
 
 /* Puls spojení. Pomalý, aby uklidňoval, ne aby na sebe upozorňoval. */
@@ -400,6 +438,10 @@ onBeforeUnmount(leaveGame)
   font-size: var(--fs-sm);
   font-weight: 600;
 }
+/* Vypadlé spojení nese slovo i barvu, na slunci u okna by odstín nestačil. */
+.alive--off { color: var(--c-bad); }
+.alive--off .alive__dot { animation: none; }
+
 .alive__dot {
   width: var(--sp-2);
   height: var(--sp-2);
@@ -450,19 +492,103 @@ onBeforeUnmount(leaveGame)
 .zoo__pick :deep(.ava) { --ava-size: 100%; }
 /* Vybrané zvíře pozná i ten, kdo barvy nerozezná: má rámeček a plochu. */
 .zoo__pick--on { border-color: var(--c-brand); background: var(--c-surface-2); }
-.card__correct { color: var(--c-text-muted); }
-.card__letter { font-family: var(--font-display); font-weight: 900; font-size: var(--fs-xl); }
-.card__gain {
+.card__score { font-size: var(--fs-lg); font-weight: 700; }
+
+/* Výsledek otázky --------------------------------------------------------
+   Pořadí řádků je pořadí otázek, které si hráč klade: jak jsem dopadl,
+   kolik to vyneslo, kde stojím, kam jsem se pohnul, co mám na dosah. */
+.result {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: var(--sp-3);
+  text-align: center;
+  padding: var(--sp-5) var(--sp-4);
+}
+.result__who {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--c-text-faint);
+}
+.result__ava { --ava-size: 1.75rem; }
+
+.result__verdict {
+  font-size: var(--fs-3xl);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: var(--lh-tight);
+}
+/* Verdikt nese slovo i barvu. Samotný odstín by na slunci u okna nestačil. */
+.result--ok .result__verdict { color: var(--c-ok); }
+.result--bad .result__verdict { color: var(--c-bad); }
+
+.result__correct { color: var(--c-text-muted); font-size: var(--fs-sm); }
+.result__letter {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: var(--fs-xl);
+  vertical-align: -0.05em;
+}
+
+.result__gain {
   font-family: var(--font-display);
   font-size: var(--fs-3xl);
   font-weight: 900;
   color: var(--c-ok);
+  font-variant-numeric: tabular-nums;
 }
-.card__score { font-size: var(--fs-lg); font-weight: 700; }
+/* Nula se nehlásí jako výhra. Zmizet ale nesmí: prázdné místo by vypadalo
+   jako chyba a hráč by hledal, kam se body poděly. */
+.result__gain--zero {
+  font-family: inherit;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--c-text-faint);
+}
 
-/* Výsledek nese slovo i barvu. Samotný odstín by na slunci u okna nestačil. */
-.card--ok .card__title { color: var(--c-ok); }
-.card--bad .card__title { color: var(--c-bad); }
+/* Vlastní body. Jedna plocha, jedno číslo. */
+.stats {
+  display: grid;
+  gap: var(--sp-1);
+  justify-items: center;
+  width: min(100%, 16rem);
+  margin: 0;
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-lg);
+  background: var(--c-bg-card);
+}
+.stat__label {
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--c-text-faint);
+}
+.stat__value {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--fs-2xl);
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  line-height: var(--lh-tight);
+}
+
+/* Poučka po odhalení. Odsazená čárou, aby nesplynula s body. Je to obsah,
+   kvůli kterému se kvíz hraje. */
+.result__note {
+  margin-top: var(--sp-2);
+  padding-top: var(--sp-3);
+  border-top: var(--border-w) solid var(--c-border-soft);
+  max-width: 24rem;
+  color: var(--c-text-muted);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
+}
 
 /* Otázka ------------------------------------------------------------------ */
 .stage {
@@ -487,8 +613,35 @@ onBeforeUnmount(leaveGame)
 .stage__msg--go { color: var(--c-brand); }
 .stage__pad { min-height: 0; }
 
+/* Pás o vypadlém spojení. Mimo tok, aby neposunul obrazovku pod sebou. */
+.drop {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  padding: var(--sp-2) var(--sp-4);
+  background: var(--c-bad-deep);
+  color: var(--c-text);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  text-align: center;
+}
+.drop button {
+  border: var(--border-w) solid var(--c-text);
+  border-radius: var(--r-md);
+  padding: var(--sp-1) var(--sp-3);
+  background: transparent;
+  color: var(--c-text);
+  font: inherit;
+}
+
 @media (pointer: coarse) {
   .me,
-  .zoo__pick { min-height: var(--control-touch); }
+  .zoo__pick,
+  .drop button { min-height: var(--control-touch); }
 }
 </style>

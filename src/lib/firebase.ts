@@ -6,6 +6,7 @@ import {
   doc,
   getDoc,
   initializeFirestore,
+  memoryLocalCache,
   onSnapshot,
   persistentLocalCache,
   persistentMultipleTabManager,
@@ -32,6 +33,29 @@ function withTimeout<T>(op: Promise<T>, ms = 8000): Promise<T> {
       throw new Error('Firestore neodpověděl včas.')
     }),
   ]) as Promise<T>
+}
+
+/**
+ * Je tohle telefon hráče?
+ *
+ * Rozhoduje adresa, na které se aplikace načetla, protože mezipaměť se
+ * volí jednou při startu a pak se nemění.
+ *
+ * Telefon hráče nemá co ukládat na disk. Trvalá mezipaměť s volbou hlavní
+ * karty tam naopak škodí: spojení k serveru drží jediná karta a ostatní
+ * čtou, co jim přes IndexedDB podstrčí. Když prohlížeč tu hlavní na pozadí
+ * uspí, a mobilní prohlížeče to dělají agresivně, ostatní zamrznou na
+ * poslední uložené fázi a hráč kouká na minulou otázku, dokud stránku
+ * ručně neobnoví. Přesně to se stalo na druhém telefonu.
+ *
+ * Přijít o offline režim tu nic nestojí: bez sítě se stejně odpovědět
+ * nedá, odpověď se neposílá naslepo.
+ */
+function isPlayerDevice(): boolean {
+  const base = import.meta.env.BASE_URL || '/'
+  const path = window.location.pathname
+  const rest = (path.startsWith(base) ? path.slice(base.length) : path).replace(/^\/+/, '')
+  return rest === 'k' || rest.startsWith('k/')
 }
 
 /**
@@ -69,8 +93,11 @@ class FirestoreDb implements MucirnaDb {
     const app = initializeApp(FIREBASE_CONFIG)
     this.db = initializeFirestore(app, {
       // Offline vrstva: hra i seznam balíčků fungují bez sítě a po
-      // obnovení připojení se změny samy dosynchronizují.
-      localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+      // obnovení připojení se změny samy dosynchronizují. Na telefonu
+      // hráče ale škodí, viz `isPlayerDevice()`.
+      localCache: isPlayerDevice()
+        ? memoryLocalCache()
+        : persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
       // Firemní proxy a captive portály na konferenční wifi umí streamování
       // rozbít tak, že se spojení tváří jako navázané a mlčí. Autodetekce
       // přepne na dlouhý polling, který proleze i tudy.

@@ -35,10 +35,6 @@ const STORAGE_KEY = 'playground.kviz.host.v1'
  */
 const PRE_ROLL_MS = 5000
 
-/** Kolik jmen nese průběžný žebříček. Bedna, ne celá listina: na plátně
- *  se delší seznam z posledního stolu nepřečte. */
-const TOP_COUNT = 3
-
 interface Wrapper {
   current: QuizHostState | null
   restored: boolean
@@ -80,6 +76,10 @@ export function restoreQuizHost(): void {
       // Hra rozehraná před avatary je pole nemá a bez něj by zápis
       // o kus dál spadl na nedefinovaném objektu.
       saved.avatars ??= {}
+      // Hra rozehraná v době, kdy plátno ještě ukazovalo průběžné pořadí,
+      // může stát na fázi, která už neexistuje. Odhalení je nejbližší
+      // předchozí stav a mezerník z něj vede dál správně.
+      if ((saved.phase as string) === 'scores') saved.phase = 'reveal'
       store.current = saved
     }
   } catch {
@@ -311,7 +311,6 @@ export async function rematchQuiz(packs: QuizPack[]): Promise<void> {
     acceptsPlayers: true,
     reveal: null,
     scores: {},
-    top: [],
     preRollMs: PRE_ROLL_MS,
     stampAskedAt: next.phase !== 'lobby',
   })
@@ -353,11 +352,6 @@ export function advance(): void {
       void revealAnswer()
       break
     case 'reveal':
-      // Žebříček má smysl jen s telefony. Bez nich by neměl co ukázat.
-      if (s.code) void showScores()
-      else void nextQuestion()
-      break
-    case 'scores':
       void nextQuestion()
       break
     case 'final':
@@ -427,15 +421,7 @@ export async function revealAnswer(): Promise<void> {
     phase: 'reveal',
     reveal: { correctIndex: q.correctIndex, note: q.note, counts },
     scores: { ...s.scores },
-    top: standings.value.slice(0, TOP_COUNT),
   })
-}
-
-export async function showScores(): Promise<void> {
-  const s = store.current
-  if (!s || s.phase !== 'reveal') return
-  s.phase = 'scores'
-  await push({ phase: 'scores' })
 }
 
 export async function nextQuestion(): Promise<void> {
@@ -475,6 +461,11 @@ async function finishRound(): Promise<void> {
   const built = buildReport(s, live.answers, conn.myUid())
   live.report = built
   s.reportId = built.id
+  await storeReport(built)
+}
+
+async function storeReport(built: QuizReport): Promise<void> {
+  if (!conn) return
   try {
     await conn.saveReport(built)
     live.reportSaved = true
@@ -482,6 +473,18 @@ async function finishRound(): Promise<void> {
     // Stáhnout do souboru jde pořád, takže o výsledky se nepřijde.
     console.error('Uložení vyhodnocení selhalo:', e)
   }
+}
+
+/**
+ * Zkusit uložení znovu. Hotové vyhodnocení drží moderátorčin prohlížeč,
+ * takže se nic nepřepočítává a druhý pokus nic nestojí. Bez něj zbývala
+ * po výpadku sítě jediná cesta ven, stažená tabulka, a archiv o to kolo
+ * nenávratně přišel.
+ */
+export async function retrySaveReport(): Promise<boolean> {
+  if (!live.report || live.reportSaved) return live.reportSaved
+  await storeReport(live.report)
+  return live.reportSaved
 }
 
 /* --- Soupiska -------------------------------------------------------------- */

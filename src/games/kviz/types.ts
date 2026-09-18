@@ -55,10 +55,11 @@ export interface QuizPack {
  * Fáze kvízu. Posouvá je moderátorka mezerníkem, jediná automatika je
  * přechod z `question` do `locked`, jakmile doběhne časomíra.
  *
- * Čekárna a průběžný žebříček dávají smysl jen s telefony. Bez nich se
- * přeskakují, protože by neměly co ukázat.
+ * Průběžné pořadí mezi fázemi není. Plátno ho neukazuje vůbec: patří na
+ * telefon, kde si ho každý přečte sám a nedrží kvůli němu celou místnost.
+ * Čekárna dává smysl jen s telefony, bez nich se přeskakuje.
  */
-export type QuizPhase = 'lobby' | 'question' | 'locked' | 'reveal' | 'scores' | 'final'
+export type QuizPhase = 'lobby' | 'question' | 'locked' | 'reveal' | 'final'
 
 /**
  * Otázka zamrazená do běžícího kvízu, včetně pořadí možností. Úprava
@@ -164,13 +165,17 @@ export interface QuizSession {
   /** Vzniká až s odhalením. Pravidlo zakazuje, aby tohle pole v dokumentu
    *  bylo, dokud otázka běží. */
   reveal?: QuizReveal
-  /** Body podle uid. Telefon si najde svoje, ostatní jsou pro něj čísla. */
+  /**
+   * Body podle uid. Telefon si najde svoje, ostatní jsou pro něj čísla.
+   *
+   * Jmenovitý žebříček tu schválně není. Dokument čte kdokoli, kdo zná
+   * kód, a přezdívky účastníků školení do něj nepatří: anonymní uid
+   * a číslo neprozradí nikoho.
+   */
   scores: Record<string, number>
-  /** Jmenovitě jen špička, pro plátno i pro telefon. */
-  top: QuizStanding[]
 }
 
-export type QuizSessionPhase = 'lobby' | 'question' | 'locked' | 'reveal' | 'scores' | 'final'
+export type QuizSessionPhase = 'lobby' | 'question' | 'locked' | 'reveal' | 'final'
 
 export interface QuizReveal {
   correctIndex: number

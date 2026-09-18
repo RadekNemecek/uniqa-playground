@@ -2,7 +2,9 @@ import {
   Timestamp,
   collection,
   deleteDoc,
+  disableNetwork,
   doc,
+  enableNetwork,
   getDoc,
   getDocs,
   onSnapshot,
@@ -18,6 +20,7 @@ import type {
   QuizAnswer,
   QuizPlayer,
   QuizReport,
+  QuizReportCell,
   QuizReportSummary,
   QuizSession,
 } from '@/games/kviz/types'
@@ -67,8 +70,25 @@ function toSession(data: DocumentData): QuizSession {
     limitMs: Number(data.limitMs ?? 0),
     ...(data.reveal ? { reveal: data.reveal } : {}),
     scores: (data.scores ?? {}) as Record<string, number>,
-    top: (data.top ?? []) as QuizSession['top'],
   }
+}
+
+/**
+ * Matice „kdo co zmáčkl" do tvaru, který Firestore unese.
+ *
+ * Firestore **neumí pole v poli**. Matice je pole řádků a řádek je pole
+ * buněk, takže se celý dokument odmítal už při odesílání, ještě před
+ * pravidly: vyhodnocení se nikdy neuložilo a moderátorce zbyla jen hláška,
+ * ať si stáhne tabulku. Řádek se proto zabalí do objektu; v aplikaci
+ * zůstává matice maticí, převádí se až tady na hranici úložiště.
+ */
+function encodeReport(report: QuizReport): Record<string, unknown> {
+  return { ...report, matrix: report.matrix.map((row) => ({ cells: row })) }
+}
+
+function decodeReport(data: DocumentData): QuizReport {
+  const rows = (data.matrix ?? []) as Array<{ cells?: Array<QuizReportCell | null> }>
+  return { ...(data as QuizReport), matrix: rows.map((row) => row.cells ?? []) }
 }
 
 class FirestoreSessionDb implements QuizSessionDb {
@@ -79,6 +99,15 @@ class FirestoreSessionDb implements QuizSessionDb {
 
   myUid(): string {
     return this.uid
+  }
+
+  /**
+   * Zavřít síť a hned ji zase otevřít. Firestore tím zahodí mrtvý stream
+   * i s frontou a naváže nový, takže se čekající snímky dorovnají samy.
+   */
+  async resync(): Promise<void> {
+    await disableNetwork(this.db)
+    await enableNetwork(this.db)
   }
 
   /* --- Moderátorka ------------------------------------------------------- */
@@ -111,7 +140,6 @@ class FirestoreSessionDb implements QuizSessionDb {
         preRollMs: init.preRollMs,
         limitMs: init.limitMs,
         scores: {},
-        top: [],
       }
       try {
         await withTimeout(setDoc(ref, payload), 12000, 'Založení hry')
@@ -205,7 +233,7 @@ class FirestoreSessionDb implements QuizSessionDb {
 
   async saveReport(report: QuizReport): Promise<void> {
     await withTimeout(
-      setDoc(doc(this.db, 'quizReports', report.id), report),
+      setDoc(doc(this.db, 'quizReports', report.id), encodeReport(report)),
       12000,
       'Uložení vyhodnocení',
     )
@@ -236,7 +264,7 @@ class FirestoreSessionDb implements QuizSessionDb {
 
   async loadReport(reportId: string): Promise<QuizReport | null> {
     const snap = await getDoc(doc(this.db, 'quizReports', reportId))
-    return snap.exists() ? (snap.data() as QuizReport) : null
+    return snap.exists() ? decodeReport(snap.data()) : null
   }
 
   async deleteReport(reportId: string): Promise<void> {

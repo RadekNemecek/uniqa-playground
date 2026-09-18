@@ -17,7 +17,7 @@ const props = defineProps<{
   reportSaved: boolean
 }>()
 
-const emit = defineEmits<{ again: []; report: []; download: []; end: [] }>()
+const emit = defineEmits<{ again: []; report: []; download: []; end: []; retrySave: [] }>()
 
 const fx = ref<HTMLElement | null>(null)
 
@@ -233,6 +233,7 @@ onUnmounted(() => {
     <p v-if="sequenceDone && hasReport && !reportSaved" class="final__warn">
       Vyhodnocení se nepodařilo uložit do databáze. Stáhni si tabulku, než
       obrazovku zavřeš.
+      <UiButton size="sm" variant="quiet" @click="emit('retrySave')">Uložit znovu</UiButton>
     </p>
   </section>
 </template>
@@ -256,6 +257,11 @@ onUnmounted(() => {
 .final__title { font-size: var(--fs-hero); font-weight: 900; letter-spacing: -0.03em; text-wrap: balance; }
 .final__empty { color: var(--c-text-faint); }
 .final__warn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
   max-width: 40rem;
   padding: var(--sp-2) var(--sp-4);
   border-radius: var(--r-md);

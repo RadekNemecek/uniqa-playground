@@ -32,6 +32,15 @@ interface PlayerState {
    * u sebe.
    */
   noConnection: boolean
+  /**
+   * Snímky chodí z mezipaměti, tedy telefon nevidí, co se na plátně děje.
+   *
+   * Bez tohohle stavu vypadá zamrzlý telefon úplně stejně jako živý:
+   * poslední doručená fáze na něm zůstane viset a hráč nemá jak poznat,
+   * že hra mezitím běží dál. Právě proto se druhý telefon musel
+   * obnovovat ručně.
+   */
+  stale: boolean
   joining: boolean
   joinError: string
   /** Kterou možnost hráč zmáčkl. Drží se lokálně, do databáze se nekouká. */
@@ -57,6 +66,7 @@ const state = reactive<PlayerState>({
   session: null,
   missing: false,
   noConnection: false,
+  stale: false,
   joining: false,
   joinError: '',
   choice: null,
@@ -72,6 +82,23 @@ let conn: QuizSessionDb | null = null
 let stop: Array<() => void> = []
 let unlockTimer = 0
 let expiryTimer = 0
+
+/**
+ * Za jak dlouho se snímek z mezipaměti bere jako výpadek.
+ *
+ * Krátká chvíle z mezipaměti je normální, tak vypadá každé připojení
+ * listeneru. Čtyři vteřiny jsou nad tím rozptylem a pod dobou, za kterou
+ * by hráč přišel o otázku.
+ */
+const STALE_MS = 4000
+
+/** Rozestup dalších pokusů, dokud se spojení nevrátí. */
+const RETRY_MS = 10000
+
+let staleTimer = 0
+let reviving = false
+let attempts = 0
+let wired = false
 
 export const player = state
 
@@ -150,8 +177,15 @@ export async function watchGame(code: string): Promise<void> {
   }
   state.uid = conn.myUid()
   detach()
+  wireWake()
   stop = [
-    conn.watchSession(code, (session) => {
+    conn.watchSession(code, (session, fromCache) => {
+      onCacheState(fromCache)
+      // Prázdný snímek z mezipaměti se zahazuje. „Hra neběží" smí říct jen
+      // server: obvinit hráče z přepsaného kódu ve chvíli, kdy mu jen
+      // vypadla wifi, je ta nejhorší možná rada. A hlavně by mu tím zmizela
+      // obrazovka, na kterou se dívá, přestože hra běží dál.
+      if (session === null && fromCache) return
       state.missing = session === null
       onSession(session)
     }),
@@ -173,8 +207,13 @@ function detach(): void {
 
 export function leaveGame(): void {
   detach()
+  unwireWake()
   window.clearTimeout(unlockTimer)
   window.clearTimeout(expiryTimer)
+  window.clearTimeout(staleTimer)
+  staleTimer = 0
+  attempts = 0
+  state.stale = false
   state.session = null
   state.choice = null
   state.send = 'idle'
@@ -202,6 +241,98 @@ export async function join(nick: string): Promise<boolean> {
   } finally {
     state.joining = false
   }
+}
+
+/* --- Živé spojení ----------------------------------------------------------
+   Firestore umí přestat doručovat snímky, aniž by to komukoli řekl:
+   prohlížeč uspí kartu, telefon se přepne z wifi na data, po cestě to
+   zahodí proxy. Listener po chybě navíc umře a sám se nezotaví. Pro hráče
+   to vypadá stejně jako klid ve hře, takže dokud tohle nebylo, zbývalo
+   jediné: obnovit stránku ručně. -------------------------------------- */
+
+/**
+ * Přišel snímek ze serveru, nebo z mezipaměti? Jen to první je důkaz, že
+ * telefon vidí, co se na plátně děje.
+ */
+function onCacheState(fromCache: boolean): void {
+  if (!fromCache) {
+    window.clearTimeout(staleTimer)
+    staleTimer = 0
+    attempts = 0
+    state.stale = false
+    return
+  }
+  // Pokus už běží, nebo je naplánovaný. Předbíhat se nemá cenu.
+  if (staleTimer !== 0 || reviving) return
+  scheduleRevive(state.stale ? RETRY_MS : STALE_MS)
+}
+
+function scheduleRevive(wait: number): void {
+  window.clearTimeout(staleTimer)
+  staleTimer = window.setTimeout(() => {
+    staleTimer = 0
+    state.stale = true
+    void revive()
+  }, wait)
+}
+
+/**
+ * Zkusit spojení vzkřísit. Nejdřív jemně, pak natvrdo.
+ *
+ * Zavřít a otevřít síť stačí na mrtvý stream. Na mrtvý listener ne, ten
+ * po chybě zůstane mrtvý až do konce stránky, a tak se od druhého pokusu
+ * nasadí znovu i listenery.
+ */
+async function revive(): Promise<void> {
+  if (!conn || !state.code || reviving || stop.length === 0) return
+  // Odesílaná odpověď čeká na potvrzení serverem. Zahodit jí spojení pod
+  // rukama by z poctivé odpovědi udělalo neodeslanou, tak se počká: buď
+  // dojde potvrzení, nebo odesílání spadne na vlastní časový strop.
+  if (state.send === 'sending') {
+    if (state.stale) scheduleRevive(RETRY_MS)
+    return
+  }
+  reviving = true
+  attempts += 1
+  try {
+    await conn.resync()
+    if (attempts >= 2) await watchGame(state.code)
+  } catch (e) {
+    console.error('Obnovení spojení selhalo:', e)
+  } finally {
+    reviving = false
+    // Potvrzení přijde jako snímek ze serveru a tenhle timer zruší.
+    // Dokud nepřijde, zkouší se dál.
+    if (state.stale) scheduleRevive(RETRY_MS)
+  }
+}
+
+/**
+ * Telefon se probral. Uspaná karta má stream skoro vždycky mrtvý a čekat
+ * na hlídače by stálo celou otázku, tak se spojení zkusí hned. Nic se
+ * přitom nehlásí: když je všechno v pořádku, hráč o tomhle vědět nemusí.
+ */
+function onWake(): void {
+  if (document.visibilityState === 'hidden' || stop.length === 0) return
+  void revive()
+}
+
+function wireWake(): void {
+  if (wired) return
+  wired = true
+  document.addEventListener('visibilitychange', onWake)
+  window.addEventListener('online', onWake)
+  // Návrat z mezipaměti prohlížeče (tlačítko zpět, přepnutí aplikace).
+  // `visibilitychange` v tu chvíli nemusí přijít.
+  window.addEventListener('pageshow', onWake)
+}
+
+function unwireWake(): void {
+  if (!wired) return
+  wired = false
+  document.removeEventListener('visibilitychange', onWake)
+  window.removeEventListener('online', onWake)
+  window.removeEventListener('pageshow', onWake)
 }
 
 /* --- Průběh hry ------------------------------------------------------------ */
@@ -317,13 +448,20 @@ export async function retry(): Promise<void> {
 export const myScore = computed(() => state.session?.scores[state.uid] ?? 0)
 export const myGain = computed(() => Math.max(0, myScore.value - state.lastScore))
 
-/** Pořadí. Při shodě bodů dostanou všichni to lepší místo, jako ve sportu. */
+/**
+ * Pořadí. Při shodě bodů dostanou všichni to lepší místo, jako ve sportu.
+ *
+ * Čte ho **jen vyhlášení**. Během hry se pořadí neukazuje nikde, ani na
+ * plátně, ani na telefonu: průběžné umístění svádí hráče porovnávat se
+ * s ostatními místo s otázkou, a u poloviny místnosti je to zpráva, že
+ * se nemá cenu snažit. Body stoupají každému, pořadí jen třem.
+ */
 export const myRank = computed(() => {
   const s = state.session
   if (!s) return 0
-  const scores = Object.values(s.scores).sort((a, b) => b - a)
-  const at = scores.indexOf(myScore.value)
-  return at < 0 ? scores.length + 1 : at + 1
+  const sorted = Object.values(s.scores).sort((a, b) => b - a)
+  const at = sorted.indexOf(myScore.value)
+  return at < 0 ? sorted.length + 1 : at + 1
 })
 
 export const playerCount = computed(() => Object.keys(state.session?.scores ?? {}).length)

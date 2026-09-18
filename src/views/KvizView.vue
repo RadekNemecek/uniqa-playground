@@ -6,7 +6,6 @@ import UiButton from '@/components/ui/UiButton.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
 import HostSetup from '@/games/kviz/components/HostSetup.vue'
 import HostLobby from '@/games/kviz/components/HostLobby.vue'
-import HostScores from '@/games/kviz/components/HostScores.vue'
 import HostFinal from '@/games/kviz/components/HostFinal.vue'
 import HostReport from '@/games/kviz/components/HostReport.vue'
 import HostRoster from '@/games/kviz/components/HostRoster.vue'
@@ -31,6 +30,7 @@ import {
   renamePlayer,
   report,
   reportSaved,
+  retrySaveReport,
   standings,
   startQuiz,
 } from '@/stores/quizHost'
@@ -77,6 +77,14 @@ async function onStart(list: QuizPack[], setup: QuizSetup): Promise<void> {
 
 function onDownload(): void {
   if (report.value) downloadReport(report.value)
+}
+
+async function onRetrySave(): Promise<void> {
+  const ok = await retrySaveReport()
+  toast(
+    ok ? 'Vyhodnocení je uložené.' : 'Pořád se to nepovedlo. Stáhni si tabulku.',
+    ok ? 'ok' : 'bad',
+  )
 }
 
 async function onEnd(): Promise<void> {
@@ -134,8 +142,6 @@ const barHint = computed(() => {
       return players.value.length > 0
         ? 'Mezerník spustí první otázku'
         : 'Čeká se na první telefony'
-    case 'scores':
-      return 'Mezerník pustí další otázku'
     case 'final':
       return ''
     default:
@@ -231,13 +237,6 @@ onBeforeUnmount(() => {
           @rename="renamePlayer"
         />
 
-        <HostScores
-          v-else-if="quiz.phase === 'scores'"
-          :standings="standings"
-          :index="quiz.index"
-          :total="quiz.questions.length"
-        />
-
         <QuizStage
           v-else-if="currentQuestion && quiz.phase !== 'final'"
           :question="currentQuestion"
@@ -271,6 +270,7 @@ onBeforeUnmount(() => {
           @again="rematchQuiz(quizPacks.packs)"
           @report="reportOpen = true"
           @download="onDownload"
+          @retry-save="onRetrySave"
           @end="onEnd"
         />
       </main>
