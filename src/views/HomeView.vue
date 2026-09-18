@@ -2,17 +2,22 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import AppHeader from '@/components/AppHeader.vue'
-import { game, hasGame } from '@/stores/game'
-import { hasQuiz, quiz } from '@/stores/quizHost'
-import { count } from '@/lib/format'
+import { endGame, game, hasGame } from '@/stores/game'
+import { endQuiz, hasQuiz, quiz } from '@/stores/quizHost'
+import { count, whenAgo } from '@/lib/format'
 import { GAMES, type GameEntry } from '@/games/registry'
 import { hasSessionDb } from '@/lib/sessionDb'
+import { confirmAction } from '@/stores/ui'
+import UiIcon from '@/components/ui/UiIcon.vue'
+import heroTitleUrl from '@/assets/mucirna-hero.png'
 
 const router = useRouter()
 
 interface GameCard {
   entry: GameEntry
   resume: string | null
+  /** Kdy se ta rozehraná hra naposled hrála. */
+  resumeWhen: string
   warn: string | null
 }
 
@@ -31,10 +36,17 @@ function resumeLabel(entry: GameEntry): string | null {
   return null
 }
 
+function resumeWhen(entry: GameEntry): string {
+  if (entry.slug === 'pojistuj' && hasGame.value && game.value) return whenAgo(game.value.startedAt)
+  if (entry.slug === 'kviz' && hasQuiz.value && quiz.value) return whenAgo(quiz.value.startedAt)
+  return ''
+}
+
 const cards = computed<GameCard[]>(() =>
   GAMES.map((entry) => ({
     entry,
     resume: resumeLabel(entry),
+    resumeWhen: resumeWhen(entry),
     warn:
       entry.needsShared && !hasSessionDb()
         ? 'Telefony se teď nepřipojí. Hru můžeš dál vést jen z plátna.'
@@ -45,41 +57,34 @@ const cards = computed<GameCard[]>(() =>
 function open(entry: GameEntry): void {
   void router.push(entry.route)
 }
+
+async function discard(entry: GameEntry): Promise<void> {
+  const ok = await confirmAction({
+    title: 'Zahodit rozehranou hru',
+    text:
+      entry.slug === 'kviz'
+        ? 'Session se ukončí, telefony se odpojí a výsledky se ztratí.'
+        : 'Skóre i stav desky se ztratí a příště se začne od přípravy.',
+    confirmLabel: 'Zahodit',
+    danger: true,
+  })
+  if (!ok) return
+  if (entry.slug === 'pojistuj') endGame()
+  else await endQuiz(true)
+}
 </script>
 
 <template>
   <div class="home">
     <AppHeader />
 
-    <main>
+    <main id="obsah">
       <section class="hero page" aria-labelledby="home-title">
         <div class="hero__copy">
-          <p class="hero__kicker">Školení, do kterého se zapojí všichni</p>
-          <h1 id="home-title" class="hero__title">Co si dnes zahrajete?</h1>
-        </div>
-
-        <div class="playfield" aria-hidden="true">
-          <div class="playfield__ring"></div>
-          <span class="playfield__orbit playfield__orbit--score">
-            <span class="playfield__token playfield__token--score">400</span>
-          </span>
-          <span class="playfield__orbit playfield__orbit--team">
-            <span class="playfield__token playfield__token--team">A</span>
-          </span>
-          <span class="playfield__orbit playfield__orbit--shape">
-            <span class="playfield__token playfield__token--shape">
-              <svg viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 3 22 20H2z" />
-              </svg>
-            </span>
-          </span>
-          <span class="playfield__orbit playfield__orbit--answer">
-            <span class="playfield__token playfield__token--answer">B</span>
-          </span>
-          <span class="playfield__core">
-            <strong>Hrajte</strong>
-            <small>společně</small>
-          </span>
+          <p class="hero__kicker">Kvízy, do kterých se zapojí celá místnost</p>
+          <h1 id="home-title" class="hero__title">
+            <img class="hero__image" :src="heroTitleUrl" alt="Mučírna" />
+          </h1>
         </div>
       </section>
 
@@ -133,10 +138,7 @@ function open(entry: GameEntry): void {
               <p class="game-card__description">{{ card.entry.description }}</p>
 
               <div class="game-card__meta">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                  <rect x="3" y="4" width="18" height="14" rx="2" />
-                  <path d="M8 22h8M12 18v4" />
-                </svg>
+                <UiIcon name="projector" size="xs" />
                 {{ card.entry.needs }}
               </div>
 
@@ -145,18 +147,23 @@ function open(entry: GameEntry): void {
               <div class="game-card__actions">
                 <button type="button" class="game-card__play" @click="open(card.entry)">
                   {{ card.resume ? 'Pokračovat' : 'Připravit hru' }}
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
-                    <path d="M5 12h13M12 5l7 7-7 7" />
-                  </svg>
+                  <UiIcon name="arrow-right" size="md" />
                 </button>
                 <RouterLink :to="card.entry.editRoute" class="game-card__questions">
                   Spravovat otázky
                 </RouterLink>
               </div>
 
+              <!-- Rozehráno s datem a s cestou ven. Bez data se nedalo
+                   poznat, jestli je to dnešní hra, nebo zbytek po minulém
+                   školení, a zahodit ho šlo jedině vejít dovnitř a najít
+                   „Konec". -->
               <p v-if="card.resume" class="game-card__resume">
                 <span aria-hidden="true"></span>
-                Rozehráno: {{ card.resume }}
+                Rozehráno {{ card.resumeWhen }}: {{ card.resume }}
+                <button type="button" class="game-card__discard" @click="discard(card.entry)">
+                  Zahodit
+                </button>
               </p>
             </div>
           </li>
@@ -167,7 +174,14 @@ function open(entry: GameEntry): void {
 </template>
 
 <style scoped>
+/* Rozměry rozcestníku. Nikdo jiný je nepoužívá, proto jsou tady a ne
+   mezi tokeny: do :root patří jen to, co sdílí víc obrazovek. */
 .home {
+  --home-preview-h: 14rem;
+  --home-perspective: 40rem;
+  --home-hero-min: 28rem;
+  --home-card-side-min: 17rem;
+
   position: relative;
   min-height: 100dvh;
   overflow: clip;
@@ -191,104 +205,34 @@ function open(entry: GameEntry): void {
 
 .hero {
   display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(var(--home-aside-min), 0.85fr);
-  align-items: center;
-  gap: var(--sp-8);
+  place-items: center;
   min-height: min(var(--home-hero-min), calc(100dvh - var(--header-h)));
-  padding-block: var(--sp-7) var(--sp-5);
+  padding-block: var(--sp-7);
+  text-align: center;
 }
 
-.hero__copy { max-width: var(--content-narrow); }
+.hero__copy {
+  display: grid;
+  justify-items: center;
+  gap: var(--sp-5);
+  width: 100%;
+}
 .hero__kicker {
-  margin-bottom: var(--sp-4);
-  color: var(--c-brand);
+  color: var(--c-text-muted);
   font-family: var(--font-hand);
-  font-size: var(--fs-3xl);
+  font-size: var(--fs-xl);
   font-weight: 500;
   line-height: var(--lh-snug);
 }
 .hero__title {
-  max-width: 11ch;
-  font-size: var(--fs-home-hero);
-  letter-spacing: -0.045em;
+  display: flex;
+  justify-content: center;
+  width: 100%;
 }
-
-.playfield {
-  position: relative;
-  justify-self: center;
-  width: min(100%, var(--home-visual));
-  aspect-ratio: 1;
-  border-radius: var(--r-full);
+.hero__image {
+  width: 100%;
+  height: auto;
 }
-.playfield::before,
-.playfield::after,
-.playfield__ring {
-  content: '';
-  position: absolute;
-  inset: var(--sp-7);
-  border: var(--separator-w) solid color-mix(in oklab, var(--c-brand) 32%, transparent);
-  border-radius: var(--r-full);
-}
-.playfield::before { inset: var(--sp-3); opacity: 0.35; }
-.playfield::after { inset: var(--sp-9); opacity: 0.55; }
-.playfield__ring {
-  inset: var(--sp-6);
-  border-style: dashed;
-}
-.playfield__core {
-  position: absolute;
-  display: grid;
-  place-items: center;
-  box-shadow: var(--shadow-lg);
-}
-.playfield__core {
-  inset: 31%;
-  align-content: center;
-  border: var(--separator-w) solid var(--c-line);
-  border-radius: var(--r-full);
-  background: radial-gradient(circle at 38% 28%, var(--c-surface-3), var(--c-surface));
-  text-align: center;
-  animation: coreGlow var(--dur-breathe) var(--ease-both) infinite alternate;
-}
-.playfield__core strong { font-size: var(--fs-xl); }
-.playfield__core small { color: var(--c-text-muted); font-size: var(--fs-xs); }
-.playfield__orbit {
-  position: absolute;
-  inset: var(--sp-3);
-  animation: orbit var(--dur-orbit) linear infinite;
-}
-.playfield__orbit--team,
-.playfield__orbit--answer { inset: var(--sp-7); animation-duration: var(--dur-orbit-slow); }
-.playfield__orbit--score { animation-delay: var(--dur-orbit-score-delay); }
-.playfield__orbit--shape { animation-delay: var(--dur-orbit-shape-delay); }
-.playfield__orbit--team { animation-delay: var(--dur-orbit-team-delay); }
-.playfield__orbit--answer { animation-delay: var(--dur-orbit-answer-delay); }
-.playfield__token {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  display: grid;
-  place-items: center;
-  width: var(--home-token);
-  aspect-ratio: 1;
-  border: var(--separator-w) solid color-mix(in oklab, var(--c-text) 18%, transparent);
-  border-radius: var(--r-xl);
-  font-size: var(--fs-xl);
-  font-weight: 900;
-  transform: translate(-50%, -50%);
-  animation: counterOrbit var(--dur-orbit) linear infinite;
-}
-.playfield__orbit--team .playfield__token,
-.playfield__orbit--answer .playfield__token { animation-duration: var(--dur-orbit-slow); }
-.playfield__orbit--score .playfield__token { animation-delay: var(--dur-orbit-score-delay); }
-.playfield__orbit--shape .playfield__token { animation-delay: var(--dur-orbit-shape-delay); }
-.playfield__orbit--team .playfield__token { animation-delay: var(--dur-orbit-team-delay); }
-.playfield__orbit--answer .playfield__token { animation-delay: var(--dur-orbit-answer-delay); }
-.playfield__token svg { width: 46%; }
-.playfield__token--score { background: linear-gradient(160deg, var(--c-tile-top), var(--c-tile-bottom)); color: var(--c-value); }
-.playfield__token--team { background: var(--c-team-1); color: var(--c-text-ink); }
-.playfield__token--shape { background: var(--c-team-3); color: var(--c-text-ink); }
-.playfield__token--answer { background: var(--c-team-4); color: var(--c-text-ink); }
 
 .choice { padding-block: var(--sp-5) var(--sp-9); }
 
@@ -445,23 +389,21 @@ function open(entry: GameEntry): void {
   text-decoration: none;
 }
 .game-card__questions:hover { background: var(--c-surface-2); color: var(--c-text); }
+.game-card__discard {
+  border: 0;
+  background: transparent;
+  color: var(--c-text-faint);
+  font-size: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+.game-card__discard:hover { color: var(--c-bad); }
+
 .game-card__resume { grid-column: 2; display: flex; align-items: center; gap: var(--sp-2); color: var(--c-text-muted); font-size: var(--fs-xs); }
 .game-card__resume span { width: var(--sp-2); height: var(--sp-2); border-radius: var(--r-full); background: var(--c-ok); box-shadow: 0 0 0 var(--sp-1) color-mix(in oklab, var(--c-ok) 18%, transparent); }
 
-@keyframes orbit { to { transform: rotate(1turn); } }
-@keyframes counterOrbit { to { transform: translate(-50%, -50%) rotate(-1turn); } }
-@keyframes coreGlow {
-  to {
-    border-color: color-mix(in oklab, var(--c-brand) 58%, var(--c-line));
-    box-shadow: var(--shadow-lg), 0 0 var(--sp-8) color-mix(in oklab, var(--c-brand-glow) 70%, transparent);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .playfield__orbit,
-  .playfield__token,
-  .playfield__core,
-  .playfield__ring { animation: none; }
   .game-card:hover,
   .game-card:hover .mini-board__tile:nth-child(8),
   .game-card:hover .mini-option--b,
@@ -469,22 +411,20 @@ function open(entry: GameEntry): void {
 }
 
 @media (max-width: 960px) {
-  .hero { grid-template-columns: minmax(0, 1fr) minmax(var(--home-aside-mid), 0.55fr); gap: var(--sp-5); }
   .games { grid-template-columns: minmax(0, 1fr); }
   .game-card { display: grid; grid-template-columns: minmax(var(--home-card-side-min), 0.8fr) minmax(0, 1.2fr); }
   .game-card__preview { min-height: 100%; border-right: var(--separator-w) solid var(--c-line); border-bottom: 0; }
 }
 
 @media (max-width: 720px) {
-  .hero { grid-template-columns: minmax(0, 1fr); min-height: 0; padding-block: var(--sp-7); }
-  .hero__copy { text-align: center; }
-  .hero__title { margin-inline: auto; }
-  .playfield { width: min(64vw, var(--home-visual-mobile)); }
+  .hero { min-height: 0; padding-block: var(--sp-8); }
+  .hero__copy { gap: var(--sp-4); }
+  .hero__kicker { font-size: var(--fs-lg); }
   .game-card { display: block; }
   .game-card__preview { min-height: var(--home-preview-h); border-right: 0; border-bottom: var(--separator-w) solid var(--c-line); }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 560px) {
   .game-card__preview { padding: var(--sp-4); }
   .game-card__body { grid-template-columns: minmax(0, 1fr); padding: var(--sp-5); }
   .game-card__index { display: none; }

@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import { watch } from 'vue'
 import UiModal from '@/components/ui/UiModal.vue'
 import UiButton from '@/components/ui/UiButton.vue'
+import UiSwitch from '@/components/ui/UiSwitch.vue'
 import { settings, SCALE_STEPS, scaleLabel } from '@/stores/settings'
 import { sfx } from '@/lib/sound'
 
@@ -11,10 +13,23 @@ function pickScale(v: number) {
   settings.scale = v
 }
 
-function toggleSound() {
-  settings.sound = !settings.sound
-  if (settings.sound) sfx.correct()
+/**
+ * Velikost ukázkového „A" roste se stupněm.
+ *
+ * Počítá se tady, ne v šabloně: prezentační konstanta zapsaná přímo do
+ * `:style` obchází celou škálu a nikdo ji tam nenajde.
+ */
+function glyphSize(step: number): string {
+  return `${0.7 + (step - 0.9) * 1.1}rem`
 }
+
+// Zvuk se po zapnutí ozve, aby bylo slyšet, co se právě zapnulo.
+watch(
+  () => settings.sound,
+  (on) => {
+    if (on) sfx.correct()
+  },
+)
 </script>
 
 <template>
@@ -23,17 +38,20 @@ function toggleSound() {
       <section>
         <h3 class="head">Velikost písma ve hře</h3>
         <p class="note">Zvětši, když promítáš do větší místnosti. Ovládání aplikace zůstane stejné.</p>
-        <div class="steps">
+        <!-- radiogroup, ne pět nezávislých tlačítek: odečítač pak ohlásí
+             jednu volbu z pěti, ne pětkrát „stisknuto". -->
+        <div class="steps" role="radiogroup" aria-label="Velikost písma ve hře">
           <button
             v-for="s in SCALE_STEPS"
             :key="s"
             type="button"
+            role="radio"
             class="step"
             :class="{ 'step--on': settings.scale === s }"
-            :aria-pressed="settings.scale === s"
+            :aria-checked="settings.scale === s"
             @click="pickScale(s)"
           >
-            <span class="step__glyph" :style="{ fontSize: `${0.7 + (s - 0.9) * 1.1}rem` }">A</span>
+            <span class="step__glyph" :style="{ fontSize: glyphSize(s) }">A</span>
             <span class="step__label">{{ scaleLabel(s) }}</span>
           </button>
         </div>
@@ -41,10 +59,11 @@ function toggleSound() {
 
       <section>
         <h3 class="head">Zvuk</h3>
-        <p class="note">Krátké tóny při otevření otázky a připsání bodů.</p>
-        <UiButton :variant="settings.sound ? 'brand' : 'ghost'" block @click="toggleSound">
-          {{ settings.sound ? 'Zvuk zapnutý' : 'Zvuk vypnutý' }}
-        </UiButton>
+        <UiSwitch
+          v-model="settings.sound"
+          label="Zvuková odezva"
+          hint="Krátké tóny při otevření otázky a připsání bodů."
+        />
       </section>
     </div>
 
@@ -64,14 +83,22 @@ function toggleSound() {
   gap: var(--sp-1);
   justify-items: center;
   padding: var(--sp-3) var(--sp-1);
-  border: 1px solid var(--c-line);
+  border: var(--border-w) solid var(--c-border);
   border-radius: var(--r-md);
-  background: var(--c-sunken);
+  background: var(--c-bg-field);
   color: var(--c-text-muted);
-  transition: all var(--dur-fast) var(--ease-out);
+  transition: var(--tr-surface);
 }
-.step:hover { border-color: var(--c-surface-3); color: var(--c-text); }
-.step--on { border-color: var(--c-brand); color: var(--c-text); background: color-mix(in oklab, var(--c-brand) 12%, transparent); }
+.step:hover { border-color: var(--c-bg-active); color: var(--c-text); }
+.step--on {
+  border-color: var(--c-brand);
+  color: var(--c-text);
+  background: color-mix(in oklab, var(--c-brand) 12%, transparent);
+}
 .step__glyph { font-family: var(--font-display); font-weight: 700; line-height: 1; }
-.step__label { font-size: 0.625rem; letter-spacing: 0.02em; }
+.step__label { font-size: var(--fs-2xs); letter-spacing: 0.02em; }
+
+@media (pointer: coarse) {
+  .step { min-height: var(--control-touch); }
+}
 </style>

@@ -3,6 +3,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { Question } from '@/types'
 import UiButton from '@/components/ui/UiButton.vue'
 import { formatScore } from '@/lib/teams'
+import UiIcon from '@/components/ui/UiIcon.vue'
 
 const props = defineProps<{
   question: Question
@@ -90,13 +91,13 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
       <div class="qe__nav">
         <span class="qe__pos">{{ position }} z {{ total }}</span>
         <button type="button" :disabled="!hasPrev" aria-label="Předchozí otázka" @click="emit('prev')">
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="m15 5-7 7 7 7" /></svg>
+          <UiIcon name="chevron-left" size="sm" />
         </button>
         <button type="button" :disabled="!hasNext" aria-label="Další otázka" @click="emit('next')">
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="m9 5 7 7-7 7" /></svg>
+          <UiIcon name="chevron-right" size="sm" />
         </button>
         <button type="button" class="qe__close" aria-label="Zavřít editor" @click="emit('close')">
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+          <UiIcon name="close" size="sm" />
         </button>
       </div>
     </header>
@@ -150,7 +151,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
       <p class="qe__state" :data-state="saveState">
         <span v-if="saveState === 'saving'">Ukládám…</span>
         <span v-else-if="saveState === 'saved'" class="qe__saved">
-          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
+          <UiIcon name="check" size="sm" />
           Uloženo
         </span>
         <span v-else-if="!ready">Chybí otázka nebo odpověď</span>
@@ -213,12 +214,12 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
   border-radius: var(--r-md);
   background: transparent;
   color: var(--c-text-muted);
-  transition: all var(--dur-fast) var(--ease-out);
+  transition: var(--tr-surface);
 }
 .qe__nav button:hover:not(:disabled) { color: var(--c-text); border-color: var(--c-surface-3); background: var(--c-surface-2); }
 .qe__nav button:disabled { opacity: 0.3; cursor: not-allowed; }
 .qe__close { margin-left: var(--sp-2); }
-.qe__close:hover { color: var(--c-bad) !important; border-color: color-mix(in oklab, var(--c-bad) 45%, transparent) !important; }
+.qe__nav button.qe__close:hover { color: var(--c-bad); border-color: color-mix(in oklab, var(--c-bad) 45%, transparent); }
 
 /* Tělo -------------------------------------------------------------------- */
 .qe__body { display: grid; gap: var(--sp-4); padding: var(--sp-5); overflow-y: auto; }

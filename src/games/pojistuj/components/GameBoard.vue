@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import type { GameState } from '@/types'
 import { cellKey } from '@/types'
 import BoardCell from './BoardCell.vue'
@@ -43,6 +43,51 @@ function teamIndexOf(key: string): number {
 function open(key: string, el: HTMLElement) {
   emit('open', key, el)
 }
+
+/* --- Ovládání desky od klávesnice ---------------------------------------
+   Otázku moderátorka vede mezerníkem, ale výběr políčka ji dosud pokaždé
+   poslal zpátky pro myš, nebo pětadvacetkrát přes tabulátor. Šipky chodí
+   po mřížce, Enter a mezerník políčko otevřou.
+
+   Zaměření drží prohlížeč na skutečném tlačítku, nedržíme si vlastní
+   „vybranou" buňku: dvě představy o tom, kde uživatelka je, se dřív nebo
+   později rozejdou. */
+const grid = ref<HTMLElement | null>(null)
+
+function cellButtons(): HTMLButtonElement[] {
+  return Array.from(grid.value?.querySelectorAll<HTMLButtonElement>('.cell') ?? [])
+}
+
+function onGridKey(e: KeyboardEvent): void {
+  const keys = ['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp', 'Home', 'End']
+  if (!keys.includes(e.key)) return
+
+  const buttons = cellButtons()
+  if (buttons.length === 0) return
+
+  const at = buttons.indexOf(document.activeElement as HTMLButtonElement)
+  // Zaměření je někde jinde v desce: šipka ho přivede na první políčko.
+  if (at < 0) {
+    e.preventDefault()
+    buttons[0]?.focus()
+    return
+  }
+
+  const c = cols.value
+  let next = at
+  switch (e.key) {
+    case 'ArrowRight': next = at + 1; break
+    case 'ArrowLeft': next = at - 1; break
+    case 'ArrowDown': next = at + c; break
+    case 'ArrowUp': next = at - c; break
+    case 'Home': next = Math.floor(at / c) * c; break
+    case 'End': next = Math.floor(at / c) * c + c - 1; break
+  }
+  if (next < 0 || next >= buttons.length) return
+
+  e.preventDefault()
+  buttons[next]?.focus()
+}
 </script>
 
 <template>
@@ -76,11 +121,15 @@ function open(key: string, el: HTMLElement) {
       </p>
     </div>
 
+    <!-- role="grid" bez řádků a buněk slibovala odečítači víc, než uměla.
+         Obyčejná skupina tlačítek se šipkami je poctivější. -->
     <div
+      ref="grid"
       class="board__grid"
       :style="{ '--cols': cols, '--rows': rows }"
-      role="grid"
-      aria-label="Herní deska"
+      role="group"
+      aria-label="Herní deska, šipkami mezi políčky"
+      @keydown="onGridKey"
     >
       <div v-for="cat in game.categories" :key="cat.id" class="board__cat">
         <span>{{ cat.name }}</span>
@@ -93,6 +142,7 @@ function open(key: string, el: HTMLElement) {
           :team="teamById(game.cells[c.key]?.teamId)"
           :team-index="teamIndexOf(c.key)"
           :category-name="c.categoryName"
+          :wager="game.wagerCells.includes(c.key)"
           :index="i"
           @open="(el) => open(c.key, el)"
         />

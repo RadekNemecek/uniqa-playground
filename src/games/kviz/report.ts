@@ -81,6 +81,7 @@ export function buildReport(state: QuizHostState, answers: QuizAnswer[], hostUid
     schema: 1,
     id: id('r'),
     hostUid,
+    groupName: state.setup.groupName ?? '',
     code: state.code,
     round: state.round,
     packNames: [...new Set(state.questions.map((q) => q.packName))],
@@ -112,6 +113,15 @@ function csvCell(value: string | number): string {
 
 export function reportToCsv(report: QuizReport): string {
   const lines: string[] = []
+
+  // Hlavička s kontextem. Bez ní byl soubor ve stažených anonymní tabulka
+  // čísel: nedalo se poznat, které skupiny se týká a kdy se hrálo.
+  const when = new Date(report.finishedAt).toLocaleString('cs-CZ')
+  lines.push([`Na kolik to dáš? ${report.groupName || 'bez názvu skupiny'}`].map(csvCell).join(';'))
+  lines.push([`Hráno ${when}`].map(csvCell).join(';'))
+  lines.push([`Balíčky: ${report.packNames.join(', ')}`].map(csvCell).join(';'))
+  if (report.code) lines.push([`Kód hry: ${report.code}`].map(csvCell).join(';'))
+  lines.push('')
 
   lines.push(['Otázka', 'Balíček', 'Správná odpověď', 'Byli u toho', 'Odpovědělo', 'Správně', 'Úspěšnost %', 'Průměr s'].map(csvCell).join(';'))
   for (const q of byDifficulty(report)) {
@@ -151,8 +161,11 @@ export function downloadReport(report: QuizReport): void {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   const stamp = new Date(report.finishedAt).toISOString().slice(0, 10)
+  const slug = report.groupName
+    ? `-${report.groupName.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '')}`
+    : ''
   a.href = url
-  a.download = `kviz-${stamp}.csv`
+  a.download = `kviz-${stamp}${slug}.csv`
   a.click()
   URL.revokeObjectURL(url)
 }

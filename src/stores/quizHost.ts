@@ -380,6 +380,10 @@ export async function beginPlay(): Promise<void> {
     qid: s.questions[s.index]?.qid ?? '',
     kind: s.questions[s.index]?.kind ?? 'choice',
     stampAskedAt: true,
+    // Čekárna se zavírá se startem hry. `setAcceptsPlayers` tu byla
+    // napsaná od začátku a nikdo ji nevolal, takže se dal kdokoli
+    // s kódem připojit ještě u poslední otázky.
+    acceptsPlayers: false,
   })
 }
 

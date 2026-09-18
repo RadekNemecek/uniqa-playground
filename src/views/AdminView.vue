@@ -23,6 +23,9 @@ import {
 } from '@/stores/packs'
 import { confirmAction, toast } from '@/stores/ui'
 import { count } from '@/lib/format'
+import UiSkeleton from '@/components/ui/UiSkeleton.vue'
+import UiEmpty from '@/components/ui/UiEmpty.vue'
+import RunHistory from '@/games/pojistuj/components/RunHistory.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -194,7 +197,7 @@ function readinessLabel(id: string): { text: string; tone: 'ok' | 'warn' | 'mute
         </template>
       </AppHeader>
 
-      <main class="admin__body page">
+      <main id="obsah" class="admin__body page">
         <!-- Knihovna -------------------------------------------------------- -->
         <section v-if="!current" class="library">
           <header class="library__head">
@@ -219,15 +222,22 @@ function readinessLabel(id: string): { text: string; tone: 'ok' | 'warn' | 'mute
             @change="onImportFile"
           />
 
-          <div v-if="packs.packs.length === 0" class="library__blank">
-            <p class="library__empty">
-              Zatím tu není žádný balíček. Založ prázdný tlačítkem Nový, naimportuj JSON,
-              nebo si napřed prohlédni ukázku.
-            </p>
+          <!-- Dokud data nedorazila, není pravda, že tu nic není. Na pomalé
+               síti se tady dřív ukázalo „Zatím tu není žádný balíček"
+               i s tlačítkem na založení ukázky, a dalo se na něj kliknout
+               dřív, než dorazily skutečné balíčky. -->
+          <UiSkeleton v-if="!packs.loaded" :lines="4" />
+
+          <UiEmpty
+            v-else-if="packs.packs.length === 0"
+            icon="info"
+            title="Zatím tu není žádný balíček"
+            text="Založ prázdný tlačítkem Nový, naimportuj JSON, nebo si napřed prohlédni ukázku."
+          >
             <UiButton size="sm" variant="ghost" @click="onCreateDemo">
               Vytvořit ukázkový balíček
             </UiButton>
-          </div>
+          </UiEmpty>
 
           <ul v-else class="library__items">
             <li v-for="p in packs.packs" :key="p.id" class="card">
@@ -260,6 +270,10 @@ function readinessLabel(id: string): { text: string; tone: 'ok' | 'warn' | 'mute
               </UiMenu>
             </li>
           </ul>
+
+          <!-- Co z odehraných her zůstalo. Z desky se dosud neukládalo nic,
+               takže po školení nebylo co ukázat dál. -->
+          <RunHistory />
         </section>
 
         <!-- Editor ---------------------------------------------------------- -->

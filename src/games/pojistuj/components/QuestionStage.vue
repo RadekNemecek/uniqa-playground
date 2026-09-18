@@ -8,6 +8,7 @@ import { flipFrom } from '@/lib/motion'
 import { fitToScreen as fit, refitOnFonts, refitOnResize } from '@/lib/fit'
 import { sfx } from '@/lib/sound'
 import { settings } from '@/stores/settings'
+import UiIconButton from '@/components/ui/UiIconButton.vue'
 
 const props = defineProps<{
   game: GameState
@@ -41,8 +42,28 @@ let stopRefit: (() => void) | null = null
 
 watch(() => [props.question.id, props.game.phase], fitToScreen)
 
+/**
+ * Mezi odhalením a připsáním bodů musí být pauza.
+ *
+ * Mezerník dělá dvě různé věci hned po sobě: první stisk odhalí odpověď,
+ * druhý připíše body. Nervózní dvojité ťuknutí tak přiznalo body týmu,
+ * který ještě nestihl odpovědět. Vrátit to sice jde, ale na plátně už
+ * skóre přeteklo a před sálem to vypadá jako chyba aplikace.
+ */
+/**
+ * Kolik času uběhlo od otevření otázky.
+ *
+ * Čte se jednou, při nasazení komponenty. Po obnovení stránky uprostřed
+ * otázky se tím časomíra napojí tam, kde skutečně byla.
+ */
+const elapsedMs = props.game.openedAt ? Math.max(0, Date.now() - props.game.openedAt) : 0
+
+const GUARD_MS = 400
+let revealedAt = 0
+
 function reveal() {
   if (revealed.value) return
+  revealedAt = performance.now()
   if (settings.sound) sfx.reveal()
   emit('reveal')
 }
@@ -72,6 +93,8 @@ function onKey(e: KeyboardEvent) {
   }
   if (e.key === ' ' || e.code === 'Space') {
     e.preventDefault()
+    // Ozvěna prvního stisku, kterým se právě odhalilo. Body nepřiznává.
+    if (performance.now() - revealedAt < GUARD_MS) return
     resolve(active.value?.id ?? null)
     return
   }
@@ -114,9 +137,13 @@ onBeforeUnmount(() => {
         <span class="stage__cat">{{ categoryName }}</span>
         <span v-if="isWager" class="stage__wagerTag">Riziko!</span>
       </div>
-      <button type="button" class="stage__close" aria-label="Zavřít bez bodování" @click="emit('cancel')">
-        &#215;
-      </button>
+      <UiIconButton
+        class="stage__close"
+        icon="close"
+        variant="plain"
+        label="Zavřít bez bodování"
+        @click="emit('cancel')"
+      />
     </header>
 
     <div class="stage__meta">
@@ -140,6 +167,7 @@ onBeforeUnmount(() => {
       <TimerBar
         v-if="!revealed"
         :seconds="game.rules.timerSeconds"
+        :elapsed-ms="elapsedMs"
         running
         @expired="timedOut = true"
       />
@@ -277,16 +305,7 @@ onBeforeUnmount(() => {
 @media (prefers-reduced-motion: reduce) {
   .stage__wagerTag { animation: none; }
 }
-.stage__close {
-  border: 0;
-  background: transparent;
-  color: var(--c-text-faint);
-  font-size: 2rem;
-  line-height: 1;
-  padding: 0 var(--sp-2);
-  border-radius: var(--r-sm);
-}
-.stage__close:hover { color: var(--c-text); }
+:deep(.stage__close) { color: var(--c-text-faint); }
 
 /* Hodnota + tým na tahu --------------------------------------------------- */
 .stage__meta {
@@ -416,10 +435,13 @@ onBeforeUnmount(() => {
   color: var(--c-bad);
   letter-spacing: var(--tracking-wide);
   text-transform: uppercase;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-sm);
   text-align: center;
 }
-.stage__hint { font-size: var(--fs-xs); color: var(--c-text-faint); }
+/* Co udělá další stisk. Dřív to bylo nejmenší a nejsvětlejší písmo na
+   plátně, tedy jediná informace, kterou moderátorka opravdu potřebuje,
+   sázená tak, aby ji z druhé řady nikdo nepřečetl. */
+.stage__hint { font-size: var(--fs-sm); color: var(--c-text-muted); }
 .stage__question { font-size: var(--fs-lg); color: var(--c-text-muted); }
 .stage__question strong { font-weight: 700; }
 
@@ -531,13 +553,12 @@ onBeforeUnmount(() => {
   .stage__prompt { animation: none; }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 720px) {
   .judge { grid-template-columns: 1fr; gap: var(--sp-3); }
   .stage__head { padding-inline: var(--sp-4); }
 }
 
 @media (pointer: coarse) {
-  .stage__close { width: 2.75rem; height: 2.75rem; display: grid; place-items: center; }
   .steal__toggle { min-height: 2.75rem; }
   .steal__chip { min-height: 2.75rem; }
   .steal__cancel { min-height: 2.75rem; padding-inline: var(--sp-3); }

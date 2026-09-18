@@ -11,7 +11,7 @@ import { restoreQuizHost } from '@/stores/quizHost'
 import { setDb } from '@/lib/db'
 import { setSessionDbFactory } from '@/lib/sessionDb'
 import { isFirebaseConfigured } from '@/lib/firebase.config'
-import { toast } from '@/stores/ui'
+import { markLocalOnly, toast } from '@/stores/ui'
 
 applySettings()
 restoreGame()
@@ -62,6 +62,7 @@ async function boot(): Promise<void> {
   // Mlčky přepnout do lokálního režimu nejde: uživatelce by beze slova
   // zmizely balíčky kolegů a nevěděla by proč.
   if (offline) {
+    markLocalOnly()
     toast('Sdílená databáze není dostupná. Hrát jde dál, otázky se ale berou jen z tohoto počítače.', 'bad', 8000)
   }
 }

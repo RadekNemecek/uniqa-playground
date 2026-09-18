@@ -23,6 +23,15 @@ interface PlayerState {
   session: QuizSession | null
   /** Session se nenašla. Jiný stav než „ještě nedorazila". */
   missing: boolean
+  /**
+   * Spojení se vůbec nenavázalo.
+   *
+   * Musí to být jiný stav než `missing`. Dřív obojí končilo hláškou
+   * „Tahle hra neběží, zkontroluj kód", takže pomalý telefon obvinil
+   * hráče z chyby, kterou neudělal, a moderátorka pak hledala problém
+   * u sebe.
+   */
+  noConnection: boolean
   joining: boolean
   joinError: string
   /** Kterou možnost hráč zmáčkl. Drží se lokálně, do databáze se nekouká. */
@@ -47,6 +56,7 @@ const state = reactive<PlayerState>({
   uid: '',
   session: null,
   missing: false,
+  noConnection: false,
   joining: false,
   joinError: '',
   choice: null,
@@ -71,6 +81,15 @@ interface Saved {
   code: string
   nick: string
   avatar?: string
+  /**
+   * Poslední potvrzená odpověď.
+   *
+   * Bez ní se po obnovení stránky uprostřed otázky odemkla tlačítka,
+   * druhý zápis odmítla pravidla, „Zkusit odeslat znovu" nemohlo nikdy
+   * uspět a při odhalení telefon tvrdil „Neodpověděl jsi", přestože body
+   * dorazily.
+   */
+  answer?: { round: number; qid: string; choice: number }
 }
 
 function readSaved(): Saved | null {
@@ -80,6 +99,24 @@ function readSaved(): Saved | null {
   } catch {
     return null
   }
+}
+
+function writeSaved(patch: Partial<Saved>): void {
+  try {
+    const saved = readSaved()
+    const next: Saved = { code: state.code, nick: state.nick, ...saved, ...patch }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+  } catch {
+    /* Soukromé okno. Bez paměti se hraje dál, jen refresh zapomene. */
+  }
+}
+
+/** Odpověď uložená z minulého načtení, pokud patří k téhle otázce. */
+function rememberedAnswer(code: string, round: number, qid: string): number | null {
+  const saved = readSaved()
+  if (saved?.code !== code || !saved.answer) return null
+  if (saved.answer.round !== round || saved.answer.qid !== qid) return null
+  return saved.answer.choice
 }
 
 /** Po obnovení stránky se hráč vrátí rovnou do hry, bez ptaní na přezdívku. */
@@ -104,9 +141,11 @@ export async function watchGame(code: string): Promise<void> {
   state.code = code
   state.nick = rememberedNick(code)
   state.avatar = rememberedAvatar(code) || state.avatar
+  state.missing = false
+  state.noConnection = false
   conn ??= await sessionDb()
   if (!conn) {
-    state.missing = true
+    state.noConnection = true
     return
   }
   state.uid = conn.myUid()
@@ -175,9 +214,13 @@ function onSession(session: QuizSession | null): void {
   // Nová otázka: zahodit minulou volbu a naplánovat odemčení tlačítek.
   const changed = session.qid !== previous?.qid || session.round !== previous?.round
   if (changed) {
-    state.choice = null
-    state.send = 'idle'
-    state.answeredQid = ''
+    // Po obnovení stránky je `previous` null, takže tudy projde i návrat
+    // do rozehrané otázky. Uloženou odpověď na tutéž otázku proto vrátíme
+    // zpátky do stavu, jinak by telefon nabídl odpovídat podruhé.
+    const saved = rememberedAnswer(state.code, session.round, session.qid)
+    state.choice = saved
+    state.send = saved === null ? 'idle' : 'sent'
+    state.answeredQid = saved === null ? '' : session.qid
     state.unlockedAt = null
     state.expired = false
     state.lastScore = session.scores[state.uid] ?? 0
@@ -252,6 +295,9 @@ export async function answer(choice: number): Promise<void> {
       expiresAt: s.expiresAt,
     })
     state.send = 'sent'
+    // Až po potvrzení serverem. Uložit ji dřív by znamenalo pamatovat si
+    // odpověď, kterou server odmítl.
+    writeSaved({ answer: { round: s.round, qid: s.qid, choice } })
   } catch (e) {
     console.error('Odeslání odpovědi selhalo:', e)
     state.send = 'failed'

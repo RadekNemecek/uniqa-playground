@@ -23,9 +23,7 @@ const avatar = computed(() => avatarFor(props.id))
     :aria-hidden="decorative ? 'true' : undefined"
     :aria-label="decorative ? undefined : avatar.label"
   >
-    <!-- Kresba je konstantní řetězec z `avatars.ts`, nikdy nic, co by
-         přišlo od hráče nebo z databáze. -->
-    <svg class="ava__art" viewBox="0 0 64 64" aria-hidden="true" v-html="avatar.art" />
+    <img class="ava__art" :src="avatar.src" alt="" draggable="false" />
   </span>
 </template>
 
@@ -36,23 +34,15 @@ const avatar = computed(() => avatarFor(props.id))
   width: var(--ava-size, 2.5rem);
   aspect-ratio: 1;
   border-radius: var(--r-full);
-  background: var(--tint);
+  background: color-mix(in oklab, var(--tint) 32%, var(--c-surface));
   overflow: hidden;
 }
-.ava__art { width: 100%; height: 100%; display: block; }
-
-/* Kresba stojí na dvou barvách: inkoust a plocha kruhu. Výřez i čára
-   se musí obarvit přes :deep(), obsah `v-html` scoped styly nedostane. */
-.ava__art :deep(*) { fill: var(--c-text-ink); }
-.ava__art :deep(.cut) { fill: var(--tint); }
-.ava__art :deep(.ink-line),
-.ava__art :deep(.cut-line) {
-  fill: none;
-  stroke-width: 3;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+.ava__art {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: var(--sp-1);
+  object-fit: contain;
+  user-select: none;
 }
-.ava__art :deep(.ink-line) { stroke: var(--c-text-ink); }
-.ava__art :deep(.cut-line) { stroke: var(--tint); }
-.ava__art :deep(.thick) { stroke-width: 7; }
 </style>

@@ -35,6 +35,15 @@
         "dev:local"
       ],
       "port": 5185
+    },
+    {
+      "name": "playground-local-5186",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev:local:alt"
+      ],
+      "port": 5186
     }
   ]
 }

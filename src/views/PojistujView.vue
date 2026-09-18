@@ -54,6 +54,24 @@ const openPoints = computed(() => {
 
 const openIsWager = computed(() => game.value?.wager !== null)
 
+/**
+ * Co udělá další stisk mezerníku.
+ *
+ * Na plátně to musí být vidět v každé fázi, aby se nedalo omylem
+ * přeskočit odhalení. Dřív tuhle informaci nesla patička otázky nejmenším
+ * a nejsvětlejším písmem a na desce nebyla vůbec.
+ */
+const nextStepHint = computed(() => {
+  const g = game.value
+  if (!g) return ''
+  // Nad otevřenou otázkou nese nápovědu patička scény, která je vidět
+  // pořád. Pás ji neopakuje: pás se po chvíli schová a dvě věty o téže
+  // věci na plátně jen ubírají místo.
+  if (pendingWager.value) return ''
+  if (g.phase !== 'board') return ''
+  return 'Vyber políčko na desce, šipkami nebo myší'
+})
+
 function onStart(pack: Pack, setup: Setup) {
   startGame(pack, setup)
 }
@@ -153,6 +171,7 @@ async function onRematch() {
       <PlayBar
         :can-undo="canUndo"
         :steal="game.rules.steal"
+        :hint="nextStepHint"
         @undo="onUndo"
         @results="showResults"
         @end="onEnd"
@@ -160,7 +179,7 @@ async function onRematch() {
 
       <!-- Herní plocha. Jen tady platí nastavení velikosti písma, protože
            tohle je to, co se promítá na plátno. -->
-      <div class="surface game-surface" :style="{ '--scale': String(settings.scale) }">
+      <main id="obsah" class="surface game-surface" :style="{ '--scale': String(settings.scale) }">
         <p class="status">
           <span>{{ game.packName }}</span>
           <span aria-hidden="true">&middot;</span>
@@ -176,6 +195,7 @@ async function onRematch() {
         :team-index="game.activeTeamIndex"
         :max="maxWager()"
         :base="Number(pendingWager.split(':')[1])"
+        :floor-zero="game.rules.floorZero"
         @confirm="confirmWager"
         @cancel="cancelWager"
       />
@@ -195,15 +215,26 @@ async function onRematch() {
         @cancel="onCancelQuestion"
       />
 
-        <!-- Výsledky ----------------------------------------------------- -->
-        <Teleport to="body">
-          <Transition name="fade">
-            <div v-if="game.phase === 'results'" class="results-layer">
-              <ResultsScreen :game="game" @again="onAgain" @rematch="onRematch" @board="backToBoard" />
-            </div>
-          </Transition>
-        </Teleport>
-      </div>
+        <!-- Výsledky -----------------------------------------------------
+             Zůstávají uvnitř `.game-surface`. Dřív se teleportovaly na
+             <body>, tedy mimo element, který nese `--scale`, takže
+             nastavení „Projekce" zvětšilo celou hru a na vyvrcholení
+             nedosáhlo. Vrstva je `position: fixed`, takže obsah stejně
+             překryje celou obrazovku; žádný předek jí nedělá containing
+             block. -->
+        <Transition name="fade">
+          <div v-if="game.phase === 'results'" class="results-layer">
+            <ResultsScreen
+              :game="game"
+              :can-undo="canUndo"
+              @again="onAgain"
+              @rematch="onRematch"
+              @board="backToBoard"
+              @undo="onUndo"
+            />
+          </div>
+        </Transition>
+      </main>
     </template>
   </div>
 </template>

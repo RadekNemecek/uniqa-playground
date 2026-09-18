@@ -11,6 +11,7 @@ import { count } from '@/lib/format'
 import { downloadQuizPack } from '../packIo'
 import { BOOLEAN_LABELS, kindOf, quizOption } from '../options'
 import type { QuizPack } from '../types'
+import UiIcon from '@/components/ui/UiIcon.vue'
 
 /** Strop je tu proto, aby se balíček vešel do jednoho dokumentu a aby se
  *  dal ještě rozumně projít očima. Sto otázek je víc než dost na školení. */
@@ -139,9 +140,7 @@ function exportPack(): void {
   <section class="ed">
     <header class="ed__head">
       <button type="button" class="ed__back" @click="emit('back')">
-        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
-          <path d="m15 5-7 7 7 7" />
-        </svg>
+        <UiIcon name="chevron-left" size="sm" />
         Balíčky
       </button>
 
@@ -198,10 +197,10 @@ function exportPack(): void {
 
           <div class="qrow__tools">
             <button type="button" :disabled="i === 0" :aria-label="`Posunout otázku ${i + 1} nahoru`" @click="move(item.id, -1)">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="m5 15 7-7 7 7" /></svg>
+              <UiIcon name="chevron-up" size="sm" />
             </button>
             <button type="button" :disabled="i === draft.items.length - 1" :aria-label="`Posunout otázku ${i + 1} dolů`" @click="move(item.id, 1)">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="m5 9 7 7 7-7" /></svg>
+              <UiIcon name="chevron-down" size="sm" />
             </button>
           </div>
         </div>
@@ -267,7 +266,7 @@ function exportPack(): void {
   border-radius: var(--r-md);
   background: transparent;
   color: var(--c-text);
-  transition: all var(--dur-fast) var(--ease-out);
+  transition: var(--tr-surface);
 }
 .ed__name { font-size: var(--fs-2xl); font-weight: 800; letter-spacing: -0.02em; }
 .ed__desc { font-size: var(--fs-sm); color: var(--c-text-muted); }
@@ -356,7 +355,7 @@ function exportPack(): void {
 .hint { font-size: var(--fs-xs); color: var(--c-text-faint); }
 
 @media (pointer: coarse) {
-  .ed__back { min-height: 44px; }
-  .qrow__tools button { width: 44px; height: 32px; }
+  .ed__back { min-height: var(--control-touch); }
+  .qrow__tools button { width: var(--control-touch); height: 32px; }
 }
 </style>

@@ -3,6 +3,7 @@ import { nextTick } from 'vue'
 import type { Category, Question } from '@/types'
 import { formatScore } from '@/lib/teams'
 import { useMediaQuery, NARROW } from '@/lib/media'
+import UiIcon from '@/components/ui/UiIcon.vue'
 
 const props = defineProps<{
   categories: Category[]
@@ -69,13 +70,13 @@ async function onValueChange(index: number, event: Event) {
         </span>
         <div class="cat__tools">
           <button type="button" :disabled="i === 0" :aria-label="`Posunout ${cat.name || 'kategorii'} nahoru`" @click="emit('moveCategory', i, -1)">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="m18 15-6-6-6 6" /></svg>
+            <UiIcon name="chevron-up" size="sm" />
           </button>
           <button type="button" :disabled="i === categories.length - 1" :aria-label="`Posunout ${cat.name || 'kategorii'} dolů`" @click="emit('moveCategory', i, 1)">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="m6 9 6 6 6-6" /></svg>
+            <UiIcon name="chevron-down" size="sm" />
           </button>
           <button type="button" class="cat__x" :disabled="!canRemoveCategory" :aria-label="`Smazat kategorii ${cat.name}`" @click="emit('removeCategory', cat.id)">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+            <UiIcon name="close" size="sm" />
           </button>
         </div>
       </header>
@@ -101,7 +102,7 @@ async function onValueChange(index: number, event: Event) {
               :aria-label="`Smazat řádek za ${formatScore(value)} bodů`"
               @click="emit('removeRow', value)"
             >
-              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+              <UiIcon name="close" size="xs" />
             </button>
           </div>
           <button
@@ -119,12 +120,8 @@ async function onValueChange(index: number, event: Event) {
             </span>
             <span v-else class="row__empty">Doplnit otázku</span>
             <span class="row__mark" aria-hidden="true">
-              <svg v-if="isReady(cat.id, value)" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M20 6 9 17l-5-5" />
-              </svg>
-              <svg v-else viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                <path d="M12 5v14M5 12h14" />
-              </svg>
+              <UiIcon v-if="isReady(cat.id, value)" name="check" size="sm" />
+              <UiIcon v-else name="plus" size="md" />
             </span>
           </button>
         </li>
@@ -160,13 +157,13 @@ async function onValueChange(index: number, event: Event) {
         />
         <div class="grid__cat-tools">
           <button type="button" :disabled="i === 0" :aria-label="`Posunout ${cat.name || 'kategorii'} doleva`" @click="emit('moveCategory', i, -1)">
-            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="m15 5-7 7 7 7" /></svg>
+            <UiIcon name="chevron-left" size="xs" />
           </button>
           <button type="button" :disabled="i === categories.length - 1" :aria-label="`Posunout ${cat.name || 'kategorii'} doprava`" @click="emit('moveCategory', i, 1)">
-            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="m9 5 7 7-7 7" /></svg>
+            <UiIcon name="chevron-right" size="xs" />
           </button>
           <button type="button" class="x" :disabled="!canRemoveCategory" :aria-label="`Smazat kategorii ${cat.name}`" @click="emit('removeCategory', cat.id)">
-            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+            <UiIcon name="close" size="xs" />
           </button>
         </div>
       </div>
@@ -201,7 +198,7 @@ async function onValueChange(index: number, event: Event) {
             :aria-label="`Smazat řádek za ${formatScore(value)} bodů`"
             @click="emit('removeRow', value)"
           >
-            <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+            <UiIcon name="close" size="xs" />
           </button>
         </div>
 
@@ -218,18 +215,14 @@ async function onValueChange(index: number, event: Event) {
           @click="emit('select', cat.id, value)"
         >
           <span v-if="isReady(cat.id, value)" class="cell__check" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M20 6 9 17l-5-5" />
-            </svg>
+            <UiIcon name="check" size="xs" />
           </span>
 
           <span v-if="preview(questionOf(cat.id, value)?.prompt)" class="cell__text">
             {{ preview(questionOf(cat.id, value)?.prompt) }}
           </span>
           <span v-else class="cell__empty">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
+            <UiIcon name="plus" size="md" />
             Doplnit
           </span>
         </button>
@@ -309,7 +302,7 @@ async function onValueChange(index: number, event: Event) {
 }
 .cat__tools button:hover:not(:disabled) { background: var(--c-surface-2); color: var(--c-text); }
 .cat__tools button:disabled { opacity: 0.3; }
-.cat__x:hover:not(:disabled) { color: var(--c-bad) !important; }
+.cat__tools button.cat__x:hover:not(:disabled) { color: var(--c-bad); }
 
 .rows { list-style: none; padding: 0; display: grid; gap: var(--sp-2); }
 .row-wrap {
@@ -372,8 +365,9 @@ async function onValueChange(index: number, event: Event) {
   background: var(--c-surface);
   color: var(--c-text-muted);
 }
-.row--on {
-  border-color: var(--c-brand) !important;
+.row--on,
+.row--on:hover {
+  border-color: var(--c-brand);
   background: color-mix(in oklab, var(--c-brand) 12%, var(--c-sunken));
   color: var(--c-text);
 }
@@ -467,7 +461,7 @@ async function onValueChange(index: number, event: Event) {
 }
 .grid__cat-tools button:hover:not(:disabled) { background: var(--c-surface); color: var(--c-text); }
 .grid__cat-tools button:disabled { opacity: 0.25; }
-.grid__cat-tools .x:hover:not(:disabled) { color: var(--c-bad) !important; }
+.grid__cat-tools button.x:hover:not(:disabled) { color: var(--c-bad); }
 
 .grid__add-col {
   display: grid;
@@ -570,8 +564,12 @@ async function onValueChange(index: number, event: Event) {
 }
 .cell--ready:hover { border-color: var(--c-surface-3); }
 
-.cell--on {
-  border-color: var(--c-brand) !important;
+/* I na hover: .cell--ready:hover je specifičtější než .cell--on, takže
+   bez vlastního hover pravidla by vybrané políčko pod myší ztratilo
+   modrý obrys. Dřív to řešil !important. */
+.cell--on,
+.cell--on:hover {
+  border-color: var(--c-brand);
   background: color-mix(in oklab, var(--c-brand) 12%, var(--c-sunken));
   color: var(--c-text);
 }

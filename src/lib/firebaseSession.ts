@@ -222,6 +222,8 @@ class FirestoreSessionDb implements QuizSessionDb {
         const data = d.data()
         return {
           id: d.id,
+          // Starší vyhodnocení skupinu nenesou, chybějící je prázdný řetězec.
+          groupName: String(data.groupName ?? ''),
           finishedAt: Number(data.finishedAt ?? 0),
           round: Number(data.round ?? 1),
           packNames: (data.packNames ?? []) as string[],

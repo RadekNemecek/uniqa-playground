@@ -10,6 +10,8 @@ const props = defineProps<{
   teamIndex: number
   categoryName: string
   index: number
+  /** Pole Riziko!: tým na něm před otázkou vsadí část svých bodů. */
+  wager?: boolean
 }>()
 
 const emit = defineEmits<{ open: [el: HTMLElement] }>()
@@ -17,7 +19,8 @@ const emit = defineEmits<{ open: [el: HTMLElement] }>()
 const color = computed(() => (props.team ? teamColor(props.team.color).cssVar : ''))
 
 const label = computed(() => {
-  if (props.state.status === 'open') return `${props.categoryName}, ${props.value} bodů`
+  const risk = props.wager ? ', pole Riziko!' : ''
+  if (props.state.status === 'open') return `${props.categoryName}, ${props.value} bodů${risk}`
   if (props.state.status === 'won')
     return `${props.categoryName}, ${props.value} bodů, získal tým ${props.team?.name}`
   return `${props.categoryName}, ${props.value} bodů, Nepojištěno`
@@ -33,13 +36,19 @@ function open(e: MouseEvent) {
   <button
     type="button"
     class="cell"
-    :class="[`cell--${state.status}`]"
+    :class="[`cell--${state.status}`, { 'cell--wager': wager && state.status === 'open' }]"
     :style="{ '--i': index, '--team': color ? `var(${color})` : 'transparent' }"
     :disabled="state.status !== 'open'"
     :aria-label="label"
     @click="open"
   >
-    <span v-if="state.status === 'open'" class="cell__value">{{ formatScore(value) }}</span>
+    <template v-if="state.status === 'open'">
+      <span class="cell__value">{{ formatScore(value) }}</span>
+      <!-- Riziko! musí být poznat dřív, než se na políčko klikne. Dokud
+           nebylo, otevřel se moderátorce dialog se sázkou, který nečekala
+           a neuměla ho místnosti ohlásit dopředu. -->
+      <span v-if="wager" class="cell__risk">Riziko!</span>
+    </template>
 
     <span v-else-if="state.status === 'won'" class="cell__won">
       <span class="cell__badge">{{ teamBadge(teamIndex) }}</span>
@@ -68,8 +77,8 @@ function open(e: MouseEvent) {
   overflow: hidden;
   box-shadow:
     inset 0 1.5px 0 var(--c-tile-sheen),
-    inset 0 -2px 0 rgba(0, 0, 0, 0.4),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.05),
+    inset 0 -2px 0 var(--shade-strong),
+    inset 0 0 0 var(--border-w) var(--sheen-faint),
     0 4px 0 var(--c-tile-edge),
     0 10px 18px -8px rgba(0, 0, 0, 0.7);
   transition:
@@ -89,13 +98,35 @@ function open(e: MouseEvent) {
   transition: translate var(--dur-slow) var(--ease-out);
 }
 
+/* Pole Riziko!
+   --c-spark je pro ně vyhrazená a je to jediná teplá barva systému, takže
+   stačí hrana a štítek; obarvit celou dlaždici by desku rozbilo. Hodnota
+   zůstává bílá, aby se četla stejně jako na ostatních polích. */
+.cell--wager {
+  background: linear-gradient(178deg, var(--c-tile-top) 0%, var(--c-spark-deep) 190%);
+  box-shadow:
+    inset 0 1.5px 0 var(--c-tile-sheen),
+    inset 0 -2px 0 var(--shade-strong),
+    inset 0 0 0 var(--border-w-strong) var(--c-spark-mid),
+    0 4px 0 var(--c-spark-deep),
+    0 10px 18px -8px rgba(0, 0, 0, 0.7);
+}
+.cell__risk {
+  font-family: var(--font-display);
+  font-size: var(--fs-2xs);
+  font-weight: 900;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--c-spark);
+}
+
 /* Výběr myší: jediný kurzor na desce, musí jít přečíst z projektoru.
    Overflow zůstává hidden, ať záře nepřeteče na sousední políčko.
    Vnější rámeček nese outline, ten se neořezává. */
 .cell--open:hover,
 .cell--open:focus-visible {
-  outline: 3px solid var(--c-brand);
-  outline-offset: 3px;
+  outline: var(--focus-ring-w) solid var(--focus-ring-c);
+  outline-offset: var(--focus-ring-offset);
   z-index: 1;
   transform: translateY(-5px) scale(1.06);
   filter: brightness(1.18);

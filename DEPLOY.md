@@ -145,10 +145,27 @@ Nastav všechny tři. **Smazání dokumentu ve Firestore nemaže jeho
 podkolekce**, takže bez politiky nad `players` a `answers` by po hrách
 zůstávaly osiřelé dokumenty, které se v konzoli ani neukážou.
 
-Vyhodnocení v kolekci `quizReports` se **nemaže samo**. Jsou v něm
-přezdívky účastníků, takže se maže ručně tlačítkem u seznamu na adrese
-`/kviz/otazky`. Když je budeš chtít držet jen omezenou dobu, přidej TTL
-politiku i nad `quizReports` a do dokumentu doplň pole s datem vypršení.
+#### Jak dlouho držet vyhodnocení
+
+Vyhodnocení v kolekci `quizReports` se **nemaže samo** a jsou v něm
+přezdívky účastníků. Přezdívku si píše účastník sám, takže to může být
+křestní jméno i celé jméno; je to osobní údaj a nemá ležet v databázi
+napořád jen proto, že ho nikdo nesmazal.
+
+Doporučená doba uchování je **jedna sezóna školení, tedy zhruba rok**.
+Do té doby je vyhodnocení k něčemu (dá se srovnat, jak na tom skupina
+byla dřív), potom už je to jen zátěž.
+
+Dvě cesty, jak to dodržet:
+
+1. **Ručně.** Seznam vyhodnocení je na `/kviz/otazky` a u každého je
+   tlačítko na smazání.
+2. **Automaticky.** Přidej TTL politiku i nad `quizReports` nad polem
+   `expiresAt` a do ukládaného dokumentu to pole doplň. Firestore pak
+   záznam smaže sám a nikdo na to nemusí myslet.
+
+Kdo se ptá, co se s jeho přezdívkou stane, má dostat tuhle odpověď:
+zůstane ve vyhodnocení školení, nikam se neposílá a po roce se maže.
 
 Session platí osm hodin. Po vypršení ji smí uklidit kdokoli, takže
 zabraný kód se sám uvolní i tehdy, když se původní počítač už nikdy
@@ -178,7 +195,7 @@ je to lepší než chybová hláška.
 
 ```bash
 git add -A
-git commit -m "Playground: hra Pojišťuj!"
+git commit -m "Mučírna: hra Pojišťuj!"
 git branch -M main
 git remote add origin https://github.com/<ucet>/uniqa-playground.git
 git push -u origin main

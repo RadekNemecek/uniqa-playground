@@ -11,7 +11,7 @@ import type {
 /**
  * Živá session kvízu.
  *
- * Záměrně to není součást `PlaygroundDb`. To rozhraní popisuje balíčky
+ * Záměrně to není součást `MucirnaDb`. To rozhraní popisuje balíčky
  * a zámek správy a `LocalDb` ho umí splnit celé. Živou session splnit
  * nemůže ani principiálně: telefon v cizím zařízení se k `localStorage`
  * moderátorčina notebooku nedostane. Kdyby tyhle metody byly v jednom

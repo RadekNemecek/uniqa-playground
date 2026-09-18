@@ -3,13 +3,13 @@ import type { QuizPack } from '@/games/kviz/types'
 import { hashSecret } from '@/lib/hash'
 
 /**
- * Datová vrstva Playgroundu.
+ * Datová vrstva Mučírny.
  *
  * Aplikace nikdy nemluví s konkrétním úložištěm přímo. Díky tomu běží
  * i bez nakonfigurovaného Firestore (režim `local`) a Firestore jde
  * kdykoli vyměnit bez zásahu do hry nebo administrace.
  */
-export interface PlaygroundDb {
+export interface MucirnaDb {
   readonly kind: 'local' | 'firestore'
   /** Připraví spojení. U Firestore i anonymní přihlášení. */
   ready(): Promise<void>
@@ -81,7 +81,7 @@ function writeQuizPacks(packs: QuizPack[]): void {
   localStorage.setItem(KEY_QUIZ_PACKS, JSON.stringify(packs))
 }
 
-class LocalDb implements PlaygroundDb {
+class LocalDb implements MucirnaDb {
   readonly kind = 'local' as const
   private listeners = new Set<(packs: Pack[]) => void>()
   private quizListeners = new Set<(packs: QuizPack[]) => void>()
@@ -207,15 +207,15 @@ export function reportDbError(message: string): void {
 
 /* ------------------------------------------------------------------------ */
 
-let instance: PlaygroundDb | null = null
+let instance: MucirnaDb | null = null
 
 /** Vrací aktivní úložiště. Firestore se připojí v kroku nasazení,
  *  do té doby a při jeho výpadku jede lokální režim. */
-export function db(): PlaygroundDb {
+export function db(): MucirnaDb {
   if (!instance) instance = new LocalDb()
   return instance
 }
 
-export function setDb(next: PlaygroundDb): void {
+export function setDb(next: MucirnaDb): void {
   instance = next
 }

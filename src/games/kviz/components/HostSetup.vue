@@ -7,6 +7,8 @@ import { count } from '@/lib/format'
 import { availableCount } from '../questions'
 import { hasSessionDb } from '@/lib/sessionDb'
 import type { QuizPack, QuizSetup } from '../types'
+import UiIcon from '@/components/ui/UiIcon.vue'
+import UiField from '@/components/ui/UiField.vue'
 
 const emit = defineEmits<{ start: [packs: QuizPack[], setup: QuizSetup] }>()
 
@@ -25,6 +27,21 @@ const wantCount = ref(10)
 const canUsePhones = computed(() => hasSessionDb())
 const withPhones = ref(true)
 
+/**
+ * Koho školíme. Nepovinné, ale rozhoduje o tom, jestli je archiv
+ * k něčemu: „kvíz z 12. 3." je bez názvu skupiny nedohledatelný, když se
+ * ten den školily tři party.
+ */
+const GROUP_KEY = 'playground.kviz.group.v1'
+const groupName = ref(localStorage.getItem(GROUP_KEY) ?? '')
+watch(groupName, (v) => {
+  try {
+    localStorage.setItem(GROUP_KEY, v)
+  } catch {
+    /* soukromé okno */
+  }
+})
+
 /** Balíčky, ve kterých je aspoň jedna hotová otázka. */
 const usable = computed(() => quizPacks.packs.filter((p) => quizPackProgress(p).done > 0))
 
@@ -33,6 +50,7 @@ const setup = computed<QuizSetup>(() => ({
   count: wantCount.value,
   limitSeconds: limitSeconds.value,
   withPhones: withPhones.value && canUsePhones.value,
+  groupName: groupName.value.trim(),
 }))
 
 const pool = computed(() => availableCount(usable.value, setup.value))
@@ -105,9 +123,7 @@ function start(): void {
               @click="toggle(p.id)"
             >
               <span class="pick__box" aria-hidden="true">
-                <svg v-if="chosen.has(p.id)" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M20 6 9 17l-5-5" />
-                </svg>
+                <UiIcon v-if="chosen.has(p.id)" name="check" size="sm" />
               </span>
               <span class="pick__text">
                 <span class="pick__name">{{ p.name }}</span>
@@ -123,6 +139,13 @@ function start(): void {
       <!-- Průběh --------------------------------------------------------- -->
       <section class="panel">
         <h2 class="panel__title"><span class="panel__num">2</span> Průběh</h2>
+
+        <UiField
+          label="Skupina"
+          hint="Nepovinné. Objeví se ve vyhodnocení a v názvu staženého souboru."
+        >
+          <input v-model="groupName" type="text" maxlength="60" placeholder="např. Obchod Morava" />
+        </UiField>
 
         <div class="rule">
           <span class="rule__label">Počet otázek</span>
@@ -234,7 +257,7 @@ function start(): void {
   font-size: var(--fs-sm);
   font-weight: 700;
   text-decoration: none;
-  transition: all var(--dur-fast) var(--ease-out);
+  transition: var(--tr-surface);
 }
 .panel__new:hover { color: var(--c-text); border-color: var(--c-surface-3); }
 
@@ -299,7 +322,7 @@ function start(): void {
   background: var(--c-sunken);
   color: var(--c-text-muted);
   text-align: left;
-  transition: all var(--dur-fast) var(--ease-out);
+  transition: var(--tr-surface);
 }
 .pick:hover { border-color: var(--c-surface-3); color: var(--c-text); }
 .pick--on {
@@ -344,7 +367,7 @@ function start(): void {
   color: var(--c-text-muted);
   font-size: var(--fs-sm);
   font-weight: 600;
-  transition: all var(--dur-fast) var(--ease-out);
+  transition: var(--tr-surface);
 }
 .segmented button:hover { color: var(--c-text); background: var(--c-surface); }
 .segmented .seg--on { background: var(--c-brand); color: var(--c-on-accent); }
@@ -371,11 +394,11 @@ function start(): void {
   line-height: var(--lh-body);
 }
 
-@media (max-width: 860px) {
+@media (max-width: 960px) {
   .setup__grid { grid-template-columns: minmax(0, 1fr); }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 720px) {
   .empty { grid-template-columns: auto minmax(0, 1fr); }
   .empty__action { grid-column: 1 / -1; text-align: center; }
 }

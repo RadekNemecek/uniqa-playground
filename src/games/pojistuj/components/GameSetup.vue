@@ -8,12 +8,24 @@ import { TEAM_COLORS, teamBadge, teamColor } from '@/lib/teams'
 import { count } from '@/lib/format'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiField from '@/components/ui/UiField.vue'
+import UiSegmented from '@/components/ui/UiSegmented.vue'
+import UiSwitch from '@/components/ui/UiSwitch.vue'
+import type { Segment } from '@/components/ui/segmented'
+import UiIcon from '@/components/ui/UiIcon.vue'
+import UiIconButton from '@/components/ui/UiIconButton.vue'
+import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 
 const emit = defineEmits<{ start: [pack: Pack, setup: GameSetup] }>()
 
 const route = useRoute()
 
 const SETUP_KEY = 'playground.setup.v1'
+/**
+ * Kolik kategorií unese deska na plátně.
+ *
+ * Musí sedět s `PLAYABLE_CATEGORIES` v editoru balíčků, jinak jde napsat
+ * kategorii, která se do hry nikdy nedostane.
+ */
 const MAX_CATEGORIES = 6
 
 /** Jména podle palety týmů, ve stejném pořadí jako TEAM_COLORS. */
@@ -24,6 +36,7 @@ function nameForColor(color: number, index: number): string {
 }
 
 interface SavedSetup {
+  groupName?: string
   packId: string
   categoryIds: string[]
   teams: Array<{ name: string; color: number }>
@@ -74,6 +87,18 @@ const rules = ref<GameRules>({
 /** Dokud si počet polí Riziko! nezvolí moderátorka sama, drží se na
  *  maximu, které deska unese. */
 const wagerPicked = ref(saved?.wagerPicked ?? false)
+
+/**
+ * Koho školíme. Nepovinné, ale bez toho je archiv odehraných her jen
+ * seznam dat: „hra z 12. 3." nikomu nepoví, které skupiny se týkala.
+ * Pamatuje se stejně jako zbytek přípravy.
+ */
+const groupName = ref(saved?.groupName ?? '')
+
+const TIMER_OPTIONS: Segment<number>[] = [0, 15, 30, 45, 60].map((s) => ({
+  value: s,
+  label: s === 0 ? 'Bez' : `${s} s`,
+}))
 
 const pack = computed<Pack | undefined>(() => packs.packs.find((p) => p.id === packId.value))
 
@@ -210,19 +235,36 @@ const maxWagerCells = computed(() => {
   return Math.min(4, Math.max(0, Math.floor(cells / 6)))
 })
 
+const wagerOptions = computed<Segment<number>[]>(() =>
+  [0, 1, 2, 3, 4].map((n) => ({
+    value: n,
+    label: n === 0 ? 'Žádné' : String(n),
+    disabled: n > maxWagerCells.value,
+  })),
+)
+
 watch(
   maxWagerCells,
   (max) => {
-    if (!wagerPicked.value) rules.value.wagerCells = max
+    // Výchozí je jedno pole, ne maximum. Dřív se při pěti kategoriích
+    // zapnula rovnou čtyři, aniž by je kdokoli zvolil, a moderátorku
+    // čtyřikrát za hru přerušil dialog, který nečekala a neuměla ho
+    // v místnosti ohlásit dopředu.
+    if (!wagerPicked.value) rules.value.wagerCells = Math.min(1, max)
     else if (rules.value.wagerCells > max) rules.value.wagerCells = max
   },
   { immediate: true },
 )
 
-function pickWagerCells(n: number) {
-  wagerPicked.value = true
-  rules.value.wagerCells = n
-}
+/** Zápis zároveň znamená „tohle si zvolila moderátorka", takže se počet
+ *  polí přestane sám dorovnávat na velikost desky. */
+const wagerCells = computed<number>({
+  get: () => rules.value.wagerCells,
+  set: (n) => {
+    wagerPicked.value = true
+    rules.value.wagerCells = n
+  },
+})
 
 const showFloorZero = computed(() => rules.value.penalty || rules.value.wagerCells > 0)
 
@@ -247,6 +289,7 @@ watch(
       teams: teams.value.map((t) => ({ name: t.name, color: t.color })),
       rules: { ...rules.value },
       wagerPicked: wagerPicked.value,
+      groupName: groupName.value,
     }
     localStorage.setItem(SETUP_KEY, JSON.stringify(payload))
   },
@@ -261,6 +304,7 @@ function start() {
     categoryIds: usable.value.filter((c) => selected.value.has(c.id)).map((c) => c.id),
     teams: teams.value.map((t) => ({ name: t.name.trim() || nameForColor(t.color, 0), color: t.color })),
     rules: { ...rules.value, sound: settings.sound },
+    groupName: groupName.value.trim(),
   })
 }
 </script>
@@ -285,7 +329,11 @@ function start() {
           </RouterLink>
         </div>
 
-        <p v-if="packs.packs.length === 0" class="empty">
+        <!-- Až po prvním snímku. Prázdný seznam před doručením dat není
+             prázdná knihovna, jen ještě nedoručená. -->
+        <UiSkeleton v-if="!packs.loaded" :lines="2" />
+
+        <p v-else-if="packs.packs.length === 0" class="empty">
           Zatím tu není žádný balíček. Založíš ho ve
           <RouterLink to="/admin">správě otázek</RouterLink>.
         </p>
@@ -308,9 +356,7 @@ function start() {
               </span>
             </span>
             <span v-if="packs.packs.length > 1" class="pack__chev" aria-hidden="true">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M6 9l6 6 6-6" />
-              </svg>
+              <UiIcon name="chevron-down" size="md" />
             </span>
           </button>
 
@@ -369,6 +415,10 @@ function start() {
       <!-- Týmy ----------------------------------------------------------- -->
       <section class="panel panel--teams">
         <h2 class="panel__title"><span class="panel__num">2</span> Týmy</h2>
+
+        <UiField label="Skupina" hint="Nepovinné. Podepíše odehranou hru v přehledu.">
+          <input v-model="groupName" type="text" maxlength="60" placeholder="např. Obchod Morava" />
+        </UiField>
         <p class="hint">Jeden až šest. Barvu změníš kliknutím na písmeno.</p>
 
         <ul class="teams">
@@ -410,15 +460,14 @@ function start() {
               :placeholder="nameForColor(t.color, i)"
               :aria-label="`Název týmu ${i + 1}`"
             />
-            <button
-              type="button"
-              class="team__x"
+            <UiIconButton
+              icon="close"
+              size="sm"
+              variant="danger"
               :disabled="teams.length <= 1"
-              :aria-label="`Odebrat tým ${t.name}`"
+              :label="`Odebrat tým ${t.name}`"
               @click="removeTeam(i)"
-            >
-              &#215;
-            </button>
+            />
           </li>
         </ul>
 
@@ -432,65 +481,34 @@ function start() {
         <h2 class="panel__title"><span class="panel__num">3</span> Pravidla</h2>
 
         <UiField label="Časomíra" hint="Kolik času má tým na odpověď. Nula znamená bez měření.">
-          <div class="segmented">
-            <button
-              v-for="s in [0, 15, 30, 45, 60]"
-              :key="s"
-              type="button"
-              :class="{ 'seg--on': rules.timerSeconds === s }"
-              :aria-pressed="rules.timerSeconds === s"
-              @click="rules.timerSeconds = s"
-            >
-              {{ s === 0 ? 'Bez' : `${s} s` }}
-            </button>
-          </div>
+          <UiSegmented v-model="rules.timerSeconds" aria-label="Časomíra" :options="TIMER_OPTIONS" />
         </UiField>
 
         <UiField
           label="Pole Riziko!"
-          hint="Na těchto polích tým před otázkou vsadí část svých bodů."
+          hint="Na těchto polích tým před otázkou vsadí část svých bodů. Na desce jsou poznat."
         >
-          <div class="segmented">
-            <button
-              v-for="n in [0, 1, 2, 3, 4]"
-              :key="n"
-              type="button"
-              :disabled="n > maxWagerCells"
-              :class="{ 'seg--on': rules.wagerCells === n }"
-              :aria-pressed="rules.wagerCells === n"
-              @click="pickWagerCells(n)"
-            >
-              {{ n === 0 ? 'Žádné' : n }}
-            </button>
-          </div>
+          <UiSegmented v-model="wagerCells" aria-label="Počet polí Riziko!" :options="wagerOptions" />
         </UiField>
 
-        <label class="switch">
-          <input v-model="rules.steal" type="checkbox" />
-          <span class="switch__box" aria-hidden="true"></span>
-          <span>
-            <strong>Přebrání jiným týmem</strong>
-            <em>Když tým na tahu neuhodne, můžeš body přiznat tomu, kdo odpověděl správně.</em>
-          </span>
-        </label>
+        <UiSwitch
+          v-model="rules.steal"
+          label="Přebrání jiným týmem"
+          hint="Když tým na tahu neuhodne, můžeš body přiznat tomu, kdo odpověděl správně."
+        />
 
-        <label class="switch">
-          <input v-model="rules.penalty" type="checkbox" />
-          <span class="switch__box" aria-hidden="true"></span>
-          <span>
-            <strong>Minusové body</strong>
-            <em>Za špatnou odpověď se týmu na tahu hodnota políčka odečte.</em>
-          </span>
-        </label>
+        <UiSwitch
+          v-model="rules.penalty"
+          label="Minusové body"
+          hint="Za špatnou odpověď se týmu na tahu hodnota políčka odečte."
+        />
 
-        <label v-if="showFloorZero" class="switch">
-          <input v-model="rules.floorZero" type="checkbox" />
-          <span class="switch__box" aria-hidden="true"></span>
-          <span>
-            <strong>Skóre nejméně nula</strong>
-            <em>Při odečtu bodů tým nesmí klesnout pod nulu.</em>
-          </span>
-        </label>
+        <UiSwitch
+          v-if="showFloorZero"
+          v-model="rules.floorZero"
+          label="Skóre nejméně nula"
+          hint="Při odečtu bodů tým nesmí klesnout pod nulu."
+        />
       </section>
     </div>
 
@@ -536,7 +554,7 @@ function start() {
           · {{ count(teams.length, 'tým', 'týmy', 'týmů') }}
           <template v-if="rules.timerSeconds"> · {{ rules.timerSeconds }}&nbsp;s</template>
           <template v-if="rules.wagerCells">
-            · {{ count(rules.wagerCells, 'Riziko!', 'Riziko!', 'Riziko!') }}
+            · {{ count(rules.wagerCells, 'pole', 'pole', 'polí') }} Riziko!
           </template>
         </p>
       </div>
@@ -656,8 +674,8 @@ function start() {
 }
 .pack__trigger:hover:not(:disabled) { border-color: var(--c-surface-3); }
 .pack__trigger:focus-visible {
-  outline: 3px solid var(--c-brand);
-  outline-offset: 2px;
+  outline: var(--focus-ring-w) solid var(--focus-ring-c);
+  outline-offset: var(--focus-ring-offset);
 }
 .pack--open .pack__trigger {
   border-color: var(--c-brand);
@@ -734,7 +752,7 @@ function start() {
   color: var(--c-text-muted);
   font-size: var(--fs-sm);
   font-weight: 600;
-  transition: all var(--dur-fast) var(--ease-out);
+  transition: var(--tr-surface);
 }
 .chip:hover:not(:disabled) { color: var(--c-text); border-color: var(--c-surface-3); }
 .chip:disabled { opacity: 0.35; cursor: not-allowed; }
@@ -827,19 +845,6 @@ function start() {
   font-size: var(--fs-md);
 }
 .team__name:focus { border-color: var(--c-brand); }
-.team__x {
-  flex: none;
-  width: 2rem;
-  height: 2rem;
-  border: 0;
-  border-radius: var(--r-sm);
-  background: transparent;
-  color: var(--c-text-faint);
-  font-size: var(--fs-xl);
-  line-height: 1;
-}
-.team__x:hover:not(:disabled) { color: var(--c-bad); background: var(--c-surface-2); }
-.team__x:disabled { opacity: 0.25; }
 
 .panel--rules {
   display: grid;
@@ -866,7 +871,7 @@ function start() {
   color: var(--c-text-muted);
   font-size: var(--fs-sm);
   font-weight: 600;
-  transition: all var(--dur-fast) var(--ease-out);
+  transition: var(--tr-surface);
 }
 .segmented button:hover:not(:disabled) { color: var(--c-text); background: var(--c-surface); }
 .segmented button:disabled { opacity: 0.3; cursor: not-allowed; }
@@ -898,7 +903,7 @@ function start() {
 }
 .switch input:checked + .switch__box { background: var(--c-brand); border-color: var(--c-brand); }
 .switch input:checked + .switch__box::after { transform: translateX(1.1rem); background: var(--c-on-accent); }
-.switch input:focus-visible + .switch__box { outline: 3px solid var(--c-brand); outline-offset: 3px; }
+.switch input:focus-visible + .switch__box { outline: var(--focus-ring-w) solid var(--focus-ring-c); outline-offset: var(--focus-ring-offset); }
 .switch strong { display: block; font-size: var(--fs-sm); font-weight: 600; }
 .switch em { display: block; font-style: normal; font-size: var(--fs-xs); color: var(--c-text-faint); line-height: 1.5; }
 
@@ -998,7 +1003,7 @@ function start() {
 .summary { color: var(--c-text-muted); font-size: var(--fs-sm); }
 .problems { list-style: none; padding: 0; display: grid; gap: var(--sp-1); color: var(--c-text-faint); font-size: var(--fs-sm); }
 
-@media (max-width: 860px) {
+@media (max-width: 960px) {
   .setup__grid { grid-template-columns: 1fr; }
   .panel--rules { grid-column: auto; }
   .launch {
@@ -1012,7 +1017,6 @@ function start() {
 @media (pointer: coarse) {
   .team__dot { width: 2.75rem; height: 2.75rem; }
   .team__name { padding-block: var(--sp-3); font-size: var(--fs-md); }
-  .team__x { width: 2.75rem; height: 2.75rem; font-size: var(--fs-2xl); }
   .swatches { grid-template-columns: repeat(3, auto); gap: var(--sp-3); padding: var(--sp-4); }
   .swatch { width: 2.75rem; height: 2.75rem; }
   .segmented button { padding-block: var(--sp-3); }

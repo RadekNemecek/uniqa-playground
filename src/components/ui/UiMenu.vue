@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import UiIcon from '@/components/ui/UiIcon.vue'
 
 defineProps<{ label: string }>()
 const open = ref(false)
@@ -53,11 +54,7 @@ defineExpose({ close })
       @click="toggle"
     >
       <slot name="trigger">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
-          <circle cx="12" cy="5" r="1.75" />
-          <circle cx="12" cy="12" r="1.75" />
-          <circle cx="12" cy="19" r="1.75" />
-        </svg>
+        <UiIcon name="dots" size="md" />
       </slot>
     </button>
 

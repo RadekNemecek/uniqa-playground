@@ -20,13 +20,23 @@ export const ui = reactive({
   confirm: null as ConfirmRequest | null,
 })
 
-export function toast(text: string, tone: Toast['tone'] = 'info', ms = 3200): void {
+/**
+ * Oznámení.
+ *
+ * Chyba nemizí sama. Uživatelka ji má opravit, a hláška, která zmizí za
+ * tři vteřiny, se nedá ani dočíst, ani opsat. Zavře se kliknutím.
+ * (WCAG 2.2.1: časový limit, který nejde prodloužit, na chybu nepatří.)
+ */
+export function toast(text: string, tone: Toast['tone'] = 'info', ms?: number): void {
   const t: Toast = { id: id('t'), text, tone }
   ui.toasts.push(t)
+
+  if (tone === 'bad' && ms === undefined) return
+
   window.setTimeout(() => {
     const at = ui.toasts.findIndex((x) => x.id === t.id)
     if (at >= 0) ui.toasts.splice(at, 1)
-  }, ms)
+  }, ms ?? 3200)
 }
 
 export function dismissToast(toastId: string): void {
@@ -55,4 +65,19 @@ export function confirmAction(options: {
 export function answerConfirm(ok: boolean): void {
   ui.confirm?.resolve(ok)
   ui.confirm = null
+}
+
+/* --- Degradovaný režim ---------------------------------------------------- */
+
+/**
+ * Sdílená databáze není dostupná a aplikace jede jen z tohohle počítače.
+ *
+ * Dřív to oznámil toast, který za osm vteřin zmizel. Potom už nikde
+ * nebylo vidět, že balíčky kolegů chybí a že se telefony nemají kam
+ * připojit, takže se na to přišlo až před plnou místností.
+ */
+export const degraded = reactive({ local: false })
+
+export function markLocalOnly(): void {
+  degraded.local = true
 }

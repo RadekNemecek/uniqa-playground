@@ -84,6 +84,12 @@ export interface QuizSetup {
   limitSeconds: number
   /** Hraje se s telefony, tedy se zakládá živá session. */
   withPhones: boolean
+  /**
+   * Koho školíme. Nepovinné, ale bez toho je archiv jen hromada
+   * anonymních tabulek: k čemu je „kvíz z 12. 3.", když se ten den
+   * školily tři skupiny.
+   */
+  groupName: string
 }
 
 export interface QuizHostState {
@@ -220,6 +226,8 @@ export interface QuizReport {
   schema: 1
   id: string
   hostUid: string
+  /** Koho se to týkalo. Prázdné u her spuštěných bez názvu skupiny. */
+  groupName: string
   /** Kód hry. Null, když se hrálo bez telefonů. */
   code: string | null
   round: number
@@ -275,6 +283,7 @@ export interface QuizReportCell {
  *  nestahoval po stovkách kilobajtů. */
 export interface QuizReportSummary {
   id: string
+  groupName: string
   finishedAt: number
   round: number
   packNames: string[]

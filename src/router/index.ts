@@ -13,7 +13,7 @@ export const router = createRouter({
       path: '/',
       name: 'home',
       component: () => import('@/views/HomeView.vue'),
-      meta: { title: 'Playground' },
+      meta: { title: 'Mučírna' },
     },
     {
       path: '/pojistuj',
@@ -47,6 +47,14 @@ export const router = createRouter({
       component: () => import('@/views/KvizJoinView.vue'),
       meta: { title: 'Na kolik to dáš?' },
     },
+    // Bez kódu. Sem vede „Zadat jiný kód" a sem patří každý, kdo QR
+    // nenačetl a přepisuje kód z plátna ručně.
+    {
+      path: '/k',
+      name: 'kviz-kod',
+      component: () => import('@/views/KvizJoinView.vue'),
+      meta: { title: 'Na kolik to dáš?' },
+    },
     // Hra se dřív jmenovala Riskuj. Záložky a zástupci PWA na starou
     // adresu musí dál fungovat.
     { path: '/riskuj', redirect: '/pojistuj' },
@@ -56,6 +64,6 @@ export const router = createRouter({
 })
 
 router.afterEach((to) => {
-  const title = to.meta.title ?? 'Playground'
-  document.title = title === 'Playground' ? 'Playground' : `${title} | Playground`
+  const title = to.meta.title ?? 'Mučírna'
+  document.title = title === 'Mučírna' ? 'Mučírna' : `${title} | Mučírna`
 })

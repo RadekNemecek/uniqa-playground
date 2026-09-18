@@ -79,8 +79,8 @@ a {
 
 /* Zaměření je vidět vždy. Moderátorka může hru ovládat jen klávesnicí. */
 :focus-visible {
-  outline: 3px solid var(--c-brand);
-  outline-offset: 3px;
+  outline: var(--focus-ring-w) solid var(--focus-ring-c);
+  outline-offset: var(--focus-ring-offset);
   border-radius: var(--r-sm);
 }
 

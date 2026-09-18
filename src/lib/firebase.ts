@@ -14,7 +14,7 @@ import {
 } from 'firebase/firestore'
 import type { Pack } from '@/types'
 import type { QuizPack } from '@/games/kviz/types'
-import type { PlaygroundDb } from '@/lib/db'
+import type { MucirnaDb } from '@/lib/db'
 import { FIREBASE_CONFIG } from '@/lib/firebase.config'
 import { hashSecret } from '@/lib/hash'
 import { reportDbError } from '@/lib/db'
@@ -50,7 +50,7 @@ function withTimeout<T>(op: Promise<T>, ms = 8000): Promise<T> {
  * Po prvním úspěšném odemčení si otisk necháme i lokálně, aby se dalo
  * odemknout i bez sítě. Skutečné oprávnění stejně rozhodují pravidla.
  */
-class FirestoreDb implements PlaygroundDb {
+class FirestoreDb implements MucirnaDb {
   readonly kind = 'firestore' as const
 
   private db!: Firestore
@@ -228,7 +228,7 @@ export function firebaseHandle(): FirebaseHandle | null {
   return handle
 }
 
-export async function createFirestoreDb(): Promise<PlaygroundDb> {
+export async function createFirestoreDb(): Promise<MucirnaDb> {
   const impl = new FirestoreDb()
   await impl.ready()
   return impl

@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { quizOption, optionLabel } from '../options'
 import type { QuizKind } from '../types'
+import UiIcon from '@/components/ui/UiIcon.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -41,9 +42,7 @@ const revealed = computed(() => props.votes !== null)
     <!-- Fajfka se objeví jen u správné, ale místo si drží obě: dlaždice se
          po odhalení nesmí přesázet. -->
     <span v-if="state !== 'idle'" class="chip__tick" :class="{ 'chip__tick--off': state !== 'right' }" aria-hidden="true">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M20 6 9 17l-5-5" />
-      </svg>
+      <UiIcon name="check" size="md" />
     </span>
 
     <span v-if="withVotes" class="chip__count" :class="{ 'chip__count--hidden': !revealed }" aria-hidden="true">

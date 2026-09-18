@@ -1,4 +1,4 @@
-# Playground: konvence projektu
+# Mučírna: konvence projektu
 
 Vue 3 + Vite + TypeScript, statická aplikace na GitHub Pages, data ve
 Firestore. Hry jsou moduly: Pojišťuj! je deska pro týmy, Na kolik to dáš? je kvíz,
@@ -113,6 +113,65 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
   s tmavým textem končí na `--c-spark-mid`. Na rozcestníku ani v kvízu
   nemá co dělat.
 
+## Komponentová vrstva
+
+Tokeny jsou přízemí, komponenty druhé patro. **Nové UI se skládá
+z `src/components/ui/`, nekreslí se znovu.** Dřív si každá obrazovka
+stavěla vlastní tlačítka, dialogy a pole, takže pět souborů mělo víc CSS
+než celá složka `ui/` a šest ikonových tlačítek vypadalo šesti způsoby.
+
+- `UiIcon` a rejstřík `icons.ts`. **Žádné inline `<svg>` v komponentách**
+  a žádný křížek zapsaný jako `&#215;`. Jedna velikostní škála
+  (`--icon-*`) a jedna tloušťka tahu (`--icon-stroke`).
+- `UiIconButton` na každé tlačítko, které nese jen ikonu.
+- `UiButton` má `loading`, `icon` a plnou `danger` variantu. Destruktivní
+  akce nesmí být vizuálně slabší než potvrzovací.
+- `UiModal` drží focus trap, vrací zaměření a zamyká rolování přes čítač
+  v `src/lib/scrollLock.ts`. **Vlastní dialog se nepíše**; potvrzení se umí
+  otevřít nad jiným oknem a prostý přepínač `overflow` to rozbije.
+- `UiField` umí chybu (`error`) a povinnost. Pole se nestyluje ručně.
+- `UiSwitch` a `UiSegmented` na binární a malé výběry. Segmented je
+  `radiogroup`, ne řada nezávislých `aria-pressed` tlačítek.
+- `UiSkeleton` a `UiEmpty`. **Prázdný stav se nesmí ukázat místo
+  načítání**: podmiňuje se `loaded` z příslušného storu, jinak správa na
+  pomalé síti tvrdí „zatím tu nic není" a nabídne založit ukázku dřív, než
+  dorazí skutečná data.
+
+Breakpointy jsou **tři** a jsou vypsané v `tokens.css`: 560, 720, 960.
+Jiný se nezavádí. Rozvržení jedné obrazovky patří do jejího
+`<style scoped>`, ne mezi tokeny.
+
+Zakázané: `!important`, `transition: all` (jsou na to `--tr-surface`
+a `--tr-enter`), syrové `44px` místo `--control-touch`, syrový prstenec
+zaměření místo `--focus-ring-*`.
+
+## Prezentační režim
+
+Jakmile hra běží, **rozhraní aplikace zmizí z plátna**. Hlavička se
+značkou a přepínačem Hrát/Otázky patří do přípravy. Nad hrou zůstane jen
+`PresentationBar`: vlevo název hry, uprostřed co udělá další stisk,
+vpravo nástroje.
+
+Pás se po chvíli schová a vrací se **pohybem myši, ne klávesou**. Hra se
+vede mezerníkem, takže na klávesu by byl vidět pořád; takhle plátno
+zčistí, jakmile moderátorka pustí myš.
+
+Schovaný pás si drží místo v toku. Kdyby zmizel, obsah pod ním
+poposkočí, a ten je změřený na jednu obrazovku.
+
+Stav celé obrazovky se čte z `fullscreenchange`, ne z vlastního
+přepínače: odchází se z ní i Escapem a F11.
+
+## Archiv odehraných her
+
+Po hře musí něco zůstat, jinak se půlhodina školení ztratí. Deska zapisuje
+do `src/games/pojistuj/runLog.ts` (localStorage, posledních 50 her), kvíz
+do `quizReports`. Obojí nese **název skupiny**, jinak je archiv jen seznam
+dat.
+
+U kvízu se ukládají přezdívky účastníků. Patří k nim doba uchování, viz
+`DEPLOY.md`.
+
 ## Data
 
 `src/lib/db.ts` je rozhraní úložiště. Aplikace nikdy nesahá na Firestore
@@ -136,7 +195,7 @@ zamrazí i zamíchané pořadí možností: na plátně je jediné pořadí a te
 nemá text, takže jiné pořadí u každého hráče by hru rozbilo.
 
 Živá session kvízu má **vlastní rozhraní** `src/lib/sessionDb.ts`, ne metodu
-navíc v `PlaygroundDb`. `LocalDb` ji splnit nemůže ani principiálně, telefon
+navíc v `MucirnaDb`. `LocalDb` ji splnit nemůže ani principiálně, telefon
 v cizím zařízení se k `localStorage` moderátorčina notebooku nedostane.
 `sessionDb()` proto vrací `null`, když Firestore není k dispozici, a kvíz
 pak jede v režimu bez telefonů. Není to degradace, je to druhý způsob, jak

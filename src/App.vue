@@ -28,6 +28,11 @@ onMounted(async () => {
 </script>
 
 <template>
+  <!-- Před obsahem stojí na každé obrazovce šest fokusovatelných prvků
+       hlavičky. Kdo jede od klávesnice, jimi jinak prochází pokaždé znovu.
+       Odkaz je vidět, až na něj skočí zaměření. -->
+  <a class="skip" href="#obsah">Přeskočit na obsah</a>
+
   <RouterView v-slot="{ Component }">
     <Transition name="page" mode="out-in">
       <component :is="Component" />
@@ -38,6 +43,21 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+.skip {
+  position: fixed;
+  top: var(--sp-3);
+  left: var(--sp-3);
+  z-index: var(--z-toast);
+  padding: var(--sp-3) var(--sp-5);
+  border-radius: var(--r-md);
+  background: var(--c-brand);
+  color: var(--c-on-accent);
+  font-weight: 700;
+  text-decoration: none;
+  transform: translateY(-200%);
+}
+.skip:focus-visible { transform: none; }
+
 .page-enter-active,
 .page-leave-active {
   transition: opacity var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out);

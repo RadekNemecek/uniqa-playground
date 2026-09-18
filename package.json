@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Playground: interaktivní školicí hry Pojišťuj! a Na kolik to dáš?",
+  "description": "Mučírna: interaktivní školicí hry Pojišťuj! a Na kolik to dáš?",
   "scripts": {
     "dev": "vite",
     "dev:lan": "vite --host",
@@ -12,7 +12,9 @@
     "build:only": "vite build && node scripts/postbuild.mjs",
     "preview": "vite preview",
     "typecheck": "vue-tsc --noEmit",
-    "icons": "node scripts/make-icons.mjs"
+    "icons": "node scripts/make-icons.mjs",
+    "avatars": "node scripts/make-avatars.mjs",
+    "dev:local:alt": "VITE_LOCAL_ONLY=1 vite --port 5186 --strictPort"
   },
   "dependencies": {
     "firebase": "^12.18.0",

@@ -4,14 +4,15 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#001A31" />
-    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="favicon.png" type="image/png" />
     <link rel="apple-touch-icon" href="apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="description" content="Pojišťuj!: vědomostní hra pro školení týmů. Vlastní otázky, až šest týmů, časomíra." />
+    <meta name="description" content="Mučírna: interaktivní hry pro školení týmů. Pojišťuj! je deska pro týmy, Na kolik to dáš? je kvíz do telefonů. Vlastní otázky, hraje se na plátno." />
 
-    <!-- Odkaz se sdílí v Teams a v mailu, tak ať není holý. Obrázek je
-         zatím čtvercová ikona aplikace. Široká karta 1200x630 chybí.
+    <!-- Odkaz se sdílí v Teams a v mailu, tak ať není holý. Karta je široká
+         1200x630, protože čtvercovou ikonu Teams i pošta ořízne nebo
+         zmenší do rohu.
 
          Adresy musí být absolutní. Náhled si nekreslí prohlížeč, ale server
          Teamsů nebo pošty, a ten relativní cestu nemá k čemu vztáhnout:
@@ -19,11 +20,13 @@
          mění se tyhle dva řádky. -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://radeknemecek.github.io/uniqa-playground/" />
-    <meta property="og:title" content="Pojišťuj! Vědomostní hra pro školení týmů" />
-    <meta property="og:description" content="Deska kategorií a bodových hodnot, až šest týmů, vlastní otázky, časomíra a pole Riziko!, kde tým před otázkou vsadí část svých bodů." />
-    <meta property="og:image" content="https://radeknemecek.github.io/uniqa-playground/icon-512.png" />
+    <meta property="og:title" content="Mučírna: školicí hry pro týmy" />
+    <meta property="og:description" content="Dvě hry na jedno plátno. Pojišťuj! je deska kategorií a bodů pro týmy, Na kolik to dáš? je kvíz, do kterého se účastníci připojí telefonem. Otázky si píšeš sama." />
+    <meta property="og:image" content="https://radeknemecek.github.io/uniqa-playground/share-card.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
     <meta property="og:locale" content="cs_CZ" />
-    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:card" content="summary_large_image" />
 
     <!-- Autorství strojově. Aplikace je SPA, takže robot, který nespustí
          skripty, vidí jen tenhle soubor. Odkaz v patě rozcestníku je pro
@@ -33,7 +36,7 @@
       {
         "@context": "https://schema.org",
         "@type": "WebApplication",
-        "name": "Pojišťuj!",
+        "name": "Mučírna",
         "applicationCategory": "GameApplication",
         "inLanguage": "cs",
         "author": {
@@ -44,7 +47,7 @@
       }
     </script>
 
-    <title>Playground</title>
+    <title>Mučírna</title>
   </head>
   <body>
     <div id="app"></div>

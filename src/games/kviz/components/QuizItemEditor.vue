@@ -206,7 +206,7 @@ watch(() => props.item.id, async () => {
   color: var(--c-text-faint);
   font-size: var(--fs-xs);
   font-weight: 700;
-  transition: all var(--dur-fast) var(--ease-out);
+  transition: var(--tr-surface);
 }
 .kinds__pick:hover { color: var(--c-text); }
 .kinds__pick--on { background: var(--c-surface-2); color: var(--c-text); }
@@ -224,7 +224,7 @@ watch(() => props.item.id, async () => {
   background: var(--c-sunken);
   color: var(--c-text-muted);
   font-weight: 700;
-  transition: all var(--dur-fast) var(--ease-out);
+  transition: var(--tr-surface);
 }
 .two__pick:hover { color: var(--c-text); border-color: var(--c-surface-3); }
 .two__letter { font-family: var(--font-display); font-weight: 900; color: var(--tint); }
@@ -244,7 +244,7 @@ watch(() => props.item.id, async () => {
   color: var(--c-text-muted);
   font-size: var(--fs-xs);
   font-weight: 600;
-  transition: all var(--dur-fast) var(--ease-out);
+  transition: var(--tr-surface);
 }
 .tool:hover { color: var(--c-text); border-color: var(--c-surface-3); background: var(--c-surface-2); }
 .tool--danger:hover {
@@ -298,10 +298,10 @@ watch(() => props.item.id, async () => {
   height: 1.15rem;
   border: 2px solid var(--c-line);
   border-radius: var(--r-full);
-  transition: all var(--dur-fast) var(--ease-out);
+  transition: var(--tr-surface);
 }
 .opt__radio:hover .opt__dot { border-color: var(--c-surface-3); }
-.opt__radio input:focus-visible + .opt__dot { outline: 2px solid var(--c-brand); outline-offset: 2px; }
+.opt__radio input:focus-visible + .opt__dot { outline: var(--focus-ring-w) solid var(--focus-ring-c); outline-offset: var(--focus-ring-offset); }
 .opt--on .opt__dot {
   border-color: var(--c-ok);
   background: radial-gradient(circle, var(--c-ok) 0 45%, transparent 46%);
@@ -320,10 +320,10 @@ watch(() => props.item.id, async () => {
 .opt--on .opt__text { border-color: color-mix(in oklab, var(--c-ok) 55%, transparent); }
 
 @media (pointer: coarse) {
-  .tool { min-height: 44px; }
+  .tool { min-height: var(--control-touch); }
   .kinds__pick,
-  .two__pick { min-height: 44px; }
+  .two__pick { min-height: var(--control-touch); }
   .opt__dot { width: 1.5rem; height: 1.5rem; }
-  .opt__radio { min-width: 44px; min-height: 44px; }
+  .opt__radio { min-width: var(--control-touch); min-height: var(--control-touch); }
 }
 </style>

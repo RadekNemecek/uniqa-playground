@@ -26,6 +26,8 @@ import { count } from '@/lib/format'
 import { sessionDb } from '@/lib/sessionDb'
 import { downloadReport } from '@/games/kviz/report'
 import type { QuizReport, QuizReportSummary } from '@/games/kviz/types'
+import UiSkeleton from '@/components/ui/UiSkeleton.vue'
+import UiEmpty from '@/components/ui/UiEmpty.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -208,7 +210,7 @@ function badge(id: string): { text: string; tone: 'ok' | 'warn' | 'muted' } {
         </template>
       </AppHeader>
 
-      <main class="admin__body page">
+      <main id="obsah" class="admin__body page">
         <!-- Knihovna -------------------------------------------------------- -->
         <section v-if="!current && !openReport" class="library">
           <header class="library__head">
@@ -234,15 +236,19 @@ function badge(id: string): { text: string; tone: 'ok' | 'warn' | 'muted' } {
             @change="onImportFile"
           />
 
-          <div v-if="quizPacks.packs.length === 0" class="library__blank">
-            <p class="library__empty">
-              Zatím tu není žádný balíček. Založ prázdný tlačítkem Nový, naimportuj JSON,
-              nebo si napřed prohlédni ukázku.
-            </p>
+          <!-- Dokud data nedorazila, není pravda, že tu nic není. -->
+          <UiSkeleton v-if="!quizPacks.loaded" :lines="4" />
+
+          <UiEmpty
+            v-else-if="quizPacks.packs.length === 0"
+            icon="info"
+            title="Zatím tu není žádný balíček"
+            text="Založ prázdný tlačítkem Nový, naimportuj JSON, nebo si napřed prohlédni ukázku."
+          >
             <UiButton size="sm" variant="ghost" @click="onCreateDemo">
               Vytvořit ukázkový kvíz
             </UiButton>
-          </div>
+          </UiEmpty>
 
           <ul v-else class="library__items">
             <li v-for="p in quizPacks.packs" :key="p.id" class="card">
@@ -442,6 +448,6 @@ function badge(id: string): { text: string; tone: 'ok' | 'warn' | 'muted' } {
 .viewer { height: min(80vh, 50rem); }
 
 @media (pointer: coarse) {
-  .rrow__x { min-height: 44px; }
+  .rrow__x { min-height: var(--control-touch); }
 }
 </style>

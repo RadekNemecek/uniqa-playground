@@ -1,5 +1,5 @@
 /* ---------------------------------------------------------------------------
-   Pojišťuj!: designové tokeny
+   Mučírna: designové tokeny
 
    Pravidlo projektu: v komponentách se nepoužívají syrové hodnoty barvy,
    mezery, velikosti písma, poloměru ani trvání animace. Vždy var(--token).
@@ -43,6 +43,17 @@
   --c-text-ink:     #001A31;  /* text na světlé barevné ploše, třeba na týmu */
   --c-on-accent:    #001A31;  /* text na akcentu, ten je světlý: 8,6:1 */
 
+  /* --- Sémantika nad paletou --------------------------------------------- */
+  /* Komponenta sahá na tyhle, ne přímo na rampu. Díky tomu je „změnit
+     vzhled karet" jedna změna tady, ne třicet změn po souborech. */
+  --c-border:       var(--c-line);
+  --c-border-soft:  var(--c-line-soft);
+  --c-bg-card:      var(--c-surface);
+  --c-bg-raised:    var(--c-surface-2);
+  --c-bg-active:    var(--c-surface-3);
+  --c-bg-field:     var(--c-sunken);
+  --c-bg-field-focus: var(--c-sunken-focus);
+
   /* --- Značka ------------------------------------------------------------ */
   /* Modrá UNIQA je #005CA9. Na tmavé ploše by ale zmizela v modré, proto
      akcent zesvětlává. Nese odkazy, focus, primární tlačítko a označení
@@ -60,12 +71,33 @@
   --c-bad-deep:     #B4325A;
   --c-dead:         #000A14;  /* políčko Nepojištěno (nikdo neuhodl) */
 
+  /* --- Obrys a rámeček --------------------------------------------------- */
+  /* Zaměření má v celé aplikaci jednu tloušťku. Dřív bylo 3px zapsané
+     natvrdo na čtyřech místech a v jednom editoru 2px, takže prstenec
+     vypadal pokaždé trochu jinak. */
+  --focus-ring-c:      var(--c-brand);
+  --focus-ring-w:      3px;
+  --focus-ring-offset: 3px;
+  --border-w:          1px;
+  --border-w-strong:   2px;
+
   /* --- Stíny ------------------------------------------------------------- */
   --shadow-sm:   0 1px 2px rgba(0, 0, 0, 0.4);
   --shadow-md:   0 8px 24px -8px rgba(0, 0, 0, 0.6);
   --shadow-lg:   0 24px 64px -16px rgba(0, 0, 0, 0.7);
-  --shadow-glow: 0 0 0 1px var(--c-brand), 0 0 32px -4px var(--c-brand-glow);
+  --shadow-glow: 0 0 0 var(--border-w) var(--c-brand), 0 0 32px -4px var(--c-brand-glow);
   --c-scrim:     rgba(0, 8, 16, 0.76);
+  /* Vnitřní stín a lesk. Dlaždice desky je fyzický panel, takže potřebuje
+     světlo shora a hranu zespodu. Dřív si to každá komponenta kreslila
+     vlastním rgba(), dohromady třináctkrát. */
+  --sheen-strong:     rgba(255, 255, 255, 0.22);
+  --sheen-soft:       rgba(255, 255, 255, 0.10);
+  --sheen-faint:      rgba(255, 255, 255, 0.05);
+  --shade-strong:     rgba(0, 0, 0, 0.40);
+  --shade-soft:       rgba(0, 0, 0, 0.22);
+  --shadow-inset-top: inset 0 1px 0 var(--sheen-soft);
+  --shadow-inset-lip: inset 0 -2px 0 var(--shade-strong);
+  --shadow-inset-well: inset 0 2px 6px var(--shade-soft);
 
   /* --- Jiskra ------------------------------------------------------------ */
   /* Používá se výhradně pro pole Riziko!, protože je to jediný
@@ -117,6 +149,9 @@
 
   /* Rozhraní má pevné velikosti. Nastavení „velikost písma" mění jen
      herní plochu, kde jde o čitelnost z druhého konce místnosti. */
+  /* 2xs nese jen štítky na dlaždici a v soupisce. Dřív to bylo
+     0.625rem zapsané natvrdo na třech místech. */
+  --fs-2xs:  0.625rem;
   --fs-xs:   0.75rem;
   --fs-sm:   0.875rem;
   --fs-md:   1rem;
@@ -188,10 +223,24 @@
   --dur-breathe: 8s;
   --dur-podium-sequence: 10s;
   --dur-podium-place: 900ms;
-  --dur-orbit-score-delay: -4s;
-  --dur-orbit-shape-delay: -18s;
-  --dur-orbit-team-delay: -10s;
-  --dur-orbit-answer-delay: -28s;
+  /* Záporné prodlevy, ne trvání: rozjedou oběžnice na rozcestníku každou
+     v jiné fázi. Vlastní prefix, aby je `--dur-*` nesváděl nulovat. */
+  --delay-orbit-score:  -4s;
+  --delay-orbit-shape:  -18s;
+  --delay-orbit-team:   -10s;
+  --delay-orbit-answer: -28s;
+
+  /* Hotové sady přechodů. `transition: all` je levné napsat a drahé
+     dobrat: přechází i to, co přecházet nemá, a v seznamu se pak hledá,
+     proč něco poskakuje. Tyhle dvě pokryjí skoro všechno. */
+  --tr-surface:
+    color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+  --tr-enter:
+    opacity var(--dur-base) var(--ease-out),
+    transform var(--dur-base) var(--ease-out);
 
   --ease-out:  cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in:   cubic-bezier(0.7, 0, 0.84, 0);
@@ -199,39 +248,51 @@
   --ease-back: cubic-bezier(0.34, 1.56, 0.64, 1);
 
   /* --- Rozvržení --------------------------------------------------------- */
+  /* Breakpointy jsou tři a jinde se žádné nezavádí. V médiích se custom
+     property použít nedá, takže je tenhle seznam jediné místo, kde se
+     dohodneme, a dodržuje se ručně:
+
+       560px  malý telefon a nízké okno (často spolu s max-height)
+       720px  úzko: matice se mění v seznam, dva sloupce v jeden
+       960px  užší notebook: postranní sloupec jde pod obsah
+
+     Dřív jich bylo sedm (480/560/640/720/760/860/960) a lámalo to
+     na každé obrazovce jinde. */
   --page-max: 1440px;
   --content-narrow: 48rem;
   --header-h: 4.75rem;
   --header-h-compact: 4rem;
-  --control-sm: 2.5rem;
+  /* Škála ovládacích prvků. Bez ní si každá obrazovka vymýšlela vlastní
+     rozměr a vznikl zvěřinec od 1,1 do 4,75 rem: tlačítka, která jsou
+     skoro, ale ne úplně stejně velká, čte oko jako nedodělanou práci. */
+  --control-xs:    1.75rem;
+  --control-sm:    2.25rem;
+  --control-md:    2.5rem;
+  --control-lg:    2.75rem;
+  /* Dotykový cíl. Stejná hodnota jako --control-lg, ale vlastní jméno:
+     tohle je požadavek přístupnosti, ne volba velikosti. */
   --control-touch: 2.75rem;
-  --mark-size: 1.5rem;
+
+  /* Ikony. Jedna škála a jedna tloušťka tahu, jinak mají dvě ikony vedle
+     sebe v jedné hlavičce jiný vzhled. */
+  --icon-xs:     12px;
+  --icon-sm:     14px;
+  --icon-md:     16px;
+  --icon-lg:     20px;
+  --icon-xl:     24px;
+  --icon-stroke: 2;
+  --mark-size: 2rem;
   --mark-gap: 2px;
   --separator-w: 1px;
-  --home-visual: 28rem;
-  --home-visual-mobile: 20rem;
-  --home-token: 4.5rem;
-  --home-preview-h: 14rem;
-  --home-perspective: 40rem;
-  --home-hero-min: 34rem;
-  --home-aside-min: 18rem;
-  --home-aside-mid: 14rem;
-  --home-card-side-min: 17rem;
-  --quiz-lobby-qr-col: 28rem;
-  --quiz-qr-max: 34rem;
-  --quiz-qr-vmax: 54vh;
-  --quiz-lobby-room-min: 24rem;
-  /* Karta hráče v čekárně a zvíře na ní. */
-  --quiz-lobby-card: 8.5rem;
-  --quiz-lobby-ava: 4rem;
-  --quiz-stage-max: 84rem;
-  --quiz-prompt-max: 64rem;
-  --quiz-stage-footer: 5rem;
+  /* Rozvržení jedné obrazovky sem nepatří: --home-* a --quiz-* teď žijí
+     ve `<style scoped>` svých komponent. Tady zůstává jen to, co používá
+     víc než jedno místo. */
   /* Pás s časomírou nad otázkou. Drží ho i fáze bez ní, aby obsah pod
      ním nepoposkočil. Stejný v obou hrách. */
   --stage-timer-h: 3.5rem;
   --z-board: 1;
   --z-header: 20;
+  --z-menu: 30;
   --z-stage: 60;
   --z-results: 120;
   /* Modal musí být nad výsledky: potvrzení „hrát znovu" jde z výherní desky. */

@@ -1,7 +1,11 @@
-# Playground
+# Mučírna
 
 Interaktivní hry pro školení týmů. Běží jako statická webová aplikace,
 hostovaná na GitHub Pages.
+
+Jakmile hra začne, rozhraní aplikace z plátna zmizí a zůstane jen
+moderátorský pás, který se po chvíli sám schová. Na projektoru je tedy
+hra, ne nástroj, ve kterém běží.
 
 **Pojišťuj!** je deska kategorií a bodových hodnot. Jeden až šest týmů,
 vlastní otázky, časomíra a pole **Riziko!**, kde tým před otázkou vsadí
@@ -60,8 +64,18 @@ jsou obyčejná tlačítka.
 | Esc | zavře políčko bez bodování |
 | ? | vypíše tenhle přehled přímo ve hře |
 
-Tlačítko **Zpět** vrátí poslední bodování včetně stavu políčka. Rozehraná hra
-přežije obnovení stránky i pád prohlížeče.
+Po desce se dá chodit **šipkami**, Enter políčko otevře. Moderátorka se
+tak mezi otázkami nemusí vracet k trackpadu.
+
+Tlačítko **Zpět** vrátí poslední bodování včetně stavu políčka a je
+dostupné i z obrazovky výsledků, kam se po poslední otázce skáče samo.
+Rozehraná hra přežije obnovení stránky i pád prohlížeče, včetně
+zbývajícího času na otázce.
+
+Pole **Riziko!** jsou na desce poznat dopředu, teplou hranou a štítkem.
+Před potvrzením sázky je vidět, kolik tým při špatné odpovědi doopravdy
+ztratí: se zapnutým „Skóre nejméně nula" může být ta částka menší než
+sázka, a tým na nule neztratí nic.
 
 ## Jak se vede Na kolik to dáš?
 
@@ -71,13 +85,20 @@ přežije obnovení stránky i pád prohlížeče.
    odpověď. Pořadí otázek i možností se zamíchá.
 3. Na plátně se objeví **kód a QR**. Účastníci se připojí telefonem, dostanou
    zvíře, které si můžou vyměnit, zadají přezdívku a naskáčou do soupisky.
+   Kdo QR nenačte, zadá kód ručně na adrese `/k`. Přejmenovat nebo vyhodit
+   hráče jde i za běhu hry, tlačítkem **Hráči** v pásu nahoře.
 4. **Mezerník** vede celou hru: zamkne odpovídání, odhalí správnou možnost,
    poučku i rozložení hlasů, ukáže tři nejlepší a pustí další otázku. Na plátně je
    vždycky vidět, co udělá další stisk. Jakmile odpoví všichni, odhalí se
    správná možnost sama, a stejně tak po vypršení limitu. Na další otázku
    se ale nikdy nepostoupí bez tebe.
 5. Po poslední otázce je vyhlášení a **vyhodnocení**: otázky seřazené od
-   nejhůř zvládnuté a tabulka, kdo co škrtl. Dá se stáhnout jako CSV.
+   nejhůř zvládnuté, u každé rozložení hlasů (je vidět, po které špatné
+   možnosti sáhla většina) a tabulka, kdo co škrtl. Dá se stáhnout jako
+   CSV i s datem, balíčkem a názvem skupiny v hlavičce.
+
+Po odhalení vidí hráč na telefonu i **poučku**, tedy to, kvůli čemu se
+kvíz hraje, ne jen jestli měl pravdu.
 
 První otázka má pětivteřinovou předehru. Na plátně se drží „Připrav se",
 aby se telefony stihly dozvědět, že hra začala, a odemkly tlačítka ve
@@ -103,13 +124,27 @@ npm run dev:lan
 ```
 
 Vite vypíše vedle místní adresy i **Network**, například
-`http://192.168.2.136:5173/uniqa-playground/`. Otevři Playground na ní a QR
+`http://192.168.2.136:5173/uniqa-playground/`. Otevři Mučírnu na ní a QR
 kód se opraví sám. Kdyby ses přesto ocitla na `localhost`, čekárna to
 vypíše červeně, takže na to nepřijdeš až před plnou místností.
 
 Síťová adresa je z pohledu prohlížeče jiné místo než `localhost`. Pro hraní
 to ničemu nevadí, připravené balíčky jsou dostupné bez hesla. Pokud chceš
 na síťové adrese otázky také upravovat, správu tam odemkni zvlášť.
+
+## Co zůstane po hře
+
+Obě hry si pamatují, co se odehrálo. V přípravě se dá vyplnit **skupina**
+(nepovinné) a podle ní se pak dá archiv číst.
+
+- **Pojišťuj!** zapíše po dohrání skóre týmů a úspěšnost po kategoriích.
+  Přehled je ve správě otázek pod knihovnou balíčků. Drží se v prohlížeči
+  na tom počítači, ze kterého se hrálo, posledních padesát her.
+- **Na kolik to dáš?** ukládá celé vyhodnocení do sdílené databáze,
+  seznam je na `/kviz/otazky`.
+
+Jsou v tom přezdívky účastníků, takže k nim patří i doba uchování. Je
+popsaná v [`DEPLOY.md`](DEPLOY.md).
 
 ## Nasazení a sdílení otázek
 
@@ -186,6 +221,7 @@ dodělat ve správě, místo aby soubor odmítl celý.
 | `npm run dev` | vývojový server |
 | `npm run dev:lan` | totéž, ale dostupné i z telefonů na stejné wifi |
 | `npm run dev:local` | totéž, ale data zůstanou jen v prohlížeči, sdílená databáze se nedotkne |
+| `npm run dev:local:alt` | totéž na portu 5186, když první lokální server už běží |
 | `npm run build` | kontrola typů a produkční sestavení |
 | `npm run preview` | náhled produkčního sestavení |
 | `npm run typecheck` | jen kontrola typů |
@@ -199,7 +235,8 @@ src/
   games/kviz/       kvíz: komponenty, losování, bodování, vyhodnocení
   games/registry.ts seznam her na rozcestníku
   components/admin/ správa balíčků desky
-  components/ui/    sdílené prvky rozhraní
+  components/ui/    sdílené prvky rozhraní: tlačítka, okna, pole, ikony
+  components/PresentationBar.vue  pás nad běžící hrou
   stores/           stav: balíčky, hra, živá session, nastavení, oznámení
   lib/              úložiště, Firebase, živá session, animace, zvuk, konfety
   styles/tokens.css jediné místo pro barvy, mezery, písma a časování

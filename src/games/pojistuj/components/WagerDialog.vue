@@ -4,10 +4,34 @@ import type { Team } from '@/types'
 import UiButton from '@/components/ui/UiButton.vue'
 import { teamBadge, teamColor, formatScore } from '@/lib/teams'
 
-const props = defineProps<{ team: Team; teamIndex: number; max: number; base: number }>()
+const props = defineProps<{
+  team: Team
+  teamIndex: number
+  max: number
+  base: number
+  /** Skóre se při odečtu nezastaví pod nulou. Mění, co tým reálně riskuje. */
+  floorZero: boolean
+}>()
 const emit = defineEmits<{ confirm: [amount: number]; cancel: [] }>()
 
-const amount = ref(props.base)
+/**
+ * Nejnižší sázka. Nula se dala vsadit a otázka za 800 se pak hrála o nic,
+ * zatímco na plátně svítilo velké „0".
+ */
+const MIN = computed(() => Math.min(10, props.max))
+
+const amount = ref(Math.max(props.base, 10))
+
+/**
+ * Co tým při špatné odpovědi doopravdy ztratí.
+ *
+ * Se zapnutým „Skóre nejméně nula" se odečte jen to, co na kontě je.
+ * Tým na nule tedy nemůže prohrát nic, a to musí být na plátně vidět,
+ * než sázku potvrdí, ne až když si to v sále někdo spočítá nahlas.
+ */
+const realLoss = computed(() =>
+  props.floorZero ? Math.min(amount.value, Math.max(0, props.team.score)) : amount.value,
+)
 const root = ref<HTMLElement | null>(null)
 const slider = ref<HTMLInputElement | null>(null)
 
@@ -17,7 +41,7 @@ const steps = computed(() => {
 })
 
 function confirm() {
-  emit('confirm', Math.min(props.max, Math.max(0, Math.round(amount.value))))
+  emit('confirm', Math.min(props.max, Math.max(MIN.value, Math.round(amount.value))))
 }
 
 /**
@@ -67,12 +91,18 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey, true))
 
       <output class="wager__amount">{{ formatScore(amount) }}</output>
 
+      <p class="wager__risk" :class="{ 'wager__risk--none': realLoss === 0 }">
+        <template v-if="realLoss === amount">Při špatné odpovědi ztratí {{ formatScore(amount) }}.</template>
+        <template v-else-if="realLoss === 0">Tým je na nule, takže při špatné odpovědi neztratí nic.</template>
+        <template v-else>Při špatné odpovědi ztratí jen {{ formatScore(realLoss) }}, víc na kontě nemá.</template>
+      </p>
+
       <input
         ref="slider"
         v-model.number="amount"
         class="wager__slider"
         type="range"
-        min="0"
+        :min="MIN"
         :max="max"
         :step="Math.max(10, Math.round(max / 20))"
         :aria-label="`Sázka, maximum ${max}`"
@@ -97,6 +127,13 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey, true))
 </template>
 
 <style scoped>
+.wager__risk {
+  font-size: var(--fs-sm);
+  color: var(--c-text-muted);
+  text-align: center;
+}
+.wager__risk--none { color: var(--c-spark); font-weight: 700; }
+
 .wager {
   position: fixed;
   inset: 0;

@@ -1,7 +1,11 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import AppSettings from '@/components/AppSettings.vue'
+import UiIconButton from '@/components/ui/UiIconButton.vue'
+import UiIcon from '@/components/ui/UiIcon.vue'
 import { GAMES } from '@/games/registry'
+import { degraded } from '@/stores/ui'
+import brandMarkUrl from '@/assets/mucirna-mark.png'
 
 const props = withDefaults(
   defineProps<{
@@ -18,27 +22,37 @@ const isFullscreen = ref(false)
 
 async function toggleFullscreen() {
   try {
-    if (document.fullscreenElement) {
-      await document.exitFullscreen()
-      isFullscreen.value = false
-    } else {
-      await document.documentElement.requestFullscreen()
-      isFullscreen.value = true
-    }
+    if (document.fullscreenElement) await document.exitFullscreen()
+    else await document.documentElement.requestFullscreen()
   } catch {
     /* Prohlížeč může celou obrazovku odmítnout. */
   }
 }
+
+/**
+ * Stav čteme z prohlížeče, ne z vlastního přepínače.
+ *
+ * Z celé obrazovky se dá odejít Escapem nebo F11, o čemž se tlačítko
+ * nikdy nedozví. Ikona pak ukazovala „opustit" i po návratu a další klik
+ * celou obrazovku zapnul místo vypnul.
+ */
+function syncFullscreen() {
+  isFullscreen.value = document.fullscreenElement !== null
+}
+
+onMounted(() => {
+  syncFullscreen()
+  document.addEventListener('fullscreenchange', syncFullscreen)
+})
+onBeforeUnmount(() => document.removeEventListener('fullscreenchange', syncFullscreen))
 </script>
 
 <template>
   <header class="head" :class="{ 'head--compact': compact }">
     <div class="identity">
-      <RouterLink to="/" class="brand" aria-label="Playground, vybrat jinou hru">
-        <span class="brand__mark" aria-hidden="true">
-          <span></span><span></span><span></span><span></span>
-        </span>
-        <span class="brand__name">Playground</span>
+      <RouterLink to="/" class="brand" aria-label="Mučírna, vybrat jinou hru">
+        <img class="brand__mark" :src="brandMarkUrl" alt="" />
+        <span class="brand__name">Mučírna</span>
       </RouterLink>
 
       <template v-if="currentGame">
@@ -71,18 +85,20 @@ async function toggleFullscreen() {
     <p v-else class="head__context">Vyber si hru</p>
 
     <div class="tools">
-      <button type="button" class="tool" title="Celá obrazovka" aria-label="Celá obrazovka" @click="toggleFullscreen">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-          <path v-if="!isFullscreen" d="M4 9V5a1 1 0 0 1 1-1h4M20 9V5a1 1 0 0 0-1-1h-4M4 15v4a1 1 0 0 0 1 1h4M20 15v4a1 1 0 0 1-1 1h-4" />
-          <path v-else d="M9 4v4a1 1 0 0 1-1 1H4M15 4v4a1 1 0 0 0 1 1h4M9 20v-4a1 1 0 0 0-1-1H4M15 20v-4a1 1 0 0 1 1-1h4" />
-        </svg>
-      </button>
-      <button type="button" class="tool" title="Nastavení" aria-label="Nastavení" @click="settingsOpen = true">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-          <circle cx="12" cy="12" r="3" />
-          <path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1" />
-        </svg>
-      </button>
+      <!-- Degradovaný režim musí zůstat vidět. Oznámení, které zmizí,
+           nestačí: chybí balíčky kolegů a telefony se nemají kam
+           připojit, a přijde se na to až před místností. -->
+      <span v-if="degraded.local" class="local" title="Sdílená databáze není dostupná. Otázky se berou jen z tohoto počítače.">
+        <UiIcon name="warning" size="sm" />
+        Jen tento počítač
+      </span>
+      <UiIconButton
+        :icon="isFullscreen ? 'fullscreen-exit' : 'fullscreen'"
+        :label="isFullscreen ? 'Opustit celou obrazovku' : 'Celá obrazovka'"
+        :pressed="isFullscreen"
+        @click="toggleFullscreen"
+      />
+      <UiIconButton icon="settings" label="Nastavení" @click="settingsOpen = true" />
       <slot name="tools" />
     </div>
   </header>
@@ -108,17 +124,14 @@ async function toggleFullscreen() {
 .identity { display: flex; align-items: center; min-width: 0; gap: var(--sp-3); }
 .brand { display: inline-flex; flex: none; align-items: center; gap: var(--sp-3); color: var(--c-text); text-decoration: none; }
 .brand__mark {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: var(--mark-gap);
+  flex: none;
   width: var(--mark-size);
   height: var(--mark-size);
+  object-fit: contain;
 }
-.brand__mark span { border-radius: var(--r-xs); background: color-mix(in oklab, var(--c-brand) 30%, var(--c-surface)); }
-.brand__mark span:first-child { background: var(--c-brand); }
 .brand__name { font-weight: 900; font-size: var(--fs-lg); letter-spacing: -0.02em; }
 
-.identity__slash { width: var(--separator-w); height: var(--sp-6); background: var(--c-line); transform: rotate(18deg); }
+.identity__slash { width: var(--separator-w); height: var(--sp-6); background: var(--c-border); transform: rotate(18deg); }
 .identity__game {
   min-width: 0;
   overflow: hidden;
@@ -136,7 +149,7 @@ async function toggleFullscreen() {
   grid-template-columns: repeat(2, 1fr);
   gap: var(--sp-1);
   padding: var(--sp-1);
-  border: 1px solid var(--c-line-soft);
+  border: var(--border-w) solid var(--c-border-soft);
   border-radius: var(--r-full);
   background: color-mix(in oklab, var(--c-sunken) 74%, transparent);
 }
@@ -155,20 +168,24 @@ async function toggleFullscreen() {
 
 .head__context { justify-self: center; color: var(--c-text-faint); font-size: var(--fs-sm); font-weight: 700; }
 .tools { display: flex; justify-self: end; align-items: center; gap: var(--sp-2); }
-.tool {
-  display: grid;
-  place-items: center;
-  width: var(--control-sm);
-  height: var(--control-sm);
-  border: 1px solid var(--c-line);
-  border-radius: var(--r-md);
-  background: color-mix(in oklab, var(--c-surface) 55%, transparent);
-  color: var(--c-text-muted);
-  transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out);
+.local {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-1) var(--sp-3);
+  border: var(--border-w) solid color-mix(in oklab, var(--c-bad) 45%, transparent);
+  border-radius: var(--r-full);
+  background: color-mix(in oklab, var(--c-bad) 12%, transparent);
+  color: var(--c-bad);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  white-space: nowrap;
 }
-.tool:hover { color: var(--c-text); border-color: var(--c-surface-3); background: var(--c-surface); }
+@media (max-width: 720px) {
+  .local { display: none; }
+}
 
-@media (max-width: 760px) {
+@media (max-width: 720px) {
   .head { grid-template-columns: minmax(0, 1fr) auto; }
   .nav { grid-row: 2; grid-column: 1 / -1; width: 100%; }
   .head__context { display: none; }
@@ -177,7 +194,6 @@ async function toggleFullscreen() {
 
 @media (pointer: coarse) {
   .brand { min-height: var(--control-touch); min-width: var(--control-touch); }
-  .tool { width: var(--control-touch); height: var(--control-touch); }
   .nav__item { min-height: var(--control-touch); padding-block: var(--sp-3); }
 }
 </style>

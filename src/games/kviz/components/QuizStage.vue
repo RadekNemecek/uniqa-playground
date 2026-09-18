@@ -22,7 +22,7 @@ const props = defineProps<{
   counts: number[] | null
 }>()
 
-const emit = defineEmits<{ expired: [] }>()
+const emit = defineEmits<{ expired: []; hint: [string] }>()
 
 const body = ref<HTMLElement | null>(null)
 const fit = (): Promise<void> => fitToScreen(body)
@@ -103,7 +103,8 @@ function shareFor(i: number): number {
 const noteUp = computed(() => revealed.value && props.question.note.trim().length > 0)
 
 /** Co udělá mezerník. Na plátně to musí být vidět, aby se nedalo omylem
- *  přeskočit odhalení. */
+ *  přeskočit odhalení. Nese ho moderátorský pás nad hrou, ne patička:
+ *  odtamtud se dá přečíst i z poslední řady. */
 const hint = computed(() => {
   switch (props.phase) {
     case 'question':
@@ -129,6 +130,9 @@ const footNote = computed(() => {
   if (props.players > 0 && props.answered >= props.players) return 'Všichni odpověděli'
   return 'Odpovídání zastaveno'
 })
+
+// Nápovědu drží pás nad hrou, takže mu ji musíme poslat nahoru.
+watch(hint, (v) => emit('hint', v), { immediate: true })
 
 // Otázka i možnosti se musí vejít na jednu obrazovku. Měří se, neodhaduje.
 // Fáze rozložení nemění, proto se při vyhodnocení znovu nepřepočítává:
@@ -220,13 +224,16 @@ onBeforeUnmount(() => {
 
     <footer class="stage__foot">
       <p class="stage__locked">{{ footNote }}</p>
-      <p class="stage__hint">{{ hint }}</p>
     </footer>
   </section>
 </template>
 
 <style scoped>
+/* Rozměry plátna kvízu. Používá je jen tahle obrazovka. */
 .stage {
+  --quiz-stage-max: 84rem;
+  --quiz-stage-footer: 5rem;
+
   display: grid;
   grid-template-rows: auto auto 1fr auto;
   gap: var(--sp-3);
@@ -408,13 +415,6 @@ onBeforeUnmount(() => {
   text-align: center;
   color: var(--c-text-muted);
 }
-.stage__hint {
-  font-size: var(--fs-xs);
-  text-align: center;
-  color: var(--c-text-faint);
-  letter-spacing: 0.02em;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .stage__prompt,
   .stage__options > li { animation: none; }

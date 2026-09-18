@@ -8,9 +8,35 @@ import { sfx } from '@/lib/sound'
 import { settings } from '@/stores/settings'
 import { count } from '@/lib/format'
 import { duration, prefersReducedMotion } from '@/lib/motion'
+import { buildRun, saveRun } from '@/games/pojistuj/runLog'
 
-const props = defineProps<{ game: GameState }>()
-const emit = defineEmits<{ again: []; rematch: []; board: [] }>()
+const props = defineProps<{ game: GameState; canUndo?: boolean }>()
+const emit = defineEmits<{ again: []; rematch: []; board: []; undo: [] }>()
+
+/**
+ * Oslava se pouští jednou za hru.
+ *
+ * Stav hry přežívá obnovení stránky, takže F5 na výsledcích znovu
+ * vystřelilo konfety a pustilo fanfáru. Před sálem to vypadá, že to někdo
+ * omylem spustil podruhé. Klíč nese id hry, aby další hra slavila znovu.
+ */
+const CELEBRATED_KEY = 'playground.celebrated.v1'
+
+function alreadyCelebrated(): boolean {
+  try {
+    return localStorage.getItem(CELEBRATED_KEY) === props.game.id
+  } catch {
+    return false
+  }
+}
+
+function markCelebrated(): void {
+  try {
+    localStorage.setItem(CELEBRATED_KEY, props.game.id)
+  } catch {
+    /* Soukromé okno nebo zakázané úložiště. Oslava se prostě zopakuje. */
+  }
+}
 
 const fx = ref<HTMLElement | null>(null)
 
@@ -112,12 +138,18 @@ function riseOrder(row: CoverRow, index: number): number {
 let celebrateTimer = 0
 
 function fireCelebration(): void {
+  if (alreadyCelebrated()) return
+  markCelebrated()
   const colors = winners.value.map((t) => teamColor(t.color).hex)
   confetti(colors, fx.value ?? undefined)
   if (settings.sound) sfx.fanfare()
 }
 
 onMounted(async () => {
+  // Zápis do archivu. Dřív hra skončila a nezůstalo po ní nic, přestože
+  // právě výsledek je to, co se ukazuje dál.
+  saveRun(buildRun(props.game, props.game.groupName))
+
   await nextTick()
 
   if (prefersReducedMotion()) {
@@ -228,11 +260,21 @@ onUnmounted(() => {
         <p class="results__meta">
           {{ game.packName }}
           · {{ count(Object.keys(game.cells).length, 'otázka', 'otázky', 'otázek') }}
+          <!-- „Nepojištěno" je název stavu políčka, ne počitatelné slovo.
+               `count()` je na skloňování; protlačit ho tudy vypsalo na
+               plátno „7 Nepojištěno", což se čte jako překlep. -->
           <template v-if="coverageTotal">
-            · {{ count(coverageTotal, 'Nepojištěno', 'Nepojištěno', 'Nepojištěno') }}
+            · {{ count(coverageTotal, 'nepojištěné pole', 'nepojištěná pole', 'nepojištěných polí') }}
           </template>
         </p>
         <div class="results__actions">
+          <!-- Po poslední otázce se na výsledky skáče automaticky a pás
+               s tlačítkem Zpět zůstane pod touhle vrstvou. Bez tohohle
+               tlačítka by se poslední špatně přiznaný bod nedal opravit
+               jinak než zavřením slavnostní obrazovky před celým sálem. -->
+          <UiButton v-if="canUndo" variant="ghost" icon="undo" @click="emit('undo')">
+            Vrátit poslední bodování
+          </UiButton>
           <UiButton variant="ghost" @click="emit('board')">Zpět na desku</UiButton>
           <UiButton variant="ghost" @click="emit('again')">Jiná sestava</UiButton>
           <UiButton variant="brand" size="lg" @click="emit('rematch')">Stejné týmy znovu</UiButton>

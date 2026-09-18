@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { nextTick, onBeforeUnmount, onMounted, ref, useId, watch } from 'vue'
+import UiIconButton from '@/components/ui/UiIconButton.vue'
+import { lockScroll, unlockScroll } from '@/lib/scrollLock'
 
 const props = withDefaults(
   defineProps<{ open: boolean; title: string; size?: 'sm' | 'md' | 'lg'; dismissible?: boolean }>(),
@@ -8,6 +10,32 @@ const props = withDefaults(
 const emit = defineEmits<{ close: [] }>()
 
 const panel = ref<HTMLElement | null>(null)
+const titleId = useId()
+
+/**
+ * Prvky, na které smí skočit tabulátor.
+ *
+ * Filtr na `disabled` a na skryté je podstatný: bez něj mohl být prvním
+ * prvkem zakázaný knoflík, Shift+Tab na začátku seznamu skočil na něco,
+ * co zaměření nepřijme, a past se rozpadla. Tabulátor pak odešel na
+ * stránku za ztmavením.
+ */
+const FOCUSABLE = [
+  'a[href]',
+  'button:not([disabled])',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[contenteditable]:not([contenteditable="false"])',
+  '[tabindex]:not([tabindex="-1"])',
+].join(',')
+
+function focusables(): HTMLElement[] {
+  if (!panel.value) return []
+  return Array.from(panel.value.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
+    (el) => el.offsetParent !== null || el === document.activeElement,
+  )
+}
 
 function onKey(e: KeyboardEvent) {
   if (!props.open) return
@@ -16,9 +44,7 @@ function onKey(e: KeyboardEvent) {
     emit('close')
   }
   if (e.key === 'Tab' && panel.value) {
-    const focusable = panel.value.querySelectorAll<HTMLElement>(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-    )
+    const focusable = focusables()
     if (focusable.length === 0) return
     const first = focusable[0]!
     const last = focusable[focusable.length - 1]!
@@ -38,7 +64,8 @@ let restoreTo: HTMLElement | null = null
 watch(
   () => props.open,
   async (open) => {
-    document.body.style.overflow = open ? 'hidden' : ''
+    if (open) lockScroll()
+    else unlockScroll()
 
     if (open) {
       restoreTo = document.activeElement as HTMLElement | null
@@ -66,21 +93,25 @@ watch(
 onMounted(() => window.addEventListener('keydown', onKey, true))
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onKey, true)
-  document.body.style.overflow = ''
+  if (props.open) unlockScroll()
 })
 </script>
 
 <template>
   <Teleport to="body">
     <Transition name="modal">
-      <div v-if="open" class="modal" role="dialog" aria-modal="true" :aria-label="title">
+      <div v-if="open" class="modal" role="dialog" aria-modal="true" :aria-labelledby="titleId">
         <div class="modal__scrim" @click="dismissible && emit('close')" />
         <div ref="panel" class="modal__panel" :class="`modal__panel--${size}`" tabindex="-1">
           <header class="modal__head">
-            <h2 class="modal__title">{{ title }}</h2>
-            <button v-if="dismissible" class="modal__x" type="button" aria-label="Zavřít" @click="emit('close')">
-              &#215;
-            </button>
+            <h2 :id="titleId" class="modal__title">{{ title }}</h2>
+            <UiIconButton
+              v-if="dismissible"
+              icon="close"
+              label="Zavřít"
+              variant="plain"
+              @click="emit('close')"
+            />
           </header>
           <div class="modal__body"><slot /></div>
           <footer v-if="$slots.footer" class="modal__foot"><slot name="footer" /></footer>
@@ -124,24 +155,9 @@ onBeforeUnmount(() => {
   justify-content: space-between;
   gap: var(--sp-4);
   padding: var(--sp-5) var(--sp-5) var(--sp-4);
-  border-bottom: 1px solid var(--c-line-soft);
+  border-bottom: var(--border-w) solid var(--c-border-soft);
 }
 .modal__title { font-size: var(--fs-xl); }
-.modal__x {
-  border: 0;
-  background: transparent;
-  color: var(--c-text-muted);
-  font-size: 1.75rem;
-  line-height: 1;
-  padding: 0 var(--sp-2);
-  border-radius: var(--r-sm);
-}
-.modal__x:hover { color: var(--c-text); }
-
-@media (pointer: coarse) {
-  .modal__x { width: 2.75rem; height: 2.75rem; }
-}
-
 .modal__body { padding: var(--sp-5); overflow-y: auto; }
 .modal__foot {
   display: flex;

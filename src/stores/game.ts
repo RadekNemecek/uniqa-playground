@@ -43,6 +43,12 @@ export function restoreGame(): void {
           parsed.turnTeamIndex = parsed.activeTeamIndex
         }
       }
+      // Hry uložené před zavedením časomíry v modelu. Null znamená
+      // „nevím, kdy se otevřela", a časomíra pak začne od plné hodnoty
+      // jako dřív.
+      if (parsed.openedAt === undefined) parsed.openedAt = null
+      if (parsed.groupName === undefined) parsed.groupName = ''
+
       for (const entry of parsed.history ?? []) {
         if (typeof entry.turnTeamIndex !== 'number') {
           entry.turnTeamIndex = entry.activeTeamIndex
@@ -131,8 +137,10 @@ export function startGame(pack: Pack, setup: GameSetup): GameState {
     },
     phase: 'board',
     openCell: null,
+    openedAt: null,
     wager: null,
     startedAt: Date.now(),
+    groupName: setup.groupName ?? '',
     history: [],
   }
 
@@ -198,6 +206,7 @@ export function selectCell(key: string): void {
   if (g.cells[key]?.status !== 'open') return
   g.openCell = key
   g.wager = null
+  g.openedAt = Date.now()
   g.phase = 'question'
 }
 

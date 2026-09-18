@@ -13,8 +13,18 @@ import { formatScore } from '@/lib/teams'
 import { count, plural } from '@/lib/format'
 import { downloadPack } from '@/lib/packIo'
 import { useMediaQuery, WIDE } from '@/lib/media'
+import UiIcon from '@/components/ui/UiIcon.vue'
 
+/**
+ * Kolik kategorií smí balíček mít.
+ *
+ * Je jich víc, než kolik se vejde na desku (šest), aby si autorka mohla
+ * držet zásobu a před hrou vybírat. Editor to musí říct nahlas, jinak
+ * napíše sedmou kategorii a diví se, proč se v přípravě nenabídne.
+ */
 const MAX_CATEGORIES = 8
+/** Kolik jich projde do jedné hry. Sedí s MAX_CATEGORIES v GameSetup.vue. */
+const PLAYABLE_CATEGORIES = 6
 const MAX_ROWS = 8
 
 const props = defineProps<{ pack: Pack }>()
@@ -260,14 +270,14 @@ function onExport() {
   <div class="ed" :class="{ 'ed--split': panelInline }">
     <header class="ed__bar">
       <button type="button" class="ed__back" @click="emit('back')">
-        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="m15 5-7 7 7 7" /></svg>
+        <UiIcon name="chevron-left" size="sm" />
         Balíčky
       </button>
 
       <p class="ed__save" :data-state="saveState">
         <span v-if="saveState === 'saving'">Ukládám…</span>
         <span v-else-if="saveState === 'saved'" class="ed__saved">
-          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
+          <UiIcon name="check" size="sm" />
           Uloženo
         </span>
       </p>
@@ -341,6 +351,14 @@ function onExport() {
 
     <div class="ed__workspace">
       <div class="ed__board">
+        <!-- Deska na plátně unese šest sloupců. Balíček jich smí mít víc
+             jako zásobu, ale autorka to musí vědět tady, kde kategorie
+             vznikají, ne až v přípravě hry. -->
+        <p v-if="draft.categories.length > PLAYABLE_CATEGORIES" class="ed__overflow">
+          Do jedné hry jde nejvýš {{ PLAYABLE_CATEGORIES }} kategorií. Zbytek zůstane
+          v balíčku jako zásoba a vybereš si v přípravě.
+        </p>
+
         <BoardEditor
           :categories="draft.categories"
           :ladder="draft.ladder"
@@ -524,6 +542,17 @@ function onExport() {
   grid-template-columns: minmax(0, 1fr) minmax(18rem, 24rem);
   align-items: start;
 }
+.ed__overflow {
+  margin-bottom: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border: var(--border-w) solid color-mix(in oklab, var(--c-brand) 40%, transparent);
+  border-radius: var(--r-md);
+  background: var(--c-brand-wash);
+  color: var(--c-text-muted);
+  font-size: var(--fs-sm);
+  line-height: 1.4;
+}
+
 .ed__board { display: grid; gap: var(--sp-3); min-width: 0; }
 .ed__hint { font-size: var(--fs-xs); color: var(--c-text-faint); }
 
@@ -575,7 +604,7 @@ function onExport() {
   .ed__back { min-height: 2.75rem; }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 720px) {
   .dialog { padding: 0; place-items: stretch; }
   .dialog__panel {
     width: 100%;

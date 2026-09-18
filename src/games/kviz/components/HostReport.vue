@@ -5,7 +5,7 @@ import { quizOption } from '../options'
 import { byDifficulty, successRate } from '../report'
 import { count } from '@/lib/format'
 import { formatScore } from '@/lib/teams'
-import type { QuizReport } from '../types'
+import type { QuizReport, QuizReportQuestion } from '../types'
 
 const props = defineProps<{ report: QuizReport }>()
 const emit = defineEmits<{ close: []; download: [] }>()
@@ -30,6 +30,16 @@ function cellOf(qIndex: number, playerAt: number): string {
 }
 
 const label: Record<string, string> = { ano: '✓', ne: '×', nic: '–', nebyl: '' }
+
+/**
+ * Past: špatná možnost, po které sáhla aspoň třetina odpovídajících.
+ * Tohle je ten řádek, kvůli kterému se vyhodnocení čte, takže se
+ * zvýrazní.
+ */
+function isTrap(q: QuizReportQuestion, at: number): boolean {
+  if (at === q.correctIndex || q.answered === 0) return false
+  return (q.byChoice[at] ?? 0) / q.answered >= 1 / 3
+}
 </script>
 
 <template>
@@ -81,6 +91,30 @@ const label: Record<string, string> = { ano: '✓', ne: '×', nic: '–', nebyl:
           <p v-if="q.answered < q.present" class="q__miss">
             {{ q.present - q.answered }} bez odpovědi
           </p>
+
+          <!-- Kam lidé sáhli. Počítalo se to od začátku, ukládalo se to
+               a nikde se to nezobrazilo. Přitom „většina si vybrala tuhle
+               jednu špatnou možnost" je to nejužitečnější, co z kvízu
+               vypadne: neříká jen že to neumí, ale co si myslí místo toho. -->
+          <ul v-if="q.answered > 0" class="picks">
+            <li
+              v-for="(n, at) in q.byChoice"
+              :key="at"
+              class="pick"
+              :class="{ 'pick--right': at === q.correctIndex, 'pick--trap': isTrap(q, at) }"
+            >
+              <span class="pick__letter" :style="{ color: `var(${quizOption(at).color.cssVar})` }">
+                <!-- Tvrzení má dvě možnosti a jejich znění se ukládá,
+                     takže se pozná podle délky pole; písmeno by u Pravda
+                     a Nepravda nic neřeklo. -->
+                {{ q.options.length === 2 ? q.options[at] : quizOption(at).letter }}
+              </span>
+              <span class="pick__bar" aria-hidden="true">
+                <span class="pick__fill" :style="{ width: `${Math.round((n / q.answered) * 100)}%` }"></span>
+              </span>
+              <span class="pick__n">{{ n }}</span>
+            </li>
+          </ul>
         </div>
       </li>
     </ol>
@@ -175,6 +209,27 @@ const label: Record<string, string> = { ano: '✓', ne: '×', nic: '–', nebyl:
 .q__answer { margin-top: var(--sp-1); font-size: var(--fs-sm); color: var(--c-text-muted); }
 .q__letter { font-family: var(--font-display); font-weight: 900; margin-right: var(--sp-1); }
 .q__time { margin-left: var(--sp-2); color: var(--c-text-faint); }
+.picks { display: grid; gap: var(--sp-1); margin-top: var(--sp-2); list-style: none; padding: 0; }
+.pick {
+  display: grid;
+  grid-template-columns: 4.5rem minmax(0, 1fr) 2rem;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--fs-xs);
+}
+.pick__letter { font-weight: 900; }
+.pick__bar {
+  height: var(--sp-2);
+  border-radius: var(--r-full);
+  background: var(--c-bg-field);
+  overflow: hidden;
+}
+.pick__fill { display: block; height: 100%; background: var(--c-text-faint); border-radius: var(--r-full); }
+.pick--right .pick__fill { background: var(--c-ok); }
+.pick--trap .pick__fill { background: var(--c-bad); }
+.pick--trap .pick__n { color: var(--c-bad); font-weight: 700; }
+.pick__n { text-align: right; color: var(--c-text-muted); font-variant-numeric: tabular-nums; }
+
 .q__miss { margin-top: var(--sp-1); font-size: var(--fs-xs); color: var(--c-text-faint); }
 
 /* Matice ------------------------------------------------------------------- */
@@ -197,6 +252,6 @@ const label: Record<string, string> = { ano: '✓', ne: '×', nic: '–', nebyl:
 }
 
 @media (pointer: coarse) {
-  .tabs button { min-height: 44px; }
+  .tabs button { min-height: var(--control-touch); }
 }
 </style>

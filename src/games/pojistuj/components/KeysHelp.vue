@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted } from 'vue'
+import UiIconButton from '@/components/ui/UiIconButton.vue'
 
 defineProps<{ open: boolean; steal: boolean }>()
 const emit = defineEmits<{ close: [] }>()
@@ -24,14 +25,26 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey, true))
         <div class="keys__panel">
           <header class="keys__head">
             <h2 class="keys__title">Klávesy</h2>
-            <button type="button" class="keys__x" aria-label="Zavřít" @click="emit('close')">&#215;</button>
+            <UiIconButton icon="close" variant="plain" label="Zavřít" @click="emit('close')" />
           </header>
+          <p class="keys__group">Na desce</p>
+          <dl class="keys__list">
+            <div><dt>Šipky</dt><dd>chodí po políčkách, Home a End skočí na kraj řádku</dd></div>
+            <div><dt>Enter</dt><dd>otevře vybrané políčko</dd></div>
+            <div><dt>Klik na tým</dt><dd>dočasně přesune tah; pořadí jde vrátit tlačítkem</dd></div>
+          </dl>
+
+          <p class="keys__group">Nad otevřenou otázkou</p>
           <dl class="keys__list">
             <div><dt>Mezerník</dt><dd>odhalí odpověď, podruhé potvrdí správnou odpověď týmu na tahu</dd></div>
             <div><dt>N nebo 0</dt><dd>neuhodl nikdo</dd></div>
             <div><dt>1–6</dt><dd>{{ steal ? 'přizná body danému týmu' : 'body jen týmu na tahu (přebírání je vypnuté)' }}</dd></div>
             <div><dt>Esc</dt><dd>zavře políčko bez bodování</dd></div>
-            <div><dt>Klik na tým</dt><dd>dočasně přesune tah; pořadí jde vrátit tlačítkem</dd></div>
+          </dl>
+
+          <p class="keys__group">Kdykoli</p>
+          <dl class="keys__list">
+            <div><dt>Zpět</dt><dd>vrátí poslední bodování včetně stavu políčka, tlačítko v pásu nahoře</dd></div>
             <div><dt>?</dt><dd>tato nápověda</dd></div>
           </dl>
         </div>
@@ -67,15 +80,16 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey, true))
   border-bottom: 1px solid var(--c-line-soft);
 }
 .keys__title { font-size: var(--fs-xl); }
-.keys__x {
-  border: 0;
-  background: transparent;
-  color: var(--c-text-muted);
-  font-size: 1.75rem;
-  line-height: 1;
-  padding: 0 var(--sp-2);
+.keys__group {
+  margin-top: var(--sp-4);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--c-text-faint);
 }
-.keys__x:hover { color: var(--c-text); }
+.keys__group:first-of-type { margin-top: 0; }
+
 .keys__list {
   display: grid;
   gap: var(--sp-3);
@@ -100,6 +114,5 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey, true))
 .keys-enter-from, .keys-leave-to { opacity: 0; }
 
 @media (pointer: coarse) {
-  .keys__x { width: 2.75rem; height: 2.75rem; }
 }
 </style>

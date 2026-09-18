@@ -12,20 +12,20 @@ export default defineConfig({
     vue(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
+      includeAssets: ['favicon.png', 'apple-touch-icon.png'],
       workbox: {
         // Aplikace se po prvním načtení uloží do prohlížeče. Když na
         // školení vypadne síť nebo firemní firewall blokne github.io,
         // hra i tak naběhne.
-        globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,webp,woff2}'],
         navigateFallback: 'index.html',
         cleanupOutdatedCaches: true,
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
       },
       manifest: {
-        name: 'Playground: školicí hry',
-        short_name: 'Playground',
-        description: 'Interaktivní hry pro školení týmů. Pojišťuj! s vlastními otázkami.',
+        name: 'Mučírna: školicí hry',
+        short_name: 'Mučírna',
+        description: 'Interaktivní hry pro školení týmů. Vlastní otázky, hraje se na plátno.',
         lang: 'cs',
         dir: 'ltr',
         start_url: '.',

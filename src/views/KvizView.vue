@@ -1,11 +1,15 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import AppHeader from '@/components/AppHeader.vue'
+import PresentationBar from '@/components/PresentationBar.vue'
+import UiButton from '@/components/ui/UiButton.vue'
+import UiIconButton from '@/components/ui/UiIconButton.vue'
 import HostSetup from '@/games/kviz/components/HostSetup.vue'
 import HostLobby from '@/games/kviz/components/HostLobby.vue'
 import HostScores from '@/games/kviz/components/HostScores.vue'
 import HostFinal from '@/games/kviz/components/HostFinal.vue'
 import HostReport from '@/games/kviz/components/HostReport.vue'
+import HostRoster from '@/games/kviz/components/HostRoster.vue'
 import QuizStage from '@/games/kviz/components/QuizStage.vue'
 import type { QuizPack, QuizSetup } from '@/games/kviz/types'
 import {
@@ -119,25 +123,93 @@ function onKey(e: KeyboardEvent): void {
   }
 }
 
+/** Nápověda z běžící otázky. Ostatní fáze si ji řeknou samy níž. */
+const stageHint = ref('')
+
+const barHint = computed(() => {
+  const q = quiz.value
+  if (!q) return ''
+  switch (q.phase) {
+    case 'lobby':
+      return players.value.length > 0
+        ? 'Mezerník spustí první otázku'
+        : 'Čeká se na první telefony'
+    case 'scores':
+      return 'Mezerník pustí další otázku'
+    case 'final':
+      return ''
+    default:
+      return stageHint.value
+  }
+})
+
+const rosterOpen = ref(false)
+
+const isFullscreen = ref(false)
+
+async function toggleFullscreen() {
+  try {
+    if (document.fullscreenElement) await document.exitFullscreen()
+    else await document.documentElement.requestFullscreen()
+  } catch {
+    /* prohlížeč to nemusí povolit */
+  }
+}
+
+/* Stav se čte z prohlížeče, ne z vlastního přepínače: z celé obrazovky se
+   odchází i Escapem a F11. */
+function syncFullscreen() {
+  isFullscreen.value = document.fullscreenElement !== null
+}
+
 onMounted(() => {
   void initQuizPacks()
+  syncFullscreen()
+  document.addEventListener('fullscreenchange', syncFullscreen)
   // Po obnovení stránky se listenery musí nasadit znovu, jinak by
   // moderátorka koukala na prázdnou soupisku běžící hry.
   void attachSession()
   window.addEventListener('keydown', onKey)
 })
-onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onKey)
+  document.removeEventListener('fullscreenchange', syncFullscreen)
+})
 </script>
 
 <template>
   <div class="kviz" :class="{ 'kviz--playing': playing }">
-    <AppHeader game="kviz" section="play" />
-
+    <!-- Hlavička aplikace patří do přípravy, ne na projektor. Jakmile hra
+         běží, zůstane nad plátnem jen moderátorský pás. -->
     <template v-if="!hasQuiz">
+      <AppHeader game="kviz" section="play" />
       <HostSetup @start="onStart" />
     </template>
 
     <template v-else-if="quiz">
+      <PresentationBar title="Na kolik to dáš?" :hint="barHint">
+        <template #tools>
+          <UiButton
+            v-if="withPhones && quiz.phase !== 'final'"
+            size="sm"
+            variant="quiet"
+            @click="rosterOpen = true"
+          >
+            Hráči ({{ players.length }})
+          </UiButton>
+          <UiIconButton
+            :icon="isFullscreen ? 'fullscreen-exit' : 'fullscreen'"
+            :label="isFullscreen ? 'Opustit celou obrazovku' : 'Celá obrazovka'"
+            :pressed="isFullscreen"
+            size="sm"
+            @click="toggleFullscreen"
+          />
+          <UiButton v-if="quiz.phase !== 'final'" size="sm" variant="quiet" @click="onEnd">
+            Ukončit kvíz
+          </UiButton>
+        </template>
+      </PresentationBar>
+
       <!-- Bez spojení telefony zamrznou na poslední doručené fázi. Zneužít
            se to nedá, pozdní odpovědi odmítne server, ale moderátorka to
            musí vědět dřív, než se začne divit. -->
@@ -148,7 +220,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 
       <!-- Herní plocha. Jen tady platí nastavení velikosti písma, protože
            tohle je to, co se promítá na plátno. -->
-      <div class="surface game-surface" :style="{ '--scale': String(settings.scale) }">
+      <main id="obsah" class="surface game-surface" :style="{ '--scale': String(settings.scale) }">
         <HostLobby
           v-if="quiz.phase === 'lobby' && quiz.code"
           :code="quiz.code"
@@ -179,6 +251,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
           :players="players.length"
           :counts="counts"
           @expired="revealAnswer"
+          @hint="stageHint = $event"
         />
 
         <HostReport
@@ -200,9 +273,16 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
           @download="onDownload"
           @end="onEnd"
         />
-      </div>
+      </main>
 
-      <button v-if="quiz.phase !== 'final'" type="button" class="bail" @click="onEnd">Ukončit kvíz</button>
+      <!-- Přejmenovat a vyhodit musí jít i za běhu, ne jen v čekárně. -->
+      <HostRoster
+        :open="rosterOpen"
+        :players="players"
+        @close="rosterOpen = false"
+        @kick="kickPlayer"
+        @rename="renamePlayer"
+      />
     </template>
   </div>
 </template>
@@ -242,19 +322,8 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 }
 
 
-.bail {
-  align-self: center;
-  margin-bottom: var(--sp-3);
-  padding: var(--sp-2) var(--sp-4);
-  border: 0;
-  background: transparent;
-  color: var(--c-text-faint);
-  font-size: var(--fs-xs);
-}
-.bail:hover { color: var(--c-text-muted); }
 
 @media (pointer: coarse) {
-  .bail { min-height: 44px; }
-  .warn button { min-height: 44px; }
+  .warn button { min-height: var(--control-touch); }
 }
 </style>

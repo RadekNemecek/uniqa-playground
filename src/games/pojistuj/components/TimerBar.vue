@@ -2,16 +2,33 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { sfx } from '@/lib/sound'
 import { settings } from '@/stores/settings'
+import UiIcon from '@/components/ui/UiIcon.vue'
 
-const props = defineProps<{ seconds: number; running: boolean }>()
+const props = withDefaults(
+  defineProps<{
+    seconds: number
+    running: boolean
+    /**
+     * Kolik už uběhlo, když se komponenta nasazuje. Po obnovení stránky
+     * uprostřed otázky se tím časomíra napojí tam, kde byla; bez toho
+     * dostal tým celý limit podruhé.
+     */
+    elapsedMs?: number
+  }>(),
+  { elapsedMs: 0 },
+)
 const emit = defineEmits<{ expired: [] }>()
 
-const left = ref(props.seconds)
+function startingMs(): number {
+  return Math.max(0, props.seconds * 1000 - Math.max(0, props.elapsedMs))
+}
+
+const left = ref(startingMs() / 1000)
 const paused = ref(false)
 let handle = 0
 let lastTick = -1
 /** Zbývající ms v momentě pauzy, ať se po obnovení počítá dál. */
-let remainingMs = props.seconds * 1000
+let remainingMs = startingMs()
 
 const pct = computed(() => (props.seconds ? Math.max(0, left.value / props.seconds) : 0))
 const urgent = computed(() => left.value <= Math.max(3, props.seconds * 0.2))
@@ -90,13 +107,7 @@ onBeforeUnmount(() => stopLoop())
       :aria-label="paused ? 'Spustit časomíru' : 'Pozastavit časomíru'"
       @click="togglePause"
     >
-      <svg v-if="!paused" viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true">
-        <rect x="6" y="5" width="4" height="14" rx="1" />
-        <rect x="14" y="5" width="4" height="14" rx="1" />
-      </svg>
-      <svg v-else viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true">
-        <path d="M8 5v14l11-7z" />
-      </svg>
+      <UiIcon :name="paused ? 'play' : 'pause'" size="sm" />
     </button>
   </div>
 </template>

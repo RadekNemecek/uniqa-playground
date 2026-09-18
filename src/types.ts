@@ -1,4 +1,4 @@
-/* Datové typy celého Playgroundu. */
+/* Datové typy celé Mučírny. */
 
 /* --- Balíček otázek ------------------------------------------------------ */
 
@@ -109,9 +109,17 @@ export interface GameState {
   phase: GamePhase
   /** Otevřené políčko, pokud fáze není `board`. */
   openCell: string | null
+  /**
+   * Kdy se otázka otevřela. Časomíra z toho po obnovení stránky dopočítá,
+   * kolik času zbývá. Bez toho se po F5 rozjela znovu od plné hodnoty
+   * a tým dostal celý limit podruhé.
+   */
+  openedAt: number | null
   /** Sázka u pole Riziko! Null znamená běžné políčko. */
   wager: number | null
   startedAt: number
+  /** Koho školíme. Zamrazí se do hry, aby ji archiv uměl pojmenovat. */
+  groupName: string
   history: HistoryEntry[]
 }
 
@@ -122,6 +130,8 @@ export interface GameSetup {
   categoryIds: string[]
   teams: Array<Pick<Team, 'name' | 'color'>>
   rules: GameRules
+  /** Koho školíme. Nepovinné, drží se v archivu odehraných her. */
+  groupName: string
 }
 
 /** Klíč políčka v mřížce. */

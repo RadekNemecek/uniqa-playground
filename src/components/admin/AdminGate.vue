@@ -4,6 +4,7 @@ import UiButton from '@/components/ui/UiButton.vue'
 import UiField from '@/components/ui/UiField.vue'
 import { db } from '@/lib/db'
 import { toast } from '@/stores/ui'
+import UiIcon from '@/components/ui/UiIcon.vue'
 
 const emit = defineEmits<{ unlocked: [] }>()
 
@@ -51,10 +52,7 @@ async function submit() {
   <div class="gate">
     <form class="gate__card" @submit.prevent="submit">
       <span class="gate__lock" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-          <rect x="4" y="10" width="16" height="11" rx="2" />
-          <path d="M8 10V7a4 4 0 0 1 8 0v3" />
-        </svg>
+        <UiIcon name="lock" size="xl" />
       </span>
 
       <template v-if="mode === 'create'">
@@ -85,7 +83,7 @@ async function submit() {
         {{ mode === 'create' ? 'Nastavit heslo' : 'Odemknout' }}
       </UiButton>
 
-      <RouterLink to="/" class="gate__back">Zpět na Playground</RouterLink>
+      <RouterLink to="/" class="gate__back">Zpět do Mučírny</RouterLink>
     </form>
   </div>
 </template>

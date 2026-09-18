@@ -1,4 +1,4 @@
-/** Seznam her v Playgroundu. Další hra je nová položka, ne přestavba. */
+/** Seznam her v Mučírně. Další hra je nová položka, ne přestavba. */
 export interface GameEntry {
   slug: string
   title: string

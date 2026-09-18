@@ -68,7 +68,7 @@ function commitRename(uid: string): void {
 
       <p v-if="onlyThisMachine" class="lobby__warn">
         Tahle adresa platí jen pro tenhle počítač, telefony se na ni
-        nedostanou. Spusť <code>npm run dev:lan</code> a otevři Playground
+        nedostanou. Spusť <code>npm run dev:lan</code> a otevři Mučírnu
         na síťové adrese, kterou vypíše. QR kód se pak opraví sám.
       </p>
     </div>
@@ -128,7 +128,16 @@ function commitRename(uid: string): void {
 </template>
 
 <style scoped>
+/* Rozměry čekárny. Používá je jen tahle obrazovka. */
 .lobby {
+  --quiz-lobby-qr-col: 28rem;
+  --quiz-qr-max: 34rem;
+  --quiz-qr-vmax: 54vh;
+  --quiz-lobby-room-min: 24rem;
+  /* Karta hráče v čekárně a zvíře na ní. */
+  --quiz-lobby-card: 8.5rem;
+  --quiz-lobby-ava: 4rem;
+
   display: grid;
   grid-template-columns: minmax(var(--quiz-lobby-qr-col), 0.95fr) minmax(0, 1.05fr);
   gap: var(--sp-6);
@@ -246,10 +255,10 @@ function commitRename(uid: string): void {
 }
 
 @media (pointer: coarse) {
-  .who__tool { min-height: 44px; }
+  .who__tool { min-height: var(--control-touch); }
 }
 
-@media (max-width: 860px) {
+@media (max-width: 960px) {
   .lobby { grid-template-columns: minmax(0, 1fr); overflow-y: auto; }
   .lobby__room { min-height: var(--quiz-lobby-room-min); }
 }
