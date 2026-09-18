@@ -92,8 +92,6 @@ onBeforeUnmount(() => document.removeEventListener('fullscreenchange', syncFulls
       </RouterLink>
     </nav>
 
-    <p v-else class="head__context">Vyber si hru</p>
-
     <div class="tools">
       <!-- Degradovaný režim musí zůstat vidět. Oznámení, které zmizí,
            nestačí: chybí balíčky kolegů a telefony se nemají kam
@@ -179,7 +177,6 @@ onBeforeUnmount(() => document.removeEventListener('fullscreenchange', syncFulls
 .nav__item:hover { color: var(--c-text); }
 .nav__item--active { background: var(--c-surface-2); color: var(--c-text); box-shadow: var(--shadow-sm); }
 
-.head__context { justify-self: center; color: var(--c-text-faint); font-size: var(--fs-sm); font-weight: 700; }
 .tools { display: flex; justify-self: end; align-items: center; gap: var(--sp-2); }
 .local {
   display: inline-flex;
@@ -201,7 +198,6 @@ onBeforeUnmount(() => document.removeEventListener('fullscreenchange', syncFulls
 @media (max-width: 720px) {
   .head { grid-template-columns: minmax(0, 1fr) auto; }
   .nav { grid-row: 2; grid-column: 1 / -1; width: 100%; }
-  .head__context { display: none; }
   .brand__name { display: none; }
 }
 

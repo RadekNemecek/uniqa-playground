@@ -63,6 +63,11 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
   přebijí pravidla zapsaná pod nimi.
 - **Texty česky, bez dlouhých pomlček.** A bez řeči o tom, jak je aplikace
   postavená. Uživatelku zajímá, co s tím může dělat, ne architektura.
+- **Pozadí rozcestníku nenese obrázek.** Plují po něm ztlumené dlaždice,
+  protože značka je mřížka dlaždic a obě hry na dlaždicích stojí; fotka
+  nebo generovaná grafika by soupeřila s nápisem a kartami a netrefila
+  by změřenou paletu. Animace jede na posunu a průhlednosti a při
+  `prefers-reduced-motion` stojí.
 - **Hravost patří do hry a na rozcestník, ne do správy otázek.** Tam se
   pracuje, ozdoby by překážely. Ve hře je hmota dlaždic, pohyb a jiskra
   vítaná, protože z tabulky dělá herní desku.
