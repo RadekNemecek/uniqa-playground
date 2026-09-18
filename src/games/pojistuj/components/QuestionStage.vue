@@ -5,7 +5,7 @@ import TimerBar from './TimerBar.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import { teamBadge, teamColor, formatScore } from '@/lib/teams'
 import { flipFrom } from '@/lib/motion'
-import { fitToScreen as fit, refitOnResize } from '@/lib/fit'
+import { fitToScreen as fit, refitOnFonts, refitOnResize } from '@/lib/fit'
 import { sfx } from '@/lib/sound'
 import { settings } from '@/stores/settings'
 
@@ -95,6 +95,9 @@ onMounted(async () => {
   await nextTick()
   if (stage.value && props.origin) flipFrom(stage.value, props.origin)
   void fitToScreen()
+  // Písmo dorazí až po prvním vykreslení a náhradní se láme jinak. Bez
+  // přeměření by první otázka po studeném startu zůstala zmenšená.
+  refitOnFonts(() => void fitToScreen())
   window.addEventListener('keydown', onKey)
   stopRefit = refitOnResize(() => void fitToScreen())
 })
@@ -508,8 +511,11 @@ onBeforeUnmount(() => {
 .curtain-enter-from { clip-path: inset(0 0 100% 0); opacity: 0; }
 .curtain-enter-to { clip-path: inset(0 0 0 0); opacity: 1; }
 
+/* Nástup se zvětšuje do místa. Posun dolů by při měření vyčníval pod
+   okraj, fitToScreen by ho přečetl jako přetečení a zmenšil otázku na
+   minimum, ze kterého se sama nevrátí. */
 @keyframes rise {
-  from { opacity: 0; transform: translateY(16px); }
+  from { opacity: 0; transform: scale(0.98); }
   to { opacity: 1; transform: none; }
 }
 @media (prefers-reduced-motion: reduce) {

@@ -115,7 +115,16 @@ const hint = computed(() => {
   }
 })
 
-const lockedLabel = computed(() => {
+/**
+ * Co stojí v patičce. Dokud se odpovídá, je to počet došlých odpovědí:
+ * časomíra se přesunula nad otázku a tenhle řádek by jinak zůstal prázdný.
+ * Co kdo zvolil, se do zamčení neukazuje, moderátorka by se prozradila
+ * obličejem.
+ */
+const footNote = computed(() => {
+  if (props.phase === 'question') {
+    return props.players > 0 ? `Odpovědělo ${props.answered} z ${props.players}` : ''
+  }
   if (revealed.value) return 'Správná odpověď'
   if (props.players > 0 && props.answered >= props.players) return 'Všichni odpověděli'
   return 'Odpovídání zastaveno'
@@ -146,11 +155,21 @@ onBeforeUnmount(() => {
   <section class="stage" :class="`stage--${phase}`">
     <header class="stage__head">
       <p class="stage__pos">Otázka {{ index + 1 }} z {{ total }}</p>
-      <p v-if="players > 0 && phase === 'question'" class="stage__tally">
-        odpovědělo {{ answered }} z {{ players }}
-      </p>
       <p class="stage__cat">{{ question.packName }}</p>
     </header>
+
+    <!-- Časomíra patří nad otázku: místnost se dívá nahoru a ubývající
+         čas má být v témže pohledu jako to, na co odpovídá. Pás si drží
+         místo po celou otázku, aby se obsah pod ním nehýbal. -->
+    <div v-if="limitSeconds > 0" class="stage__time">
+      <TimerBar
+        v-if="phase === 'question'"
+        :key="question.qid + String(ready)"
+        :seconds="limitSeconds"
+        :running="running"
+        @expired="emit('expired')"
+      />
+    </div>
 
     <!-- Předehra: místnost ztichne a telefony stihnou odemknout tlačítka. -->
     <div v-if="!ready" class="prep" aria-live="polite">
@@ -200,16 +219,7 @@ onBeforeUnmount(() => {
     </div>
 
     <footer class="stage__foot">
-      <TimerBar
-        v-if="limitSeconds > 0 && phase === 'question'"
-        :key="question.qid + String(ready)"
-        :seconds="limitSeconds"
-        :running="running"
-        @expired="emit('expired')"
-      />
-      <p v-else class="stage__locked">
-        {{ lockedLabel }}
-      </p>
+      <p class="stage__locked">{{ footNote }}</p>
       <p class="stage__hint">{{ hint }}</p>
     </footer>
   </section>
@@ -218,7 +228,7 @@ onBeforeUnmount(() => {
 <style scoped>
 .stage {
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto auto 1fr auto;
   gap: var(--sp-3);
   height: 100%;
   min-height: 0;
@@ -243,9 +253,13 @@ onBeforeUnmount(() => {
 }
 .stage__pos { color: var(--c-text-faint); }
 .stage__cat { color: var(--c-brand); }
-/* Kolik lidí odpovědělo, ne co zvolili. Rozložení do zamčení nesmí být
-   vidět, moderátorka by se prozradila obličejem. */
-.stage__tally { font-size: var(--fs-sm); color: var(--c-text-muted); font-variant-numeric: tabular-nums; }
+/* Pás s časomírou. Výšku drží i mimo běžící otázku, aby otázka pod ním
+   nepoposkočila, až čas doběhne. */
+.stage__time {
+  display: flex;
+  align-items: center;
+  min-height: var(--quiz-timer-h);
+}
 
 /* Předehra ----------------------------------------------------------------- */
 .prep {
