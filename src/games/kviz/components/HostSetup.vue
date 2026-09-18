@@ -13,11 +13,18 @@ import UiField from '@/components/ui/UiField.vue'
 const emit = defineEmits<{ start: [packs: QuizPack[], setup: QuizSetup] }>()
 
 const LIMITS = [10, 15, 20, 30]
-const COUNTS = [5, 10, 15, 20]
+
+/** Nabízené stropy. Nula je „všechny" a stojí první, protože je výchozí. */
+const COUNTS = [5, 10, 15, 20, 30]
 
 const chosen = ref(new Set<string>())
 const limitSeconds = ref(20)
-const wantCount = ref(10)
+/**
+ * Strop na počet otázek. Nula znamená všechny a je to výchozí stav:
+ * balíček se chystá na konkrétní školení, takže se obvykle hraje celý.
+ * Strop je na krátký blok, kdy se z nachystané zásoby vylosuje výběr.
+ */
+const wantCount = ref(0)
 /**
  * Bez sdílené databáze se telefony nemají kam připojit. Není to porucha,
  * je to druhý způsob, jak kvíz vést: promítaná hra s ručním bodováním.
@@ -54,8 +61,31 @@ const setup = computed<QuizSetup>(() => ({
 }))
 
 const pool = computed(() => availableCount(usable.value, setup.value))
-const willPlay = computed(() => Math.min(wantCount.value, pool.value))
+const willPlay = computed(() =>
+  wantCount.value > 0 ? Math.min(wantCount.value, pool.value) : pool.value,
+)
 const canStart = computed(() => pool.value > 0)
+
+/**
+ * Stropy, které dávají smysl. Nabízet „20 otázek", když jich je ve
+ * vybraných balíčcích dvanáct, je jen past: vypadá to jako volba, ale
+ * zahraje se totéž co u „všech".
+ */
+const offered = computed(() => COUNTS.filter((n) => n < pool.value))
+
+/** Kolik se vezme z každého balíčku. Losuje se po balíčcích kolem
+ *  dokola, takže díl je stejný, dokud je z čeho brát. */
+const perPack = computed(() => {
+  const packs = chosen.value.size
+  if (packs < 2 || wantCount.value === 0) return 0
+  return Math.floor(willPlay.value / packs)
+})
+
+// Když se odškrtnutím balíčku zásoba smrskne pod zvolený strop, volba
+// by v pásu zmizela a zůstala platit potichu. Vrátíme se na „všechny".
+watch([pool, wantCount], ([n, want]) => {
+  if (want > 0 && want >= n) wantCount.value = 0
+})
 
 function toggle(id: string): void {
   const next = new Set(chosen.value)
@@ -79,7 +109,7 @@ watch(
 
 function start(): void {
   if (!canStart.value) return
-  emit('start', usable.value, { ...setup.value, count: willPlay.value })
+  emit('start', usable.value, setup.value)
 }
 </script>
 
@@ -151,7 +181,14 @@ function start(): void {
           <span class="rule__label">Počet otázek</span>
           <div class="segmented">
             <button
-              v-for="n in COUNTS"
+              type="button"
+              :class="{ 'seg--on': wantCount === 0 }"
+              @click="wantCount = 0"
+            >
+              Všechny
+            </button>
+            <button
+              v-for="n in offered"
               :key="n"
               type="button"
               :class="{ 'seg--on': wantCount === n }"
@@ -160,7 +197,19 @@ function start(): void {
               {{ n }}
             </button>
           </div>
-          <p class="hint">Pořadí se zamíchá, z každého balíčku se bere střídavě.</p>
+          <p class="hint">
+            <template v-if="wantCount === 0">
+              Zahrají se všechny otázky z vybraných balíčků, zamíchané dohromady.
+            </template>
+            <template v-else-if="perPack > 0">
+              Vylosuje se {{ count(willPlay, 'otázka', 'otázky', 'otázek') }},
+              z každého balíčku zhruba {{ perPack }}. Pořadí se zamíchá.
+            </template>
+            <template v-else>
+              Z balíčku se vylosuje {{ count(willPlay, 'otázka', 'otázky', 'otázek') }}.
+              Pořadí se zamíchá.
+            </template>
+          </p>
         </div>
 
         <div class="rule">
@@ -202,11 +251,12 @@ function start(): void {
       <p class="tally">
         <template v-if="pool === 0">Vyber aspoň jeden balíček.</template>
         <template v-else>
-          <template v-if="willPlay < wantCount">
-            K dispozici je jen {{ count(pool, 'otázka', 'otázky', 'otázek') }}, zahrajeme je všechny.
+          <template v-if="wantCount === 0">
+            Všech {{ count(pool, 'otázka', 'otázky', 'otázek') }} · {{ limitSeconds }} s na každou
           </template>
           <template v-else>
-            {{ count(willPlay, 'otázka', 'otázky', 'otázek') }} · {{ limitSeconds }} s na každou
+            {{ willPlay }} z {{ count(pool, 'otázky', 'otázek', 'otázek') }} ·
+            {{ limitSeconds }} s na každou
           </template>
           <!-- U tlačítka se rozhoduje, u tlačítka to má být napsané. -->
           <span class="tally__mode">

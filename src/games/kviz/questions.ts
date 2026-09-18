@@ -44,9 +44,14 @@ export function availableCount(packs: QuizPack[], setup: QuizSetup): number {
 }
 
 /**
- * Sestaví kvíz. Losuje se po balíčcích kolem dokola, ne přes celý seznam
- * najednou: deset otázek ze tří balíčků by čistě náhodným výběrem klidně
- * vytáhlo osm z jednoho. Pořadí se zamíchá až nakonec.
+ * Sestaví kvíz.
+ *
+ * Bez stropu (`count` je nula) se hraje všechno, co ve vybraných
+ * balíčcích je, jen zamíchané dohromady. Se stropem se losuje po
+ * balíčcích kolem dokola, ne přes celý seznam najednou: dvacet otázek
+ * ze čtyř balíčků by čistě náhodným výběrem klidně vytáhlo dvanáct
+ * z jednoho, kdežto takhle vyjde z každého stejný díl a zbytek se dobere
+ * z těch, kde ještě je z čeho brát. Pořadí se zamíchá až nakonec.
  *
  * `avoidIds` jsou otázky z minulých kol. Odveta má nabídnout nové, a teprve
  * když dojdou, sáhnout po odehraných.
@@ -59,13 +64,17 @@ export function buildQuestions(
   const avoid = new Set(avoidIds)
   const ready = pools(packs, setup)
 
+  // Nula je „všechny", takže stropem je celá zásoba.
+  const total = ready.reduce((n, p) => n + p.items.length, 0)
+  const limit = setup.count > 0 ? Math.min(setup.count, total) : total
+
   // Dvě kola výběru: nejdřív jen nové otázky, pak teprve odehrané.
   const fresh = withItems(ready, (q) => !avoid.has(q.id))
   const used = withItems(ready, (q) => avoid.has(q.id))
 
-  const picked = roundRobin(fresh, setup.count)
-  if (picked.length < setup.count) {
-    picked.push(...roundRobin(used, setup.count - picked.length))
+  const picked = roundRobin(fresh, limit)
+  if (picked.length < limit) {
+    picked.push(...roundRobin(used, limit - picked.length))
   }
 
   return shuffle(picked).map(({ item, packName }) => ({

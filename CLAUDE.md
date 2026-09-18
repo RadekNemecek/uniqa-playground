@@ -75,6 +75,14 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
   na azur je z dálky moc blízko, a písek, jediná teplá barva palety.
   Definice je v `src/games/kviz/options.ts` a platí stejně na plátně
   i na telefonu.
+- **Kvíz se ve výchozím stavu hraje celý.** Balíček se chystá na
+  konkrétní školení, takže se zahrají všechny hotové otázky z vybraných
+  balíčků, jen zamíchané dohromady. Strop na počet otázek je volba
+  navíc, ne běžný postup, a `count: 0` v `QuizSetup` znamená „všechny".
+  Se stropem se losuje po balíčcích kolem dokola, takže z každého vyjde
+  stejný díl a z menšího se dobere jen to, co v něm je. Nabízejí se jen
+  stropy nižší, než kolik je otázek k dispozici: strop, který se rovná
+  celé zásobě, je jen past tvářící se jako volba.
 - **Kvíz zná dva tvary otázky.** Čtveřici možností a tvrzení, na které se
   odpovídá Pravda, nebo Nepravda. Tvar se volí u každé otázky zvlášť a oba
   se v jednom balíčku i v jedné hře běžně střídají, losování mezi nimi

@@ -119,6 +119,11 @@ export interface QuizQuestion {
 /** Z čeho se kvíz sestavil. Slouží i k odvetě s novými otázkami. */
 export interface QuizSetup {
   packIds: string[]
+  /**
+   * Strop na počet otázek. **Nula znamená všechny**, a to je výchozí
+   * stav: balíček se připravuje na konkrétní školení, takže se obvykle
+   * hraje celý. Strop je pojistka na krátký blok, ne běžný postup.
+   */
   count: number
   limitSeconds: number
   /** Hraje se s telefony, tedy se zakládá živá session. */
