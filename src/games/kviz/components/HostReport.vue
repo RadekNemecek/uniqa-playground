@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watchEffect } from 'vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import { quizOption } from '../options'
 import { byDifficulty, successRate } from '../report'
 import { count } from '@/lib/format'
+import { cachedImage, loadImage } from '@/stores/quizImages'
 import { formatScore } from '@/lib/teams'
 import type { QuizReport, QuizReportQuestion } from '../types'
 
@@ -18,6 +19,21 @@ const questions = computed(() => byDifficulty(props.report))
 
 /** Sloupce matice jsou hráči v pořadí výsledkové listiny. */
 const players = computed(() => props.report.players)
+
+/**
+ * Náhled obrázku u otázky. Archiv nese jen odkaz, takže se obrázek
+ * ukáže, dokud balíček s ním existuje; po jeho smazání zbyde znění
+ * otázky a nic se nerozbije.
+ */
+watchEffect(() => {
+  for (const q of props.report.questions) {
+    if (q.imageId) void loadImage(q.imageId)
+  }
+})
+
+function thumbOf(q: QuizReportQuestion): string | null {
+  return q.imageId ? (cachedImage(q.imageId)?.data ?? null) : null
+}
 
 function cellOf(qIndex: number, playerAt: number): string {
   const p = players.value[playerAt]
@@ -81,6 +97,7 @@ function isTrap(q: QuizReportQuestion, at: number): boolean {
         </p>
         <div class="q__text">
           <p v-fit-text class="q__prompt">{{ q.index + 1 }}. {{ q.prompt }}</p>
+          <img v-if="thumbOf(q)" class="q__thumb" :src="thumbOf(q) ?? ''" alt="" />
           <p class="q__answer">
             <span class="q__letter" :style="{ color: `var(${quizOption(q.correctIndex).color.cssVar})` }">
               {{ quizOption(q.correctIndex).letter }}
@@ -206,6 +223,16 @@ function isTrap(q: QuizReportQuestion, at: number): boolean {
 .q__rate span { font-size: var(--fs-xs); color: var(--c-text-faint); }
 .q__text { min-width: 0; }
 .q__prompt { font-weight: 600; line-height: var(--lh-snug); font-size: calc(1em * var(--fit-text, 1)); }
+/* Náhled je malý schválně: připomíná, o kterou otázku šlo, nečte se z něj. */
+.q__thumb {
+  display: block;
+  margin-top: var(--sp-2);
+  max-width: 12rem;
+  max-height: 6rem;
+  border-radius: var(--r-sm);
+  background: var(--c-photo-mat);
+  object-fit: contain;
+}
 .q__answer { margin-top: var(--sp-1); font-size: var(--fs-sm); color: var(--c-text-muted); }
 .q__letter { font-family: var(--font-display); font-weight: 900; margin-right: var(--sp-1); }
 .q__time { margin-left: var(--sp-2); color: var(--c-text-faint); }

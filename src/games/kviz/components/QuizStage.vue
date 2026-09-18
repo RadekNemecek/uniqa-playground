@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import TimerBar from '@/games/pojistuj/components/TimerBar.vue'
 import OptionChip from './OptionChip.vue'
 import { fitToScreen, refitOnFonts, refitOnResize } from '@/lib/fit'
+import { cachedImage, loadImage } from '@/stores/quizImages'
 import type { QuizPhase, QuizQuestion } from '../types'
 
 const props = defineProps<{
@@ -29,6 +30,18 @@ const fit = (): Promise<void> => fitToScreen(body)
 let stopRefit: (() => void) | null = null
 
 const revealed = computed(() => props.phase === 'reveal')
+
+/**
+ * Obrázek otázky. Stahuje se dopředu při sestavení kvízu, tohle je
+ * pojistka pro případ, že se to nestihlo nebo se stav obnovil z disku.
+ * Dokud není, otázka se ukáže bez něj: prázdné místo je lepší než
+ * čekající plátno.
+ */
+const image = computed(() => cachedImage(props.question.imageId) ?? null)
+
+function fetchImage(): void {
+  if (props.question.imageId) void loadImage(props.question.imageId)
+}
 
 /**
  * Předehra. Otázka se na plátně objeví až po ní, aby se telefony stihly
@@ -141,11 +154,17 @@ watch(hint, (v) => emit('hint', v), { immediate: true })
 // Fáze rozložení nemění, proto se při vyhodnocení znovu nepřepočítává:
 // velikost i poloha dlaždic tak zůstanou beze změny.
 watch(() => props.question.qid, () => {
+  fetchImage()
   scheduleReady()
   void fit()
 })
 
+// Obrázek, který dorazí až po měření, mění výšku obsahu. Měří se proto
+// znovu, jakmile se objeví, stejně jako po dorazivším písmu.
+watch(image, () => void fit())
+
 onMounted(() => {
+  fetchImage()
   scheduleReady()
   void fit()
   refitOnFonts(() => void fit())
@@ -194,6 +213,19 @@ onBeforeUnmount(() => {
         {{ question.prompt }}
       </p>
 
+      <!-- Obrázek k otázce. Drží si stejné místo i po odhalení: kdyby
+           zmizel nebo se zmenšil, dlaždice pod ním by poskočily a obsah
+           je změřený na jednu obrazovku jen jednou. -->
+      <figure v-if="image" class="stage__figure" :class="{ 'stage__figure--tall': image.h > image.w }">
+        <img
+          class="stage__img"
+          :src="image.data"
+          :style="{ aspectRatio: `${image.w} / ${image.h}` }"
+          alt=""
+          @load="fit()"
+        />
+      </figure>
+
       <!-- Otázka a poučka sdílejí jednu buňku, takže se řádek změří na tu
            vyšší z nich a přepnutí nikam neposune dlaždice pod ním. -->
       <div class="stage__focus">
@@ -236,6 +268,13 @@ onBeforeUnmount(() => {
 .stage {
   --quiz-stage-max: 84rem;
   --quiz-stage-footer: 5rem;
+  /* Strop pro obrázek k otázce. Zbytek obrazovky musí zůstat na otázku
+     a čtyři dlaždice, takže si obrázek bere zhruba třetinu výšky a dál
+     se zmenšuje spolu s textem přes --fit. Obrázek na výšku dostane víc:
+     při stejné výšce zabere sotva třetinu šířky, takže o místo pro text
+     nepřipraví, a při nižším stropu by byl z poslední řady k nepřečtení. */
+  --quiz-image-h: 34vh;
+  --quiz-image-tall-h: 46vh;
 
   display: grid;
   grid-template-rows: auto auto 1fr auto;
@@ -295,11 +334,13 @@ onBeforeUnmount(() => {
   color: var(--c-text-faint);
 }
 
-/* Tělo. --fit nastavuje fitToScreen(), zmenšuje otázku i možnosti naráz. */
+/* Tělo. --fit nastavuje fitToScreen(), zmenšuje otázku i možnosti naráz.
+   Svislý sloupec, ne mřížka s pevnými řádky: ohlédnutí i obrázek tu jsou
+   jen u některých otázek a mřížka by pak posunula zbytek o řádek výš. */
 .stage__body {
   --fit: 1;
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  display: flex;
+  flex-direction: column;
   gap: calc(var(--sp-5) * var(--fit));
   width: 100%;
   min-height: 0;
@@ -309,7 +350,8 @@ onBeforeUnmount(() => {
 /* Otázka po odhalení. Jeden řádek, ať je jasné, k čemu se poučka pod ní
    vztahuje, a nic víc: přečetla se, dokud se odpovídalo. */
 .stage__recap {
-  justify-self: center;
+  flex: none;
+  align-self: center;
   max-width: min(100%, calc(80ch / var(--fit)));
   overflow: hidden;
   white-space: nowrap;
@@ -321,13 +363,50 @@ onBeforeUnmount(() => {
 }
 .stage__recap--hidden { visibility: hidden; opacity: 0; }
 
+/* Obrázek k otázce. Sedí na bílé ploše, protože se na ni usadil už při
+   nahrání: výřez s průhledným okrajem by jinak na tmavém plátně dostal
+   rám. Výška je daná tokenem krát --fit, takže se obrázek zmenšuje spolu
+   s textem a měření dojde k jedné velikosti pro celou obrazovku. */
+.stage__figure {
+  /* Výška je daná, ne odvozená z obsahu: pružná položka by se ve sloupci
+     smrskla pod velikost obrázku a ten by přetekl přes otázku i dlaždice.
+     Obrázek se do ní vejde celý a zmenšuje se spolu s textem přes --fit. */
+  --img-cap: calc(var(--quiz-image-h) * var(--fit));
+  flex: 0 0 auto;
+  block-size: var(--img-cap);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  margin: 0;
+}
+/* Strop se počítá z tokenu, ne z procent výšky rodiče: procento by se
+   uvnitř mřížky odvodilo od řádku dopočítaného podle obrázku, tedy od
+   něj samotného, a nezmenšilo by nic. */
+.stage__figure--tall { --img-cap: calc(var(--quiz-image-tall-h) * var(--fit)); }
+.stage__img {
+  max-block-size: var(--img-cap);
+  max-inline-size: 100%;
+  inline-size: auto;
+  block-size: auto;
+  border-radius: var(--r-lg);
+  background: var(--c-photo-mat);
+  object-fit: contain;
+  /* Nástup jen zesvětlí a zvětší do místa, nikdy neposune: posun pod
+     dolní okraj by měření přečetlo jako přetečení. */
+  animation: prompt-in var(--dur-slow) var(--ease-out) backwards;
+}
+
 /* Otázka a poučka stojí v jedné buňce přes sebe. Řádek se tím změří na
    tu vyšší z nich a přepnutí po odhalení s ničím nehne. */
 .stage__focus {
+  /* Bez zmenšování pod vlastní obsah: kdyby se buňka srazila, poučka by
+     přetekla přes dlaždice a měření by o tom nevědělo. Takhle přeteče
+     celé tělo a fitToScreen() ubere všemu naráz. */
+  flex: 1 0 auto;
   display: grid;
   align-items: center;
   justify-items: center;
-  min-height: 0;
 }
 .stage__focus > * { grid-area: 1 / 1; }
 
@@ -358,6 +437,7 @@ onBeforeUnmount(() => {
 }
 
 .stage__options {
+  flex: none;
   list-style: none;
   padding: 0;
   display: grid;
@@ -420,11 +500,16 @@ onBeforeUnmount(() => {
 }
 @media (prefers-reduced-motion: reduce) {
   .stage__prompt,
+  .stage__img,
   .stage__options > li { animation: none; }
 }
 
 @media (max-width: 720px) {
-  .stage { padding: var(--sp-3) var(--sp-4) var(--sp-4); }
+  .stage {
+    padding: var(--sp-3) var(--sp-4) var(--sp-4);
+    --quiz-image-h: 24vh;
+    --quiz-image-tall-h: 30vh;
+  }
   .stage__options { grid-template-columns: minmax(0, 1fr); }
 }
 </style>

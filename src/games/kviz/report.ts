@@ -59,6 +59,8 @@ export function buildReport(state: QuizHostState, answers: QuizAnswer[], hostUid
     }
 
     questions.push({
+      // Jen když obrázek opravdu byl: Firestore nepřijme pole s undefined.
+      ...(q.imageId ? { imageId: q.imageId } : {}),
       qid: q.qid,
       index,
       prompt: q.prompt,

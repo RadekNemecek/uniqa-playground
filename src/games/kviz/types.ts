@@ -40,6 +40,41 @@ export interface QuizItem {
   correctIndex: number
   /** Poučka po odhalení. Prázdná, když ji autorka nenapsala. */
   note: string
+  /**
+   * Obrázek k otázce. Je to jen odkaz do `quizImages`, ne samotná data:
+   * balíček je jeden dokument a editor ho přepisuje po každé pauze
+   * v psaní, takže by se sto kilobajtů base64 přepisovalo pořád dokola.
+   * Chybí u otázek bez obrázku a u všech starších balíčků.
+   */
+  imageId?: string
+}
+
+/**
+ * Obrázek k otázce kvízu. Vlastní dokument v `quizImages`, jeden na
+ * obrázek.
+ *
+ * Data nesou data URL, protože se kreslí přímo do `<img>` a nepotřebují
+ * druhé úložiště ani druhá pravidla. Strop dokumentu je 1 MiB a base64
+ * nafoukne obsah o třetinu, proto se obrázek před uložením zmenší
+ * a překóduje, viz `image.ts`.
+ *
+ * Platí jeden obrázek, jeden vlastník: duplikace balíčku i import
+ * zakládají vlastní kopie, aby smazání jednoho balíčku nerozbilo druhý.
+ */
+export interface QuizImage {
+  id: string
+  /** Typ po převodu, typicky `image/webp`. */
+  mime: string
+  /** Rozměry po zmenšení. Plátno je potřebuje dřív, než obrázek dorazí:
+   *  bez nich má `<img>` do dokončení dekódování nulovou výšku a měření
+   *  by počítalo s jiným obsahem, než za chvíli uvidí místnost. */
+  w: number
+  h: number
+  /** Data URL i s hlavičkou, tedy `data:image/webp;base64,...`. */
+  data: string
+  /** Délka dat ve znacích. Slouží k hlídání stropu dokumentu. */
+  bytes: number
+  createdAt: number
 }
 
 export interface QuizPack {
@@ -75,6 +110,9 @@ export interface QuizQuestion {
   correctIndex: number
   /** Poučka po odhalení. Prázdná, když ji autorka nenapsala. */
   note: string
+  /** Obrázek otázky. Zamrazí se odkaz, ne data: stav hry se po každé
+   *  akci ukládá do `localStorage` a ten by base64 nepobral. */
+  imageId?: string
   packName: string
 }
 
@@ -256,6 +294,9 @@ export interface QuizReportQuestion {
   options: string[]
   correctIndex: number
   note: string
+  /** Obrázek otázky, pokud ho měla. V archivu se ukáže, dokud balíček
+   *  s obrázkem existuje; po jeho smazání zbyde jen znění. */
+  imageId?: string
   packName: string
   /** Kolik lidí bylo ve hře, kolik odpovědělo a kolik trefilo. */
   present: number

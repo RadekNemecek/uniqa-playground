@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import { id } from '@/lib/id'
 import { clone } from '@/lib/clone'
 import { BOOLEAN_COUNT, OPTION_COUNT, kindOf } from '@/games/kviz/options'
+import { duplicateImage, removeImage } from '@/stores/quizImages'
 import type { QuizItem, QuizPack } from '@/games/kviz/types'
 import { demoQuizPack } from '@/games/kviz/demoPack'
 
@@ -114,14 +115,31 @@ export async function duplicateQuizPack(source: QuizPack): Promise<QuizPack> {
     createdAt: now,
     updatedAt: now,
   }
-  // Nové identifikátory, aby se kopie nepletla s originálem.
-  copy.items = copy.items.map((q) => ({ ...q, id: id('i') }))
+  // Nové identifikátory, aby se kopie nepletla s originálem. Obrázky se
+  // kopírují taky: kdyby je obě kopie sdílely, smazání jedné by obrázek
+  // vzalo i té druhé.
+  const remap = new Map<string, string>()
+  for (const imageId of [...new Set(copy.items.map((q) => q.imageId).filter(Boolean))]) {
+    const next = await duplicateImage(imageId as string)
+    if (next) remap.set(imageId as string, next)
+  }
+  copy.items = copy.items.map((q) => ({
+    ...q,
+    id: id('i'),
+    imageId: q.imageId ? remap.get(q.imageId) : undefined,
+  }))
   await db().saveQuizPack(copy)
   return copy
 }
 
+/** Smaže balíček i obrázky jeho otázek, aby v databázi nezůstaly
+ *  dokumenty, na které se nikdo neodkazuje a které nejsou nikde vidět. */
 export async function deleteQuizPack(packId: string): Promise<void> {
+  const pack = state.packs.find((p) => p.id === packId)
   await db().deleteQuizPack(packId)
+  for (const imageId of pack?.items.map((i) => i.imageId).filter(Boolean) ?? []) {
+    await removeImage(imageId as string)
+  }
 }
 
 /* --- Odvozené údaje ------------------------------------------------------ */

@@ -72,6 +72,9 @@ const RAW = {
   /* --- Obsah ------------------------------------------------------------- */
   /** Plátno a stojan. Říká „tohle se promítá". */
   projector: { body: '<rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 22h8M12 18v4"/>' },
+  image: {
+    body: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="m4 17 4.5-4.5 3.5 3.5 3-2.5L20 17"/>',
+  },
   phone: { body: '<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/>' },
   clock: { body: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>' },
   warning: { body: '<path d="M12 3 22 20H2zM12 10v4M12 17.5v.5"/>' },

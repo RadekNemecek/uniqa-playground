@@ -5,6 +5,7 @@ import { buildReport } from '@/games/kviz/report'
 import { pointsFor } from '@/games/kviz/scoring'
 import { randomCode } from '@/games/kviz/code'
 import { sessionDb, type QuizSessionDb, type SessionPatch } from '@/lib/sessionDb'
+import { preloadImages } from '@/stores/quizImages'
 import type {
   QuizAnswer,
   QuizHostState,
@@ -81,6 +82,10 @@ export function restoreQuizHost(): void {
       // předchozí stav a mezerník z něj vede dál správně.
       if ((saved.phase as string) === 'scores') saved.phase = 'reveal'
       store.current = saved
+      // Obrázky v localStorage nejsou, jsou to jen odkazy. Po obnovení
+      // stránky se musí natáhnout znovu, jinak by otázka na plátně
+      // naskočila bez obrázku.
+      void preloadImages(saved.questions.map((q) => q.imageId))
     }
   } catch {
     localStorage.removeItem(STORAGE_KEY)
@@ -186,6 +191,10 @@ function freshState(
 
 export async function startQuiz(packs: QuizPack[], setup: QuizSetup): Promise<QuizHostState> {
   const questions = buildQuestions(packs, setup)
+  // Obrázky se stahují a dekódují dopředu, ještě než se otevře čekárna.
+  // Obrázek dekódovaný až ve chvíli, kdy se otázka objeví na plátně, by
+  // místnost viděla naskakovat a měření by proběhlo nad prázdným místem.
+  void preloadImages(questions.map((q) => q.imageId))
   let code: string | null = null
   let expiresAt = 0
 
@@ -282,6 +291,7 @@ export async function rematchQuiz(packs: QuizPack[]): Promise<void> {
   const prev = store.current
   if (!prev) return
   const questions = buildQuestions(packs, prev.setup, prev.usedQids)
+  void preloadImages(questions.map((q) => q.imageId))
   store.current = {
     ...prev,
     round: prev.round + 1,

@@ -35,6 +35,10 @@
      pole má být zapadlé i tam, kde pod ním žádné pozadí stránky není. */
   --c-sunken:       #001120;
   --c-sunken-focus: #001A31;
+  /* Podklad pod obrázkem k otázce. Obrázek se při nahrání usadí na bílou
+     (viz `games/kviz/image.ts`), takže plocha pod ním musí být stejná.
+     Jinak by průhledné okraje výřezu udělaly na tmavém plátně rám. */
+  --c-photo-mat:    #FFFFFF;
 
   /* --- Text -------------------------------------------------------------- */
   --c-text:         #F2F7FD;  /* 16,4:1 na --c-base, 10,1:1 i na --c-surface-3 */

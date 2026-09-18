@@ -152,10 +152,10 @@ async function onRemove(id?: string): Promise<void> {
   if (currentId.value === target.id) closePack()
 }
 
-function onExport(id: string): void {
+async function onExport(id: string): Promise<void> {
   const pack = quizPacks.packs.find((p) => p.id === id)
   if (!pack) return
-  downloadQuizPack(pack)
+  await downloadQuizPack(pack)
   toast('Balíček stažen jako JSON.', 'ok')
 }
 
@@ -163,18 +163,43 @@ function triggerImport(): void {
   fileInput.value?.click()
 }
 
+/**
+ * Balíčky se dovážejí po dávkách, typicky celá převedená sada naráz.
+ * Do editoru se otevře jen jediný importovaný balíček: po dávce se jde
+ * zpátky do knihovny, kde je vidět, co všechno dorazilo.
+ */
 async function onImportFile(event: Event): Promise<void> {
   const input = event.target as HTMLInputElement
-  const file = input.files?.[0]
+  const files = Array.from(input.files ?? [])
   input.value = ''
-  if (!file) return
-  try {
-    const pack = await readQuizPackFile(file)
-    await saveQuizPack(pack)
-    toast(`Balíček „${pack.name}" importován.`, 'ok')
-    openPack(pack.id)
-  } catch (e) {
-    toast(e instanceof Error ? e.message : 'Import se nepovedl.', 'bad')
+  if (files.length === 0) return
+
+  const added: string[] = []
+  const failed: string[] = []
+  for (const file of files) {
+    try {
+      const pack = await readQuizPackFile(file)
+      await saveQuizPack(pack)
+      added.push(pack.id)
+    } catch (e) {
+      failed.push(e instanceof Error ? e.message : file.name)
+    }
+  }
+
+  if (added.length === 1 && failed.length === 0) {
+    const pack = quizPacks.packs.find((p) => p.id === added[0])
+    toast(`Balíček „${pack?.name ?? ''}" importován.`, 'ok')
+    openPack(added[0]!)
+    return
+  }
+  if (added.length > 0) toast(`Importováno ${count(added.length, 'balíček', 'balíčky', 'balíčků')}.`, 'ok')
+  if (failed.length > 0) {
+    toast(
+      failed.length === 1
+        ? failed[0]!
+        : `${count(failed.length, 'balíček', 'balíčky', 'balíčků')} se nepovedlo načíst.`,
+      'bad',
+    )
   }
 }
 
@@ -232,6 +257,7 @@ function badge(id: string): { text: string; tone: 'ok' | 'warn' | 'muted' } {
             ref="fileInput"
             type="file"
             accept="application/json,.json"
+            multiple
             class="library__file"
             @change="onImportFile"
           />
@@ -272,7 +298,7 @@ function badge(id: string): { text: string; tone: 'ok' | 'warn' | 'muted' } {
               <UiMenu label="Akce balíčku" v-slot="{ close }">
                 <button type="button" role="menuitem" @click="openPack(p.id); close()">Otevřít</button>
                 <button type="button" role="menuitem" @click="onDuplicate(p.id); close()">Duplikovat</button>
-                <button type="button" role="menuitem" @click="onExport(p.id); close()">Exportovat JSON</button>
+                <button type="button" role="menuitem" @click="void onExport(p.id); close()">Exportovat JSON</button>
                 <hr />
                 <button type="button" role="menuitem" class="danger" @click="onRemove(p.id); close()">Smazat</button>
               </UiMenu>

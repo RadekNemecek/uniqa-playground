@@ -74,6 +74,7 @@ export function buildQuestions(
     prompt: item.prompt,
     ...framedOptions(item),
     note: item.note,
+    imageId: item.imageId,
     packName,
   }))
 }

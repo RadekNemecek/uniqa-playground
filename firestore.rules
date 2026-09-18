@@ -59,6 +59,18 @@ service cloud.firestore {
       allow write: if isUnlocked();
     }
 
+    // Obrázky k otázkám kvízu, jeden dokument na obrázek. Čtou se stejně
+    // veřejně jako balíčky, jinak by se hra nedala spustit bez hesla.
+    // Strop hlídá i pravidlo: dokument Firestore unese 1 MiB a obrázek,
+    // který by se přes rozhraní nedostal, sem nemá projít ani jinudy.
+    match /quizImages/{imageId} {
+      allow read: if true;
+      allow write: if isUnlocked()
+                   && (request.method == 'delete'
+                       || (request.resource.data.id == imageId
+                           && request.resource.data.data.size() < 900000));
+    }
+
     /* --- Živá hra kvízu -------------------------------------------------- */
 
     // Session se při každém zápisu hráče čte pravidlem. Firestore si

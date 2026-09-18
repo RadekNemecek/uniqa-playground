@@ -6,6 +6,7 @@ import QuizItemEditor from './QuizItemEditor.vue'
 import { db } from '@/lib/db'
 import { clone } from '@/lib/clone'
 import { emptyQuizItem, isItemReady, quizPackProgress } from '@/stores/quizPacks'
+import { removeImage } from '@/stores/quizImages'
 import { confirmAction, toast } from '@/stores/ui'
 import { count } from '@/lib/format'
 import { downloadQuizPack } from '../packIo'
@@ -107,6 +108,7 @@ async function removeItem(id: string): Promise<void> {
   }
   draft.value.items.splice(at, 1)
   if (openId.value === id) openId.value = null
+  if (item.imageId) await removeImage(item.imageId)
 }
 
 function move(id: string, by: number): void {
@@ -130,8 +132,8 @@ function correctText(id: string): string {
   return item.options[item.correctIndex]?.trim() ?? ''
 }
 
-function exportPack(): void {
-  downloadQuizPack(clone(toRaw(draft.value)))
+async function exportPack(): Promise<void> {
+  await downloadQuizPack(clone(toRaw(draft.value)))
   toast('Balíček stažen jako JSON.', 'ok')
 }
 </script>
@@ -150,7 +152,7 @@ function exportPack(): void {
       </div>
 
       <UiMenu label="Akce balíčku" v-slot="{ close }">
-        <button type="button" role="menuitem" @click="exportPack(); close()">Stáhnout jako JSON</button>
+        <button type="button" role="menuitem" @click="void exportPack(); close()">Stáhnout jako JSON</button>
         <button type="button" role="menuitem" @click="emit('duplicate'); close()">Duplikovat</button>
         <button type="button" role="menuitem" @click="emit('remove'); close()">Smazat balíček</button>
       </UiMenu>
@@ -182,7 +184,15 @@ function exportPack(): void {
           <button type="button" class="qrow__toggle" :aria-expanded="openId === item.id" @click="toggle(item.id)">
             <span class="qrow__num">{{ i + 1 }}</span>
             <span class="qrow__text">
-              <span v-fit-text class="qrow__prompt">{{ item.prompt.trim() || 'Nová otázka' }}</span>
+              <span v-fit-text class="qrow__prompt">
+                <UiIcon
+                  v-if="item.imageId"
+                  name="image"
+                  size="sm"
+                  class="qrow__img"
+                  aria-label="Otázka má obrázek"
+                />{{ item.prompt.trim() || 'Nová otázka' }}
+              </span>
               <span v-if="isItemReady(item)" v-fit-text class="qrow__answer">
                 <span class="qrow__letter" :style="{ color: `var(${quizOption(item.correctIndex).color.cssVar})` }">
                   {{ quizOption(item.correctIndex).letter }}
@@ -333,6 +343,9 @@ function exportPack(): void {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+/* Otázka s obrázkem je poznat i ze sbaleného řádku, jinak by se dal
+   obrázek hledat jen otevíráním jedné otázky po druhé. */
+.qrow__img { margin-right: var(--sp-2); color: var(--c-text-faint); vertical-align: -0.15em; }
 .qrow__answer { font-size: calc(var(--fs-xs) * var(--fit-text, 1)); color: var(--c-text-muted); }
 .qrow__letter { font-family: var(--font-display); font-weight: 900; margin-right: var(--sp-1); }
 .qrow__todo { font-size: var(--fs-xs); color: var(--c-text-faint); }

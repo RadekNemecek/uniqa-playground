@@ -83,6 +83,18 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
   tvrzení má vědět, kam sáhnout. Slova Pravda a Nepravda nese
   `BOOLEAN_LABELS`, nepíše je autorka a do balíčku se neukládají. Balíček
   bez pole `kind` je čtveřice možností, přepisovat se kvůli tomu nemusí.
+- **Obrázek k otázce patří jen na plátno.** Kvízová otázka může nést
+  jeden obrázek. Do balíčku se ukládá odkaz, ne data: balíček je jeden
+  dokument a editor ho přepisuje po každé pauze v psaní. Obrázky mají
+  vlastní kolekci `quizImages`, jeden dokument na obrázek, uvnitř data
+  URL po zmenšení na 1600 px a převodu do WebP (`src/games/kviz/image.ts`).
+  Platí jeden obrázek, jeden vlastník: duplikace balíčku i import
+  zakládají vlastní kopie a mazání otázky i balíčku obrázek uklidí,
+  jinak zůstanou ve Firestore dokumenty, které nejsou nikde vidět.
+  Telefon obrázek nedostane, do session nesmí o otázce nic.
+  Na plátně si obrázek drží stejné místo i po odhalení; kdyby zmizel,
+  dlaždice pod ním poskočí a měření je jednorázové. Rozměry se ukládají
+  s obrázkem, aby měl box velikost dřív, než se obrázek dekóduje.
 - **Po odhalení nese rozložení hlasů sama dlaždice.** Ne graf vedle ní:
   pět prvků na jednom plátně nikdo nepřečte. Dlaždici přeteče pruh
   z inkoustu podle počtu hlasů a číslo na kraji. Otázka se zároveň smrskne

@@ -14,7 +14,7 @@ import {
   type Firestore,
 } from 'firebase/firestore'
 import type { Pack } from '@/types'
-import type { QuizPack } from '@/games/kviz/types'
+import type { QuizImage, QuizPack } from '@/games/kviz/types'
 import type { MucirnaDb } from '@/lib/db'
 import { FIREBASE_CONFIG } from '@/lib/firebase.config'
 import { hashSecret } from '@/lib/hash'
@@ -146,6 +146,33 @@ class FirestoreDb implements MucirnaDb {
 
   async deleteQuizPack(packId: string): Promise<void> {
     await this.write(deleteDoc(doc(this.db, 'quizPacks', packId)), 'Smazání balíčku kvízu')
+  }
+
+  /**
+   * Obrázky k otázkám. Jeden dokument na obrázek, čtení veřejné jako
+   * u balíčků: hra se musí dát spustit bez hesla do správy.
+   *
+   * Zápis se tu na rozdíl od balíčku čeká celý. Balíček se ukládá sám
+   * během psaní, takže tam krátká lhůta stačí, ale obrázek nahrává
+   * autorka jednou a musí se dozvědět, jestli se to povedlo: uložit
+   * odkaz na obrázek, který v databázi není, by otázku tiše rozbilo.
+   */
+  async saveQuizImage(image: QuizImage): Promise<void> {
+    try {
+      await withTimeout(setDoc(doc(this.db, 'quizImages', image.id), image), 20000)
+    } catch (e) {
+      console.error('Uložení obrázku selhalo:', e)
+      throw new Error('Obrázek se nepodařilo uložit. Zkontroluj připojení a oprávnění.')
+    }
+  }
+
+  async loadQuizImage(imageId: string): Promise<QuizImage | null> {
+    const snap = await withTimeout(getDoc(doc(this.db, 'quizImages', imageId)), 20000)
+    return snap.exists() ? (snap.data() as QuizImage) : null
+  }
+
+  async deleteQuizImage(imageId: string): Promise<void> {
+    await this.write(deleteDoc(doc(this.db, 'quizImages', imageId)), 'Smazání obrázku')
   }
 
   /**

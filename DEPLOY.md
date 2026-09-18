@@ -44,8 +44,9 @@ Ověření: v seznamu poskytovatelů má být u *Anonymous* stav **Enabled**.
 
 Pravidla se občas změní spolu s aplikací. Když přibude něco, co hráč
 zapisuje, je potřeba je publikovat znovu, jinak server nový zápis odmítne.
-Naposledy se to stalo s **avatarem hráče**: karta na soupisce má navíc pole
-`avatar`.
+Naposledy se to stalo s **obrázky k otázkám kvízu**: přibyla kolekce
+`quizImages`, kterou čte kdokoli a zapisuje jen odemčená správa. Bez
+publikovaných pravidel se obrázek nenahraje a otázka zůstane bez něj.
 
 Co pravidla dělají:
 
@@ -56,6 +57,9 @@ Co pravidla dělají:
 - připravené balíčky kvízu Na kolik to dáš? smí **číst kdokoli**, aby šla
   hra připravit a spustit bez hesla. Vytvářet, upravovat a mazat je smí
   jen odemčená správa,
+- **obrázky k otázkám** v kolekci `quizImages` platí totéž. Každý obrázek
+  je vlastní dokument s daty v base64, pravidlo navíc hlídá strop, aby se
+  do databáze nedostalo nic, co by se přes rozhraní nevešlo,
 - běžící hru kvízu si přečte každý, kdo zná pětiznakový kód, ale není
   v ní znění otázky ani správná možnost, dokud ji moderátorka neodhalí,
 - hráč smí zapsat **jednu** odpověď na otázku a jen dokud otázka běží.

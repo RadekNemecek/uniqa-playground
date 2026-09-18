@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import ImageField from './ImageField.vue'
 import { BOOLEAN_LABELS, OPTION_COUNT, kindOf, quizOption } from '../options'
 import type { QuizItem, QuizKind } from '../types'
 
@@ -112,6 +113,8 @@ watch(() => props.item.id, async () => {
       />
       <span v-if="promptNote" class="f__note">{{ promptNote }}</span>
     </label>
+
+    <ImageField :item="item" />
 
     <fieldset v-if="kind === 'boolean'" class="opts">
       <legend class="f__label">

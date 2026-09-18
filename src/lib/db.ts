@@ -1,5 +1,5 @@
 import type { Pack } from '@/types'
-import type { QuizPack } from '@/games/kviz/types'
+import type { QuizImage, QuizPack } from '@/games/kviz/types'
 import { hashSecret } from '@/lib/hash'
 
 /**
@@ -31,6 +31,19 @@ export interface MucirnaDb {
   saveQuizPack(pack: QuizPack): Promise<void>
   deleteQuizPack(packId: string): Promise<void>
 
+  /**
+   * Obrázky k otázkám kvízu. Každý je vlastní záznam, protože balíček se
+   * přepisuje při každé pauze v psaní a stovky kilobajtů by se přepisovaly
+   * s ním.
+   *
+   * Nesledují se listenerem: stahují se jen ty, které jsou zrovna potřeba,
+   * tedy otevřená otázka v editoru a otázky sestaveného kvízu. Snímek celé
+   * kolekce by do každého prohlížeče natáhl všechno, co kdy kdo nahrál.
+   */
+  saveQuizImage(image: QuizImage): Promise<void>
+  loadQuizImage(imageId: string): Promise<QuizImage | null>
+  deleteQuizImage(imageId: string): Promise<void>
+
   /** Je už heslo do administrace vůbec nastavené? */
   hasPassword(): Promise<boolean>
   /** Nastaví heslo. Pokud už existuje, vyžaduje znalost toho starého. */
@@ -48,6 +61,7 @@ export interface MucirnaDb {
 
 const KEY_PACKS = 'playground.packs.v1'
 const KEY_QUIZ_PACKS = 'playground.kviz.packs.v1'
+const KEY_QUIZ_IMAGE = 'playground.kviz.img.v1.'
 const KEY_SECRET = 'playground.secret.v1'
 const KEY_UNLOCK = 'playground.unlocked.v1'
 
@@ -148,6 +162,38 @@ class LocalDb implements MucirnaDb {
   async deleteQuizPack(packId: string): Promise<void> {
     writeQuizPacks(readQuizPacks().filter((p) => p.id !== packId))
     this.emitQuiz()
+  }
+
+  /**
+   * Obrázky v lokálním režimu. Každý má vlastní klíč, aby se s balíčky
+   * nepřepisoval dokola celý blok dat.
+   *
+   * `localStorage` unese kolem pěti megabajtů na celý původ, takže se sem
+   * pár obrázků vejde a víc ne. Lokální režim je na zkoušení, ostrý provoz
+   * jede na Firestore; až quóta dojde, musí to ale říct nahlas, ne tiše
+   * zahodit nahraný obrázek.
+   */
+  async saveQuizImage(image: QuizImage): Promise<void> {
+    try {
+      localStorage.setItem(`${KEY_QUIZ_IMAGE}${image.id}`, JSON.stringify(image))
+    } catch {
+      throw new Error(
+        'V lokálním režimu došlo místo na obrázky. Smaž nějaký starší, nebo zkoušej s Firestore.',
+      )
+    }
+  }
+
+  async loadQuizImage(imageId: string): Promise<QuizImage | null> {
+    try {
+      const raw = localStorage.getItem(`${KEY_QUIZ_IMAGE}${imageId}`)
+      return raw ? (JSON.parse(raw) as QuizImage) : null
+    } catch {
+      return null
+    }
+  }
+
+  async deleteQuizImage(imageId: string): Promise<void> {
+    localStorage.removeItem(`${KEY_QUIZ_IMAGE}${imageId}`)
   }
 
   async hasPassword(): Promise<boolean> {
