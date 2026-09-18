@@ -201,6 +201,13 @@ dat.
 U kvízu se ukládají přezdívky účastníků. Patří k nim doba uchování, viz
 `DEPLOY.md`.
 
+Výsledky kvízu mají **vlastní záložku** vedle Hrát a Otázky
+(`src/views/KvizReportsView.vue`, cesta z `reportsRoute` v registru her).
+Jsou to dvě různé práce: otázky se chystají před školením, výsledky se
+čtou po něm, a jako oddíl pod knihovnou balíčků se k nim muselo
+prorolovat. Záložku dostane jen hra, která `reportsRoute` má. Heslo
+chrání totéž co správu, jsou v nich přezdívky.
+
 ## Data
 
 `src/lib/db.ts` je rozhraní úložiště. Aplikace nikdy nesahá na Firestore

@@ -11,7 +11,7 @@ const props = withDefaults(
   defineProps<{
     compact?: boolean
     game?: string
-    section?: 'play' | 'questions'
+    section?: 'play' | 'questions' | 'reports'
   }>(),
   { compact: false, game: '', section: undefined },
 )
@@ -80,6 +80,16 @@ onBeforeUnmount(() => document.removeEventListener('fullscreenchange', syncFulls
       >
         Otázky
       </RouterLink>
+      <!-- Výsledky mají vlastní záložku jen tam, kde vůbec vznikají. -->
+      <RouterLink
+        v-if="currentGame.reportsRoute"
+        :to="currentGame.reportsRoute"
+        class="nav__item"
+        :class="{ 'nav__item--active': section === 'reports' }"
+        :aria-current="section === 'reports' ? 'page' : undefined"
+      >
+        Výsledky
+      </RouterLink>
     </nav>
 
     <p v-else class="head__context">Vyber si hru</p>
@@ -144,9 +154,12 @@ onBeforeUnmount(() => document.removeEventListener('fullscreenchange', syncFulls
 }
 .identity__game:hover { color: var(--c-text); }
 
+/* Sloupce se dopočítají podle počtu záložek: kvíz má navíc Výsledky,
+   Pojišťuj! zůstává u dvou. */
 .nav {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
   gap: var(--sp-1);
   padding: var(--sp-1);
   border: var(--border-w) solid var(--c-border-soft);

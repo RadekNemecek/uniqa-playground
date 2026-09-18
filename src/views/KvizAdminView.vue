@@ -4,7 +4,6 @@ import { useRoute, useRouter } from 'vue-router'
 import AppHeader from '@/components/AppHeader.vue'
 import AdminGate from '@/components/admin/AdminGate.vue'
 import QuizPackEditor from '@/games/kviz/components/QuizPackEditor.vue'
-import HostReport from '@/games/kviz/components/HostReport.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiMenu from '@/components/ui/UiMenu.vue'
 import { db } from '@/lib/db'
@@ -23,9 +22,6 @@ import {
 } from '@/stores/quizPacks'
 import { confirmAction, toast } from '@/stores/ui'
 import { count } from '@/lib/format'
-import { sessionDb } from '@/lib/sessionDb'
-import { downloadReport } from '@/games/kviz/report'
-import type { QuizReport, QuizReportSummary } from '@/games/kviz/types'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import UiEmpty from '@/components/ui/UiEmpty.vue'
 
@@ -35,62 +31,15 @@ const router = useRouter()
 const unlocked = ref(db().isUnlocked())
 const fileInput = ref<HTMLInputElement | null>(null)
 
-/* --- Uložená vyhodnocení -------------------------------------------------- */
-
-const reports = ref<QuizReportSummary[]>([])
-const openReport = ref<QuizReport | null>(null)
-
-/**
- * Vyhodnocení leží jen ve sdílené databázi, protože bez telefonů žádné
- * nevzniká. Bez ní se oddíl prostě neukáže.
- */
-async function loadReports(): Promise<void> {
-  const conn = await sessionDb()
-  if (!conn) return
-  try {
-    reports.value = await conn.listReports()
-  } catch (e) {
-    console.error('Čtení vyhodnocení selhalo:', e)
-  }
-}
-
-async function showReport(reportId: string): Promise<void> {
-  const conn = await sessionDb()
-  if (!conn) return
-  openReport.value = await conn.loadReport(reportId)
-  if (!openReport.value) toast('Vyhodnocení se nepodařilo načíst.', 'bad')
-}
-
-async function removeReport(row: QuizReportSummary): Promise<void> {
-  const ok = await confirmAction({
-    title: 'Smazat vyhodnocení',
-    text: 'Smaže se i s přezdívkami účastníků. Vrátit to nejde.',
-    confirmLabel: 'Smazat',
-    danger: true,
-  })
-  if (!ok) return
-  const conn = await sessionDb()
-  if (!conn) return
-  await conn.deleteReport(row.id)
-  reports.value = reports.value.filter((r) => r.id !== row.id)
-  toast('Vyhodnocení smazáno.', 'ok')
-}
-
-function reportDate(at: number): string {
-  return new Intl.DateTimeFormat('cs-CZ', { dateStyle: 'medium', timeStyle: 'short' }).format(at)
-}
-
 /** Po odemčení se musí sledování nasadit znovu: listener, který
  *  Firestore zamítl, už nic nepošle. */
 async function onUnlocked(): Promise<void> {
   unlocked.value = true
   await reloadQuizPacks()
-  await loadReports()
 }
 
 onMounted(() => {
   void initQuizPacks()
-  void loadReports()
 })
 
 const currentId = computed(() => {
@@ -237,7 +186,7 @@ function badge(id: string): { text: string; tone: 'ok' | 'warn' | 'muted' } {
 
       <main id="obsah" class="admin__body page">
         <!-- Knihovna -------------------------------------------------------- -->
-        <section v-if="!current && !openReport" class="library">
+        <section v-if="!current" class="library">
           <header class="library__head">
             <div>
               <p class="eyebrow">Na kolik to dáš?</p>
@@ -304,38 +253,7 @@ function badge(id: string): { text: string; tone: 'ok' | 'warn' | 'muted' } {
               </UiMenu>
             </li>
           </ul>
-          <!-- Uložená vyhodnocení ------------------------------------------ -->
-          <section v-if="reports.length" class="reports">
-            <h2 class="reports__title">Vyhodnocení odehraných kvízů</h2>
-            <p class="reports__lead">
-              Jsou v nich přezdívky účastníků. Smaž je, až je nebudeš potřebovat.
-            </p>
-            <ul class="reports__items">
-              <li v-for="r in reports" :key="r.id">
-                <button type="button" class="rrow" @click="showReport(r.id)">
-                  <span class="rrow__date">{{ reportDate(r.finishedAt) }}</span>
-                  <span v-fit-text class="rrow__meta">
-                    {{ count(r.questionCount, 'otázka', 'otázky', 'otázek') }} ·
-                    {{ count(r.playerCount, 'hráč', 'hráči', 'hráčů') }} ·
-                    {{ r.packNames.join(', ') }}
-                  </span>
-                </button>
-                <button type="button" class="rrow__x" :aria-label="`Smazat vyhodnocení z ${reportDate(r.finishedAt)}`" @click="removeReport(r)">
-                  Smazat
-                </button>
-              </li>
-            </ul>
-          </section>
         </section>
-
-        <!-- Otevřené vyhodnocení -------------------------------------------- -->
-        <div v-else-if="openReport" class="viewer">
-          <HostReport
-            :report="openReport"
-            @close="openReport = null"
-            @download="downloadReport(openReport)"
-          />
-        </div>
 
         <!-- Editor ---------------------------------------------------------- -->
         <QuizPackEditor
@@ -437,43 +355,4 @@ function badge(id: string): { text: string; tone: 'ok' | 'warn' | 'muted' } {
   transition: width var(--dur-base) var(--ease-out);
 }
 
-/* Uložená vyhodnocení ------------------------------------------------------ */
-.reports { display: grid; gap: var(--sp-2); margin-top: var(--sp-4); padding-top: var(--sp-5); border-top: 1px solid var(--c-line-soft); }
-.reports__title { font-size: var(--fs-lg); }
-.reports__lead { font-size: var(--fs-xs); color: var(--c-text-faint); line-height: var(--lh-body); }
-.reports__items { list-style: none; padding: 0; display: grid; gap: var(--sp-2); margin-top: var(--sp-2); }
-.reports__items li { display: flex; align-items: center; gap: var(--sp-2); }
-.rrow {
-  flex: 1;
-  display: grid;
-  gap: 1px;
-  min-width: 0;
-  padding: var(--sp-3) var(--sp-4);
-  border: 1px solid var(--c-line);
-  border-radius: var(--r-lg);
-  background: var(--c-surface);
-  color: var(--c-text);
-  text-align: left;
-  transition: border-color var(--dur-fast) var(--ease-out);
-}
-.rrow:hover { border-color: var(--c-surface-3); }
-.rrow__date { font-weight: 700; }
-.rrow__meta { font-size: calc(var(--fs-xs) * var(--fit-text, 1)); color: var(--c-text-faint); }
-.rrow__x {
-  flex: none;
-  padding: var(--sp-2) var(--sp-3);
-  border: 1px solid var(--c-line);
-  border-radius: var(--r-md);
-  background: transparent;
-  color: var(--c-text-faint);
-  font-size: var(--fs-xs);
-  font-weight: 600;
-}
-.rrow__x:hover { color: var(--c-bad); border-color: color-mix(in oklab, var(--c-bad) 45%, transparent); }
-
-.viewer { height: min(80vh, 50rem); }
-
-@media (pointer: coarse) {
-  .rrow__x { min-height: var(--control-touch); }
-}
 </style>

@@ -34,6 +34,12 @@ export const router = createRouter({
       meta: { title: 'Otázky | Na kolik to dáš?' },
     },
     {
+      path: '/kviz/vysledky',
+      name: 'kviz-vysledky',
+      component: () => import('@/views/KvizReportsView.vue'),
+      meta: { title: 'Výsledky | Na kolik to dáš?' },
+    },
+    {
       path: '/admin',
       name: 'admin',
       component: () => import('@/views/AdminView.vue'),
