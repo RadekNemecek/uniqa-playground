@@ -180,6 +180,9 @@ async function discard(entry: GameEntry): Promise<void> {
   --home-preview-h: 14rem;
   --home-perspective: 40rem;
   --home-hero-min: 28rem;
+  /* Nápis Mučírna nejde přes celou šířku stránky: na širokém monitoru
+     přebíjel větu nad sebou a dlaždice tlačil pod ohyb. */
+  --home-hero-image-max: 70rem;
   --home-card-side-min: 17rem;
 
   position: relative;
@@ -220,7 +223,7 @@ async function discard(entry: GameEntry): Promise<void> {
 .hero__kicker {
   color: var(--c-text-muted);
   font-family: var(--font-hand);
-  font-size: var(--fs-xl);
+  font-size: var(--fs-2xl);
   font-weight: 500;
   line-height: var(--lh-snug);
 }
@@ -230,11 +233,13 @@ async function discard(entry: GameEntry): Promise<void> {
   width: 100%;
 }
 .hero__image {
-  width: 100%;
+  width: min(100%, var(--home-hero-image-max));
   height: auto;
 }
 
-.choice { padding-block: var(--sp-5) var(--sp-9); }
+/* Dlaždice nezačínají hned pod nápisem: rozcestník je první, co
+   uživatelka vidí, a stálo za to nechat ho dýchat. */
+.choice { padding-block: var(--sp-8) var(--sp-9); }
 
 .games {
   display: grid;
@@ -419,7 +424,8 @@ async function discard(entry: GameEntry): Promise<void> {
 @media (max-width: 720px) {
   .hero { min-height: 0; padding-block: var(--sp-8); }
   .hero__copy { gap: var(--sp-4); }
-  .hero__kicker { font-size: var(--fs-lg); }
+  .hero__kicker { font-size: var(--fs-xl); }
+  .choice { padding-block: var(--sp-6) var(--sp-8); }
   .game-card { display: block; }
   .game-card__preview { min-height: var(--home-preview-h); border-right: 0; border-bottom: var(--separator-w) solid var(--c-line); }
 }
