@@ -309,12 +309,19 @@ async function discard(entry: GameEntry): Promise<void> {
   /* Hlavička karty. Je to pevná výška, ne spodní mez: obě hry mají
      v náhledu jinak vysokou ukázku a karty vedle sebe se musí potkat
      na téže lince. */
-  --home-preview-h: 13rem;
+  --home-preview-h: 12rem;
   --home-perspective: 40rem;
   /* Nápis je hlavička stránky, ne titulní strana: pod ním mají být obě
      hry rovnou vidět, bez rolování. */
-  --home-hero-image-max: 34rem;
+  --home-hero-image-max: 40rem;
   --home-card-side-min: 17rem;
+
+  /* Rozcestník není pracovní sešit, je to dveře do hry. Hranatost, kterou
+     si papírová plocha zavádí kvůli správě otázek, se tu vrací zpátky na
+     měkké poloměry: karta má být dlaždice, na kterou jde sáhnout. */
+  --r-md: 8px;
+  --r-lg: 12px;
+  --r-xl: 20px;
 
   /* Vlastní vrstvení: dlaždice plují pod obsahem. Obsah musí být
      vypsaný taky, pozicovaný pseudoprvek se jinak vykreslí nad
@@ -370,8 +377,25 @@ main {
    a karty pod ním jen vykukovaly, takže se muselo rolovat i tehdy, když
    moderátorka jen jde spustit hru, kterou zná. Nápis teď začíná na téže
    svislé lince jako všechno pod ním a jako nadpisy v přípravě. */
-.hero { padding-block: var(--sp-7) var(--sp-5); }
-.hero__title { display: flex; }
+.hero { position: relative; padding-block: var(--sp-6) var(--sp-4); }
+
+/* Světlo pod značkou. Dlaždice plují po celé ploše a pod nápisem z nich
+   byl závoj; tohle jim tam uklidí a značka stojí na čistém papíře. Na
+   světlé ploše je světlo bílá plocha, ne záře: záře by se tu četla jako
+   šmouha. Leží nad dlaždicemi a pod nápisem, a je vystředěné s ním. */
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: calc(var(--sp-7) * -1) calc(var(--sp-6) * -1);
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 58% 62% at 50% 50%,
+    var(--c-paper-sheet),
+    transparent 72%
+  );
+}
+.hero__title { display: flex; justify-content: center; }
 .hero__image { width: min(100%, var(--home-hero-image-max)); height: auto; }
 
 .choice { padding-block: 0 var(--sp-7); }
@@ -430,10 +454,13 @@ main {
   border: var(--border-w) solid var(--c-border-soft);
   border-radius: var(--r-lg);
   background: var(--c-surface);
-  transition: border-color var(--dur-base) var(--ease-out);
+  transition:
+    border-color var(--dur-base) var(--ease-out),
+    transform var(--dur-base) var(--ease-out);
 }
 .game-card--kviz { --preview-phase: calc(var(--dur-ambient) * 0.26); }
-.game-card:hover { border-color: var(--c-brand); }
+/* Karta se pod prstem nadzvedne. Je to dlaždice, ne řádek v tabulce. */
+.game-card:hover { border-color: var(--c-brand); transform: translateY(calc(var(--sp-1) * -1)); }
 
 @keyframes card-in {
   from { opacity: 0; transform: translateY(var(--sp-5)); }
@@ -555,7 +582,7 @@ main {
   font-variant-numeric: tabular-nums;
 }
 .game-card__heading h3 { margin-top: var(--sp-1); font-size: var(--fs-2xl); }
-.game-card__tagline { color: var(--c-text-muted); font-size: var(--fs-sm); font-weight: 700; }
+.game-card__tagline { color: var(--c-brand); font-size: var(--fs-sm); font-weight: 700; }
 .game-card__description { grid-column: 2; color: var(--c-text-muted); line-height: var(--lh-body); }
 .game-card__meta {
   grid-column: 2;
@@ -602,6 +629,7 @@ main {
   .game-card,
   .mini-board__tile,
   .mini-option { animation: none; }
+  .game-card:hover { transform: none; }
 }
 
 @media (max-width: 960px) {
@@ -614,7 +642,24 @@ main {
 @media (max-width: 720px) {
   /* Na úzké obrazovce by osm dlaždic dělalo nepořádek, půlka stačí. */
   .drift__tile:nth-child(n + 5) { display: none; }
-  .hero { padding-block: var(--sp-7) var(--sp-5); }
+  .hero { position: relative; padding-block: var(--sp-6) var(--sp-4); }
+
+/* Světlo pod značkou. Dlaždice plují po celé ploše a pod nápisem z nich
+   byl závoj; tohle jim tam uklidí a značka stojí na čistém papíře. Na
+   světlé ploše je světlo bílá plocha, ne záře: záře by se tu četla jako
+   šmouha. Leží nad dlaždicemi a pod nápisem, a je vystředěné s ním. */
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: calc(var(--sp-7) * -1) calc(var(--sp-6) * -1);
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 58% 62% at 50% 50%,
+    var(--c-paper-sheet),
+    transparent 72%
+  );
+}
   .choice { padding-block: 0 var(--sp-8); }
   .game-card { display: block; }
   /* Zpátky na pevnou výšku. `min-height: 100%` z širšího rozvržení se

@@ -75,9 +75,16 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
   sám. Zůstaly plující dlaždice, protože značka je mřížka dlaždic a obě
   hry na dlaždicích stojí. Na papíře jsou o odstín hlubší plocha, ne
   tmavý panel, inkoust na nich drží 13,01:1. Animace jede na posunu
-  a natočení a při `prefers-reduced-motion` stojí. Nápis stojí bez
-  sloganu, jako hlavička stránky, a pod ním jsou obě hry vidět bez
-  rolování. Náhledy her uvnitř karet zůstávají tmavé, ukazují plátno.
+  a natočení a při `prefers-reduced-motion` stojí. Pod značkou uklízí
+  dlaždice bílé světlo, aby nápis nestál v závoji; na světlé ploše je
+  světlo bílá plocha, ne záře. Nápis stojí vystředěný a bez sloganu,
+  a pod ním jsou obě hry vidět bez rolování. Náhledy her uvnitř karet
+  zůstávají tmavé, ukazují plátno.
+- **Rozcestník si bere zpátky měkké poloměry.** Pracovní sešit srovnává
+  `--r-md`, `--r-lg` i `--r-xl` na `--r-sm`, protože ve správě otázek se
+  pracuje. Rozcestník jsou dveře do hry, takže si je vrací na 8, 12 a 20
+  px a karta se pod prstem nadzvedne. Hranatá bílá karta z něj dělá
+  formulář.
 - **Hravost patří do hry a na rozcestník, ne do správy otázek.** Tam se
   pracuje, ozdoby by překážely. Ve hře je hmota dlaždic, pohyb a jiskra
   vítaná, protože z tabulky dělá herní desku.

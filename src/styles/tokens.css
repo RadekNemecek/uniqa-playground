@@ -400,17 +400,20 @@ body:has(.work-surface) > .modal {
   --button-brand-shadow: none;
   --button-danger-text: var(--c-paper-sheet);
   /* Značka na papíře: modrá dlaždice s bílým „M", slovo z inkoustu.
-     Jiskry jdou z modré, ne ze světla desky: to má na papíru 2,2:1
+     Slovo má spád z inkoustu do modré jako na tmavé ploše. Nejslabší
+     místo je jeho spodek: 6,77:1 na bílém světle pod značkou, 6,03:1 na
+     papíru a 5,00:1 tam, kde pod ním projede plující dlaždice. Jiskry
+     jdou z modré, ne ze světla desky: to má na papíru 2,2:1
      a zmizelo by. */
   --mark-word-top: var(--c-paper-ink);
-  --mark-word-bottom: var(--c-paper-ink);
+  --mark-word-bottom: var(--c-paper-blue);
   --mark-tile-top: var(--c-paper-blue);
   --mark-tile-bottom: var(--c-paper-blue-deep);
   --mark-letter: var(--c-paper-sheet);
   --mark-edge: var(--c-paper-blue-edge);
   --mark-sheen: rgba(255, 255, 255, 0.18);
   --mark-spark: var(--c-paper-blue);
-  --mark-gloss: 0.45;
+  --mark-gloss: 0.6;
   --r-md: var(--r-sm);
   --r-lg: var(--r-sm);
   --r-xl: var(--r-sm);
