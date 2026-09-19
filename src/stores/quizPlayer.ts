@@ -1,5 +1,5 @@
 import { computed, reactive } from 'vue'
-import { sessionDb, type QuizSessionDb } from '@/lib/sessionDb'
+import { sessionDbWhenReady, type QuizSessionDb } from '@/lib/sessionDb'
 import { randomAvatarId } from '@/games/kviz/avatars'
 import type { QuizSession } from '@/games/kviz/types'
 
@@ -170,7 +170,10 @@ export async function watchGame(code: string): Promise<void> {
   state.avatar = rememberedAvatar(code) || state.avatar
   state.missing = false
   state.noConnection = false
-  conn ??= await sessionDb()
+  // Počká, pokud se spojení zrovna navazuje. Hráč otevře odkaz z QR
+  // kódu dřív, než se vrátí anonymní přihlášení, a hlásit mu v tu chvíli
+  // „nemám spojení" znamená poslat ho hledat chybu, která není.
+  conn ??= await sessionDbWhenReady()
   if (!conn) {
     state.noConnection = true
     return

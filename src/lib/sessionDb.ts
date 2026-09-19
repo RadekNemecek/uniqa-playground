@@ -1,4 +1,4 @@
-import { shallowRef } from 'vue'
+import { shallowRef, watch } from 'vue'
 import type {
   QuizAnswer,
   QuizKind,
@@ -127,9 +127,35 @@ export interface AnswerDraft {
  *  a sama se srovnala, jakmile se spojení objeví. */
 const factory = shallowRef<(() => Promise<QuizSessionDb | null>) | null>(null)
 
+/**
+ * Spojení se teprve navazuje.
+ *
+ * Telefon se ptá hned, jak hráč otevře odkaz z QR kódu, tedy skoro
+ * vždycky dřív, než se stihne vrátit anonymní přihlášení od Googlu.
+ * Bez tohohle rozlišení odpověděl `sessionDb()` prázdnem a hráč dostal
+ * „Nemám spojení" na síti, která byla v pořádku, s tlačítkem, které to
+ * nemohlo spravit.
+ */
+const connecting = shallowRef(false)
+
+/** Jak dlouho se dá čekat na spojení, které se navazuje. Pojistka proti
+ *  síti, která spojení ani nenaváže, ani neodmítne. */
+const WAIT_MS = 15000
+
 /** Registruje se z `main.ts`, jakmile je Firestore k dispozici. */
 export function setSessionDbFactory(next: () => Promise<QuizSessionDb | null>): void {
   factory.value = next
+  connecting.value = false
+}
+
+/** Ohlásí z `main.ts`, že se spojení navazuje. */
+export function markSessionDbConnecting(): void {
+  if (!factory.value) connecting.value = true
+}
+
+/** Ohlásí z `main.ts`, že se spojení navázat nepovedlo. */
+export function markSessionDbFailed(): void {
+  connecting.value = false
 }
 
 /**
@@ -141,6 +167,39 @@ export async function sessionDb(): Promise<QuizSessionDb | null> {
   return factory.value ? factory.value() : null
 }
 
+/**
+ * Totéž, ale počká, pokud se spojení zrovna navazuje.
+ *
+ * Pro telefon hráče je to rozdíl mezi „ještě to nedorazilo" a „tady to
+ * nepojede". První se spraví samo za vteřinu, druhé si žádá načíst
+ * stránku znovu, a hráč před plnou místností musí dostat tu radu, která
+ * platí.
+ */
+export async function sessionDbWhenReady(): Promise<QuizSessionDb | null> {
+  if (!factory.value && connecting.value) {
+    await new Promise<void>((resolve) => {
+      let stop: (() => void) | null = null
+      let timer = 0
+      const done = (): void => {
+        stop?.()
+        window.clearTimeout(timer)
+        resolve()
+      }
+      // Pojistka na síť, která spojení ani nenaváže, ani neodmítne.
+      timer = window.setTimeout(done, WAIT_MS)
+      stop = watch([factory, connecting], () => {
+        if (factory.value || !connecting.value) done()
+      })
+    })
+  }
+  return sessionDb()
+}
+
 export function hasSessionDb(): boolean {
   return factory.value !== null
+}
+
+/** Spojení se navazuje a ještě není rozhodnuto. */
+export function isSessionDbConnecting(): boolean {
+  return connecting.value
 }

@@ -206,9 +206,24 @@ service cloud.firestore {
       allow get: if request.auth != null
                  && (isUnlocked() || resource.data.hostUid == request.auth.uid);
       allow list: if isUnlocked();
+      // Zápis je otevřený každému přihlášenému, protože kvíz smí vést
+      // i ten, kdo nezná heslo do správy. Proto aspoň hrubý tvar: bez
+      // něj je to kolekce, do které umí kdokoli sypat cokoli. Přečíst
+      // to stejně nikdo cizí nemůže, jde jen o to nedržet cizí data
+      // a neplatit za ně.
       allow create: if request.auth != null
                     && request.resource.data.hostUid == request.auth.uid
-                    && request.resource.data.schema == 1;
+                    && request.resource.data.schema == 1
+                    && request.resource.data.keys().hasAll(['id', 'groupName', 'round',
+                         'packNames', 'startedAt', 'finishedAt', 'questions', 'players', 'matrix'])
+                    && request.resource.data.groupName is string
+                    && request.resource.data.groupName.size() <= 120
+                    && request.resource.data.questions is list
+                    && request.resource.data.questions.size() <= 200
+                    && request.resource.data.players is list
+                    && request.resource.data.players.size() <= 300
+                    && request.resource.data.matrix is list
+                    && request.resource.data.matrix.size() <= 200;
       allow update: if false;
       allow delete: if isUnlocked();
     }

@@ -6,6 +6,7 @@ import PlayerAvatar from '@/games/kviz/components/PlayerAvatar.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import { BOOLEAN_LABELS, quizOption } from '@/games/kviz/options'
 import { CODE_LENGTH, isCodeShaped, normalizeCode } from '@/games/kviz/code'
+import { hasSessionDb, isSessionDbConnecting } from '@/lib/sessionDb'
 import { AVATARS, avatarFor } from '@/games/kviz/avatars'
 import { formatScore } from '@/lib/teams'
 import { count } from '@/lib/format'
@@ -54,8 +55,19 @@ function enterAnotherCode(): void {
   void router.push({ name: 'kviz-kod' })
 }
 
-/** Znovu se pokusit navázat spojení, aniž by hráč musel přenačíst stránku. */
+/**
+ * Znovu se pokusit navázat spojení.
+ *
+ * Dokud se spojení navazuje, stačí nasadit listenery znovu. Když se ale
+ * nenavázalo vůbec, žádné opakování uvnitř stránky nepomůže: spojení se
+ * zakládá jednou při startu a druhá šance je jen načíst stránku znovu.
+ * Tlačítko, které to nedělá, je v takové chvíli jen slib bez krytí.
+ */
 function retryConnect(): void {
+  if (!hasSessionDb() && !isSessionDbConnecting()) {
+    window.location.reload()
+    return
+  }
   void watchGame(code.value)
 }
 /** Nabídka zvířat. Zavřená, dokud hráči přidělené nevadí. */
@@ -188,9 +200,9 @@ onBeforeUnmount(leaveGame)
     <section v-else-if="view === 'offline'" class="card">
       <h1 class="card__title">Nemám spojení</h1>
       <p class="card__lead">
-        Telefon se nedostal k internetu. Zkontroluj wifi nebo data a zkus to znovu.
+        Telefon se nedostal k internetu. Zkontroluj wifi nebo data a načti stránku znovu.
       </p>
-      <UiButton variant="brand" size="lg" block @click="retryConnect">Zkusit znovu</UiButton>
+      <UiButton variant="brand" size="lg" block @click="retryConnect">Načíst znovu</UiButton>
       <UiButton v-if="code" variant="ghost" @click="enterAnotherCode">Zadat jiný kód</UiButton>
     </section>
 

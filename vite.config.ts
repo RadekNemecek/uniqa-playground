@@ -12,12 +12,31 @@ export default defineConfig({
     vue(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.png', 'apple-touch-icon.png'],
+      includeAssets: ['favicon.png'],
+      // Ikony z manifestu si prohlížeč stáhne, až když si někdo aplikaci
+      // přidá na plochu. Předstahovat kvůli tomu čtvrt megabajtu do
+      // každého telefonu v sále nedává smysl.
+      includeManifestIcons: false,
       workbox: {
         // Aplikace se po prvním načtení uloží do prohlížeče. Když na
         // školení vypadne síť nebo firemní firewall blokne github.io,
         // hra i tak naběhne.
         globPatterns: ['**/*.{js,css,html,svg,png,webp,woff2}'],
+        // Co se předem stahovat nemá. Na školení se naráz připojuje celá
+        // místnost a každý telefon si tahá tenhle seznam přes jednu wifi,
+        // takže každý zbytečný soubor se násobí počtem lidí.
+        //
+        // Velké ikony a karta pro náhled odkazu jsou pro instalaci PWA
+        // a pro Teams, ne pro prohlížeč: ten si vystačí s favicon.
+        // Caveat je ruční písmo ze tří míst rozhraní, na telefonu hráče
+        // není ani na jednom, a stejně se donačte, když bude potřeba.
+        globIgnores: [
+          '**/icon-512.png',
+          '**/icon-maskable-512.png',
+          '**/apple-touch-icon.png',
+          '**/share-card.png',
+          '**/caveat-*.woff2',
+        ],
         navigateFallback: 'index.html',
         cleanupOutdatedCaches: true,
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,

@@ -227,6 +227,7 @@
   --dur-breathe: 8s;
   --dur-podium-sequence: 10s;
   --dur-podium-place: 900ms;
+  --dur-spin: 700ms;    /* jedna otáčka čekacího kolečka */
   /* Záporné prodlevy, ne trvání: rozjedou oběžnice na rozcestníku každou
      v jiné fázi. Vlastní prefix, aby je `--dur-*` nesváděl nulovat. */
   --delay-orbit-score:  -4s;
@@ -299,6 +300,10 @@
   --z-menu: 30;
   --z-stage: 60;
   --z-results: 120;
+  /* Pás o vypadlém spojení. Stojí mimo tok, aby neposunul obsah změřený
+     na jednu obrazovku, a musí být vidět i přes výsledky: dozvědět se
+     o odpojených telefonech až po hře je pozdě. */
+  --z-alert: 130;
   /* Modal musí být nad výsledky: potvrzení „hrát znovu" jde z výherní desky. */
   --z-modal: 140;
   --z-toast: 160;

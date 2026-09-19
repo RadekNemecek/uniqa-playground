@@ -88,6 +88,19 @@ function scheduleReady(): void {
 
 const running = computed(() => props.phase === 'question' && ready.value)
 
+/**
+ * Kolik z limitu už uteklo, než se časomíra nasadila.
+ *
+ * Na nové otázce nula. Po obnovení stránky uprostřed otázky ale ne:
+ * telefony i pravidlo na serveru počítají dál od serverového razítka
+ * a plátno se na ně musí napojit, ne začít znovu. Bez tohohle ukazovala
+ * místnosti patnáct zbývajících vteřin nad tlačítky, která už server
+ * nepustí. Deska Pojišťuj! to dělá stejně.
+ */
+const elapsedMs = computed(() =>
+  props.askedAt === null ? 0 : Math.max(0, Date.now() - (props.askedAt + props.preRollMs)),
+)
+
 /** Vyhodnocení ztlumí chybné možnosti a označí správnou. Rozvržení
  *  zůstává stejné, dlaždice se nikam neposunou. */
 function stateOf(i: number): 'idle' | 'wrong' | 'right' {
@@ -192,6 +205,7 @@ onBeforeUnmount(() => {
         v-if="phase === 'question'"
         :key="question.qid + String(ready)"
         :seconds="limitSeconds"
+        :elapsed-ms="elapsedMs"
         :running="running"
         @expired="emit('expired')"
       />

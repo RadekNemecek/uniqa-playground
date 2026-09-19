@@ -162,7 +162,8 @@ byla dřív), potom už je to jen zátěž.
 
 Dvě cesty, jak to dodržet:
 
-1. **Ručně.** Seznam vyhodnocení je na `/kviz/otazky` a u každého je
+1. **Ručně.** Seznam vyhodnocení je na `/kviz/vysledky`, tedy pod
+   záložkou *Výsledky* vedle *Hrát* a *Otázky*, a u každého je
    tlačítko na smazání.
 2. **Automaticky.** Přidej TTL politiku i nad `quizReports` nad polem
    `expiresAt` a do ukládaného dokumentu to pole doplň. Firestore pak

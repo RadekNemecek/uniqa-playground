@@ -119,11 +119,10 @@ function onKey(e: KeyboardEvent): void {
   // Uvnitř tlačítka nebo pole má klávesa svůj vlastní význam.
   if (target && /^(BUTTON|INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return
 
-  if (e.key === 'Escape') {
-    e.preventDefault()
-    void onEnd()
-    return
-  }
+  // Escape tu schválně hru neukončuje. Z celé obrazovky se odchází taky
+  // Escapem, takže moderátorce, která chtěla jen ven z fullscreenu,
+  // vyskakoval dialog „Ukončit kvíz" uprostřed běžícího školení.
+  // Ukončit jde tlačítkem v pásu, a to je na nevratný krok akorát.
   // Mezerník hlásí různé prohlížeče různě, proto i e.code.
   if (e.key === ' ' || e.code === 'Space') {
     e.preventDefault()
@@ -218,8 +217,12 @@ onBeforeUnmount(() => {
 
       <!-- Bez spojení telefony zamrznou na poslední doručené fázi. Zneužít
            se to nedá, pozdní odpovědi odmítne server, ale moderátorka to
-           musí vědět dřív, než se začne divit. -->
-      <p v-if="offline && withPhones" class="warn">
+           musí vědět dřív, než se začne divit.
+
+           Pás stojí mimo tok. Kdyby se vsunul nad herní plochu, posunul
+           by obsah, který je změřený na jednu obrazovku, a přeměřit se
+           nedá: `fitToScreen()` měří jednou na začátku otázky. -->
+      <p v-if="offline && withPhones" class="warn" role="status">
         Bez spojení. Telefony nevidí, co se na plátně děje.
         <button type="button" @click="onDropPhones">Dohrát bez telefonů</button>
       </p>
@@ -301,6 +304,9 @@ onBeforeUnmount(() => {
 }
 
 .warn {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: var(--z-alert);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -311,9 +317,10 @@ onBeforeUnmount(() => {
   color: var(--c-text);
   font-size: var(--fs-sm);
   font-weight: 600;
+  text-align: center;
 }
 .warn button {
-  border: 1px solid var(--c-text);
+  border: var(--border-w) solid var(--c-text);
   border-radius: var(--r-md);
   padding: var(--sp-1) var(--sp-3);
   background: transparent;

@@ -465,7 +465,7 @@ main {
   transform-origin: top center;
   /* Sotva znatelné dýchání, jako když se projektor rozehřívá. Pomalé
      schválně: je to pozadí, ne animace k dívání. */
-  animation: beam-sway 26s var(--ease-out) infinite alternate;
+  animation: beam-sway var(--dur-orbit) var(--ease-out) infinite alternate;
 }
 
 /* Dopad světla za nápisem. Drží ho v ploše, aby nevisel v prázdnu. */

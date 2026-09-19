@@ -5,7 +5,7 @@ import type { GameState } from '@/types'
  *
  * Z kvízu zůstane po hře vyhodnocení, z desky dosud nezůstalo nic: hra
  * skončila, moderátorka klikla na Konec a půlhodina školení se ztratila.
- * Přitom právě tohle je to, co se ukazuje managementu — ne že se hrálo,
+ * Přitom právě tohle je to, co se ukazuje managementu, ne že se hrálo,
  * ale co z toho vyšlo a která kategorie týmu nesedla.
  *
  * Ukládá se lokálně, do prohlížeče. Deska se vede z jednoho notebooku

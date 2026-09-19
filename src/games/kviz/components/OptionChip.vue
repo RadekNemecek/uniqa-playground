@@ -39,10 +39,12 @@ const revealed = computed(() => props.votes !== null)
     <span class="chip__letter" aria-hidden="true">{{ option.letter }}</span>
     <span v-if="text" v-fit-text class="chip__text">{{ text }}</span>
 
-    <!-- Fajfka se objeví jen u správné, ale místo si drží obě: dlaždice se
-         po odhalení nesmí přesázet. -->
-    <span v-if="state !== 'idle'" class="chip__tick" :class="{ 'chip__tick--off': state !== 'right' }" aria-hidden="true">
-      <UiIcon name="check" size="md" />
+    <!-- Značka verdiktu. Fajfka u správné, křížek u chybné, u obou na
+         stejném místě: dlaždice se po odhalení nesmí přesázet. Křížek
+         tu není navíc k barvě, je to druhý nositel téhož: kdo barvy
+         nerozezná nebo sedí daleko, čte tvar. -->
+    <span v-if="state !== 'idle'" class="chip__tick" aria-hidden="true">
+      <UiIcon :name="state === 'right' ? 'check' : 'close'" size="md" />
     </span>
 
     <span v-if="withVotes" class="chip__count" :class="{ 'chip__count--hidden': !revealed }" aria-hidden="true">
@@ -55,7 +57,13 @@ const revealed = computed(() => props.votes !== null)
       <span class="chip__fill"></span>
     </span>
 
-    <span class="vh">{{ label }}<template v-if="revealed">, {{ votes }}</template></span>
+    <!-- Verdikt nese na plátně tvar a plocha, obojí je pro čtečku němé,
+         proto je tady i slovem. -->
+    <span class="vh">
+      {{ label }}<template v-if="state === 'right'">, správně</template><template
+        v-else-if="state === 'wrong'"
+      >, špatně</template><template v-if="revealed">, {{ votes }}</template>
+    </span>
   </div>
 </template>
 
@@ -78,7 +86,8 @@ const revealed = computed(() => props.votes !== null)
   color: var(--c-text-ink);
   overflow: hidden;
   transition:
-    opacity var(--dur-base) var(--ease-out),
+    background-color var(--dur-base) var(--ease-out),
+    color var(--dur-base) var(--ease-out),
     border-color var(--dur-base) var(--ease-out),
     box-shadow var(--dur-base) var(--ease-out);
 }
@@ -122,8 +131,6 @@ const revealed = computed(() => props.votes !== null)
   color: var(--tint);
 }
 .chip__tick svg { width: 62%; height: 62%; }
-/* U chybné možnosti je fajfka jen rezervované místo. */
-.chip__tick--off { visibility: hidden; }
 
 .chip__count {
   min-width: 2ch;
@@ -156,10 +163,41 @@ const revealed = computed(() => props.votes !== null)
   transition: width var(--dur-slow) var(--ease-out);
 }
 
-/* Chybná možnost se ztlumí, ale ne tak, aby se z druhého konce místnosti
-   nedal přečíst její počet hlasů: to je to, co učí. */
-.chip--wrong { opacity: 0.55; }
-/* Správná drží plný jas a navíc silnější rámeček, ne jen barvu. */
+/* --- Verdikt --------------------------------------------------------------
+   Chybná možnost nezhasíná průhledností, ale ztrácí barvu a propadá pod
+   plochu. Je to schválně tvrdý rozdíl: z poslední řady se svítící deska
+   proti zhaslé pozná okamžitě, kdežto ztlumení jasu vypadalo jen jako
+   slabší barva. Dřív to byla `opacity: 0.55`, se kterou text na dlaždici
+   spadl na 2:1, hluboko pod hranici 4,5:1, kterou si projekt drží.
+
+   Takhle se plocha i text mění spolu, takže kontrast nespadne: světlý
+   text na propadlé ploše drží kolem 8:1. Odstín možnosti v ní zůstává
+   jen v náznaku, aby se dlaždice dala spárovat s tím, co má hráč na
+   telefonu, ale barvu už nenese, tu si nechává jediná správná.
+
+   Počet hlasů musí zůstat čitelný, to je to, co učí: pruh i číslo se
+   proto překlápějí z inkoustu do světlé, jinak by tmavý pruh na
+   propadlé ploše zmizel. */
+.chip--wrong {
+  border-color: color-mix(in oklab, var(--tint) 20%, transparent);
+  background: color-mix(in oklab, var(--tint) 14%, var(--c-abyss));
+  box-shadow: var(--shadow-inset-well);
+  color: var(--c-text-muted);
+}
+.chip--wrong .chip__letter {
+  background: color-mix(in oklab, var(--c-value) 6%, transparent);
+  color: var(--c-text-muted);
+  box-shadow: inset 0 0 0 var(--separator-w) color-mix(in oklab, var(--tint) 32%, transparent);
+}
+.chip--wrong .chip__tick {
+  background: transparent;
+  color: var(--c-text-faint);
+  box-shadow: inset 0 0 0 var(--separator-w) color-mix(in oklab, var(--c-text-faint) 55%, transparent);
+}
+.chip--wrong .chip__bar { background: color-mix(in oklab, var(--c-value) 10%, transparent); }
+.chip--wrong .chip__fill { background: var(--c-text-muted); }
+
+/* Správná drží plnou barvu a navíc silnější rámeček, ne jen odstín. */
 .chip--right {
   border-color: var(--c-text-ink);
   box-shadow: var(--shadow-lg), inset 0 0 0 calc(var(--sp-1) * var(--fit, 1)) color-mix(in oklab, var(--c-text-ink) 22%, transparent);

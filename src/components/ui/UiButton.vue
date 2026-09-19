@@ -146,7 +146,7 @@ withDefaults(
   border: var(--border-w-strong) solid color-mix(in oklab, currentColor 30%, transparent);
   border-top-color: currentColor;
   border-radius: var(--r-full);
-  animation: btn-spin 700ms linear infinite;
+  animation: btn-spin var(--dur-spin) linear infinite;
 }
 
 @keyframes btn-spin {

@@ -354,8 +354,10 @@ export function advance(): void {
     case 'question':
       // Odpočet je nástup otázky, ne část odpovídání. Opakovaný stisk
       // mezerníku během něj nesmí otázku zamknout dřív, než ji lidé uvidí.
-      // Běží jen u první otázky, dál se na nic nečeká.
-      if (s.index === 0 && s.askedAt && Date.now() < s.askedAt + PRE_ROLL_MS) break
+      // Čte se `preRollMs`, ne konstanta: bez telefonů žádný odpočet
+      // není a mezerník tehdy nesmí být pět vteřin hluchý. Plátno by
+      // přitom tvrdilo „Mezerník zamkne odpovídání" a nic by se nedělo.
+      if (s.askedAt && Date.now() < s.askedAt + preRollMs.value) break
       void lockAnswers()
       break
     case 'locked':
@@ -519,15 +521,27 @@ export async function renamePlayer(uid: string, nick: string): Promise<void> {
  * Dohrát bez telefonů. Session se přestane zapisovat a kvíz dojede jako
  * promítaná hra. Body za dobu výpadku se dobodovat nedají a hráči to musí
  * vědět, proto to není automatické.
+ *
+ * Session se zkusí uklidit. Nečeká se na to a neúspěch se nehlásí: hra
+ * běží dál na plátně a moderátorka teď řeší místnost, ne databázi. Bez
+ * pokusu by ale v databázi zůstaly přezdívky účastníků a odpovědi až do
+ * vypršení osmi hodin, a to jen za předpokladu, že jsou ve Firebase
+ * nastavené politiky TTL (viz `DEPLOY.md`).
  */
 export function dropPhones(): void {
   const s = store.current
   if (!s) return
+  const code = s.code
   detachAll()
   s.code = null
   live.players = []
   live.answers = []
   live.offline = false
+  if (code && conn) {
+    void conn.disposeSession(code).catch((e) => {
+      console.error('Úklid opuštěné hry selhal:', e)
+    })
+  }
 }
 
 /** Předehra v milisekundách. Patří jen před první otázku kola a bez
