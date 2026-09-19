@@ -61,9 +61,12 @@ const cards = computed<GameCard[]>(() =>
  * pozadí nenese obrázek odjinud, ale vlastní tvar aplikace. Jsou to jen
  * souřadnice a tempo, vzhled si řeší styl.
  *
- * `slow` je doba jednoho přeletu tam a zpět. Čísla jsou schválně velká
- * a nesoudělná, aby se dlaždice nikdy nesrovnaly do společného rytmu
- * a pohyb zůstal na hraně vnímatelnosti.
+ * `slow` je doba jednoho okruhu. Čísla jsou schválně velká
+ * a nesoudělná, aby se dlaždice nikdy nesrovnaly do společného rytmu.
+ * Dráha není úsečka tam a zpět, ale uzavřený čtyřbodový okruh: dlaždice
+ * se tím nekývá, ale plave. Na jeden úsek vychází kolem deseti vteřin,
+ * takže je pohyb vidět, když se člověk zastaví, a nerve se o pozornost,
+ * když ne.
  *
  * Pole je celá stránka včetně úvodu, klidně i za nápisem: dlaždice jsou
  * tlumené a rozostřené natolik, že značce neubírají. U okrajů je
@@ -79,10 +82,11 @@ interface DriftTile {
   size: number
   /** Natočení ve stupních. */
   rot: number
-  /** Posun během přeletu v procentech vlastní velikosti. */
+  /** Nejzazší bod dráhy v procentech vlastní velikosti. Zbytek dráhy
+   *  se z něj odvozuje, takže tvar plavby je jeden a délka vlastní. */
   dx: number
   dy: number
-  /** Doba přeletu a odklad startu v sekundách. */
+  /** Doba jednoho okruhu a odklad startu v sekundách. */
   slow: number
   delay: number
   /** Modrá je vzácná: dvě dlaždice z osmi, jinak by z pozadí byl vzor. */
@@ -90,14 +94,14 @@ interface DriftTile {
 }
 
 const DRIFT: DriftTile[] = [
-  { x: -5, y: 3, size: 14, rot: -9, dx: 10, dy: -7, slow: 47, delay: 0, tone: 'papir' },
-  { x: 91, y: 7, size: 11, rot: 12, dx: -9, dy: 10, slow: 61, delay: -8, tone: 'modra' },
-  { x: 27, y: 6, size: 8, rot: 14, dx: 13, dy: 8, slow: 43, delay: -14, tone: 'papir' },
-  { x: 62, y: 15, size: 7, rot: -6, dx: -11, dy: -9, slow: 53, delay: -21, tone: 'papir' },
-  { x: -2, y: 26, size: 12, rot: 6, dx: 11, dy: -10, slow: 57, delay: -26, tone: 'papir' },
-  { x: 84, y: 30, size: 13, rot: 8, dx: -8, dy: 9, slow: 39, delay: -5, tone: 'papir' },
-  { x: 19, y: 36, size: 9, rot: -11, dx: -9, dy: -12, slow: 67, delay: -31, tone: 'modra' },
-  { x: 55, y: 80, size: 11, rot: -14, dx: -13, dy: 9, slow: 71, delay: -12, tone: 'papir' },
+  { x: -5, y: 3, size: 14, rot: -9, dx: 38, dy: -26, slow: 79, delay: 0, tone: 'papir' },
+  { x: 91, y: 7, size: 11, rot: 12, dx: -34, dy: 41, slow: 97, delay: -13, tone: 'modra' },
+  { x: 27, y: 6, size: 8, rot: 14, dx: 52, dy: 33, slow: 67, delay: -28, tone: 'papir' },
+  { x: 62, y: 15, size: 7, rot: -6, dx: -46, dy: -37, slow: 83, delay: -41, tone: 'papir' },
+  { x: -2, y: 26, size: 12, rot: 6, dx: 41, dy: -31, slow: 89, delay: -54, tone: 'papir' },
+  { x: 84, y: 30, size: 13, rot: 8, dx: -29, dy: 36, slow: 61, delay: -9, tone: 'papir' },
+  { x: 19, y: 36, size: 9, rot: -11, dx: -44, dy: -48, slow: 73, delay: -62, tone: 'modra' },
+  { x: 55, y: 80, size: 11, rot: -14, dx: -39, dy: 28, slow: 101, delay: -35, tone: 'papir' },
 ]
 
 /**
@@ -365,15 +369,30 @@ async function discard(entry: GameEntry): Promise<void> {
   /* Jen tolik rozostření, aby dlaždice ustoupila do pozadí a přitom
      zůstala dlaždicí. Víc z ní udělá šmouhu. */
   filter: blur(calc(var(--sp-1) / 2));
-  animation: drift var(--slow) var(--ease-out) var(--delay) infinite alternate;
+  /* Okruh je uzavřený, takže se nesmyčkuje přes `alternate`: dlaždice
+     doplave zpátky tam, odkud vyrazila, a smyčka nikde neucukne.
+     Náběh se počítá na každý úsek zvlášť, proto to na obrátkách
+     nedrhne. */
+  animation: drift var(--slow) var(--ease-both) var(--delay) infinite;
 }
 /* Dvě modré dlaždice, aby plocha nebyla jen šedá na šedé. Význam
    nenesou, tady je to plocha, ne volba. */
 .drift__tile--modra { background: var(--c-brand); opacity: 0.08; }
 
 @keyframes drift {
-  from { transform: translate3d(0, 0, 0) rotate(var(--r)); }
-  to { transform: translate3d(var(--dx), var(--dy), 0) rotate(calc(var(--r) * -1)); }
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(var(--r)); }
+  25% {
+    transform: translate3d(var(--dx), calc(var(--dy) * 0.3), 0)
+      rotate(calc(var(--r) * 0.1));
+  }
+  50% {
+    transform: translate3d(calc(var(--dx) * 0.45), var(--dy), 0)
+      rotate(calc(var(--r) * -1));
+  }
+  75% {
+    transform: translate3d(calc(var(--dx) * -0.5), calc(var(--dy) * 0.55), 0)
+      rotate(calc(var(--r) * -0.35));
+  }
 }
 
 main {

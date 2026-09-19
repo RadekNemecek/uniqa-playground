@@ -81,7 +81,10 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
   a klidně i za nápisem: jsou tlumené a rozostřené natolik, že mu
   neubírají, a to světlo je za ním ztlumí ještě o kus víc. U okrajů je
   zaříznutá hrana stránky, takže z nich kouká jen kus a čtou se jako
-  geometrie. Animace jede na posunu a natočení a při
+  geometrie. Dráha je uzavřený čtyřbodový okruh, ne úsečka tam a zpět:
+  dlaždice se tím nekývá, ale plave. Na jeden úsek vychází kolem deseti
+  vteřin, takže je pohyb vidět, když se člověk zastaví, a nerve se
+  o pozornost, když ne. Animace jede na posunu a natočení a při
   `prefers-reduced-motion` stojí. Úvod je titulní strana: značka
   vystředěná na výšku i na šířku a pod ní ruční kicker. Vtip
   s odebraným „M" se přečte sám a věta ho jen dopoví, proto stojí až za
