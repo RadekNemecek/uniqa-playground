@@ -1,17 +1,127 @@
 /**
  * Vygeneruje favicon, ikony aplikace a náhledovou kartu z produktové značky.
  * Spouští se ručně: `node scripts/make-icons.mjs`
+ *
+ * Značka je dlaždice s „M", tatáž, jakou nese nápis v `HeroMark.vue`.
+ * Nekreslí se odjinud a není to obrázek: geometrie i barvy se sem opíšou
+ * z téhož zdroje jako do nápisu, takže se ikona v prohlížeči a nápis na
+ * plátně nemůžou rozejít.
+ *
+ * Jiskry nad dlaždicí do ikony nepatří. V nápisu mají místo, v ikoně by
+ * ubraly z dlaždice výšku a na šestnácti bodech, kde se favicona čte,
+ * by z nich stejně zbyly tři šmouhy.
  */
 import { mkdir, readFile } from 'node:fs/promises'
+import opentype from 'opentype.js'
 import sharp from 'sharp'
 
 // Musí odpovídat tmavé vrstvě v src/styles/tokens.css.
 const BASE = '#001A31' // --c-base
 const LIT = '#7DBBF0' // --c-brand
 const GLOW = '#002846' // --c-surface
-const SOURCE = 'src/assets/mucirna-mark.png'
 
-const source = await readFile(SOURCE)
+// Dlaždice značky. Tytéž hodnoty jako gradient `mark-tile` v HeroMark.
+const TILE_TOP = '#5AAAF5' // --c-light
+const TILE_BOTTOM = '#4E9BDD' // --c-brand-deep
+const TILE_EDGE = '#01182E' // --c-tile-edge
+const TILE_SHEEN = 'rgba(255, 255, 255, 0.16)' // --c-tile-sheen
+const LETTER = '#FFFFFF' // --c-value
+
+/** Naklonění dlaždice ve stupních. Stejné jako v nápisu. */
+const TILT = 7
+/** Strana dlaždice a střed plátna, na kterém se kreslí. Konkrétní čísla
+ *  jsou jedno, obrázek se pak stejně ořízne na obsah a zasadí do čtverce;
+ *  musí se jen vejít i s náklonem a hranou. */
+const TILE = 90
+const CENTER = 60
+const CANVAS = 120
+
+/**
+ * Písmeno „M" v Latu 900, tedy v písmu UNIQA a v tomtéž řezu jako nápis.
+ *
+ * Bere se z řezu, který má aplikace v závislostech, a převádí se na
+ * křivku. Kdyby se do SVG napsalo `font-family="Lato"`, vykreslila by ho
+ * knihovna v sharpu systémovým písmem: Lato v systému není a záměna by
+ * proběhla tiše, takže by ikona vypadala správně jen na počítači, kde
+ * Lato nainstalované je.
+ */
+const FONT = 'node_modules/@fontsource/lato/files/lato-latin-900-normal.woff'
+
+/**
+ * Vypíše cestu z příkazů.
+ *
+ * `Path.toPathData` z opentype.js 2.0.0 se použít nedá: při necelé
+ * velikosti písma, což je přesně náš případ, vypouští do souřadnic `NaN`.
+ * Příkazy samotné jsou v pořádku, takže se zapíší rovnou.
+ */
+function pathData(path, precision = 2) {
+  const num = (value) => String(Number(value.toFixed(precision)))
+
+  return path.commands
+    .map((command) => {
+      if (command.type === 'Z') return 'Z'
+      const points =
+        command.type === 'C'
+          ? [command.x1, command.y1, command.x2, command.y2, command.x, command.y]
+          : command.type === 'Q'
+            ? [command.x1, command.y1, command.x, command.y]
+            : [command.x, command.y]
+      return command.type + points.map(num).join(' ')
+    })
+    .join('')
+    .replace(/ -/g, '-')
+}
+
+/**
+ * Křivka „M" vystředěná na střed dlaždice.
+ *
+ * Středí se na skutečný obrys, ne na účaří: v poli má sedět opticky,
+ * a to `dominant-baseline` neumí.
+ *
+ * Verzálka zabírá větší díl dlaždice než v nápisu. Nápis se čte na
+ * plátně a dlaždice v něm smí dýchat, kdežto favicona se čte na
+ * šestnácti bodech a tam rozhoduje, jak silné je písmeno. S poměrem
+ * z nápisu z něj v liště zbyl světlý proužek.
+ */
+function letterPath(font) {
+  const cap = font.tables.os2.sCapHeight / font.unitsPerEm
+  const size = (TILE * 0.55) / cap
+  const box = font.getPath('M', 0, 0, size).getBoundingBox()
+
+  return pathData(
+    font.getPath('M', CENTER - (box.x1 + box.x2) / 2, CENTER - (box.y1 + box.y2) / 2, size),
+  )
+}
+
+/** Dlaždice s „M". Hrana zespodu a lesk nahoře jsou tytéž jako na
+ *  dlaždicích herní desky, bez nich by to byl jen barevný čtvereček. */
+function markSvg(letter) {
+  const x = CENTER - TILE / 2
+  const y = CENTER - TILE / 2
+  const r = TILE * 0.2
+  const drop = TILE * 0.05
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${CANVAS}" height="${CANVAS}" viewBox="0 0 ${CANVAS} ${CANVAS}">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0.35" y2="1">
+      <stop offset="0%" stop-color="${TILE_TOP}"/>
+      <stop offset="100%" stop-color="${TILE_BOTTOM}"/>
+    </linearGradient>
+  </defs>
+  <g transform="rotate(${-TILT} ${CENTER} ${CENTER})">
+    <rect x="${x}" y="${y + drop}" width="${TILE}" height="${TILE}" rx="${r}" fill="${TILE_EDGE}"/>
+    <rect x="${x}" y="${y}" width="${TILE}" height="${TILE}" rx="${r}" fill="url(#tile)"/>
+    <rect x="${x + TILE * 0.09}" y="${y + drop}" width="${TILE * 0.82}" height="${TILE * 0.035}" rx="${TILE * 0.02}" fill="${TILE_SHEEN}"/>
+    <path d="${letter}" fill="${LETTER}"/>
+  </g>
+</svg>`
+}
+
+const buffer = await readFile(FONT)
+const font = opentype.parse(
+  buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength),
+)
+const source = Buffer.from(markSvg(letterPath(font)))
 
 /** Značku nejdřív ořízne na obsah a potom ji bezpečně zasadí do čtverce. */
 async function squareMark(size, padding, background = { r: 0, g: 0, b: 0, alpha: 0 }) {
@@ -38,7 +148,17 @@ async function squareMark(size, padding, background = { r: 0, g: 0, b: 0, alpha:
     .toBuffer()
 }
 
-/** Široká náhledová karta pro Teams, e-mail a další sdílení odkazu. */
+/**
+ * Široká náhledová karta pro Teams, e-mail a další sdílení odkazu.
+ *
+ * Nadpis se sází přes `font-family`, takže ho vykreslí knihovna v sharpu
+ * tím, co najde v systému. Lato tam typicky není a záměna proběhne tiše.
+ * Na křivky se převést zatím nedá: Lato, které projekt veze
+ * (`@fontsource/lato`), nemá „č" ani další české glyfy, takže by v nápisu
+ * zůstalo prázdné pole. Až se ta zásoba vyřeší, patří sem `letterPath`
+ * rozšířené o celý text. Značky samotné se to netýká, „M" žádný
+ * rozšířený glyf nepotřebuje.
+ */
 function cardSvg() {
   const width = 1200
   const height = 630
