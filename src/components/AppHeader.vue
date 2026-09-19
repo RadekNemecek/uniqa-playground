@@ -5,7 +5,7 @@ import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import { GAMES } from '@/games/registry'
 import { degraded } from '@/stores/ui'
-import brandMarkUrl from '@/assets/mucirna-mark.png'
+import BrandTile from '@/components/BrandTile.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -51,7 +51,7 @@ onBeforeUnmount(() => document.removeEventListener('fullscreenchange', syncFulls
   <header class="head" :class="{ 'head--compact': compact }">
     <div class="identity">
       <RouterLink to="/" class="brand" aria-label="Mučírna, vybrat jinou hru">
-        <img class="brand__mark" :src="brandMarkUrl" alt="" />
+        <BrandTile class="brand__mark" aria-hidden="true" />
         <span class="brand__name">Mučírna</span>
       </RouterLink>
 
@@ -135,7 +135,6 @@ onBeforeUnmount(() => document.removeEventListener('fullscreenchange', syncFulls
   flex: none;
   width: var(--mark-size);
   height: var(--mark-size);
-  object-fit: contain;
 }
 .brand__name { font-weight: 900; font-size: var(--fs-lg); letter-spacing: -0.02em; }
 

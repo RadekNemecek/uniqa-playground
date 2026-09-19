@@ -39,13 +39,21 @@ const CANVAS = 120
 /**
  * Písmeno „M" v Latu 900, tedy v písmu UNIQA a v tomtéž řezu jako nápis.
  *
- * Bere se z řezu, který má aplikace v závislostech, a převádí se na
- * křivku. Kdyby se do SVG napsalo `font-family="Lato"`, vykreslila by ho
- * knihovna v sharpu systémovým písmem: Lato v systému není a záměna by
- * proběhla tiše, takže by ikona vypadala správně jen na počítači, kde
- * Lato nainstalované je.
+ * Bere se z téhož zdroje, ze kterého si řezy vyrábí `make-fonts.mjs`,
+ * takže „M" v ikoně a „M" na plátně jsou jedna a tatáž kresba.
+ *
+ * Kdyby se do SVG napsalo `font-family="Lato"`, vykreslila by ho knihovna
+ * v sharpu systémovým písmem: Lato v systému není a záměna by proběhla
+ * tiše, takže by ikona vypadala správně jen na počítači, kde Lato
+ * nainstalované je.
  */
-const FONT = 'node_modules/@fontsource/lato/files/lato-latin-900-normal.woff'
+const FONTS = 'node_modules/lato-font/fonts'
+
+/** Otevře řez Lata. */
+async function loadFont(name) {
+  const file = await readFile(`${FONTS}/${name}/${name}.woff`)
+  return opentype.parse(file.buffer.slice(file.byteOffset, file.byteOffset + file.byteLength))
+}
 
 /**
  * Vypíše cestu z příkazů.
@@ -93,6 +101,20 @@ function letterPath(font) {
   )
 }
 
+/** Vysází text na křivky. Účaří na `y`, začátek na `x`. */
+function textPath(font, text, x, y, size, tracking = 0) {
+  let cursor = x
+
+  return [...text]
+    .map((character) => {
+      const glyph = font.charToGlyph(character)
+      const d = pathData(glyph.getPath(cursor, y, size))
+      cursor += (glyph.advanceWidth * size) / font.unitsPerEm + tracking
+      return d
+    })
+    .join('')
+}
+
 /** Dlaždice s „M". Hrana zespodu a lesk nahoře jsou tytéž jako na
  *  dlaždicích herní desky, bez nich by to byl jen barevný čtvereček. */
 function markSvg(letter) {
@@ -117,11 +139,9 @@ function markSvg(letter) {
 </svg>`
 }
 
-const buffer = await readFile(FONT)
-const font = opentype.parse(
-  buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength),
-)
-const source = Buffer.from(markSvg(letterPath(font)))
+const black = await loadFont('lato-black')
+const regular = await loadFont('lato-normal')
+const source = Buffer.from(markSvg(letterPath(black)))
 
 /** Značku nejdřív ořízne na obsah a potom ji bezpečně zasadí do čtverce. */
 async function squareMark(size, padding, background = { r: 0, g: 0, b: 0, alpha: 0 }) {
@@ -151,13 +171,9 @@ async function squareMark(size, padding, background = { r: 0, g: 0, b: 0, alpha:
 /**
  * Široká náhledová karta pro Teams, e-mail a další sdílení odkazu.
  *
- * Nadpis se sází přes `font-family`, takže ho vykreslí knihovna v sharpu
- * tím, co najde v systému. Lato tam typicky není a záměna proběhne tiše.
- * Na křivky se převést zatím nedá: Lato, které projekt veze
- * (`@fontsource/lato`), nemá „č" ani další české glyfy, takže by v nápisu
- * zůstalo prázdné pole. Až se ta zásoba vyřeší, patří sem `letterPath`
- * rozšířené o celý text. Značky samotné se to netýká, „M" žádný
- * rozšířený glyf nepotřebuje.
+ * Nadpis i podtitul se sázejí na křivky ze stejného Lata jako značka.
+ * Zapsané `font-family="Lato"` by knihovna v sharpu vykreslila tím, co
+ * najde v systému, a Lato tam typicky není.
  */
 function cardSvg() {
   const width = 1200
@@ -177,13 +193,8 @@ function cardSvg() {
   </defs>
   <rect width="${width}" height="${height}" fill="url(#g1)"/>
   <rect width="${width}" height="${height}" fill="url(#g2)"/>
-  <text x="388" y="297" fill="#F2F7FD"
-        font-family="Lato, Helvetica, Arial, sans-serif" font-weight="900" font-size="118"
-        letter-spacing="-3">Mučírna</text>
-  <text x="392" y="371" fill="#A9C6E2"
-        font-family="Lato, Helvetica, Arial, sans-serif" font-weight="400" font-size="40">
-    Školicí hry pro týmy
-  </text>
+  <path d="${textPath(black, 'Mučírna', 388, 297, 118, -3)}" fill="#F2F7FD"/>
+  <path d="${textPath(regular, 'Školicí hry pro týmy', 392, 371, 40)}" fill="#A9C6E2"/>
 </svg>`
 }
 

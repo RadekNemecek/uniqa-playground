@@ -1,10 +1,22 @@
 /* ---------------------------------------------------------------------------
    Písma
 
-   Deklarujeme jen latinku a latin-ext, protože aplikace je česká. Balíčkové
-   CSS přitáhne i cyrilici, řečtinu a vietnamštinu a service worker by je pak
-   všechny ukládal do offline mezipaměti. Takhle se stáhne jen to, co se
-   opravdu použije. České háčky a čárky jsou v latin-ext, ta je povinná.
+   Deklarujeme si řezy sami, protože balíčkové CSS přitáhne i cyrilici,
+   řečtinu a vietnamštinu a service worker by je pak všechny ukládal do
+   offline mezipaměti. Takhle se stáhne jen to, co se opravdu použije.
+
+   Lato se nebere z Google Fonts. To, co Google rozdává, češtinu neumí:
+   celý řez má 224 glyfů a chybí v nich Č, Ď, Ě, Ň, Ř, Ť a Ů včetně malých.
+   Přitom se deklaroval `unicode-range`, který tvrdil, že je latin-ext
+   pokrývá, takže si prohlížeč soubor stáhl, glyf v něm nenašel a potichu
+   sáhl po systémovém písmu. Půlka háčků v aplikaci se sázela něčím jiným.
+   Řezy proto vyrábí `scripts/make-fonts.mjs` z původního Lata 2.015 od
+   autora. Rozsah níž se musí shodovat s tím, co ten skript vypíše.
+
+   Latin a latin-ext se nedělí. To dělení šetří stažení tam, kde se
+   rozšířené znaky nevyskytnou; česká aplikace má háček v každé druhé větě.
+
+   Caveat od Googlu čeština trápí nemusí, jeho dva subsety se doplňují.
 
    Lato nese celou aplikaci. Je to písmo, kterým píše UNIQA, takže sazba
    sedí ke značce bez dalšího úsilí. Otázky se promítají na plátno a čtou je
@@ -18,64 +30,34 @@
    nikdy nenese otázku, odpověď, hodnotu ani ovládací prvek.
 --------------------------------------------------------------------------- */
 
-/* Lato 400, latin */
+/* Lato 400 */
 @font-face {
   font-family: 'Lato';
   font-style: normal;
   font-display: swap;
   font-weight: 400;
-  src: url('@fontsource/lato/files/lato-latin-400-normal.woff2') format('woff2');
-  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+  src: url('@/assets/fonts/lato-400.woff2') format('woff2');
+  unicode-range: U+0000-017F,U+0192,U+02C6-02DD,U+2000-206F,U+20A0-20BF,U+2113,U+2122,U+2190-2193,U+2212,U+2215,U+FEFF,U+FFFD;
 }
 
-/* Lato 400, latin-ext */
-@font-face {
-  font-family: 'Lato';
-  font-style: normal;
-  font-display: swap;
-  font-weight: 400;
-  src: url('@fontsource/lato/files/lato-latin-ext-400-normal.woff2') format('woff2');
-  unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;
-}
-
-/* Lato 700, latin */
+/* Lato 700 */
 @font-face {
   font-family: 'Lato';
   font-style: normal;
   font-display: swap;
   font-weight: 700;
-  src: url('@fontsource/lato/files/lato-latin-700-normal.woff2') format('woff2');
-  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+  src: url('@/assets/fonts/lato-700.woff2') format('woff2');
+  unicode-range: U+0000-017F,U+0192,U+02C6-02DD,U+2000-206F,U+20A0-20BF,U+2113,U+2122,U+2190-2193,U+2212,U+2215,U+FEFF,U+FFFD;
 }
 
-/* Lato 700, latin-ext */
-@font-face {
-  font-family: 'Lato';
-  font-style: normal;
-  font-display: swap;
-  font-weight: 700;
-  src: url('@fontsource/lato/files/lato-latin-ext-700-normal.woff2') format('woff2');
-  unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;
-}
-
-/* Lato 900, latin */
+/* Lato 900 */
 @font-face {
   font-family: 'Lato';
   font-style: normal;
   font-display: swap;
   font-weight: 900;
-  src: url('@fontsource/lato/files/lato-latin-900-normal.woff2') format('woff2');
-  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
-}
-
-/* Lato 900, latin-ext */
-@font-face {
-  font-family: 'Lato';
-  font-style: normal;
-  font-display: swap;
-  font-weight: 900;
-  src: url('@fontsource/lato/files/lato-latin-ext-900-normal.woff2') format('woff2');
-  unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;
+  src: url('@/assets/fonts/lato-900.woff2') format('woff2');
+  unicode-range: U+0000-017F,U+0192,U+02C6-02DD,U+2000-206F,U+20A0-20BF,U+2113,U+2122,U+2190-2193,U+2212,U+2215,U+FEFF,U+FFFD;
 }
 
 /* Caveat 500, latin */
