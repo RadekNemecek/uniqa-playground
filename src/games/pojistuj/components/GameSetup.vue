@@ -486,7 +486,7 @@ function start() {
 
         <UiField
           label="Pole Riziko!"
-          hint="Na těchto polích tým před otázkou vsadí část svých bodů. Na desce jsou poznat."
+          hint="Na těchto polích tým před otázkou vsadí část svých bodů. Na desce poznat nejsou, rozsvítí se až při otevření."
         >
           <UiSegmented v-model="wagerCells" aria-label="Počet polí Riziko!" :options="wagerOptions" />
         </UiField>

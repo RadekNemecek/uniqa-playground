@@ -72,7 +72,9 @@ dostupné i z obrazovky výsledků, kam se po poslední otázce skáče samo.
 Rozehraná hra přežije obnovení stránky i pád prohlížeče, včetně
 zbývajícího času na otázce.
 
-Pole **Riziko!** jsou na desce poznat dopředu, teplou hranou a štítkem.
+Pole **Riziko!** na desce poznat nejsou. Mají padnout náhodou: kdo je
+vidí dopředu, buď se jim vyhne, nebo si je schová na konec, a z divokého
+okamžiku je taktika. Ohlásí se samo při otevření, přes celé plátno.
 Před potvrzením sázky je vidět, kolik tým při špatné odpovědi doopravdy
 ztratí: se zapnutým „Skóre nejméně nula" může být ta částka menší než
 sázka, a tým na nule neztratí nic.
@@ -141,7 +143,7 @@ Obě hry si pamatují, co se odehrálo. V přípravě se dá vyplnit **skupina**
   Přehled je ve správě otázek pod knihovnou balíčků. Drží se v prohlížeči
   na tom počítači, ze kterého se hrálo, posledních padesát her.
 - **Na kolik to dáš?** ukládá celé vyhodnocení do sdílené databáze,
-  seznam je na `/kviz/otazky`.
+  seznam je pod vlastní záložkou *Výsledky* na `/kviz/vysledky`.
 
 Jsou v tom přezdívky účastníků, takže k nim patří i doba uchování. Je
 popsaná v [`DEPLOY.md`](DEPLOY.md).
@@ -170,8 +172,9 @@ součást hry, ne jako cizí nástroj.
 
 **Zlatá v systému není**, UNIQA žádnou nemá. Hodnoty na dlaždicích jsou
 bílé, akcent je modrý a jediná teplá barva patří poli **Riziko!**
-Jeho hrana je červená UNIQA, tedy barva, kterou pojišťovna dává na chyby.
-Rizikové pole je obarvené vlastní varovnou barvou značky.
+Ukáže se až ve chvíli, kdy tým na takové pole sáhne: v dialogu se sázkou
+a nad otázkou. Je to červená UNIQA, tedy barva, kterou pojišťovna dává
+na chyby.
 
 ## Logo UNIQA
 

@@ -142,7 +142,6 @@ function onGridKey(e: KeyboardEvent): void {
           :team="teamById(game.cells[c.key]?.teamId)"
           :team-index="teamIndexOf(c.key)"
           :category-name="c.categoryName"
-          :wager="game.wagerCells.includes(c.key)"
           :index="i"
           @open="(el) => open(c.key, el)"
         />

@@ -20,8 +20,6 @@ const emit = defineEmits<{ confirm: [amount: number]; cancel: [] }>()
  */
 const MIN = computed(() => Math.min(10, props.max))
 
-const amount = ref(Math.max(props.base, 10))
-
 /**
  * Co tým při špatné odpovědi doopravdy ztratí.
  *
@@ -35,9 +33,56 @@ const realLoss = computed(() =>
 const root = ref<HTMLElement | null>(null)
 const slider = ref<HTMLInputElement | null>(null)
 
+/**
+ * Krok posuvníku.
+ *
+ * Deset bodů pevně, ne podíl z maxima. Krok se v HTML počítá **od
+ * `min`, ne od nuly**, takže hrubý krok posuvníku na horní mez nedojede:
+ * u pole za tisíc byl krok padesát, posuvník skončil na 960 a nad ním
+ * přitom svítilo 1 000. Deseti se sázka dělí vždycky, protože se z něj
+ * skládají i hodnoty na desce.
+ *
+ * Jemné ladění nese posuvník, hrubá volba tři tlačítka pod ním, takže
+ * si krok nemusí hrát na obojí.
+ */
+const STEP = 10
+
+/** Nejvyšší hodnota, na kterou posuvník dojede. */
+const TOP = computed(() =>
+  Math.max(MIN.value, MIN.value + Math.floor((props.max - MIN.value) / STEP) * STEP),
+)
+
+/** Zaokrouhlí na mřížku posuvníku, ať tlačítko a posuvník ukazují totéž. */
+function snap(value: number): number {
+  const off = Math.round((value - MIN.value) / STEP) * STEP
+  return Math.min(TOP.value, Math.max(MIN.value, MIN.value + off))
+}
+
+/** Napoprvé hodnota pole, zarovnaná na mřížku, ať posuvník nezačíná mezi
+ *  dvěma body a nepřeskočí hned při prvním stisku šipky. */
+const amount = ref(snap(props.base))
+
+/**
+ * Tři pevné sázky: nejmíň, půlka, všechno.
+ *
+ * U stolu se rozhoduje mezi „neriskujeme", „něco" a „jdeme do všeho",
+ * a na tohle je posuvník nepraktický: moderátorka na projektoru míří
+ * myší na pár pixelů a hodnotu pak stejně dolaďuje. Tlačítka jsou tři
+ * vždy, tedy i u pole za tisíc, kde se dřív základní hodnota rovnala
+ * maximu a z nabídky zbyla dvě. Posuvník zůstává na sázky mezi tím.
+ *
+ * Každé tlačítko nese slovo i číslo. Samotné číslo se z místnosti čte
+ * jako údaj, ne jako volba, a v řadě tří čísel není poznat, co znamenají.
+ */
 const steps = computed(() => {
-  const out = new Set<number>([props.base, Math.round(props.max / 2), props.max])
-  return [...out].filter((v) => v > 0 && v <= props.max).sort((a, b) => a - b)
+  const trio = [
+    { label: 'Minimum', value: MIN.value },
+    { label: 'Půlka', value: snap(TOP.value / 2) },
+    { label: 'Všechno', value: TOP.value },
+  ]
+  // Na velmi malém maximu by hodnoty splynuly. Radši dvě tlačítka než
+  // dvě stejná.
+  return trio.filter((s, i) => trio.findIndex((o) => o.value === s.value) === i)
 })
 
 function confirm() {
@@ -103,14 +148,21 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey, true))
         class="wager__slider"
         type="range"
         :min="MIN"
-        :max="max"
-        :step="Math.max(10, Math.round(max / 20))"
-        :aria-label="`Sázka, maximum ${max}`"
+        :max="TOP"
+        :step="STEP"
+        :aria-label="`Sázka, maximum ${TOP}`"
       />
 
       <div class="wager__steps">
-        <button v-for="s in steps" :key="s" type="button" @click="amount = s">
-          {{ formatScore(s) }}
+        <button
+          v-for="s in steps"
+          :key="s.value"
+          type="button"
+          :aria-label="`${s.label}, ${s.value} bodů`"
+          @click="amount = s.value"
+        >
+          <span class="wager__stepWord" aria-hidden="true">{{ s.label }}</span>
+          <span class="wager__stepValue" aria-hidden="true">{{ formatScore(s.value) }}</span>
         </button>
       </div>
 
@@ -216,16 +268,39 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey, true))
   width: 100%;
   accent-color: var(--c-spark);
 }
-.wager__steps { display: flex; gap: var(--sp-2); flex-wrap: wrap; justify-content: center; }
+/* Tři sázky na jeden klik. Stejná šířka, aby z nich byla řada voleb,
+   ne tři náhodně široké chipsy. */
+.wager__steps { display: flex; gap: var(--sp-3); flex-wrap: wrap; justify-content: center; }
 .wager__steps button {
+  display: grid;
+  gap: var(--sp-1);
+  min-width: 7rem;
   padding: var(--sp-2) var(--sp-4);
-  border: 1px solid var(--c-line);
-  border-radius: var(--r-full);
+  border: var(--border-w) solid var(--c-line);
+  border-radius: var(--r-lg);
   background: transparent;
   color: var(--c-text-muted);
-  font-size: var(--fs-sm);
-  font-weight: 600;
+  transition: var(--tr-surface);
+}
+.wager__steps button:hover,
+.wager__steps button:focus-visible {
+  border-color: var(--c-spark-mid);
+  background: color-mix(in oklab, var(--c-spark) 10%, transparent);
+  color: var(--c-text);
+}
+.wager__stepWord {
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+}
+.wager__stepValue {
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+  font-weight: 900;
   font-variant-numeric: tabular-nums;
+  line-height: 1;
+  color: var(--c-text);
 }
 .wager__steps button:hover { color: var(--c-text); border-color: var(--c-spark); }
 
@@ -243,5 +318,10 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey, true))
 @keyframes pop { from { opacity: 0; transform: translateY(20px) scale(0.94); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) {
   .wager, .wager__panel { animation: none; }
+}
+
+/* Dotyk až nakonec, jinak by pravidla nad ním výšku přebila. */
+@media (pointer: coarse) {
+  .wager__steps button { min-height: var(--control-touch); }
 }
 </style>
