@@ -40,9 +40,6 @@ const TILT = 7
 const GAP = FS * 0.02
 /** Místo nad dlaždicí pro jiskry. */
 const SPARKS = FS * 0.3
-/** Šířka pruhu světla, který přejíždí po slovu. */
-const GLINT = FS * 0.55
-
 const textEl = ref<SVGTextElement | null>(null)
 
 /** Střed dlaždice. Účaří slova je na y = FS a dlaždice stojí na výšce
@@ -58,8 +55,6 @@ const reach = (TILE / 2) * (Math.cos(rad) + Math.sin(rad))
 
 const wordX = tileCx + reach + GAP
 const viewBox = ref(`0 0 ${FS * 5} ${FS * 1.4}`)
-/** Kam až slovo sahá. Odlesk po něm přejíždí, takže musí vědět, kde skončit. */
-const wordEnd = ref(wordX + FS * 2.7)
 
 /**
  * Nápis se ukáže a rozjede teprve s hotovým písmem.
@@ -83,7 +78,6 @@ function measure(): void {
   }
   if (width === 0) return
 
-  wordEnd.value = wordX + width
   const pad = FS * 0.08
   const left = tileCx - reach - pad
   const right = wordX + width + pad
@@ -116,36 +110,6 @@ onBeforeUnmount(() => window.removeEventListener('resize', measure))
     aria-label="Mučírna"
     preserveAspectRatio="xMidYMid meet"
   >
-    <defs>
-      <!-- Slovo má spád shora dolů, nahoře skoro bílé, dole modré. -->
-      <linearGradient id="mark-word" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="var(--mark-word-top)" />
-        <stop offset="100%" stop-color="var(--mark-word-bottom)" />
-      </linearGradient>
-      <linearGradient id="mark-tile" x1="0" y1="0" x2="0.35" y2="1">
-        <stop offset="0%" stop-color="var(--mark-tile-top)" />
-        <stop offset="100%" stop-color="var(--mark-tile-bottom)" />
-      </linearGradient>
-      <!-- Odlesk, který dlaždici jednou za čas přejede. Bílá do ztracena
-           na obou koncích, aby to byl přejezd světla a ne pruh. -->
-      <linearGradient id="mark-glint" x1="0" y1="0" x2="1" y2="0">
-        <stop offset="0%" stop-color="var(--c-value)" stop-opacity="0" />
-        <stop offset="50%" stop-color="var(--c-value)" stop-opacity="0.34" />
-        <stop offset="100%" stop-color="var(--c-value)" stop-opacity="0" />
-      </linearGradient>
-      <!-- Odlesk se ořeže lícem dlaždice. Ořez je bez vlastní transformace,
-           takže sedí v téže soustavě jako nakloněná dlaždice. -->
-      <clipPath id="mark-tile-clip">
-        <rect :x="0" :y="tileY" :width="TILE" :height="TILE" :rx="TILE * 0.2" />
-      </clipPath>
-      <!-- Týž odlesk přejede i slovo, ořezaný jeho písmeny. Světlo tak
-           přes nápis přejde jednou, ne dvakrát: nejdřív dlaždice, pak
-           písmena. -->
-      <clipPath id="mark-word-clip">
-        <use href="#mark-word-text" />
-      </clipPath>
-    </defs>
-
     <!-- Jiskry nad dlaždicí. Tři tahy, stejně jako na původním nápisu.
          Vyletí až na dopad dlaždice, každý o chlup později než předchozí. -->
     <g class="mark__sparks" :stroke-width="FS * 0.05">
@@ -180,17 +144,10 @@ onBeforeUnmount(() => window.removeEventListener('resize', measure))
          na konci sekvence o těch sedm stupňů poskočila. Dvě skupiny se
          skládají a nepřetahují. -->
     <g class="mark__drop">
-      <!-- Dlaždice s „M". Hrana a lesk jsou tytéž jako na dlaždicích desky,
-           jinak by z toho byl jen barevný rámeček. -->
+      <!-- Dlaždice s „M". Je to plocha, ne panel: bez hrany, lesku
+           a přejíždějícího odlesku. Ve velikosti, jakou má nápis na
+           rozcestníku, z těch tří věcí byla ikona aplikace, ne značka. -->
       <g class="mark__tile" :transform="`rotate(${-TILT} ${tileCx} ${tileCy})`">
-        <rect
-          class="mark__tile-edge"
-          :x="0"
-          :y="tileY + TILE * 0.05"
-          :width="TILE"
-          :height="TILE"
-          :rx="TILE * 0.2"
-        />
         <rect
           class="mark__tile-face"
           :x="0"
@@ -198,14 +155,6 @@ onBeforeUnmount(() => window.removeEventListener('resize', measure))
           :width="TILE"
           :height="TILE"
           :rx="TILE * 0.2"
-        />
-        <rect
-          class="mark__tile-sheen"
-          :x="TILE * 0.09"
-          :y="tileY + TILE * 0.05"
-          :width="TILE * 0.82"
-          :height="TILE * 0.035"
-          :rx="TILE * 0.02"
         />
         <text
           class="mark__letter"
@@ -217,16 +166,6 @@ onBeforeUnmount(() => window.removeEventListener('resize', measure))
         >
           M
         </text>
-        <g clip-path="url(#mark-tile-clip)">
-          <rect
-            class="mark__glint"
-            :x="0"
-            :y="tileY - TILE * 0.3"
-            :width="TILE * 0.42"
-            :height="TILE * 1.6"
-            fill="url(#mark-glint)"
-          />
-        </g>
       </g>
     </g>
 
@@ -234,17 +173,6 @@ onBeforeUnmount(() => window.removeEventListener('resize', measure))
       učírna
     </text>
 
-    <g clip-path="url(#mark-word-clip)">
-      <rect
-        class="mark__word-glint"
-        :style="{ '--from': `${wordX - GLINT}px`, '--to': `${wordEnd}px` }"
-        :x="0"
-        :y="FS - FS * 0.95"
-        :width="GLINT"
-        :height="FS * 1.15"
-        fill="url(#mark-glint)"
-      />
-    </g>
   </svg>
 </template>
 
@@ -270,19 +198,10 @@ onBeforeUnmount(() => window.removeEventListener('resize', measure))
   font-weight: 900;
   letter-spacing: -0.03em;
 }
-.mark__word { fill: url(#mark-word); }
+.mark__word { fill: var(--mark-word); }
 .mark__letter { fill: var(--mark-letter); letter-spacing: 0; }
-
-.mark__tile-face { fill: url(#mark-tile); }
-.mark__tile-edge { fill: var(--mark-edge); }
-.mark__tile-sheen { fill: var(--mark-sheen); }
+.mark__tile-face { fill: var(--mark-tile); }
 .mark__sparks { stroke: var(--mark-spark); stroke-linecap: round; }
-/* Mimo přejezd je odlesk neviditelný. Bez toho by ve vypnutém pohybu,
-   kde se animace nespustí, zůstal navěky ležet přes levou třetinu
-   dlaždice jako bílý pruh. */
-.mark__glint,
-.mark__word-glint { opacity: 0; }
-
 /* Sekvence se rozjede s odkrytím, ne s připojením do stránky. Kdyby
    běžela pod nulovou průhledností, odehrála by se dřív, než je vidět. */
 .mark--ready .mark__word {
@@ -302,24 +221,6 @@ onBeforeUnmount(() => window.removeEventListener('resize', measure))
   transform-origin: bottom center;
   animation: spark-out var(--dur-base) var(--ease-back)
     calc(var(--mark-land) + var(--dur-slow) * 0.7 + var(--dur-instant) * var(--i)) backwards;
-}
-/* Odlesk. Přejede nápis jednou za čas, nejdřív dlaždici a hned po ní
-   písmena, takže je to jeden pohyb světla přes celou značku a ne dvě
-   blikátka. Bez něj je nápis po dosednutí mrtvý obrázek.
-
-   Jiskry mezitím podle svého, v jiném rytmu: kdyby šly zároveň
-   s odleskem, byla by z toho choreografie. */
-.mark--ready .mark__glint {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: tile-glint var(--dur-ambient) linear calc(var(--mark-land) + var(--dur-slow)) infinite;
-}
-/* Pruh se posouvá v jednotkách výřezu, ne v procentech vlastní šířky:
-   kde slovo končí, ví až měření, a v `--to` je to rovnou v týchž
-   souřadnicích jako zbytek kresby. */
-.mark--ready .mark__word-glint {
-  animation: word-glint var(--dur-ambient) linear
-    calc(var(--mark-land) + var(--dur-slow) + var(--dur-count)) infinite;
 }
 .mark--ready .mark__spark {
   animation:
@@ -344,16 +245,6 @@ onBeforeUnmount(() => window.removeEventListener('resize', measure))
 }
 /* Přejezd zabere první desetinu cyklu, zbytek je klid. Je to ozdoba
    na rozcestníku, ne blikátko. */
-@keyframes tile-glint {
-  0% { opacity: var(--mark-gloss); transform: translateX(-190%) skewX(-16deg); }
-  9% { opacity: var(--mark-gloss); transform: translateX(330%) skewX(-16deg); }
-  100% { opacity: var(--mark-gloss); transform: translateX(330%) skewX(-16deg); }
-}
-@keyframes word-glint {
-  0% { opacity: var(--mark-gloss); transform: translateX(var(--from)) skewX(-12deg); }
-  11% { opacity: var(--mark-gloss); transform: translateX(var(--to)) skewX(-12deg); }
-  100% { opacity: var(--mark-gloss); transform: translateX(var(--to)) skewX(-12deg); }
-}
 /* Jiskra chvíli dřímá a pak krátce vyšlehne. V klidu je o kousek kratší
    a tlumenější, jinak by nebylo co zesílit. */
 @keyframes spark-twinkle {
@@ -364,8 +255,6 @@ onBeforeUnmount(() => window.removeEventListener('resize', measure))
 @media (prefers-reduced-motion: reduce) {
   .mark--ready .mark__word,
   .mark--ready .mark__drop,
-  .mark--ready .mark__spark,
-  .mark--ready .mark__glint,
-  .mark--ready .mark__word-glint { animation: none; }
+  .mark--ready .mark__spark { animation: none; }
 }
 </style>

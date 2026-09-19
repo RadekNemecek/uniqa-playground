@@ -44,13 +44,15 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
   v dialogu sázky a blahopřání na výsledkové obrazovce.
   Nikdy nenese otázku, odpověď, hodnotu ani ovládací prvek, ty se čtou
   z druhého konce místnosti a tam vyhrává čitelnost nad charakterem.
-- **Dvě plochy podle práce, ne podle obrazovky.** Hra je tmavá: rampa je
-  čistý odstín `#005CA9` ztlumený do hloubky. Rozcestník, příprava a
-  správa jsou světlý pracovní sešit ze stejných značkových barev. Nese
-  ho třída `work-surface`, která přemapuje aliasy v `tokens.css`;
-  komponenty z `ui/` o žádném tématu nevědí a nesmí se to změnit.
-  Tmavý blok uvnitř světla (shrnutí v přípravě, náhled hry na
-  rozcestníku) si aliasy vrátí u sebe, přes `--c-studio*`.
+- **Dvě plochy podle práce, ne podle obrazovky.** Co se promítá, je
+  tmavé: hra i rozcestník, rampa je čistý odstín `#005CA9` ztlumený do
+  hloubky. Co se chystá u stolu, je světlý pracovní sešit ze stejných
+  značkových barev: příprava kvízu a správa otázek. Nese ho třída
+  `work-surface`, která přemapuje aliasy v `tokens.css`; komponenty
+  z `ui/` o žádném tématu nevědí a nesmí se to změnit. Tmavý blok
+  uvnitř světla, tedy shrnutí v přípravě, si aliasy vrátí u sebe přes
+  `--c-studio*`. Rozcestník světlý být zkoušel a nefungovalo to: visí
+  na plátně před hrou a patří ke hře, ne k přípravě.
 - **Žádná zlatá ani žlutá.** UNIQA je nemá. Akcent je `--c-brand`, hodnoty
   na dlaždicích nese `--c-value`. Žlutá chybí i mezi barvami týmů, jinak by
   se zlatá vrátila zadními dveřmi.
@@ -73,19 +75,18 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
   generovaná grafika. Ozdob tu běželo šest naráz, tedy záře, zrno, kužel
   i dopad světla, a značce to ubíralo: vtip s odebraným „M" se přečte
   sám. Zůstaly plující dlaždice, protože značka je mřížka dlaždic a obě
-  hry na dlaždicích stojí. Na papíře jsou o odstín hlubší plocha, ne
-  tmavý panel, inkoust na nich drží 13,01:1. Animace jede na posunu
-  a natočení a při `prefers-reduced-motion` stojí. Pod značkou uklízí
-  dlaždice bílé světlo, aby nápis nestál v závoji; na světlé ploše je
-  světlo bílá plocha, ne záře. Nápis stojí vystředěný a bez sloganu
+  hry na dlaždicích stojí, a jeden měkký kruh světla pod nápisem, aby
+  v nich nestál v závoji. Animace jede na posunu a natočení a při
+  `prefers-reduced-motion` stojí. Nápis stojí vystředěný, bez sloganu
   a má přednost před ohybem: celá karta se pod něj na notebooku nevejde,
   její horní hrana s náhledem hry ano, takže je vidět, že se roluje dál.
-  Náhledy her uvnitř karet zůstávají tmavé, ukazují plátno.
-- **Rozcestník si bere zpátky měkké poloměry.** Pracovní sešit srovnává
-  `--r-md`, `--r-lg` i `--r-xl` na `--r-sm`, protože ve správě otázek se
-  pracuje. Rozcestník jsou dveře do hry, takže si je vrací na 8, 12 a 20
-  px a karta se pod prstem nadzvedne. Hranatá bílá karta z něj dělá
-  formulář.
+- **Nápis Mučírna je plochý.** Jedna barva na dlaždici, jedna na slovo,
+  žádná spodní hrana, lesk ani přejíždějící odlesk. Ve velikosti, jakou
+  má na rozcestníku, tedy přes tisíc pixelů, z těch tří věcí byla ikona
+  aplikace z roku 2012. Zůstala nakloněná dlaždice, jiskry a dosednutí,
+  protože to nese ten vtip; povrchová úprava ho nenese. Barvy jdou přes
+  `--mark-*`, takže kresba neví, na které ploše leží. Hmota dlaždic
+  patří herní desce a náhledům her, ne značce.
 - **Hravost patří do hry a na rozcestník, ne do správy otázek.** Tam se
   pracuje, ozdoby by překážely. Ve hře je hmota dlaždic, pohyb a jiskra
   vítaná, protože z tabulky dělá herní desku.

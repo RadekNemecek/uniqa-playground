@@ -165,17 +165,16 @@ kterým UNIQA sází, a **Caveat**, ruční řez, který si na svůj web pustila
 sama tam, kde chce znít lidsky. Hravost se tedy ke značce nepřilepuje,
 jen se zesiluje to, co v ní už je.
 
-**Herní plátno tmavé, pracovní sešit světlý.** Hra zůstává v hluboké
-modré odvozené od `#005CA9`. Rozcestník, příprava a správa kvízu
-používají světlé plochy `#EEF2FA`, `#D5DEEE` a bílou, s tmavým inkoustem
-a modrým akcentem. Knihovna má přehledné řádky; editor drží seznam
-otázek vedle jedné otevřené otázky. Na telefonu se seznam změní na výběr
-otázky. Herní pravidla a barvy odpovědí zůstávají stejné.
+**Co se promítá, je tmavé; co se chystá u stolu, je světlé.** Hra
+i rozcestník zůstávají v hluboké modré odvozené od `#005CA9`. Příprava
+kvízu a správa otázek používají světlé plochy `#EEF2FA`, `#D5DEEE`
+a bílou, s tmavým inkoustem a modrým akcentem. Knihovna má přehledné
+řádky; editor drží seznam otázek vedle jedné otevřené otázky. Na
+telefonu se seznam změní na výběr otázky.
 
-Na rozcestníku nese světlo nápis **Mučírna**: modrá dlaždice s bílým „M"
-a slovo z inkoustu. Stojí sám, bez sloganu, a má přednost před ohybem:
-zpod něj vykukují karty obou her. Náhledy her uvnitř karet zůstávají
-tmavé, protože ukazují plátno.
+Rozcestníku vévodí nápis **Mučírna**, a je plochý: barevná dlaždice
+s „M", vedle ní slovo, žádný lesk ani plastika. Stojí sám, bez sloganu,
+a má přednost před ohybem, takže zpod něj vykukují karty obou her.
 
 **Zlatá v systému není**, UNIQA žádnou nemá. Hodnoty na dlaždicích jsou
 bílé, akcent je modrý a jediná teplá barva patří poli **Riziko!**

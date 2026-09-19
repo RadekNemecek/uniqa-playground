@@ -156,7 +156,7 @@ async function discard(entry: GameEntry): Promise<void> {
 </script>
 
 <template>
-  <div class="home work-surface">
+  <div class="home">
     <!-- Dlaždice v pozadí. Pohyb je pomalý schválně: má dát ploše život,
          ne přetahovat se o pozornost se značkou. -->
     <div class="drift" aria-hidden="true">
@@ -316,13 +316,6 @@ async function discard(entry: GameEntry): Promise<void> {
   --home-hero-image-max: 64rem;
   --home-card-side-min: 17rem;
 
-  /* Rozcestník není pracovní sešit, je to dveře do hry. Hranatost, kterou
-     si papírová plocha zavádí kvůli správě otázek, se tu vrací zpátky na
-     měkké poloměry: karta má být dlaždice, na kterou jde sáhnout. */
-  --r-md: 8px;
-  --r-lg: 12px;
-  --r-xl: 20px;
-
   /* Vlastní vrstvení: dlaždice plují pod obsahem. Obsah musí být
      vypsaný taky, pozicovaný pseudoprvek se jinak vykreslí nad
      nepozicovaným blokem bez ohledu na pořadí v dokumentu. */
@@ -331,12 +324,14 @@ async function discard(entry: GameEntry): Promise<void> {
   overflow: clip;
   display: flex;
   flex-direction: column;
+  min-height: 100dvh;
+  background: var(--c-base);
 }
 
 /* Dlaždice v pozadí. Nesou tvar dlaždic z desky, jen na papíře: světlá
-   plocha o odstín hlubší než pozadí, ne tmavý panel. Inkoust na nich
-   drží 13,01:1, takže pod nápisem se nemá co zhoršit. Animuje se jen
-   posun a natočení, tedy to, co umí grafická karta bez překreslování
+   plocha o odstín výš než pozadí, bez hrany a lesku, stejně jako sama
+   značka. Světlý text na nich drží 10,1:1. Animuje se jen posun
+   a natočení, tedy to, co umí grafická karta bez překreslování
    stránky. */
 .drift {
   position: absolute;
@@ -352,8 +347,8 @@ async function discard(entry: GameEntry): Promise<void> {
   width: var(--s);
   height: var(--s);
   border-radius: var(--r-xl);
-  background: var(--c-paper-selected);
-  opacity: 0.55;
+  background: var(--c-surface-2);
+  opacity: 0.5;
   /* Jen tolik rozostření, aby dlaždice ustoupila do pozadí a přitom
      zůstala dlaždicí. Víc z ní udělá šmouhu. */
   filter: blur(calc(var(--sp-1) / 2));
@@ -361,7 +356,7 @@ async function discard(entry: GameEntry): Promise<void> {
 }
 /* Dvě modré dlaždice, aby plocha nebyla jen šedá na šedé. Význam
    nenesou, tady je to plocha, ne volba. */
-.drift__tile--modra { background: var(--c-paper-blue); opacity: 0.07; }
+.drift__tile--modra { background: var(--c-brand); opacity: 0.08; }
 
 @keyframes drift {
   from { transform: translate3d(0, 0, 0) rotate(var(--r)); }
@@ -380,9 +375,9 @@ main {
 .hero { position: relative; padding-block: var(--sp-7) var(--sp-6); }
 
 /* Světlo pod značkou. Dlaždice plují po celé ploše a pod nápisem z nich
-   byl závoj; tohle jim tam uklidí a značka stojí na čistém papíře. Na
-   světlé ploše je světlo bílá plocha, ne záře: záře by se tu četla jako
-   šmouha. Leží nad dlaždicemi a pod nápisem, a je vystředěné s ním. */
+   byl závoj; tohle jim tam uklidí a značka stojí na čisté ploše. Je to
+   jeden měkký kruh, ne kužel: kužel s okraji se na ploše čte jako
+   trojúhelník. Leží nad dlaždicemi a pod nápisem, vystředěný s ním. */
 .hero::before {
   content: '';
   position: absolute;
@@ -391,7 +386,7 @@ main {
   pointer-events: none;
   background: radial-gradient(
     ellipse 58% 62% at 50% 50%,
-    var(--c-paper-sheet),
+    color-mix(in oklab, var(--c-brand) 13%, transparent),
     transparent 72%
   );
 }
@@ -466,16 +461,9 @@ main {
   from { opacity: 0; transform: translateY(var(--sp-5)); }
   to { opacity: 1; transform: none; }
 }
-/* Náhled zůstává tmavý, protože ukazuje hru, a ta se hraje na tmavém
-   plátně. Aliasy se tu vracejí zpátky na herní hodnoty: papírová plocha
-   je přepsala a světlý text hry by na ní zmizel. Barvy dlaždic a možností
-   přepsané nejsou, ty patří hře a zůstaly tmavé i na papíře. */
+/* Náhled je plátno zapuštěné do karty: karta je vyvýšená plocha,
+   ukázka hry leží o patro níž, na téže barvě jako samotná hra. */
 .game-card__preview {
-  --c-text: var(--c-studio-text);
-  --c-text-muted: var(--c-studio-accent);
-  --c-text-faint: var(--c-studio-accent);
-  --c-brand: var(--c-studio-accent);
-
   /* Štítek má vlastní řádek, neleží přes ukázku. Dřív byl odsazený
      absolutně a stačilo náhled o kus zkrátit, aby seděl na dlaždicích. */
   display: grid;
@@ -486,11 +474,11 @@ main {
   block-size: var(--home-preview-h);
   padding: var(--sp-5);
   overflow: hidden;
-  background: var(--c-studio);
+  background: var(--c-base);
 }
 .preview-label {
   justify-self: end;
-  color: var(--c-studio-accent);
+  color: var(--c-text-faint);
   font-size: var(--fs-xs);
   font-weight: 700;
 }
@@ -645,9 +633,9 @@ main {
   .hero { position: relative; padding-block: var(--sp-7) var(--sp-6); }
 
 /* Světlo pod značkou. Dlaždice plují po celé ploše a pod nápisem z nich
-   byl závoj; tohle jim tam uklidí a značka stojí na čistém papíře. Na
-   světlé ploše je světlo bílá plocha, ne záře: záře by se tu četla jako
-   šmouha. Leží nad dlaždicemi a pod nápisem, a je vystředěné s ním. */
+   byl závoj; tohle jim tam uklidí a značka stojí na čisté ploše. Je to
+   jeden měkký kruh, ne kužel: kužel s okraji se na ploše čte jako
+   trojúhelník. Leží nad dlaždicemi a pod nápisem, vystředěný s ním. */
 .hero::before {
   content: '';
   position: absolute;
@@ -656,7 +644,7 @@ main {
   pointer-events: none;
   background: radial-gradient(
     ellipse 58% 62% at 50% 50%,
-    var(--c-paper-sheet),
+    color-mix(in oklab, var(--c-brand) 13%, transparent),
     transparent 72%
   );
 }

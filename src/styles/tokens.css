@@ -31,12 +31,6 @@
   --c-paper-selected: #D5DEEE;
   --c-paper-ink: #001A31;
   --c-paper-blue: #005CA9;
-  /* Spodek dlaždice ve značce a její hrana. Bílé „M" na nich drží
-     9,82:1 a 12,56:1, takže nejslabší místo je vršek dlaždice se 6,77:1.
-     Hrana je ztlumená modř, ne skoro černá: na papíře by z ní byl
-     tvrdý stín. */
-  --c-paper-blue-deep: #004480;
-  --c-paper-blue-edge: #003463;
   --c-paper-green: #026E46;
   --c-paper-red: #AC163F;
   --c-paper-red-deep: #810F2F;
@@ -165,19 +159,18 @@
   --c-value-glow:  rgba(255, 255, 255, 0.22);
 
   /* --- Nápis Mučírna ----------------------------------------------------- */
-  /* Značka se kreslí na obou plochách, takže si barvy bere odtud a ne
-     z herních dlaždic. Výchozí je tmavá varianta; pracovní plocha si
-     je níž přepíše. `--mark-gloss` je síla přejíždějícího odlesku:
-     na papíře stačí polovina, jinak z hmoty dlaždice bude výloha. */
-  --mark-word-top:    var(--c-value);
-  --mark-word-bottom: var(--c-brand);
-  --mark-tile-top:    var(--c-light);
-  --mark-tile-bottom: var(--c-brand-deep);
-  --mark-letter:      var(--c-value);
-  --mark-edge:        var(--c-tile-edge);
-  --mark-sheen:       var(--c-tile-sheen);
-  --mark-spark:       var(--c-light);
-  --mark-gloss:       1;
+  /* Značka je plochá: jedna barva na dlaždici, jedna na slovo. Lesk,
+     spodní hrana a přejíždějící odlesk z ní dělaly ve velkém ikonu
+     z roku 2012, a na rozcestníku je nápis přes tisíc pixelů široký.
+     Zůstala nakloněná dlaždice, jiskry a dosednutí, tedy to, co nese
+     vtip, ne povrchová úprava. Barvy se berou odtud, ne z herních
+     dlaždic: značka se kreslí i na světlé ploše.
+     Dlaždice a slovo na --c-base: 8,6:1 a 16,4:1. Tmavé „M" na
+     dlaždici: 8,6:1. */
+  --mark-tile:   var(--c-brand);
+  --mark-letter: var(--c-on-accent);
+  --mark-word:   var(--c-text);
+  --mark-spark:  var(--c-brand);
 
   /* --- Barvy týmů -------------------------------------------------------- */
   /* Všechny mají nejméně 7:1 vůči tmavému inkoustu, takže na nich může
@@ -400,20 +393,12 @@ body:has(.work-surface) > .modal {
   --button-brand-shadow: none;
   --button-danger-text: var(--c-paper-sheet);
   /* Značka na papíře: modrá dlaždice s bílým „M", slovo z inkoustu.
-     Slovo má spád z inkoustu do modré jako na tmavé ploše. Nejslabší
-     místo je jeho spodek: 6,77:1 na bílém světle pod značkou, 6,03:1 na
-     papíru a 5,00:1 tam, kde pod ním projede plující dlaždice. Jiskry
-     jdou z modré, ne ze světla desky: to má na papíru 2,2:1
-     a zmizelo by. */
-  --mark-word-top: var(--c-paper-ink);
-  --mark-word-bottom: var(--c-paper-blue);
-  --mark-tile-top: var(--c-paper-blue);
-  --mark-tile-bottom: var(--c-paper-blue-deep);
+     Bílé „M" na dlaždici 6,77:1, inkoust na papíru 15,70:1, modré
+     jiskry 6,03:1. */
+  --mark-tile: var(--c-paper-blue);
   --mark-letter: var(--c-paper-sheet);
-  --mark-edge: var(--c-paper-blue-edge);
-  --mark-sheen: rgba(255, 255, 255, 0.18);
+  --mark-word: var(--c-paper-ink);
   --mark-spark: var(--c-paper-blue);
-  --mark-gloss: 0.6;
   --r-md: var(--r-sm);
   --r-lg: var(--r-sm);
   --r-xl: var(--r-sm);
