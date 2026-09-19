@@ -247,12 +247,15 @@ dat.
 U kvízu se ukládají přezdívky účastníků. Patří k nim doba uchování, viz
 `DEPLOY.md`.
 
-Tři záložky kvízu, tedy Příprava, Otázky a Výsledky, jsou **jedna
-obrazovka ve třech stavech**, ne tři různé nástroje: tentýž nadpisový
-blok (nadhoz, tvrzení s tečkou, jednořádkový lead), tentýž linkovaný
-seznam s pořadovým číslem a nabídkou akcí na řádku, tatáž hlavička.
-Hlavičku přepíná `prep`, který z pilulek udělá řádku záložek
-a z „Hrát" „Přípravu".
+Všechno, co není hra, je **jedna obrazovka v několika stavech**, ne
+hromada různých nástrojů. Platí to napříč oběma hrami: příprava, správa
+otázek i výsledky mají tentýž nadpisový blok (nadhoz, tvrzení s tečkou,
+jednořádkový lead v sazbě `--content-reading`), tentýž linkovaný seznam
+s pořadovým číslem a nabídkou akcí na řádku a tutéž hlavičku. Příprava
+obou her má navíc týž tvar: číslované sekce `01`, `02`, `03` v jednom
+sloupci a vpravo lepivé shrnutí s jediným hlavním tlačítkem a řádkou
+„co bude dál". Hlavičku přepíná `prep`, který z pilulek udělá řádku
+záložek a z „Hrát" „Přípravu".
 
 Výsledky kvízu mají **vlastní záložku** vedle Přípravy a Otázek
 (`src/views/KvizReportsView.vue`, cesta z `reportsRoute` v registru her).

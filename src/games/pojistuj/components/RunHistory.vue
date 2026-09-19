@@ -51,7 +51,8 @@ function rate(run: PojistujRun): number {
     />
 
     <ul v-else class="runs">
-      <li v-for="run in runs" :key="run.id" class="run">
+      <li v-for="(run, i) in runs" :key="run.id" class="run">
+        <span class="run__index" aria-hidden="true">{{ String(i + 1).padStart(2, '0') }}</span>
         <button
           type="button"
           class="run__main"
@@ -111,38 +112,42 @@ function rate(run: PojistujRun): number {
 
 <style scoped>
 .hist { display: grid; gap: var(--sp-4); margin-top: var(--sp-8); }
+.hist__head { margin-bottom: var(--sp-1); }
 .hist__head { display: grid; gap: var(--sp-1); }
 .hist__title { font-size: var(--fs-xl); }
-.hist__lead { font-size: var(--fs-sm); color: var(--c-text-faint); }
+.hist__lead { font-size: var(--fs-sm); color: var(--c-text-muted); }
 
-.runs { display: grid; gap: var(--sp-2); list-style: none; padding: 0; }
+/* Řádky, ne karty: stejný klíč jako knihovna balíčků o kus výš. */
+.runs { list-style: none; padding: 0; border-top: var(--border-w-strong) solid var(--c-text); }
 .run {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: var(--sp-2);
-  padding: var(--sp-2) var(--sp-3);
-  border: var(--border-w) solid var(--c-border-soft);
-  border-radius: var(--r-md);
-  background: var(--c-bg-card);
+  gap: var(--sp-4);
+  padding-block: var(--sp-4);
+  border-bottom: var(--border-w) solid var(--c-border-soft);
 }
+.run__index { color: var(--c-brand); font-size: var(--fs-sm); font-weight: 900; font-variant-numeric: tabular-nums; }
 .run__main {
   display: grid;
   grid-template-columns: 8rem minmax(0, 1fr) minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--sp-3);
+  padding: var(--sp-2);
   border: 0;
+  border-radius: var(--r-sm);
   background: transparent;
   color: inherit;
   text-align: left;
 }
-.run__when { font-size: var(--fs-xs); color: var(--c-text-faint); }
-.run__name { font-weight: 700; font-size: calc(1em * var(--fit-text, 1)); }
+.run__main:hover { background: var(--c-bg-active); }
+.run__when { font-size: var(--fs-sm); color: var(--c-text-muted); font-variant-numeric: tabular-nums; }
+.run__name { font-weight: 900; font-size: calc(1em * var(--fit-text, 1)); }
 .run__pack { font-size: calc(var(--fs-sm) * var(--fit-text, 1)); color: var(--c-text-muted); }
-.run__rate { font-size: var(--fs-sm); color: var(--c-text-muted); white-space: nowrap; }
+.run__rate { font-size: var(--fs-sm); color: var(--c-text-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
 
 .detail {
-  grid-column: 1 / -1;
+  grid-column: 2 / -1;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
   gap: var(--sp-5);
@@ -180,7 +185,9 @@ function rate(run: PojistujRun): number {
 .cat__n { color: var(--c-text-faint); font-variant-numeric: tabular-nums; }
 
 @media (max-width: 720px) {
+  .run { gap: var(--sp-3); }
   .run__main { grid-template-columns: minmax(0, 1fr); gap: var(--sp-1); }
+  .detail { grid-column: 1 / -1; }
   .detail { grid-template-columns: minmax(0, 1fr); }
 }
 </style>

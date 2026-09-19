@@ -183,12 +183,12 @@ function readinessLabel(id: string): { text: string; tone: 'ok' | 'warn' | 'mute
 <template>
   <div class="admin">
     <template v-if="!unlocked">
-      <AppHeader game="pojistuj" section="questions" />
+      <AppHeader game="pojistuj" section="questions" prep />
       <AdminGate @unlocked="unlocked = true" />
     </template>
 
     <template v-else>
-      <AppHeader game="pojistuj" section="questions">
+      <AppHeader game="pojistuj" section="questions" prep>
         <template #tools>
           <UiMenu label="Účet správy" v-slot="{ close }">
             <button type="button" role="menuitem" @click="openPassword(); close()">Změnit heslo</button>
@@ -202,15 +202,16 @@ function readinessLabel(id: string): { text: string; tone: 'ok' | 'warn' | 'mute
         <section v-if="!current" class="library">
           <header class="library__head">
             <div>
-              <p class="eyebrow">Pojišťuj!</p>
-              <h1 class="library__title">Balíčky otázek</h1>
+              <p class="eyebrow">Tvoje knihovna</p>
+              <h1 class="library__title">Otázky na desku.</h1>
               <p class="library__lead">
-                Připrav desku před hrou. Hratelná je jen kategorie, která má vyplněné všechny otázky.
+                Balíčky pro hru Pojišťuj! Hratelná je jen kategorie, která má
+                vyplněné všechny otázky.
               </p>
             </div>
             <div class="library__actions">
               <UiButton size="sm" variant="ghost" @click="triggerImport">Importovat</UiButton>
-              <UiButton size="sm" variant="brand" @click="onCreate">Nový</UiButton>
+              <UiButton size="sm" variant="brand" @click="onCreate">Nový balíček</UiButton>
             </div>
           </header>
 
@@ -232,7 +233,7 @@ function readinessLabel(id: string): { text: string; tone: 'ok' | 'warn' | 'mute
             v-else-if="packs.packs.length === 0"
             icon="info"
             title="Zatím tu není žádný balíček"
-            text="Založ prázdný tlačítkem Nový, naimportuj JSON, nebo si napřed prohlédni ukázku."
+            text="Založ prázdný tlačítkem Nový balíček, naimportuj JSON, nebo si napřed prohlédni ukázku."
           >
             <UiButton size="sm" variant="ghost" @click="onCreateDemo">
               Vytvořit ukázkový balíček
@@ -240,28 +241,22 @@ function readinessLabel(id: string): { text: string; tone: 'ok' | 'warn' | 'mute
           </UiEmpty>
 
           <ul v-else class="library__items">
-            <li v-for="p in packs.packs" :key="p.id" class="card">
+            <li v-for="(p, i) in packs.packs" :key="p.id" class="card">
+              <span class="card__index" aria-hidden="true">{{ String(i + 1).padStart(2, '0') }}</span>
               <button type="button" class="card__main" @click="openPack(p.id)">
                 <span class="card__name">{{ p.name }}</span>
-                <span
-                  class="card__badge"
-                  :class="`card__badge--${readinessLabel(p.id).tone}`"
-                >
+                <span class="card__badge" :class="`card__badge--${readinessLabel(p.id).tone}`">
                   {{ readinessLabel(p.id).text }}
                 </span>
                 <span class="card__meta">
-                  {{ packProgress(p).done }} z {{ packProgress(p).total }} otázek
+                  {{ packProgress(p).done }} z {{ packProgress(p).total }} otázek hotových
                 </span>
-                <span class="card__bar" aria-hidden="true">
-                  <span
-                    :style="{
-                      width: `${packProgress(p).total ? (packProgress(p).done / packProgress(p).total) * 100 : 0}%`,
-                    }"
-                  />
+                <span v-if="packProgress(p).done < packProgress(p).total" class="card__remaining">
+                  Zbývá doplnit {{ count(packProgress(p).total - packProgress(p).done, 'otázku', 'otázky', 'otázek') }}
                 </span>
               </button>
 
-              <UiMenu label="Akce balíčku" v-slot="{ close }">
+              <UiMenu :label="`Akce balíčku ${p.name}`" v-slot="{ close }">
                 <button type="button" role="menuitem" @click="openPack(p.id); close()">Otevřít</button>
                 <button type="button" role="menuitem" @click="onDuplicate(p.id); close()">Duplikovat</button>
                 <button type="button" role="menuitem" @click="onExport(p.id); close()">Exportovat JSON</button>
@@ -312,112 +307,38 @@ function readinessLabel(id: string): { text: string; tone: 'ok' | 'warn' | 'mute
 </template>
 
 <style scoped>
+/* Týž tvar jako knihovna kvízu: nadpis, pod ním linkovaný seznam
+   a na každém řádku nabídka akcí. Obě hry se spravují stejně, takže
+   se to nemá lišit. */
 .admin { min-height: 100dvh; display: flex; flex-direction: column; }
+.admin__body { flex: 1; padding-block: var(--sp-6) var(--sp-8); }
 
-.admin__body {
-  flex: 1;
-  padding-block: var(--sp-4) var(--sp-8);
-}
-
-.library { display: grid; gap: var(--sp-5); align-content: start; max-width: 40rem; }
-.library__head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--sp-4);
-}
-.library__title { font-size: var(--fs-2xl); }
-.library__lead {
-  margin-top: var(--sp-1);
-  font-size: var(--fs-sm);
-  color: var(--c-text-muted);
-  line-height: var(--lh-body);
-  max-width: 28rem;
-}
-.library__actions { display: flex; gap: var(--sp-2); }
+.library { display: grid; gap: var(--sp-6); max-width: var(--content-reading); margin-inline: auto; width: 100%; }
+.library__head { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: var(--sp-5); }
+.library__title { font-size: var(--fs-work-title); margin-top: var(--sp-2); }
+.library__lead { margin-top: var(--sp-3); max-width: var(--content-narrow); color: var(--c-text-muted); font-size: var(--fs-sm); line-height: var(--lh-body); }
+.library__actions { display: flex; gap: var(--sp-3); flex-wrap: wrap; }
 .library__file { display: none; }
-.library__blank { display: grid; gap: var(--sp-3); max-width: 28rem; }
-.library__empty { font-size: var(--fs-sm); color: var(--c-text-faint); line-height: var(--lh-body); }
 
-.library__items {
-  list-style: none;
-  padding: 0;
-  display: grid;
-  gap: var(--sp-2);
-}
-
-.card {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: var(--sp-2);
-  align-items: stretch;
-  padding: var(--sp-2);
-  border: 1px solid var(--c-line);
-  border-radius: var(--r-lg);
-  background: var(--c-surface);
-  transition: border-color var(--dur-fast) var(--ease-out);
-}
-.card:hover { border-color: var(--c-surface-3); }
-
-.card__main {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-areas:
-    'name badge'
-    'meta meta'
-    'bar bar';
-  gap: var(--sp-1) var(--sp-3);
-  text-align: left;
-  padding: var(--sp-2) var(--sp-3);
-  border: 0;
-  border-radius: var(--r-md);
-  background: transparent;
-  color: var(--c-text);
-}
-.card__main:hover { background: color-mix(in oklab, var(--c-brand) 7%, transparent); }
-.card__name {
-  grid-area: name;
-  font-weight: 700;
-  font-size: var(--fs-md);
-}
-.card__badge {
-  grid-area: badge;
-  align-self: start;
-  padding: 2px var(--sp-2);
-  border-radius: var(--r-full);
-  font-size: var(--fs-xs);
-  font-weight: 700;
-  background: var(--c-surface-2);
-  color: var(--c-text-faint);
-}
-.card__badge--ok { background: color-mix(in oklab, var(--c-ok) 22%, transparent); color: var(--c-ok); }
-.card__badge--warn { background: color-mix(in oklab, var(--c-brand) 18%, transparent); color: var(--c-brand); }
-.card__meta {
-  grid-area: meta;
-  font-size: var(--fs-xs);
-  color: var(--c-text-faint);
-}
-.card__bar {
-  grid-area: bar;
-  display: block;
-  height: 3px;
-  border-radius: var(--r-full);
-  background: var(--c-sunken);
-  overflow: hidden;
-  margin-top: var(--sp-1);
-}
-.card__bar span {
-  display: block;
-  height: 100%;
-  background: var(--c-brand);
-  transition: width var(--dur-slow) var(--ease-out);
-}
+.library__items { list-style: none; padding: 0; border-top: var(--border-w-strong) solid var(--c-text); }
+.card { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--sp-5); align-items: center; padding-block: var(--sp-5); border-bottom: var(--border-w) solid var(--c-border-soft); }
+.card__index { color: var(--c-brand); font-size: var(--fs-sm); font-weight: 900; font-variant-numeric: tabular-nums; }
+.card__main { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--sp-2) var(--sp-4); padding: var(--sp-2); border: 0; border-radius: var(--r-sm); background: transparent; color: var(--c-text); text-align: left; }
+.card__main:hover { background: var(--c-bg-active); }
+.card__name { font-size: var(--fs-xl); font-weight: 900; overflow-wrap: anywhere; }
+.card__meta { grid-column: 1; font-size: var(--fs-sm); color: var(--c-text-muted); }
+.card__remaining { grid-column: 1 / -1; font-size: var(--fs-sm); }
+.card__badge { align-self: center; font-size: var(--fs-sm); font-weight: 700; color: var(--c-text-muted); }
+.card__badge--ok { color: var(--c-ok); }
 
 .pw { display: grid; gap: var(--sp-4); }
-.pw__error { color: var(--c-bad); font-size: var(--fs-sm); font-weight: 600; }
+.pw__error { color: var(--c-bad); font-size: var(--fs-sm); font-weight: 700; }
 
-@media (pointer: coarse) {
-  .card__main { min-height: 2.75rem; }
+@media (max-width: 720px) {
+  .card { gap: var(--sp-3); }
+  .card__main { grid-template-columns: minmax(0, 1fr); }
+  .card__badge { grid-row: 3; }
+  .card__name { font-size: var(--fs-lg); }
 }
+@media (pointer: coarse) { .card__main { min-height: var(--control-touch); } }
 </style>

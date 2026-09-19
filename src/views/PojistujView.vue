@@ -163,7 +163,7 @@ async function onRematch() {
   <div class="pojistuj" :class="{ 'pojistuj--playing': !!game }">
     <!-- Bez rozehrané hry nabídneme nastavení ---------------------------- -->
     <template v-if="!game">
-      <AppHeader game="pojistuj" section="play" />
+      <AppHeader game="pojistuj" section="play" prep />
       <GameSetup @start="onStart" />
     </template>
 

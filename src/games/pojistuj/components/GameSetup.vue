@@ -11,9 +11,9 @@ import UiField from '@/components/ui/UiField.vue'
 import UiSegmented from '@/components/ui/UiSegmented.vue'
 import UiSwitch from '@/components/ui/UiSwitch.vue'
 import type { Segment } from '@/components/ui/segmented'
-import UiIcon from '@/components/ui/UiIcon.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
+import UiEmpty from '@/components/ui/UiEmpty.vue'
 
 const emit = defineEmits<{ start: [pack: Pack, setup: GameSetup] }>()
 
@@ -174,11 +174,8 @@ function removeTeam(i: number) {
 
 /** Otevřená nabídka barev, index týmu. */
 const picker = ref<number | null>(null)
-/** Rozbalený výběr balíčku. */
-const packOpen = ref(false)
 
 function togglePicker(i: number) {
-  packOpen.value = false
   picker.value = picker.value === i ? null : i
 }
 
@@ -192,17 +189,6 @@ function chooseColor(i: number, color: number) {
   picker.value = null
 }
 
-function choosePack(id: string) {
-  packId.value = id
-  packOpen.value = false
-}
-
-function togglePackOpen() {
-  if (packs.packs.length <= 1) return
-  picker.value = null
-  packOpen.value = !packOpen.value
-}
-
 /** Barvu, kterou už má jiný tým, nabízet nemá smysl. */
 function colorTakenBy(color: number, exceptIndex: number): number {
   return teams.value.findIndex((t, i) => i !== exceptIndex && t.color === color)
@@ -211,14 +197,10 @@ function colorTakenBy(color: number, exceptIndex: number): number {
 function onDocumentClick(e: MouseEvent) {
   const target = e.target as HTMLElement
   if (picker.value !== null && !target.closest('.team__color')) picker.value = null
-  if (packOpen.value && !target.closest('.pack')) packOpen.value = false
 }
 
 function onEscape(e: KeyboardEvent) {
-  if (e.key === 'Escape') {
-    picker.value = null
-    packOpen.value = false
-  }
+  if (e.key === 'Escape') picker.value = null
 }
 
 onMounted(() => {
@@ -310,717 +292,405 @@ function start() {
 </script>
 
 <template>
-  <div class="setup page">
+  <main id="obsah" class="setup page">
     <header class="setup__head">
       <p class="eyebrow">Pojišťuj!</p>
-      <h1 class="setup__title">Připrav hru</h1>
+      <h1 class="setup__title">Připrav hru.</h1>
+      <p class="lead">Vyber otázky, týmy a pravidla.</p>
     </header>
 
     <div class="setup__grid">
-      <!-- Balíček a kategorie ------------------------------------------- -->
-      <section class="panel">
-        <div class="panel__head">
-          <h2 class="panel__title"><span class="panel__num">1</span> Balíček otázek</h2>
-          <!-- Zkratka k tomu balíčku, který se chystáš hrát, ne cesta do
-               správy. Tou je položka Otázky v hlavičce a ta vede vždycky
-               na seznam balíčků. -->
-          <RouterLink v-if="packId" :to="editLink" class="panel__new">
-            Upravit balíček
-          </RouterLink>
-        </div>
+      <div class="setup__form">
+        <!-- 01 Balíček a kategorie -------------------------------------- -->
+        <section class="section" aria-labelledby="setup-pack">
+          <div class="section__head">
+            <h2 id="setup-pack"><span class="section__num" aria-hidden="true">01</span> Z čeho se bude hrát</h2>
+            <!-- Zkratka k tomu balíčku, který se chystáš hrát, ne cesta do
+                 správy. Tou je položka Otázky v hlavičce a ta vede vždycky
+                 na seznam balíčků. -->
+            <RouterLink v-if="packId" :to="editLink" class="edit-link">Upravit balíček</RouterLink>
+          </div>
+          <p class="hint">Vyber jeden balíček. Deska se skládá z jednoho, ne z několika.</p>
 
-        <!-- Až po prvním snímku. Prázdný seznam před doručením dat není
-             prázdná knihovna, jen ještě nedoručená. -->
-        <UiSkeleton v-if="!packs.loaded" :lines="2" />
+          <!-- Až po prvním snímku. Prázdný seznam před doručením dat není
+               prázdná knihovna, jen ještě nedoručená. -->
+          <UiSkeleton v-if="!packs.loaded" :lines="3" />
 
-        <p v-else-if="packs.packs.length === 0" class="empty">
-          Zatím tu není žádný balíček. Založíš ho ve
-          <RouterLink to="/admin">správě otázek</RouterLink>.
-        </p>
-
-        <div v-else class="pack" :class="{ 'pack--open': packOpen }">
-          <button
-            type="button"
-            class="pack__trigger"
-            :class="{ 'pack__trigger--static': packs.packs.length === 1 }"
-            :aria-expanded="packs.packs.length > 1 ? packOpen : undefined"
-            :aria-haspopup="packs.packs.length > 1 ? 'listbox' : undefined"
-            :disabled="packs.packs.length === 1"
-            @click="togglePackOpen"
+          <UiEmpty
+            v-else-if="packs.packs.length === 0"
+            title="Připrav první otázky"
+            text="Deska potřebuje aspoň jednu kategorii s vyplněnými otázkami."
           >
-            <span class="pack__text">
-              <span class="pack__name">{{ pack?.name ?? 'Vyber balíček' }}</span>
-              <span v-if="pack" class="pack__meta">
-                {{ count(usable.length, 'kategorie', 'kategorie', 'kategorií') }}
-                · {{ count(packProgress(pack).done, 'otázka', 'otázky', 'otázek') }}
-              </span>
-            </span>
-            <span v-if="packs.packs.length > 1" class="pack__chev" aria-hidden="true">
-              <UiIcon name="chevron-down" size="md" />
-            </span>
-          </button>
+            <RouterLink to="/admin">Přejít k otázkám</RouterLink>
+          </UiEmpty>
 
-          <ul
-            v-if="packOpen"
-            class="pack__list"
-            role="listbox"
-            aria-label="Dostupné balíčky"
-          >
-            <li v-for="p in packs.packs" :key="p.id" role="presentation">
-              <button
-                type="button"
-                class="pack__option"
-                role="option"
-                :aria-selected="p.id === packId"
-                :class="{ 'pack__option--on': p.id === packId }"
-                @click="choosePack(p.id)"
-              >
-                <span class="pack__name">{{ p.name }}</span>
-                <span class="pack__meta">
-                  {{ count(playableCategories(p).length, 'kategorie', 'kategorie', 'kategorií') }}
-                  · {{ count(packProgress(p).done, 'otázka', 'otázky', 'otázek') }}
+          <ul v-else class="packs">
+            <li v-for="p in packs.packs" :key="p.id">
+              <label class="pick">
+                <input v-model="packId" type="radio" name="setup-pack-choice" :value="p.id" />
+                <span class="pick__row">
+                  <span class="pick__text">
+                    <strong>{{ p.name }}</strong>
+                    <span class="hint">
+                      {{ count(playableCategories(p).length, 'hratelná kategorie', 'hratelné kategorie', 'hratelných kategorií') }}
+                      · {{ count(packProgress(p).done, 'otázka', 'otázky', 'otázek') }}
+                    </span>
+                  </span>
+                  <span class="pick__count" aria-hidden="true">{{ playableCategories(p).length }}</span>
                 </span>
-              </button>
+              </label>
             </li>
           </ul>
-        </div>
 
-        <template v-if="pack && usable.length">
-          <h3 class="sub">Kategorie do hry</h3>
-          <p class="hint">
-            Jednu až {{ MAX_CATEGORIES }}. Každá kategorie je jeden sloupec desky.
-            <template v-if="selected.size >= MAX_CATEGORIES"> Vybráno maximum.</template>
-          </p>
-          <div class="chips">
-            <button
-              v-for="c in usable"
-              :key="c.id"
-              type="button"
-              class="chip"
-              :class="{ 'chip--on': selected.has(c.id) }"
-              :aria-pressed="selected.has(c.id)"
-              :disabled="!selected.has(c.id) && selected.size >= MAX_CATEGORIES"
-              @click="toggleCategory(c.id)"
-            >
-              {{ c.name }}
-            </button>
-          </div>
-          <p v-if="incomplete.length" class="warn">
-            Nehratelné, protože nemají vyplněné všechny otázky:
-            {{ incomplete.map((c) => c.name).join(', ') }}
-          </p>
-        </template>
-      </section>
-
-      <!-- Týmy ----------------------------------------------------------- -->
-      <section class="panel panel--teams">
-        <h2 class="panel__title"><span class="panel__num">2</span> Týmy</h2>
-
-        <UiField label="Skupina" hint="Nepovinné. Podepíše odehranou hru v přehledu.">
-          <input v-model="groupName" type="text" maxlength="60" placeholder="např. Obchod Morava" />
-        </UiField>
-        <p class="hint">Jeden až šest. Barvu změníš kliknutím na písmeno.</p>
-
-        <ul class="teams">
-          <li v-for="(t, i) in teams" :key="i" class="team">
-            <span class="team__color">
+          <template v-if="pack && usable.length">
+            <h3 class="sub">Kategorie do hry</h3>
+            <p class="hint">
+              Jednu až {{ MAX_CATEGORIES }}. Každá kategorie je jeden sloupec desky.
+              <template v-if="selected.size >= MAX_CATEGORIES"> Vybráno maximum.</template>
+            </p>
+            <div class="chips">
               <button
+                v-for="c in usable"
+                :key="c.id"
                 type="button"
-                class="team__dot"
-                :style="{ background: `var(${teamColor(t.color).cssVar})` }"
-                :aria-label="`Barva týmu ${t.name || i + 1}: ${teamColor(t.color).label}, vybrat jinou`"
-                :aria-expanded="picker === i"
-                aria-haspopup="true"
-                @click.stop="togglePicker(i)"
+                class="chip"
+                :class="{ 'chip--on': selected.has(c.id) }"
+                :aria-pressed="selected.has(c.id)"
+                :disabled="!selected.has(c.id) && selected.size >= MAX_CATEGORIES"
+                @click="toggleCategory(c.id)"
               >
-                {{ teamBadge(i) }}
+                {{ c.name }}
               </button>
+            </div>
+            <p v-if="incomplete.length" class="warn">
+              Nehratelné, protože nemají vyplněné všechny otázky:
+              {{ incomplete.map((c) => c.name).join(', ') }}
+            </p>
+          </template>
+        </section>
 
-              <span v-if="picker === i" class="swatches" role="group" aria-label="Barva týmu">
+        <!-- 02 Týmy ------------------------------------------------------ -->
+        <section class="section" aria-labelledby="setup-teams">
+          <div class="section__head">
+            <h2 id="setup-teams"><span class="section__num" aria-hidden="true">02</span> Kdo hraje</h2>
+          </div>
+
+          <UiField label="Skupina (nepovinné)" hint="Název najdeš v přehledu odehraných her.">
+            <input v-model="groupName" type="text" maxlength="60" placeholder="Např. Obchod Morava" />
+          </UiField>
+          <p class="hint">Jeden až šest týmů. Barvu změníš kliknutím na písmeno.</p>
+
+          <ul class="teams">
+            <li v-for="(t, i) in teams" :key="i" class="team">
+              <span class="team__color">
                 <button
-                  v-for="(c, ci) in TEAM_COLORS"
-                  :key="ci"
                   type="button"
-                  class="swatch"
-                  :class="{ 'swatch--on': t.color === ci }"
-                  :style="{ background: `var(${c.cssVar})` }"
-                  :disabled="colorTakenBy(ci, i) >= 0"
-                  :aria-pressed="t.color === ci"
-                  :title="colorTakenBy(ci, i) >= 0 ? `${c.label}, už má jiný tým` : c.label"
-                  :aria-label="colorTakenBy(ci, i) >= 0 ? `${c.label}, už má jiný tým` : c.label"
-                  @click.stop="chooseColor(i, ci)"
-                />
+                  class="team__dot"
+                  :style="{ background: `var(${teamColor(t.color).cssVar})` }"
+                  :aria-label="`Barva týmu ${t.name || i + 1}: ${teamColor(t.color).label}, vybrat jinou`"
+                  :aria-expanded="picker === i"
+                  aria-haspopup="true"
+                  @click.stop="togglePicker(i)"
+                >
+                  {{ teamBadge(i) }}
+                </button>
+
+                <span v-if="picker === i" class="swatches" role="group" aria-label="Barva týmu">
+                  <button
+                    v-for="(c, ci) in TEAM_COLORS"
+                    :key="ci"
+                    type="button"
+                    class="swatch"
+                    :class="{ 'swatch--on': t.color === ci }"
+                    :style="{ background: `var(${c.cssVar})` }"
+                    :disabled="colorTakenBy(ci, i) >= 0"
+                    :aria-pressed="t.color === ci"
+                    :title="colorTakenBy(ci, i) >= 0 ? `${c.label}, už má jiný tým` : c.label"
+                    :aria-label="colorTakenBy(ci, i) >= 0 ? `${c.label}, už má jiný tým` : c.label"
+                    @click.stop="chooseColor(i, ci)"
+                  />
+                </span>
               </span>
-            </span>
-            <input
-              v-model="t.name"
-              class="team__name"
-              type="text"
-              maxlength="24"
-              :placeholder="nameForColor(t.color, i)"
-              :aria-label="`Název týmu ${i + 1}`"
-            />
-            <UiIconButton
-              icon="close"
-              size="sm"
-              variant="danger"
-              :disabled="teams.length <= 1"
-              :label="`Odebrat tým ${t.name}`"
-              @click="removeTeam(i)"
-            />
-          </li>
-        </ul>
-
-        <UiButton variant="ghost" size="sm" :disabled="teams.length >= 6" @click="addTeam">
-          Přidat tým
-        </UiButton>
-      </section>
-
-      <!-- Pravidla ------------------------------------------------------- -->
-      <section class="panel panel--rules">
-        <h2 class="panel__title"><span class="panel__num">3</span> Pravidla</h2>
-
-        <UiField label="Časomíra" hint="Kolik času má tým na odpověď. Nula znamená bez měření.">
-          <UiSegmented v-model="rules.timerSeconds" aria-label="Časomíra" :options="TIMER_OPTIONS" />
-        </UiField>
-
-        <UiField
-          label="Pole Riziko!"
-          hint="Na těchto polích tým před otázkou vsadí část svých bodů. Na desce poznat nejsou, rozsvítí se až při otevření."
-        >
-          <UiSegmented v-model="wagerCells" aria-label="Počet polí Riziko!" :options="wagerOptions" />
-        </UiField>
-
-        <UiSwitch
-          v-model="rules.steal"
-          label="Přebrání jiným týmem"
-          hint="Když tým na tahu neuhodne, můžeš body přiznat tomu, kdo odpověděl správně."
-        />
-
-        <UiSwitch
-          v-model="rules.penalty"
-          label="Minusové body"
-          hint="Za špatnou odpověď se týmu na tahu hodnota políčka odečte."
-        />
-
-        <UiSwitch
-          v-if="showFloorZero"
-          v-model="rules.floorZero"
-          label="Skóre nejméně nula"
-          hint="Při odečtu bodů tým nesmí klesnout pod nulu."
-        />
-      </section>
-    </div>
-
-    <div class="launch">
-      <div class="launch__preview" aria-hidden="true">
-        <template v-if="boardPreview.cols && boardPreview.rows">
-          <div class="mini" :style="{ '--cols': boardPreview.cols }">
-            <div
-              v-for="value in boardPreview.ladder"
-              :key="value"
-              class="mini__row"
-            >
-              <span
-                v-for="cat in boardPreview.categories"
-                :key="`${cat.id}:${value}`"
-                class="mini__cell"
+              <input
+                v-model="t.name"
+                class="team__name"
+                type="text"
+                maxlength="24"
+                :placeholder="nameForColor(t.color, i)"
+                :aria-label="`Název týmu ${i + 1}`"
               />
+              <UiIconButton
+                icon="close"
+                size="sm"
+                variant="danger"
+                :disabled="teams.length <= 1"
+                :label="`Odebrat tým ${t.name}`"
+                @click="removeTeam(i)"
+              />
+            </li>
+          </ul>
+
+          <UiButton class="add-team" variant="ghost" size="sm" :disabled="teams.length >= 6" @click="addTeam">
+            Přidat tým
+          </UiButton>
+        </section>
+
+        <!-- 03 Pravidla -------------------------------------------------- -->
+        <section class="section" aria-labelledby="setup-rules">
+          <div class="section__head">
+            <h2 id="setup-rules"><span class="section__num" aria-hidden="true">03</span> Jak bude hra probíhat</h2>
+          </div>
+
+          <div class="rules">
+            <div class="rule">
+              <p class="rule__label">Časomíra</p>
+              <UiSegmented v-model="rules.timerSeconds" aria-label="Časomíra" :options="TIMER_OPTIONS" />
+              <p class="hint">Kolik času má tým na odpověď. Bez znamená bez měření.</p>
+            </div>
+            <div class="rule">
+              <p class="rule__label">Pole Riziko!</p>
+              <UiSegmented v-model="wagerCells" aria-label="Počet polí Riziko!" :options="wagerOptions" />
+              <p class="hint">Tým na nich před otázkou vsadí část bodů. Na desce poznat nejsou.</p>
             </div>
           </div>
-        </template>
-        <p v-else class="launch__empty">Deska se objeví po výběru kategorií</p>
+
+          <UiSwitch
+            v-model="rules.steal"
+            label="Přebrání jiným týmem"
+            hint="Když tým na tahu neuhodne, můžeš body přiznat tomu, kdo odpověděl správně."
+          />
+
+          <UiSwitch
+            v-model="rules.penalty"
+            label="Minusové body"
+            hint="Za špatnou odpověď se týmu na tahu hodnota políčka odečte."
+          />
+
+          <UiSwitch
+            v-if="showFloorZero"
+            v-model="rules.floorZero"
+            label="Skóre nejméně nula"
+            hint="Při odečtu bodů tým nesmí klesnout pod nulu."
+          />
+        </section>
       </div>
 
-      <div class="launch__info">
-        <ul class="launch__teams" aria-label="Týmy">
+      <!-- Shrnutí ---------------------------------------------------------- -->
+      <aside class="summary" aria-label="Shrnutí připravené hry">
+        <p class="eyebrow">Tvoje hra</p>
+        <h2>Pojišťuj!</h2>
+
+        <p class="summary__total" aria-live="polite">
+          <strong>{{ boardPreview.cells }}</strong>
+          <span>{{ boardPreview.cells === 1 ? 'otázka' : boardPreview.cells >= 2 && boardPreview.cells <= 4 ? 'otázky' : 'otázek' }} na desce</span>
+        </p>
+
+        <div class="summary__preview" aria-hidden="true">
+          <div v-if="boardPreview.cols && boardPreview.rows" class="mini" :style="{ '--cols': boardPreview.cols }">
+            <div v-for="value in boardPreview.ladder" :key="value" class="mini__row">
+              <span v-for="cat in boardPreview.categories" :key="`${cat.id}:${value}`" class="mini__cell" />
+            </div>
+          </div>
+          <p v-else class="summary__empty">Deska se objeví po výběru kategorií</p>
+        </div>
+
+        <dl>
+          <dt>Kategorie</dt><dd>{{ selectedCats.length }}</dd>
+          <dt>Týmy</dt><dd>{{ teams.length }}</dd>
+          <dt>Časomíra</dt><dd>{{ rules.timerSeconds ? `${rules.timerSeconds} s` : 'Bez' }}</dd>
+          <dt>Riziko!</dt><dd>{{ rules.wagerCells || 'Žádné' }}</dd>
+        </dl>
+
+        <ul class="summary__teams" aria-label="Týmy">
           <li
             v-for="(t, i) in teams"
             :key="i"
-            class="launch__team"
+            class="summary__team"
             :style="{ '--team': `var(${teamColor(t.color).cssVar})` }"
             :title="t.name"
           >
-            <span class="launch__badge">{{ teamBadge(i) }}</span>
-            <span class="launch__team-name">{{ t.name }}</span>
+            <span class="summary__badge">{{ teamBadge(i) }}</span>
+            <span v-fit-text class="summary__team-name">{{ t.name }}</span>
           </li>
         </ul>
+
+        <UiButton variant="brand" block :disabled="!ready" @click="start">Spustit hru</UiButton>
 
         <ul v-if="problems.length" class="problems">
           <li v-for="p in problems" :key="p">{{ p }}</li>
         </ul>
-        <p v-else class="summary">
-          {{ count(boardPreview.cells, 'otázka', 'otázky', 'otázek') }}
-          · {{ count(teams.length, 'tým', 'týmy', 'týmů') }}
-          <template v-if="rules.timerSeconds"> · {{ rules.timerSeconds }}&nbsp;s</template>
-          <template v-if="rules.wagerCells">
-            · {{ count(rules.wagerCells, 'pole', 'pole', 'polí') }} Riziko!
-          </template>
-        </p>
-      </div>
-
-      <UiButton
-        class="launch__cta"
-        variant="brand"
-        size="xl"
-        :disabled="!ready"
-        @click="start"
-      >
-        Spustit hru
-      </UiButton>
+        <p v-else class="summary__next">Deska se otevře rovnou na plátně.</p>
+      </aside>
     </div>
-  </div>
+  </main>
 </template>
 
 <style scoped>
-.setup { padding-block: var(--sp-5) var(--sp-8); }
+/* Týž tvar jako příprava kvízu: číslované sekce v jednom sloupci
+   a vpravo shrnutí, které drží jediné hlavní tlačítko. Obě hry se
+   chystají stejně, takže se to nemá lišit. */
+.setup { max-width: var(--content-reading); padding-block: var(--sp-6) var(--sp-8); }
 .setup__head { margin-bottom: var(--sp-6); }
-.setup__title { font-size: var(--fs-3xl); letter-spacing: -0.03em; margin-top: var(--sp-2); }
+.setup__title { font-size: var(--fs-work-title); margin-top: var(--sp-2); }
+.lead { color: var(--c-text-muted); margin-top: var(--sp-3); font-size: var(--fs-sm); }
 
-.setup__grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--sp-4);
-  align-items: start;
-}
-.panel--rules { grid-column: 1 / -1; }
-
-.panel {
-  display: grid;
-  gap: var(--sp-4);
-  align-content: start;
-  padding: var(--sp-5);
-  border: 1px solid var(--c-line);
-  border-radius: var(--r-xl);
-  background: var(--c-surface);
-}
-.panel--teams {
-  border-color: color-mix(in oklab, var(--c-brand) 35%, var(--c-line));
-  background:
-    linear-gradient(
-      165deg,
-      color-mix(in oklab, var(--c-brand) 8%, var(--c-surface)),
-      var(--c-surface) 45%
-    );
-}
-.panel--rules {
-  padding-block: var(--sp-4);
-  background: color-mix(in oklab, var(--c-surface) 70%, var(--c-base));
-  border-color: var(--c-line-soft);
-}
-.panel--rules .panel__title { font-size: var(--fs-md); color: var(--c-text-muted); }
-.panel--rules .panel__num {
-  background: var(--c-surface);
-  color: var(--c-text-faint);
-}
-
-.panel__title { display: flex; align-items: center; gap: var(--sp-3); font-size: var(--fs-lg); }
-.panel__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--sp-3);
-}
-.panel__new {
-  flex: none;
-  padding: var(--sp-2) var(--sp-4);
-  border: 1px solid var(--c-brand);
-  border-radius: var(--r-md);
-  background: var(--c-brand);
-  color: var(--c-on-accent);
-  font-size: var(--fs-sm);
-  font-weight: 700;
-  text-decoration: none;
-  transition:
-    background-color var(--dur-fast) var(--ease-out),
-    border-color var(--dur-fast) var(--ease-out);
-}
-.panel__new:hover {
-  background: var(--c-brand-soft);
-  border-color: var(--c-brand-soft);
-}
-.panel__num {
-  display: grid;
-  place-items: center;
-  width: 1.6rem;
-  height: 1.6rem;
-  border-radius: var(--r-full);
-  background: var(--c-surface-3);
-  color: var(--c-brand);
-  font-size: var(--fs-sm);
-  font-family: var(--font-ui);
-}
-
+.setup__grid { display: grid; grid-template-columns: minmax(0, 1fr) var(--content-sidebar); gap: var(--sp-7); align-items: start; }
+.setup__form { display: grid; gap: var(--sp-6); min-width: 0; }
+.section { display: grid; gap: var(--sp-4); }
+.section__head { display: flex; flex-wrap: wrap; gap: var(--sp-3); justify-content: space-between; align-items: center; }
+.section__head h2 { display: flex; align-items: baseline; gap: var(--sp-3); font-size: var(--fs-xl); }
+.section__num { font-size: var(--fs-sm); color: var(--c-brand); font-variant-numeric: tabular-nums; }
+.edit-link { display: inline-flex; align-items: center; min-height: var(--control-touch); font-size: var(--fs-sm); font-weight: 700; }
+.hint { font-size: var(--fs-sm); line-height: var(--lh-body); color: var(--c-text-faint); }
 .sub { font-size: var(--fs-md); margin-top: var(--sp-2); }
-.hint { font-size: var(--fs-sm); color: var(--c-text-faint); margin-top: calc(var(--sp-3) * -1); }
-.empty { color: var(--c-text-muted); font-size: var(--fs-sm); }
-.warn { font-size: var(--fs-xs); color: var(--c-text-faint); line-height: 1.5; }
+.warn { font-size: var(--fs-sm); color: var(--c-text-faint); line-height: var(--lh-body); }
 
-.pack { position: relative; }
-.pack__trigger {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-3);
-  width: 100%;
-  text-align: left;
-  padding: var(--sp-3) var(--sp-4);
-  border: 1px solid var(--c-line);
-  border-radius: var(--r-md);
-  background: var(--c-sunken);
-  color: var(--c-text);
-  transition:
-    border-color var(--dur-fast) var(--ease-out),
-    background-color var(--dur-fast) var(--ease-out);
-}
-.pack__trigger:hover:not(:disabled) { border-color: var(--c-surface-3); }
-.pack__trigger:focus-visible {
-  outline: var(--focus-ring-w) solid var(--focus-ring-c);
-  outline-offset: var(--focus-ring-offset);
-}
-.pack--open .pack__trigger {
-  border-color: var(--c-brand);
-  background: color-mix(in oklab, var(--c-brand) 10%, var(--c-sunken));
-  border-bottom-left-radius: 0;
-  border-bottom-right-radius: 0;
-}
-.pack__trigger--static {
-  cursor: default;
-  border-color: color-mix(in oklab, var(--c-brand) 40%, var(--c-line));
-  background: color-mix(in oklab, var(--c-brand) 8%, var(--c-sunken));
-}
-.pack__trigger--static:disabled { opacity: 1; color: var(--c-text); }
-.pack__text { display: grid; gap: var(--sp-1); min-width: 0; flex: 1; }
-.pack__name {
-  font-weight: 700;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.pack__meta { font-size: var(--fs-xs); color: var(--c-text-faint); }
-.pack__chev {
-  flex: none;
-  display: grid;
-  place-items: center;
-  color: var(--c-text-muted);
-  transition: transform var(--dur-fast) var(--ease-out);
-}
-.pack--open .pack__chev { transform: rotate(180deg); }
-
-.pack__list {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 100%;
-  z-index: 3;
-  list-style: none;
-  padding: var(--sp-1);
-  margin: 0;
-  border: 1px solid var(--c-brand);
-  border-top: 0;
-  border-radius: 0 0 var(--r-md) var(--r-md);
-  background: var(--c-surface);
-  box-shadow: var(--shadow-md);
-  display: grid;
-  gap: var(--sp-1);
-  max-height: 16rem;
-  overflow: auto;
-  animation: pop var(--dur-fast) var(--ease-out) both;
-}
-.pack__option {
-  display: grid;
-  gap: var(--sp-1);
-  width: 100%;
-  text-align: left;
-  padding: var(--sp-3) var(--sp-4);
-  border: 0;
-  border-radius: var(--r-sm);
-  background: transparent;
-  color: var(--c-text);
-}
-.pack__option:hover { background: var(--c-surface-2); }
-.pack__option--on {
-  background: color-mix(in oklab, var(--c-brand) 14%, transparent);
-}
-.pack__option--on .pack__name { color: var(--c-brand-soft); }
+/* Balíček je jeden, ne několik, takže přepínač místo zaškrtávátka.
+   Řádek je jinak týž jako v přípravě kvízu. */
+.packs { list-style: none; padding: 0; border-top: var(--border-w) solid var(--c-border-soft); }
+.packs li { border-bottom: var(--border-w) solid var(--c-border-soft); }
+.pick { display: flex; align-items: center; gap: var(--sp-3); cursor: pointer; min-height: var(--control-touch); padding: var(--sp-4) var(--sp-2); }
+.pick:hover { background: var(--c-bg-active); }
+.pick input { flex: none; width: var(--control-check); height: var(--control-check); margin: 0; accent-color: var(--c-brand); }
+.pick__row { flex: 1; min-width: 0; display: flex; justify-content: space-between; gap: var(--sp-4); align-items: center; }
+.pick__text { display: grid; gap: var(--sp-1); overflow-wrap: anywhere; }
+.pick__count { font-weight: 900; color: var(--c-brand); font-variant-numeric: tabular-nums; }
 
 .chips { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
 .chip {
   padding: var(--sp-2) var(--sp-4);
-  border: 1px solid var(--c-line);
-  border-radius: var(--r-full);
+  border: var(--border-w) solid var(--c-border);
+  border-radius: var(--r-sm);
   background: transparent;
   color: var(--c-text-muted);
   font-size: var(--fs-sm);
-  font-weight: 600;
+  font-weight: 700;
   transition: var(--tr-surface);
 }
-.chip:hover:not(:disabled) { color: var(--c-text); border-color: var(--c-surface-3); }
+.chip:hover:not(:disabled) { color: var(--c-text); background: var(--c-bg-raised); }
 .chip:disabled { opacity: 0.35; cursor: not-allowed; }
-.chip--on {
-  color: var(--c-on-accent);
-  background: var(--c-brand);
-  border-color: var(--c-brand);
-}
+.chip--on { color: var(--c-on-accent); background: var(--c-brand); border-color: var(--c-brand); }
 
 .teams { list-style: none; padding: 0; display: grid; gap: var(--sp-2); }
+/* Sekce je mřížka, takže by se tlačítko roztáhlo přes celou šířku. */
+.add-team { justify-self: start; }
 .team { display: flex; align-items: center; gap: var(--sp-2); }
+.team__color { position: relative; display: inline-flex; }
 .team__dot {
   flex: none;
-  width: 2.25rem;
-  height: 2.25rem;
+  width: var(--control-md);
+  height: var(--control-md);
   border: 0;
   border-radius: var(--r-md);
   color: var(--c-text-ink);
   font-family: var(--font-display);
-  font-weight: 800;
+  font-weight: 900;
   font-size: var(--fs-sm);
-  box-shadow:
-    inset 0 1px 0 var(--c-tile-sheen),
-    0 2px 0 color-mix(in oklab, var(--c-abyss) 55%, transparent);
   transition: transform var(--dur-fast) var(--ease-back);
 }
 .team__dot:hover { transform: scale(1.08); }
-
-.team__color { position: relative; display: inline-flex; }
+.team__name {
+  flex: 1;
+  min-width: 0;
+  padding: var(--sp-2) var(--sp-3);
+  border: var(--border-w) solid var(--c-border);
+  border-radius: var(--r-md);
+  background: var(--c-bg-field);
+  color: var(--c-text);
+  font-size: var(--fs-md);
+}
+.team__name:focus { border-color: var(--c-brand); }
 
 .swatches {
   position: absolute;
   top: calc(100% + var(--sp-2));
   left: 0;
-  z-index: 2;
+  z-index: var(--z-header);
   display: grid;
   grid-template-columns: repeat(3, auto);
   gap: var(--sp-2);
   padding: var(--sp-3);
-  border: 1px solid var(--c-line);
-  border-radius: var(--r-lg);
-  background: var(--c-surface-2);
+  border: var(--border-w) solid var(--c-border);
+  border-radius: var(--r-md);
+  background: var(--c-surface);
   box-shadow: var(--shadow-md);
-  animation: pop var(--dur-fast) var(--ease-back) both;
 }
-.swatches::before {
-  content: '';
-  position: absolute;
-  top: -5px;
-  left: 0.9rem;
-  width: 9px;
-  height: 9px;
-  rotate: 45deg;
-  background: var(--c-surface-2);
-  border-left: 1px solid var(--c-line);
-  border-top: 1px solid var(--c-line);
-}
-
 .swatch {
-  width: 1.75rem;
-  height: 1.75rem;
-  border: 2px solid transparent;
+  width: var(--control-sm);
+  height: var(--control-sm);
+  border: var(--border-w-strong) solid transparent;
   border-radius: var(--r-full);
-  box-shadow: inset 0 1px 0 var(--c-tile-sheen);
   transition: transform var(--dur-fast) var(--ease-back), border-color var(--dur-fast) var(--ease-out);
 }
 .swatch:hover:not(:disabled) { transform: scale(1.14); }
 .swatch--on { border-color: var(--c-text); }
 .swatch:disabled { opacity: 0.28; cursor: not-allowed; }
 
-@keyframes pop {
-  from { opacity: 0; transform: translateY(calc(var(--sp-2) * -1)) scale(0.94); }
-  to { opacity: 1; transform: none; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .swatches,
-  .pack__list { animation: none; }
-  .swatch,
-  .pack__chev { transition: none; }
-}
+.rules { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--sp-4); align-items: start; }
+.rule { display: grid; gap: var(--sp-2); }
+.rule__label { font-size: var(--fs-sm); font-weight: 700; color: var(--c-text-muted); }
 
-.team__name {
-  flex: 1;
-  min-width: 0;
-  padding: var(--sp-2) var(--sp-3);
-  border: 1px solid var(--c-line);
-  border-radius: var(--r-md);
-  background: var(--c-sunken);
-  color: var(--c-text);
-  font-size: var(--fs-md);
+.summary {
+  position: sticky; top: var(--sp-5); padding: var(--sp-5);
+  border: var(--border-w) solid var(--c-border-soft); border-radius: var(--r-lg);
+  background: var(--c-surface);
 }
-.team__name:focus { border-color: var(--c-brand); }
-
-.panel--rules {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
-  gap: var(--sp-4) var(--sp-5);
-  align-items: start;
-}
-.panel--rules .panel__title { grid-column: 1 / -1; }
-
-.segmented {
-  display: flex;
-  gap: var(--sp-1);
-  padding: var(--sp-1);
-  border: 1px solid var(--c-line);
-  border-radius: var(--r-md);
-  background: var(--c-sunken);
-}
-.segmented button {
-  flex: 1;
-  padding: var(--sp-2) var(--sp-1);
-  border: 0;
-  border-radius: var(--r-sm);
-  background: transparent;
-  color: var(--c-text-muted);
-  font-size: var(--fs-sm);
-  font-weight: 600;
-  transition: var(--tr-surface);
-}
-.segmented button:hover:not(:disabled) { color: var(--c-text); background: var(--c-surface); }
-.segmented button:disabled { opacity: 0.3; cursor: not-allowed; }
-.segmented .seg--on { background: var(--c-brand); color: var(--c-on-accent); }
-
-.switch { display: flex; gap: var(--sp-3); align-items: flex-start; cursor: pointer; }
-.switch input { position: absolute; opacity: 0; width: 0; height: 0; }
-.switch__box {
-  flex: none;
-  margin-top: var(--sp-1);
-  width: 2.6rem;
-  height: 1.5rem;
-  border-radius: var(--r-full);
-  background: var(--c-surface-2);
-  border: 1px solid var(--c-line);
-  position: relative;
-  transition: background-color var(--dur-fast) var(--ease-out);
-}
-.switch__box::after {
-  content: '';
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 1.1rem;
-  height: 1.1rem;
-  border-radius: var(--r-full);
-  background: var(--c-text-muted);
-  transition: transform var(--dur-fast) var(--ease-back), background-color var(--dur-fast) var(--ease-out);
-}
-.switch input:checked + .switch__box { background: var(--c-brand); border-color: var(--c-brand); }
-.switch input:checked + .switch__box::after { transform: translateX(1.1rem); background: var(--c-on-accent); }
-.switch input:focus-visible + .switch__box { outline: var(--focus-ring-w) solid var(--focus-ring-c); outline-offset: var(--focus-ring-offset); }
-.switch strong { display: block; font-size: var(--fs-sm); font-weight: 600; }
-.switch em { display: block; font-style: normal; font-size: var(--fs-xs); color: var(--c-text-faint); line-height: 1.5; }
-
-.launch {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: var(--sp-4) var(--sp-5);
-  align-items: center;
-  margin-top: var(--sp-5);
-  padding: var(--sp-4) var(--sp-5);
-  border: 1px solid var(--c-line);
-  border-radius: var(--r-xl);
-  background:
-    linear-gradient(
-      90deg,
-      color-mix(in oklab, var(--c-brand) 6%, var(--c-surface)),
-      var(--c-surface) 40%
-    );
-}
-.launch__info {
-  display: grid;
-  gap: var(--sp-2);
-  min-width: 0;
-}
-.launch__teams {
-  list-style: none;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--sp-2);
-}
-.launch__team {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-1);
-  max-width: 10rem;
-  padding: var(--sp-1) var(--sp-2) var(--sp-1) var(--sp-1);
-  border-radius: var(--r-full);
-  background: color-mix(in oklab, var(--team) 16%, transparent);
-  border: 1px solid color-mix(in oklab, var(--team) 35%, transparent);
-}
-.launch__badge {
+.summary .eyebrow, .summary__next { color: var(--c-brand); }
+.summary h2 { margin-top: var(--sp-2); font-size: var(--fs-xl); }
+.summary__total { display: grid; margin-block: var(--sp-5) var(--sp-4); }
+.summary__total strong { font-size: var(--fs-work-number); font-weight: 900; line-height: var(--lh-tight); font-variant-numeric: tabular-nums; }
+.summary__total span { font-size: var(--fs-sm); margin-top: var(--sp-2); color: var(--c-text-muted); }
+.summary__preview { padding: var(--sp-3); border-radius: var(--r-md); background: var(--c-bg-field); }
+.summary__empty { font-size: var(--fs-xs); color: var(--c-text-faint); line-height: var(--lh-snug); }
+.summary dl { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--sp-3); margin-block: var(--sp-5); font-size: var(--fs-sm); color: var(--c-text-muted); }
+.summary dd { margin: 0; font-weight: 700; text-align: right; color: var(--c-text); }
+.summary__teams { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-bottom: var(--sp-5); }
+.summary__team { display: inline-flex; align-items: center; gap: var(--sp-2); max-width: 100%; min-width: 0; }
+.summary__badge {
   display: grid;
   place-items: center;
-  width: 1.35rem;
-  height: 1.35rem;
-  border-radius: var(--r-full);
+  width: var(--control-xs);
+  height: var(--control-xs);
+  border-radius: var(--r-sm);
   background: var(--team);
   color: var(--c-text-ink);
   font-family: var(--font-display);
   font-size: var(--fs-xs);
   font-weight: 900;
 }
-.launch__team-name {
-  font-size: var(--fs-xs);
-  font-weight: 700;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.launch__cta { flex: none; }
-.launch__preview {
-  min-width: 0;
-  max-width: 11rem;
-  padding: var(--sp-2);
-  border-radius: var(--r-md);
-  background: var(--c-sunken);
-  border: 1px solid var(--c-line-soft);
-}
-.launch__empty {
-  font-size: var(--fs-xs);
-  color: var(--c-text-faint);
-  padding: var(--sp-1);
-  max-width: 8rem;
-  line-height: var(--lh-snug);
-}
+.summary__team-name { font-size: calc(var(--fs-xs) * var(--fit-text, 1)); font-weight: 700; min-width: 0; }
+.summary__next { font-size: var(--fs-sm); margin-top: var(--sp-3); }
+.problems { list-style: none; padding: 0; display: grid; gap: var(--sp-1); margin-top: var(--sp-3); color: var(--c-text-faint); font-size: var(--fs-sm); }
 
-.mini {
-  --cols: 1;
-  display: grid;
-  gap: var(--sp-1);
-}
-.mini__row {
-  display: grid;
-  grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
-  gap: var(--sp-1);
-}
+/* Náhled desky. Dlaždice si drží hmotu, protože takhle deska na plátně
+   opravdu vypadá. */
+.mini { --cols: 1; display: grid; gap: var(--sp-1); }
+.mini__row { display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); gap: var(--sp-1); }
 .mini__cell {
   display: block;
   aspect-ratio: 1.35 / 1;
-  min-height: 0.7rem;
+  min-height: var(--sp-3);
   border-radius: var(--r-sm);
   background: linear-gradient(178deg, var(--c-tile-top), var(--c-tile-bottom));
-  box-shadow: inset 0 1px 0 var(--c-tile-sheen);
+  box-shadow: var(--shadow-inset-top);
 }
-
-.summary { color: var(--c-text-muted); font-size: var(--fs-sm); }
-.problems { list-style: none; padding: 0; display: grid; gap: var(--sp-1); color: var(--c-text-faint); font-size: var(--fs-sm); }
 
 @media (max-width: 960px) {
-  .setup__grid { grid-template-columns: 1fr; }
-  .panel--rules { grid-column: auto; }
-  .launch {
-    grid-template-columns: 1fr;
-    justify-items: stretch;
-  }
-  .launch__preview { max-width: none; }
-  .launch__cta { width: 100%; }
+  .setup__grid { gap: var(--sp-5); grid-template-columns: minmax(0, 1fr) minmax(0, .65fr); }
+  .rules { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 720px) {
+  .setup__grid { grid-template-columns: minmax(0, 1fr); }
+  .summary { position: static; }
+  .section__head h2 { font-size: var(--fs-lg); }
 }
 
+/* Dotyková pravidla jsou poslední, aby je pozdější breakpoint nepřebil. */
 @media (pointer: coarse) {
-  .team__dot { width: 2.75rem; height: 2.75rem; }
+  .team__dot { width: var(--control-touch); height: var(--control-touch); }
   .team__name { padding-block: var(--sp-3); font-size: var(--fs-md); }
-  .swatches { grid-template-columns: repeat(3, auto); gap: var(--sp-3); padding: var(--sp-4); }
-  .swatch { width: 2.75rem; height: 2.75rem; }
-  .segmented button { padding-block: var(--sp-3); }
-  .chip { padding: var(--sp-3) var(--sp-4); }
-  .panel__new { min-height: 2.75rem; display: inline-grid; place-items: center; }
+  .swatches { gap: var(--sp-3); padding: var(--sp-4); }
+  .swatch { width: var(--control-touch); height: var(--control-touch); }
+  .chip { padding: var(--sp-3) var(--sp-4); min-height: var(--control-touch); }
 }
 </style>
