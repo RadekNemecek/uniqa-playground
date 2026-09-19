@@ -188,7 +188,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="kviz" :class="{ 'kviz--playing': playing, 'work-surface': !hasQuiz }">
+  <div class="kviz" :class="{ 'kviz--playing': playing }">
     <!-- Hlavička aplikace patří do přípravy, ne na projektor. Jakmile hra
          běží, zůstane nad plátnem jen moderátorský pás. -->
     <template v-if="!hasQuiz">

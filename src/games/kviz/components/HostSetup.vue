@@ -224,16 +224,16 @@ function start(): void {
 .rule { display: grid; gap: var(--sp-2); }
 .rule__label { font-size: var(--fs-sm); font-weight: 700; color: var(--c-text-muted); }
 .notice { border-top: var(--border-w) solid var(--c-border-soft); padding-top: var(--sp-4); font-size: var(--fs-sm); color: var(--c-text-muted); }
+/* Shrnutí je jediný těžký blok obrazovky. Na světlém sešitu to byl
+   tmavý panel; na plátně je to obráceně, tedy vyvýšená plocha
+   s hranou. Role je táž, barvy jdou z rampy a nic si tu nepřepisuje
+   aliasy. */
 .summary {
-  --c-brand: var(--c-studio-accent);
-  --c-on-accent: var(--c-studio);
-  --button-brand-bg: var(--c-studio-accent);
-  --button-brand-hover: var(--c-paper);
-  --focus-ring-c: var(--c-studio-accent);
-  position: sticky; top: var(--sp-5); padding: var(--sp-5); border-radius: var(--r-sm);
-  background: var(--c-studio); color: var(--c-studio-text);
+  position: sticky; top: var(--sp-5); padding: var(--sp-5);
+  border: var(--border-w) solid var(--c-border-soft); border-radius: var(--r-lg);
+  background: var(--c-surface);
 }
-.summary .eyebrow, .summary__next { color: var(--c-studio-accent); }
+.summary .eyebrow, .summary__next { color: var(--c-brand); }
 .summary h2 { margin-top: var(--sp-2); font-size: var(--fs-xl); }
 .summary__total { display: grid; margin-block: var(--sp-5); }
 .summary__total strong { font-size: var(--fs-work-number); font-weight: 900; line-height: var(--lh-tight); font-variant-numeric: tabular-nums; }

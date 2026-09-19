@@ -165,12 +165,12 @@ kterým UNIQA sází, a **Caveat**, ruční řez, který si na svůj web pustila
 sama tam, kde chce znít lidsky. Hravost se tedy ke značce nepřilepuje,
 jen se zesiluje to, co v ní už je.
 
-**Co se promítá, je tmavé; co se chystá u stolu, je světlé.** Hra
-i rozcestník zůstávají v hluboké modré odvozené od `#005CA9`. Příprava
-kvízu a správa otázek používají světlé plochy `#EEF2FA`, `#D5DEEE`
-a bílou, s tmavým inkoustem a modrým akcentem. Knihovna má přehledné
-řádky; editor drží seznam otázek vedle jedné otevřené otázky. Na
-telefonu se seznam změní na výběr otázky.
+**Tmavá je výchozí, světlá je výjimka pro správu otázek.** Hra,
+rozcestník i příprava kvízu jsou v hluboké modré odvozené od `#005CA9`.
+Správa otázek používá světlé plochy `#EEF2FA`, `#D5DEEE` a bílou,
+s tmavým inkoustem a modrým akcentem, protože se v ní jen píše.
+Knihovna má přehledné řádky; editor drží seznam otázek vedle jedné
+otevřené otázky. Na telefonu se seznam změní na výběr otázky.
 
 Rozcestníku vévodí nápis **Mučírna**, a je plochý: barevná dlaždice
 s „M", vedle ní slovo, přeliv mezi dvěma odstíny modré, žádný lesk ani

@@ -45,15 +45,15 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
   výsledkové obrazovce.
   Nikdy nenese otázku, odpověď, hodnotu ani ovládací prvek, ty se čtou
   z druhého konce místnosti a tam vyhrává čitelnost nad charakterem.
-- **Dvě plochy podle práce, ne podle obrazovky.** Co se promítá, je
-  tmavé: hra i rozcestník, rampa je čistý odstín `#005CA9` ztlumený do
-  hloubky. Co se chystá u stolu, je světlý pracovní sešit ze stejných
-  značkových barev: příprava kvízu a správa otázek. Nese ho třída
-  `work-surface`, která přemapuje aliasy v `tokens.css`; komponenty
-  z `ui/` o žádném tématu nevědí a nesmí se to změnit. Tmavý blok
-  uvnitř světla, tedy shrnutí v přípravě, si aliasy vrátí u sebe přes
-  `--c-studio*`. Rozcestník světlý být zkoušel a nefungovalo to: visí
-  na plátně před hrou a patří ke hře, ne k přípravě.
+- **Tmavá je výchozí, světlá je výjimka pro správu otázek.** Rampa je
+  čistý odstín `#005CA9` ztlumený do hloubky a nese hru, rozcestník
+  i přípravu kvízu: všechno tohle se promítá nebo na to je vidět,
+  a patří to k sobě. Rozcestník i příprava světlé být zkoušely
+  a nefungovalo to. Světlý pracovní sešit zůstal správě otázek, kde se
+  opravdu jen píše. Nese ho třída `work-surface`, která přemapuje
+  aliasy v `tokens.css`; komponenty z `ui/` o žádném tématu nevědí
+  a nesmí se to změnit. Když se plocha převléká, mění se **jen barvy**:
+  rozvržení, pořadí ani prvky obrazovky s tím nemají co do činění.
 - **Žádná zlatá ani žlutá.** UNIQA je nemá. Akcent je `--c-brand`, hodnoty
   na dlaždicích nese `--c-value`. Žlutá chybí i mezi barvami týmů, jinak by
   se zlatá vrátila zadními dveřmi.

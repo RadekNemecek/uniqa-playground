@@ -19,13 +19,12 @@
 --------------------------------------------------------------------------- */
 
 :root {
-  /* Pracovní sešit: schválená světlá příprava a správa kvízu.
+  /* Pracovní sešit: světlá správa otázek.
      Kontrast inkoustu na papíru / bílé / výběru: 15,70 / 17,62 / 13,01.
      Modrá na stejných plochách: 6,03 / 6,77 / 5,00.
      Zelená: 5,64 / 6,32 / 4,67. Červená (UNIQA ztmavená na 80 %):
      6,36 / 7,14 / 5,28.
-     Tmavší červená pro hover: 9,16 / 10,28 / 7,59.
-     Studio: světlý text 16,35:1 a akcent 8,59:1 na tmavém inkoustu. */
+     Tmavší červená pro hover: 9,16 / 10,28 / 7,59. */
   --c-paper: #EEF2FA;
   --c-paper-sheet: #FFFFFF;
   --c-paper-selected: #D5DEEE;
@@ -34,9 +33,6 @@
   --c-paper-green: #026E46;
   --c-paper-red: #AC163F;
   --c-paper-red-deep: #810F2F;
-  --c-studio: #001A31;
-  --c-studio-text: #F2F7FD;
-  --c-studio-accent: #7DBBF0;
   --fs-work-title: clamp(2rem, 1.5rem + 1vw, 2.75rem);
   --fs-work-number: 3.5rem;
   --control-check: 1.25rem;
