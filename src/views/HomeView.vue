@@ -165,6 +165,7 @@ async function discard(entry: GameEntry): Promise<void> {
             :key="card.entry.slug"
             class="game-card"
             :class="`game-card--${card.entry.slug}`"
+            :style="{ '--i': index }"
           >
             <div class="game-card__preview" aria-hidden="true">
               <template v-if="card.entry.slug === 'pojistuj'">
@@ -172,8 +173,13 @@ async function discard(entry: GameEntry): Promise<void> {
                   <span class="mini-board__category">Majetek</span>
                   <span class="mini-board__category">Život</span>
                   <span class="mini-board__category">Auto</span>
-                  <template v-for="value in [200, 400, 600]" :key="value">
-                    <span v-for="column in 3" :key="`${value}-${column}`" class="mini-board__tile">
+                  <template v-for="(value, row) in [200, 400, 600]" :key="value">
+                    <span
+                      v-for="column in 3"
+                      :key="`${value}-${column}`"
+                      class="mini-board__tile"
+                      :style="{ '--i': row * 3 + column - 1 }"
+                    >
                       {{ value }}
                     </span>
                   </template>
@@ -189,10 +195,10 @@ async function discard(entry: GameEntry): Promise<void> {
                   </div>
                   <p>Která odpověď platí?</p>
                   <div class="mini-quiz__options">
-                    <span class="mini-option mini-option--a">A</span>
-                    <span class="mini-option mini-option--b">B</span>
-                    <span class="mini-option mini-option--c">C</span>
-                    <span class="mini-option mini-option--d">D</span>
+                    <span class="mini-option mini-option--a" style="--i: 0">A</span>
+                    <span class="mini-option mini-option--b" style="--i: 2">B</span>
+                    <span class="mini-option mini-option--c" style="--i: 3">C</span>
+                    <span class="mini-option mini-option--d" style="--i: 1">D</span>
                   </div>
                 </div>
                 <span class="preview-label">Každý odpovídá za sebe</span>
@@ -367,12 +373,12 @@ async function discard(entry: GameEntry): Promise<void> {
   background:
     radial-gradient(
       ellipse 62% 58% at 50% -6%,
-      color-mix(in oklab, var(--c-light) 16%, transparent),
+      color-mix(in oklab, var(--c-light) 24%, transparent),
       transparent 62%
     ),
     radial-gradient(
       ellipse 26% 70% at 50% 0%,
-      color-mix(in oklab, var(--c-light) 10%, transparent),
+      color-mix(in oklab, var(--c-light) 15%, transparent),
       transparent 70%
     );
   transform-origin: top center;
@@ -396,8 +402,8 @@ async function discard(entry: GameEntry): Promise<void> {
 }
 
 @keyframes beam-sway {
-  from { opacity: 0.82; transform: scale(1); }
-  to { opacity: 1; transform: scale(1.06); }
+  from { opacity: 0.7; transform: scale(1); }
+  to { opacity: 1; transform: scale(1.08); }
 }
 
 .hero__copy {
@@ -406,7 +412,11 @@ async function discard(entry: GameEntry): Promise<void> {
   gap: var(--sp-5);
   width: 100%;
 }
+/* Kicker přichází první a sám. Je to začátek téže věty, kterou pak
+   dopoví nápis: nejdřív se objeví řádek, pak slovo, nakonec do něj
+   dosedne dlaždice. */
 .hero__kicker {
+  animation: kicker-in var(--dur-stage) var(--ease-out) backwards;
   color: var(--c-text-muted);
   font-family: var(--font-hand);
   font-size: var(--fs-2xl);
@@ -421,6 +431,11 @@ async function discard(entry: GameEntry): Promise<void> {
 .hero__image {
   width: min(100%, var(--home-hero-image-max));
   height: auto;
+}
+
+@keyframes kicker-in {
+  from { opacity: 0; transform: translateY(var(--sp-3)); }
+  to { opacity: 1; transform: none; }
 }
 
 /* Dlaždice nezačínají hned pod nápisem: rozcestník je první, co
@@ -470,6 +485,13 @@ async function discard(entry: GameEntry): Promise<void> {
   list-style: none;
 }
 .game-card {
+  /* Odklad ambientního pohybu v náhledu. Bez něj by obě karty blikaly
+     naráz a z náhledů by byl jeden rytmus místo dvou her. */
+  --preview-phase: 0s;
+
+  /* Karty nastupují jedna po druhé. Nástup je jediné místo, kde se dá
+     ukázat, že jsou dvě a ne jedna dlouhá plocha. */
+  animation: card-in var(--dur-stage) var(--ease-out) calc(var(--dur-fast) * var(--i)) backwards;
   min-width: 0;
   overflow: hidden;
   border: var(--separator-w) solid var(--c-line);
@@ -478,7 +500,20 @@ async function discard(entry: GameEntry): Promise<void> {
   box-shadow: var(--shadow-md);
   transition: border-color var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out);
 }
-.game-card:hover { border-color: var(--c-brand); transform: translateY(calc(var(--sp-1) * -1)); box-shadow: var(--shadow-lg); }
+.game-card--kviz { --preview-phase: calc(var(--dur-ambient) * 0.26); }
+.game-card:hover {
+  border-color: var(--c-brand);
+  transform: translateY(calc(var(--sp-1) * -1));
+  /* Ke stínu i záře: karta je dlaždice, na kterou jde sáhnout, a ta se
+     pod prstem rozsvítí. Samotný zvednutý stín se na tmavém pozadí
+     skoro neprojeví. */
+  box-shadow: var(--shadow-lg), 0 0 var(--sp-8) calc(var(--sp-4) * -1) var(--c-brand-glow);
+}
+
+@keyframes card-in {
+  from { opacity: 0; transform: translateY(var(--sp-5)); }
+  to { opacity: 1; transform: none; }
+}
 .game-card__preview {
   position: relative;
   display: grid;
@@ -491,6 +526,22 @@ async function discard(entry: GameEntry): Promise<void> {
     linear-gradient(145deg, color-mix(in oklab, var(--c-surface-3) 82%, transparent), var(--c-sunken)),
     var(--c-surface-2);
 }
+/* Světlo zespodu při najetí. Je to `::before`, ne `::after`: pseudoprvek
+   se řadí před potomky, takže ukázka i štítek zůstanou nad ním. */
+.game-card__preview::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 75% 65% at 50% 112%,
+    color-mix(in oklab, var(--c-brand) 28%, transparent),
+    transparent 72%
+  );
+  transition: opacity var(--dur-base) var(--ease-out);
+}
+.game-card:hover .game-card__preview::before { opacity: 1; }
 .preview-label {
   position: absolute;
   right: var(--sp-4);
@@ -530,9 +581,24 @@ async function discard(entry: GameEntry): Promise<void> {
   color: var(--c-value);
   font-size: var(--fs-sm);
   font-weight: 900;
-  transition: transform var(--dur-base) var(--ease-out);
+  /* Deskou jednou za čas přejede vlna: dlaždice se po řadě nadzvednou
+     a zase dosednou. Dřív tu byl hover na jediné dlaždici, o kterém se
+     nikdo nedozvěděl, dokud na kartu nenajel myší. Vlna jde zleva
+     doprava a shora dolů, takže to je pohyb se směrem, ne blikání. */
+  animation: tile-wave var(--dur-ambient) var(--ease-out)
+    calc(var(--dur-ambient) / 48 * var(--i) + var(--preview-phase)) infinite;
 }
-.game-card:hover .mini-board__tile:nth-child(8) { transform: translateY(calc(var(--sp-2) * -1)); }
+
+/* Špička je krátká a zbytek cyklu je klid. Je to náhled na rozcestníku,
+   ne prvek, který si říká o pozornost. */
+/* Rozsvícení je spočítané, ne odhadnuté: `brightness(1.3)` posune
+   `--c-tile-top` z #12559A na zhruba #176FC8 a bílá hodnota na něm drží
+   5,1:1, tedy pořád nad 4,5:1. */
+@keyframes tile-wave {
+  0% { transform: none; filter: none; }
+  2% { transform: translateY(calc(var(--sp-1) * -0.75)); filter: brightness(1.3); }
+  8%, 100% { transform: none; filter: none; }
+}
 
 .mini-quiz { display: grid; gap: var(--sp-3); width: 86%; }
 .mini-quiz__top { display: flex; justify-content: space-between; color: var(--c-text-faint); font-size: var(--fs-xs); font-weight: 700; }
@@ -549,13 +615,22 @@ async function discard(entry: GameEntry): Promise<void> {
   color: var(--c-text-ink);
   font-size: var(--fs-sm);
   font-weight: 900;
-  transition: transform var(--dur-base) var(--ease-out);
+  /* Možnosti se rozsvěcují na přeskáčku, jako když do kvízu padají
+     hlasy z telefonů. Proto je pořadí v šabloně jiné než A, B, C, D:
+     odpovědi taky nechodí popořadě. */
+  animation: option-ping var(--dur-ambient) var(--ease-out)
+    calc(var(--dur-ambient) / 36 * var(--i) + var(--preview-phase)) infinite;
+}
+
+@keyframes option-ping {
+  0% { transform: none; filter: none; }
+  2% { transform: translateX(var(--sp-1)); filter: brightness(1.16); }
+  9%, 100% { transform: none; filter: none; }
 }
 .mini-option--a { background: var(--c-team-1); }
 .mini-option--b { background: var(--c-team-3); }
 .mini-option--c { background: var(--c-team-4); }
 .mini-option--d { background: var(--c-team-5); }
-.game-card:hover .mini-option--b { transform: translateX(var(--sp-2)); }
 
 .game-card__body { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--sp-4); padding: var(--sp-6); }
 .game-card__index {
@@ -633,10 +708,12 @@ async function discard(entry: GameEntry): Promise<void> {
 
 @media (prefers-reduced-motion: reduce) {
   .hero::before,
-  .drift__tile { animation: none; }
+  .hero__kicker,
+  .drift__tile,
+  .game-card,
+  .mini-board__tile,
+  .mini-option { animation: none; }
   .game-card:hover,
-  .game-card:hover .mini-board__tile:nth-child(8),
-  .game-card:hover .mini-option--b,
   .game-card__play:hover { transform: none; }
 }
 
