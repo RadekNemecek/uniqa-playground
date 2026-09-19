@@ -173,8 +173,10 @@ a bílou, s tmavým inkoustem a modrým akcentem. Knihovna má přehledné
 telefonu se seznam změní na výběr otázky.
 
 Rozcestníku vévodí nápis **Mučírna**, a je plochý: barevná dlaždice
-s „M", vedle ní slovo, žádný lesk ani plastika. Stojí sám, bez sloganu,
-a má přednost před ohybem, takže zpod něj vykukují karty obou her.
+s „M", vedle ní slovo, přeliv mezi dvěma odstíny modré, žádný lesk ani
+plastika. Úvod je titulní strana, značka je vystředěná na výšku i na
+šířku a zpod dolní hrany kouká jen pruh karet, aby bylo vidět, že se
+roluje dál.
 
 **Zlatá v systému není**, UNIQA žádnou nemá. Hodnoty na dlaždicích jsou
 bílé, akcent je modrý a jediná teplá barva patří poli **Riziko!**

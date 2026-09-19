@@ -66,8 +66,10 @@ const cards = computed<GameCard[]>(() =>
  * a pohyb zůstal na hraně vnímatelnosti.
  *
  * Nad nápisem žádná neleží. Značka jde přes většinu šířky a dlaždice
- * kolem ní se s ní přetahovaly, takže začínají až u jejího spodního
- * okraje a zbytek plují za kartami.
+ * kolem ní se s ní přetahovaly, takže celé pole začíná až kousek nad
+ * ohybem: pár dlaždic vykoukne v mezeře pod značkou, zbytek pluje za
+ * kartami a objeví se zase u patičky. Souřadnice jsou v procentech
+ * toho pole, ne celé stránky.
  */
 interface DriftTile {
   /** Poloha v procentech plochy. */
@@ -88,14 +90,14 @@ interface DriftTile {
 }
 
 const DRIFT: DriftTile[] = [
-  { x: 4, y: 30, size: 13, rot: -9, dx: 14, dy: -10, slow: 47, delay: 0, tone: 'papir' },
-  { x: 80, y: 27, size: 9, rot: 12, dx: -12, dy: 14, slow: 61, delay: -8, tone: 'modra' },
-  { x: 88, y: 41, size: 15, rot: -6, dx: -9, dy: -12, slow: 53, delay: -21, tone: 'papir' },
-  { x: 16, y: 55, size: 8, rot: 14, dx: 18, dy: 9, slow: 43, delay: -14, tone: 'papir' },
-  { x: 43, y: 80, size: 11, rot: -11, dx: -10, dy: -16, slow: 67, delay: -31, tone: 'papir' },
-  { x: 68, y: 66, size: 7, rot: 8, dx: 15, dy: 12, slow: 39, delay: -5, tone: 'papir' },
-  { x: 1, y: 84, size: 10, rot: 6, dx: 11, dy: -13, slow: 57, delay: -26, tone: 'modra' },
-  { x: 57, y: 36, size: 6, rot: -14, dx: -16, dy: 11, slow: 71, delay: -12, tone: 'papir' },
+  { x: 4, y: 0, size: 13, rot: -9, dx: 14, dy: -10, slow: 47, delay: 0, tone: 'papir' },
+  { x: 80, y: 4, size: 9, rot: 12, dx: -12, dy: 14, slow: 61, delay: -8, tone: 'modra' },
+  { x: 88, y: 14, size: 15, rot: -6, dx: -9, dy: -12, slow: 53, delay: -21, tone: 'papir' },
+  { x: 16, y: 28, size: 8, rot: 14, dx: 18, dy: 9, slow: 43, delay: -14, tone: 'papir' },
+  { x: 43, y: 62, size: 11, rot: -11, dx: -10, dy: -16, slow: 67, delay: -31, tone: 'papir' },
+  { x: 68, y: 46, size: 7, rot: 8, dx: 15, dy: 12, slow: 39, delay: -5, tone: 'papir' },
+  { x: 1, y: 74, size: 10, rot: 6, dx: 11, dy: -13, slow: 57, delay: -26, tone: 'modra' },
+  { x: 57, y: 8, size: 6, rot: -14, dx: -16, dy: 11, slow: 71, delay: -12, tone: 'papir' },
 ]
 
 /**
@@ -187,13 +189,16 @@ async function discard(entry: GameEntry): Promise<void> {
          stála podruhé kousek nad nápisem a navigace hry se ukáže, až
          je nějaká vybraná. -->
     <main id="obsah">
-      <!-- Nápis stojí sám. Slogan nad ním říkal totéž, co je vidět
-           z karet pod ním, a značce ubíral na síle: vtip s odebraným
-           „M" se přečte bez doprovodu. -->
+      <!-- Úvod je titulní strana: značka vystředěná na výšku i na šířku
+           a zpod dolní hrany vykukuje kus náhledu, aby bylo vidět, že se
+           roluje dál. -->
       <section class="hero page" aria-labelledby="home-title">
-        <h1 id="home-title" class="hero__title">
-          <HeroMark class="hero__image" />
-        </h1>
+        <div class="hero__copy">
+          <p class="hero__kicker">Kvízy, do kterých se zapojí celá místnost</p>
+          <h1 id="home-title" class="hero__title">
+            <HeroMark class="hero__image" />
+          </h1>
+        </div>
       </section>
 
       <section class="choice page" aria-label="Vyber hru">
@@ -315,8 +320,12 @@ async function discard(entry: GameEntry): Promise<void> {
      na téže lince. */
   --home-preview-h: 12rem;
   --home-perspective: 40rem;
-  /* Značka dostala přednost před ohybem. Nevejde se pod ni celá karta,
-     ale její horní hrana ano, takže je vidět, že se roluje dál. */
+  /* Značka dostala přednost před ohybem. Zpod úvodu kouká jen tenhle
+     kus karty, tedy horní pruh náhledu: dost na to, aby bylo vidět, že
+     se roluje dál, a málo na to, aby to soupeřilo se značkou. */
+  --home-peek: 5rem;
+  /* Pod co se úvod nesmí srazit ani na nízkém okně. */
+  --home-hero-floor: 26rem;
   --home-hero-image-max: 64rem;
   --home-card-side-min: 17rem;
 
@@ -339,7 +348,11 @@ async function discard(entry: GameEntry): Promise<void> {
    stránky. */
 .drift {
   position: absolute;
-  inset: 0;
+  /* Pole začíná kousek nad ohybem, tedy nad spodní hranou úvodu. Nad
+     ním má prostor značka. */
+  top: calc(max(var(--home-hero-floor), calc(100dvh - var(--home-peek))) - var(--sp-9));
+  inset-inline: 0;
+  bottom: 0;
   z-index: 0;
   overflow: hidden;
   pointer-events: none;
@@ -376,16 +389,38 @@ main {
    a karty pod ním jen vykukovaly, takže se muselo rolovat i tehdy, když
    moderátorka jen jde spustit hru, kterou zná. Nápis teď začíná na téže
    svislé lince jako všechno pod ním a jako nadpisy v přípravě. */
-.hero { position: relative; padding-block: var(--sp-7) var(--sp-6); }
+.hero {
+  display: grid;
+  place-items: center;
+  min-height: max(var(--home-hero-floor), calc(100dvh - var(--home-peek)));
+  padding-block: var(--sp-7) var(--sp-6);
+}
+.hero__copy { position: relative; display: grid; justify-items: center; gap: var(--sp-5); width: 100%; }
+/* Kicker přichází první a sám. Je to začátek téže věty, kterou pak
+   dopoví nápis: nejdřív se objeví řádek, pak slovo, nakonec do něj
+   dosedne dlaždice. */
+.hero__kicker {
+  animation: kicker-in var(--dur-stage) var(--ease-out) backwards;
+  color: var(--c-text-muted);
+  font-family: var(--font-hand);
+  font-size: var(--fs-2xl);
+  font-weight: 500;
+  line-height: var(--lh-snug);
+  text-align: center;
+}
+@keyframes kicker-in {
+  from { opacity: 0; transform: translateY(var(--sp-3)); }
+  to { opacity: 1; transform: none; }
+}
 
 /* Světlo pod značkou. Dlaždice plují po celé ploše a pod nápisem z nich
    byl závoj; tohle jim tam uklidí a značka stojí na čisté ploše. Je to
    jeden měkký kruh, ne kužel: kužel s okraji se na ploše čte jako
    trojúhelník. Leží nad dlaždicemi a pod nápisem, vystředěný s ním. */
-.hero::before {
+.hero__copy::before {
   content: '';
   position: absolute;
-  inset: calc(var(--sp-7) * -1) calc(var(--sp-6) * -1);
+  inset: calc(var(--sp-8) * -1) calc(var(--sp-6) * -1);
   z-index: -1;
   pointer-events: none;
   background: radial-gradient(
@@ -394,7 +429,7 @@ main {
     transparent 72%
   );
 }
-.hero__title { display: flex; justify-content: center; }
+.hero__title { display: flex; justify-content: center; width: 100%; }
 .hero__image { width: min(100%, var(--home-hero-image-max)); height: auto; }
 
 .choice { padding-block: 0 var(--sp-7); }
@@ -618,6 +653,7 @@ main {
 
 @media (prefers-reduced-motion: reduce) {
   .drift__tile,
+  .hero__kicker,
   .game-card,
   .mini-board__tile,
   .mini-option { animation: none; }
@@ -634,24 +670,11 @@ main {
 @media (max-width: 720px) {
   /* Na úzké obrazovce by osm dlaždic dělalo nepořádek, půlka stačí. */
   .drift__tile:nth-child(n + 5) { display: none; }
-  .hero { position: relative; padding-block: var(--sp-7) var(--sp-6); }
-
-/* Světlo pod značkou. Dlaždice plují po celé ploše a pod nápisem z nich
-   byl závoj; tohle jim tam uklidí a značka stojí na čisté ploše. Je to
-   jeden měkký kruh, ne kužel: kužel s okraji se na ploše čte jako
-   trojúhelník. Leží nad dlaždicemi a pod nápisem, vystředěný s ním. */
-.hero::before {
-  content: '';
-  position: absolute;
-  inset: calc(var(--sp-7) * -1) calc(var(--sp-6) * -1);
-  z-index: -1;
-  pointer-events: none;
-  background: radial-gradient(
-    ellipse 58% 62% at 50% 50%,
-    color-mix(in oklab, var(--c-brand) 13%, transparent),
-    transparent 72%
-  );
-}
+  /* Na telefonu se roluje rád a celá obrazovka pro značku je tam
+     plýtvání: úvod se srazí na svůj obsah. */
+  .hero { min-height: 0; padding-block: var(--sp-7) var(--sp-6); }
+  .hero__copy { gap: var(--sp-4); }
+  .hero__kicker { font-size: var(--fs-xl); }
   .choice { padding-block: 0 var(--sp-8); }
   .game-card { display: block; }
   /* Zpátky na pevnou výšku. `min-height: 100%` z širšího rozvržení se

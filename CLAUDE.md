@@ -40,8 +40,9 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
   tam, kde je property deklarovaná, takže samotné přepsání `--scale` na
   potomkovi by nestačilo.
 - **Dvě písma, Lato a Caveat.** Lato nese všechno, je to písmo UNIQA, řezy
-  400, 700 a 900. Caveat je ruční a smí být jen na dvou místech: kicker
-  v dialogu sázky a blahopřání na výsledkové obrazovce.
+  400, 700 a 900. Caveat je ruční a smí být jen na třech místech: kicker
+  rozcestníku, kicker v dialogu sázky, blahopřání na výsledkové
+  obrazovce.
   Nikdy nenese otázku, odpověď, hodnotu ani ovládací prvek, ty se čtou
   z druhého konce místnosti a tam vyhrává čitelnost nad charakterem.
 - **Dvě plochy podle práce, ne podle obrazovky.** Co se promítá, je
@@ -77,9 +78,10 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
   sám. Zůstaly plující dlaždice, protože značka je mřížka dlaždic a obě
   hry na dlaždicích stojí, a jeden měkký kruh světla pod nápisem, aby
   v nich nestál v závoji. Animace jede na posunu a natočení a při
-  `prefers-reduced-motion` stojí. Nápis stojí vystředěný, bez sloganu
-  a má přednost před ohybem: celá karta se pod něj na notebooku nevejde,
-  její horní hrana s náhledem hry ano, takže je vidět, že se roluje dál.
+  `prefers-reduced-motion` stojí. Úvod je titulní strana: značka
+  vystředěná na výšku i na šířku, nad ní ruční kicker a zpod dolní
+  hrany kouká `--home-peek`, tedy horní pruh náhledu. Tolik, aby bylo
+  vidět, že se roluje dál, a ne víc, aby to se značkou nesoupeřilo.
 - **Nápis Mučírna je plochý.** Žádná spodní hrana, lesk ani přejíždějící
   odlesk. Přeliv na dlaždici i na slově zůstal, ale je to spád mezi
   dvěma sousedními odstíny modré, ne světlo dopadající na hmotu: bez něj
