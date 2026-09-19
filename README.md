@@ -12,7 +12,7 @@ vlastní otázky, časomíra a pole **Riziko!**, kde tým před otázkou vsadí
 část svých bodů. Vede se z notebooku na plátno, účastníci nemají v ruce nic.
 
 **Na kolik to dáš?** je kvíz. Otázka se čtyřmi možnostmi, nebo tvrzení, na
-které se odpovídá Pravda, nebo Nepravda; u obojího běží časomíra. Účastníci
+které se odpovídá ANO, nebo NE; u obojího běží časomíra. Účastníci
 se připojí telefonem přes QR kód, vyberou si zvíře a odpovídají sami za
 sebe, body dostávají podle rychlosti. Po odhalení se na každé možnosti
 ukáže, kolik lidí ji zvolilo, uprostřed plátna poučka, a po poslední
@@ -215,7 +215,7 @@ Nedodělané kategorie se v přípravě hry samy nenabídnou.
 
 Balíček je seznam otázek, ne mřížka. U každé je znění, nepovinná poučka,
 která se ukáže po odhalení, a podle zvoleného tvaru buď čtyři možnosti
-s puntíkem u té správné, nebo volba mezi Pravda a Nepravda. Přepínač tvaru
+s puntíkem u té správné, nebo volba mezi ANO a NE. Přepínač tvaru
 je nahoře v otázce a oba druhy se v jednom balíčku klidně střídají. Otázky
 se dají přeskládat šipkami. Ukládá se samo.
 

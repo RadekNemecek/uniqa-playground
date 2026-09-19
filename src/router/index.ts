@@ -31,7 +31,7 @@ export const router = createRouter({
       path: '/kviz/otazky',
       name: 'kviz-otazky',
       component: () => import('@/views/KvizAdminView.vue'),
-      meta: { title: 'Otázky | Na kolik to dáš?' },
+      meta: { title: 'Balíčky | Na kolik to dáš?' },
     },
     {
       path: '/kviz/vysledky',
@@ -43,7 +43,7 @@ export const router = createRouter({
       path: '/admin',
       name: 'admin',
       component: () => import('@/views/AdminView.vue'),
-      meta: { title: 'Otázky | Pojišťuj!' },
+      meta: { title: 'Balíčky | Pojišťuj!' },
     },
     // Adresa pro hráče. Je krátká schválně: nese ji QR kód na plátně
     // a čím kratší adresa, tím řidší kód a tím dál se dá načíst.

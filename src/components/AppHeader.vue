@@ -84,7 +84,7 @@ onBeforeUnmount(() => document.removeEventListener('fullscreenchange', syncFulls
         :class="{ 'nav__item--active': section === 'questions' }"
         :aria-current="section === 'questions' ? 'page' : undefined"
       >
-        Otázky
+        Balíčky
       </RouterLink>
       <!-- Výsledky mají vlastní záložku jen tam, kde vůbec vznikají. -->
       <RouterLink

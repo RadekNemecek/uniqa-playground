@@ -222,6 +222,7 @@ async function discard(entry: GameEntry): Promise<void> {
             class="game-card"
             :class="`game-card--${card.entry.slug}`"
             :style="{ '--i': index }"
+            @click="open(card.entry)"
           >
             <div class="game-card__preview" aria-hidden="true">
               <template v-if="card.entry.slug === 'pojistuj'">
@@ -276,13 +277,16 @@ async function discard(entry: GameEntry): Promise<void> {
 
               <p v-if="card.warn" class="game-card__warn">{{ card.warn }}</p>
 
+              <!-- Kliknout jde kamkoli na kartu, tlačítko je tu proto, aby
+                   bylo vidět co se stane, a proto, že myš není jediná cesta:
+                   klávesnice potřebuje cíl, na který se dá zaměřit.
+                   Roztažený pseudoprvek by nestačil, `UiButton` je sám
+                   polohovaný a překryv by se zastavil na jeho okraji.
+                   K balíčkům se chodí z hlavičky hry, ne odtud. -->
               <div class="game-card__actions">
-                <UiButton variant="brand" @click="open(card.entry)">
+                <UiButton class="game-card__play" variant="brand" @click.stop="open(card.entry)">
                   {{ card.resume ? 'Pokračovat' : 'Připravit hru' }}
                 </UiButton>
-                <RouterLink :to="card.entry.editRoute" class="game-card__questions">
-                  Upravit otázky
-                </RouterLink>
               </div>
 
               <!-- Rozehráno s datem a s cestou ven. Bez data se nedalo
@@ -292,7 +296,7 @@ async function discard(entry: GameEntry): Promise<void> {
               <p v-if="card.resume" class="game-card__resume">
                 <span aria-hidden="true"></span>
                 Rozehráno {{ card.resumeWhen }}: {{ card.resume }}
-                <button type="button" class="game-card__discard" @click="discard(card.entry)">
+                <button type="button" class="game-card__discard" @click.stop="discard(card.entry)">
                   Zahodit
                 </button>
               </p>
@@ -502,8 +506,10 @@ main {
   /* Karty nastupují jedna po druhé. Nástup je jediné místo, kde se dá
      ukázat, že jsou dvě a ne jedna dlouhá plocha. */
   animation: card-in var(--dur-stage) var(--ease-out) calc(var(--dur-fast) * var(--i)) backwards;
+  position: relative;
   min-width: 0;
   overflow: hidden;
+  cursor: pointer;
   border: var(--border-w) solid var(--c-border-soft);
   border-radius: var(--r-lg);
   background: var(--c-surface);
@@ -649,13 +655,6 @@ main {
   line-height: var(--lh-body);
 }
 .game-card__actions { grid-column: 2; display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; margin-top: var(--sp-2); }
-.game-card__questions {
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--control-touch);
-  font-size: var(--fs-sm);
-  font-weight: 700;
-}
 .game-card__discard {
   border: 0;
   background: transparent;
@@ -712,11 +711,6 @@ main {
   .game-card__resume { grid-column: 1; }
   .game-card__actions { align-items: stretch; }
   .game-card__actions :deep(.btn) { width: 100%; }
-  .game-card__questions { width: 100%; justify-content: center; }
 }
 
-/* Dotyková pravidla jsou poslední, aby je pozdější breakpoint nepřepsal. */
-@media (pointer: coarse) {
-  .game-card__questions { min-height: var(--control-touch); }
-}
 </style>

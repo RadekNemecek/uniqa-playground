@@ -89,7 +89,7 @@ export function buildQuestions(
 }
 
 /**
- * Možnosti tak, jak půjdou na plátno. Tvrzení se nemíchá: Pravda je
+ * Možnosti tak, jak půjdou na plátno. Tvrzení se nemíchá: ANO je
  * vždycky A. Předvídatelné pořadí je u dvou možností přednost, ne
  * nedbalost, protože hráč na telefonu nevidí jejich znění.
  */

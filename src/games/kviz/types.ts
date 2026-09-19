@@ -2,7 +2,7 @@
 
 /**
  * Tvar otázky. `choice` je klasická čtveřice možností, `boolean` tvrzení,
- * na které se odpovídá Pravda, nebo Nepravda. Dva tvary v jednom balíčku
+ * na které se odpovídá ANO, nebo NE. Dva tvary v jednom balíčku
  * jsou schválně: školení se tím rozhýbe a tvrzení se píšou rychleji než
  * čtyři věrohodné možnosti.
  */
@@ -24,7 +24,7 @@ export interface QuizItem {
   id: string
   /**
    * Tvar otázky. `choice` je čtveřice možností, `boolean` tvrzení, na které
-   * se odpovídá Pravda, nebo Nepravda. Chybí u balíčků, které vznikly dřív,
+   * se odpovídá ANO, nebo NE. Chybí u balíčků, které vznikly dřív,
    * a tam se čte jako `choice`; kvůli jednomu poli se staré balíčky
    * nepřepisují.
    */
@@ -33,7 +33,7 @@ export interface QuizItem {
   /** Čtyři možnosti. Ve hře se jejich pořadí zamíchá. */
   options: string[]
   /**
-   * Která možnost je správná. U tvrzení je 0 Pravda a 1 Nepravda; `options`
+   * Která možnost je správná. U tvrzení je 0 ANO a 1 NE; `options`
    * se u nich nečtou, znění obou možností je dané a nese ho `BOOLEAN_LABELS`.
    * Zůstanou proto uložené i po přepnutí tvaru a přepnutí zpátky je vrátí.
    */
@@ -105,7 +105,7 @@ export interface QuizQuestion {
   kind: QuizKind
   prompt: string
   /** Možnosti v pořadí, ve kterém se ukážou. U tvrzení jsou vždy dvě
-   *  a nemíchají se: Pravda je vždycky A. */
+   *  a nemíchají se: ANO je vždycky A. */
   options: string[]
   correctIndex: number
   /** Poučka po odhalení. Prázdná, když ji autorka nenapsala. */
@@ -195,7 +195,7 @@ export interface QuizSession {
   index: number
   qid: string
   /** Tvar běžící otázky. Telefon podle něj ví, kolik má nabídnout tlačítek
-   *  a jestli na nich mají být slova Pravda a Nepravda. Znění otázky ani
+   *  a jestli na nich mají být slova ANO a NE. Znění otázky ani
    *  správná odpověď v tom nejsou. */
   kind: QuizKind
   phase: QuizSessionPhase

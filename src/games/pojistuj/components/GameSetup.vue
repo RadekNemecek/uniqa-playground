@@ -212,9 +212,21 @@ onBeforeUnmount(() => {
   document.removeEventListener('keydown', onEscape)
 })
 
+/**
+ * Kolik polí Riziko! deska unese.
+ *
+ * Nejvýš jedno na kategorii a nejvýš čtyři za hru. Dvě pole v jednom
+ * sloupci by se potkala a víc než čtyři sázky za půlhodinu je zdržení.
+ *
+ * Dřív se počítalo jedno pole na šest políček. To nikde nestálo, nedalo
+ * se to z obrazovky uhodnout a při jedné kategorii vycházela nula:
+ * celá volba se tiše zakázala a zvolený počet spadl na Žádné, aniž by
+ * se kdokoli dozvěděl proč. Pětkrát pět políček přitom na jednu sázku
+ * místo má.
+ */
 const maxWagerCells = computed(() => {
-  const cells = selected.value.size * (pack.value?.ladder.length ?? 0)
-  return Math.min(4, Math.max(0, Math.floor(cells / 6)))
+  if (!pack.value?.ladder.length) return 0
+  return Math.min(4, selected.value.size)
 })
 
 const wagerOptions = computed<Segment<number>[]>(() =>
@@ -450,7 +462,10 @@ function start() {
             <div class="rule">
               <p class="rule__label">Pole Riziko!</p>
               <UiSegmented v-model="wagerCells" aria-label="Počet polí Riziko!" :options="wagerOptions" />
-              <p class="hint">Tým na nich před otázkou vsadí část bodů. Na desce poznat nejsou.</p>
+              <p class="hint">
+                Tým na nich před otázkou vsadí část bodů. Na desce poznat nejsou,
+                rozsvítí se až při otevření. Nejvýš jedno na kategorii.
+              </p>
             </div>
           </div>
 

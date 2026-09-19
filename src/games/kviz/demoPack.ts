@@ -133,7 +133,7 @@ const ROWS: Row[] = [
 ]
 
 /** Tvrzení: znění, jestli platí, a poučka. Na plátně i na telefonu se
- *  odpovídá Pravda, nebo Nepravda. */
+ *  odpovídá ANO, nebo NE. */
 type Claim = [prompt: string, holds: boolean, note: string]
 
 const CLAIMS: Claim[] = [
@@ -190,7 +190,7 @@ export function demoQuizPack(): QuizPack {
         id: id('i'),
         kind: 'boolean' as const,
         prompt,
-        // Tvrzení znění možností nečte, Pravda je vždycky 0.
+        // Tvrzení znění možností nečte, ANO je vždycky 0.
         options: [],
         correctIndex: holds ? 0 : 1,
         note,

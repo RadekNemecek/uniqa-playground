@@ -35,7 +35,7 @@ export const GAMES: GameEntry[] = [
     title: 'Na kolik to dáš?',
     tagline: 'Rychlý kvíz pro každého v místnosti',
     description:
-      'Otázka se čtyřmi možnostmi, nebo tvrzení na pravda a nepravda. Účastníci hlasují z telefonů, sbírají body za správnost i rychlost a po každém kole si společně projdete vysvětlení.',
+      'Otázka se čtyřmi možnostmi, nebo tvrzení na ano a ne. Účastníci hlasují z telefonů, sbírají body za správnost i rychlost a po každém kole si společně projdete vysvětlení.',
     route: '/kviz',
     editRoute: '/kviz/otazky',
     reportsRoute: '/kviz/vysledky',

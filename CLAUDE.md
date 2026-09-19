@@ -70,6 +70,12 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
   přebijí pravidla zapsaná pod nimi.
 - **Texty česky, bez dlouhých pomlček.** A bez řeči o tom, jak je aplikace
   postavená. Uživatelku zajímá, co s tím může dělat, ne architektura.
+- **Dlaždice rozcestníku je klikatelná celá.** Tlačítko v ní zůstává,
+  aby bylo vidět, co se stane, a aby měla klávesnice cíl, na který se dá
+  zaměřit. Roztažený pseudoprvek na to nestačí, `UiButton` je sám
+  polohovaný a překryv se zastaví na jeho okraji, takže kliknutí nese
+  sama karta a tlačítko uvnitř zastavuje probublání. K balíčkům se
+  odtud nechodí, ta cesta vede z hlavičky hry.
 - **Rozcestník nese nápis, pozadí jen dýchá.** Žádná fotka ani
   generovaná grafika. Ozdob tu běželo šest naráz, tedy záře, zrno, kužel
   i dopad světla, a značce to ubíralo: vtip s odebraným „M" se přečte
@@ -122,11 +128,11 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
   stropy nižší, než kolik je otázek k dispozici: strop, který se rovná
   celé zásobě, je jen past tvářící se jako volba.
 - **Kvíz zná dva tvary otázky.** Čtveřici možností a tvrzení, na které se
-  odpovídá Pravda, nebo Nepravda. Tvar se volí u každé otázky zvlášť a oba
+  odpovídá ANO, nebo NE. Tvar se volí u každé otázky zvlášť a oba
   se v jednom balíčku i v jedné hře běžně střídají, losování mezi nimi
   nerozlišuje. Co se u tvrzení nemíchá, je pořadí jeho dvou možností:
-  Pravda je vždycky A. Hráč na telefonu jejich znění nevidí a po druhém
-  tvrzení má vědět, kam sáhnout. Slova Pravda a Nepravda nese
+  ANO je vždycky A. Hráč na telefonu jejich znění nevidí a po druhém
+  tvrzení má vědět, kam sáhnout. Slova ANO a NE nese
   `BOOLEAN_LABELS`, nepíše je autorka a do balíčku se neukládají. Balíček
   bez pole `kind` je čtveřice možností, přepisovat se kvůli tomu nemusí.
 - **Obrázek k otázce patří jen na plátno.** Kvízová otázka může nést
@@ -181,6 +187,13 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
 - **Připravené balíčky kvízu jsou veřejně čitelné.** Příprava a spuštění hry
   nesmí vyžadovat heslo do správy. Heslo chrání vytváření, úpravy a mazání
   balíčků. Balíčky desky zůstávají také veřejně čitelné.
+- **Polí Riziko! je nejvýš jedno na kategorii a nejvýš čtyři.** Dvě pole
+  v jednom sloupci by se potkala a víc než čtyři sázky za půlhodinu je
+  zdržení. Strop se počítá z počtu vybraných kategorií, ne z počtu
+  políček: dřív to bylo jedno pole na šest políček, což nikde nestálo,
+  nedalo se to z obrazovky uhodnout a při jedné kategorii vycházela
+  nula, takže se celá volba tiše zakázala. Omezení patří do nápovědy
+  pod přepínačem, ne jen do kódu.
 - **`--c-spark` je vyhrazená pro pole Riziko!** Je to jediný divoký
   okamžik hry a po zrušení zlaté zároveň jediná teplá barva systému.
   Jakmile se objeví i jinde, přestane fungovat. Má tři stupně, protože na
@@ -257,7 +270,7 @@ sloupci a vpravo lepivé shrnutí s jediným hlavním tlačítkem a řádkou
 „co bude dál". Hlavičku přepíná `prep`, který z pilulek udělá řádku
 záložek a z „Hrát" „Přípravu".
 
-Výsledky kvízu mají **vlastní záložku** vedle Přípravy a Otázek
+Výsledky kvízu mají **vlastní záložku** vedle Přípravy a Balíčků
 (`src/views/KvizReportsView.vue`, cesta z `reportsRoute` v registru her).
 Jsou to dvě různé práce: otázky se chystají před školením, výsledky se
 čtou po něm, a jako oddíl pod knihovnou balíčků se k nim muselo

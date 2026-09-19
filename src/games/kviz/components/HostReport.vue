@@ -122,8 +122,8 @@ function isTrap(q: QuizReportQuestion, at: number): boolean {
             >
               <span class="pick__letter" :style="{ color: `var(${quizOption(at).color.cssVar})` }">
                 <!-- Tvrzení má dvě možnosti a jejich znění se ukládá,
-                     takže se pozná podle délky pole; písmeno by u Pravda
-                     a Nepravda nic neřeklo. -->
+                     takže se pozná podle délky pole; písmeno by u ANO
+                     a NE nic neřeklo. -->
                 {{ q.options.length === 2 ? q.options[at] : quizOption(at).letter }}
               </span>
               <span class="pick__bar" aria-hidden="true">

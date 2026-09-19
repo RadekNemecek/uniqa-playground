@@ -14,7 +14,7 @@ const slots = computed(() => Array.from({ length: OPTION_COUNT }, (_, i) => i))
 const kind = computed(() => kindOf(props.item))
 const kinds: { value: QuizKind; label: string }[] = [
   { value: 'choice', label: 'Čtyři možnosti' },
-  { value: 'boolean', label: 'Pravda, nepravda' },
+  { value: 'boolean', label: 'Ano, ne' },
 ]
 
 function grow(el: HTMLTextAreaElement | null): void {
@@ -67,7 +67,7 @@ onMounted(async () => {
           <UiIcon v-if="item.correctIndex === i" name="check" size="sm" />
         </label>
       </div>
-      <p class="hint">Pravda je vždy A, Nepravda B. Pořadí se ve hře nemíchá.</p>
+      <p class="hint">ANO je vždy A, NE je B. Pořadí se ve hře nemíchá.</p>
     </fieldset>
     <fieldset v-else class="options">
       <legend>Možnosti · označ správnou</legend>

@@ -25,11 +25,11 @@ export const OPTION_COUNT = QUIZ_OPTIONS.length
 
 /**
  * Znění obou možností u tvrzení. Nepíše je autorka a nemíchají se:
- * Pravda je vždycky A, Nepravda vždycky B. Hráč tak po druhém tvrzení
+ * ANO je vždycky A, NE vždycky B. Hráč tak po druhém tvrzení
  * ví, kam sáhnout, aniž by musel číst. Barvy zůstávají z palety možností,
  * ne zelená a červená, ty v kvízu znamenají správně a vedle.
  */
-export const BOOLEAN_LABELS = ['Pravda', 'Nepravda'] as const
+export const BOOLEAN_LABELS = ['ANO', 'NE'] as const
 
 export const BOOLEAN_COUNT = BOOLEAN_LABELS.length
 

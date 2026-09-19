@@ -221,7 +221,7 @@ async function duplicate(): Promise<void> {
         <QuizItemEditor :key="current.id" ref="editor" :item="current" />
       </section>
     </div>
-    <UiEmpty v-else title="První otázka čeká na tebe" text="Přidej otázku se čtyřmi možnostmi nebo tvrzení na pravda a nepravda.">
+    <UiEmpty v-else title="První otázka čeká na tebe" text="Přidej otázku se čtyřmi možnostmi nebo tvrzení na ano a ne.">
       <UiButton icon="plus" variant="brand" @click="addItem">Přidat otázku</UiButton>
     </UiEmpty>
 

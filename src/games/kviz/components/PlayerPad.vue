@@ -19,7 +19,7 @@ const slots = computed(() => Array.from({ length: optionCountFor(props.kind) }, 
 
 /**
  * Znění na tlačítku. U čtveřice možností tam žádné není, texty jsou na
- * plátně. U tvrzení ano: Pravda a Nepravda nejsou obsah otázky, jsou to
+ * plátně. U tvrzení ano: ANO a NE nejsou obsah otázky, jsou to
  * dvě stálá slova, a bez nich by hráč hádal, co znamená A.
  */
 function word(i: number): string {
