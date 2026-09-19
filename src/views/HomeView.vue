@@ -8,7 +8,7 @@ import { GAMES, type GameEntry } from '@/games/registry'
 import { hasSessionDb } from '@/lib/sessionDb'
 import { confirmAction, degraded } from '@/stores/ui'
 import UiIcon from '@/components/ui/UiIcon.vue'
-import heroTitleUrl from '@/assets/mucirna-hero.png'
+import HeroMark from '@/components/HeroMark.vue'
 
 const router = useRouter()
 
@@ -144,7 +144,7 @@ async function discard(entry: GameEntry): Promise<void> {
         <div class="hero__copy">
           <p class="hero__kicker">Kvízy, do kterých se zapojí celá místnost</p>
           <h1 id="home-title" class="hero__title">
-            <img class="hero__image" :src="heroTitleUrl" alt="Mučírna" />
+            <HeroMark class="hero__image" />
           </h1>
         </div>
       </section>
