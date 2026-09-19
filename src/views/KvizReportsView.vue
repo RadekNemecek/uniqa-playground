@@ -96,12 +96,12 @@ onMounted(() => {
 <template>
   <div class="page-wrap">
     <template v-if="!unlocked">
-      <AppHeader game="kviz" section="reports" />
+      <AppHeader game="kviz" section="reports" prep />
       <AdminGate @unlocked="onUnlocked" />
     </template>
 
     <template v-else>
-      <AppHeader game="kviz" section="reports">
+      <AppHeader game="kviz" section="reports" prep>
         <template #tools>
           <UiMenu label="Účet správy" v-slot="{ close }">
             <button type="button" role="menuitem" @click="lock(); close()">Zamknout</button>
@@ -121,9 +121,9 @@ onMounted(() => {
 
         <!-- Seznam ----------------------------------------------------------- -->
         <section v-else class="list">
-          <header>
+          <header class="list__head">
             <p class="eyebrow">Na kolik to dáš?</p>
-            <h1 class="list__title">Výsledky odehraných kvízů</h1>
+            <h1 class="list__title">Odehrané kvízy.</h1>
             <p class="list__lead">
               Co která skupina uměla a kde se sekla. Jsou v nich přezdívky
               účastníků, smaž je, až je nebudeš potřebovat.
@@ -141,26 +141,23 @@ onMounted(() => {
           />
 
           <ul v-else class="items">
-            <li v-for="r in reports" :key="r.id">
-              <button type="button" class="rrow" @click="showReport(r.id)">
-                <span class="rrow__date">
-                  {{ r.groupName || 'Bez názvu skupiny' }}
-                </span>
-                <span v-fit-text class="rrow__meta">
-                  {{ reportDate(r.finishedAt) }} ·
+            <li v-for="(r, i) in reports" :key="r.id" class="card">
+              <span class="card__index" aria-hidden="true">{{ String(i + 1).padStart(2, '0') }}</span>
+              <button type="button" class="card__main" @click="showReport(r.id)">
+                <span class="card__name">{{ r.groupName || 'Bez názvu skupiny' }}</span>
+                <span class="card__when">{{ reportDate(r.finishedAt) }}</span>
+                <span class="card__meta">
                   {{ count(r.questionCount, 'otázka', 'otázky', 'otázek') }} ·
                   {{ count(r.playerCount, 'hráč', 'hráči', 'hráčů') }} ·
                   {{ r.packNames.join(', ') }}
                 </span>
               </button>
-              <button
-                type="button"
-                class="rrow__x"
-                :aria-label="`Smazat vyhodnocení z ${reportDate(r.finishedAt)}`"
-                @click="removeReport(r)"
-              >
-                Smazat
-              </button>
+
+              <UiMenu :label="`Akce vyhodnocení ${r.groupName || reportDate(r.finishedAt)}`" v-slot="{ close }">
+                <button type="button" role="menuitem" @click="void showReport(r.id); close()">Otevřít</button>
+                <hr />
+                <button type="button" role="menuitem" @click="void removeReport(r); close()">Smazat</button>
+              </UiMenu>
             </li>
           </ul>
         </section>
@@ -170,46 +167,32 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.page-wrap { min-height: 100dvh; }
-.body { padding-block: var(--sp-5) var(--sp-8); }
+/* Tvar je týž jako u knihovny balíčků: nadpis, pod ním linkovaný
+   seznam a na každém řádku nabídka akcí. Otázky se chystají před
+   školením a výsledky se čtou po něm, ale je to tatáž práce u téhož
+   stolu, takže se nemají lišit tvarem. */
+.page-wrap { min-height: 100dvh; display: flex; flex-direction: column; }
+.body { padding-block: var(--sp-6) var(--sp-8); }
 
-.list { display: grid; gap: var(--sp-5); align-content: start; max-width: 40rem; }
-.list__title { font-size: var(--fs-2xl); letter-spacing: -0.02em; }
-.list__lead { margin-top: var(--sp-2); font-size: var(--fs-sm); color: var(--c-text-muted); line-height: var(--lh-body); }
+.list { display: grid; gap: var(--sp-6); max-width: var(--content-reading); margin-inline: auto; width: 100%; }
+.list__title { font-size: var(--fs-work-title); margin-top: var(--sp-2); }
+.list__lead { margin-top: var(--sp-3); max-width: var(--content-narrow); font-size: var(--fs-sm); color: var(--c-text-muted); line-height: var(--lh-body); }
 
-.items { list-style: none; padding: 0; display: grid; gap: var(--sp-2); }
-.items li { display: flex; align-items: center; gap: var(--sp-2); }
-.rrow {
-  flex: 1;
-  display: grid;
-  gap: 1px;
-  min-width: 0;
-  padding: var(--sp-3) var(--sp-4);
-  border: 1px solid var(--c-line);
-  border-radius: var(--r-lg);
-  background: var(--c-surface);
-  color: var(--c-text);
-  text-align: left;
-  transition: border-color var(--dur-fast) var(--ease-out);
-}
-.rrow:hover { border-color: var(--c-surface-3); }
-.rrow__date { font-weight: 700; }
-.rrow__meta { font-size: calc(var(--fs-xs) * var(--fit-text, 1)); color: var(--c-text-faint); }
-.rrow__x {
-  flex: none;
-  padding: var(--sp-2) var(--sp-3);
-  border: 1px solid var(--c-line);
-  border-radius: var(--r-md);
-  background: transparent;
-  color: var(--c-text-faint);
-  font-size: var(--fs-xs);
-  font-weight: 600;
-}
-.rrow__x:hover { color: var(--c-bad); border-color: color-mix(in oklab, var(--c-bad) 45%, transparent); }
+.items { list-style: none; padding: 0; border-top: var(--border-w-strong) solid var(--c-text); }
+.card { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--sp-5); align-items: center; padding-block: var(--sp-5); border-bottom: var(--border-w) solid var(--c-border-soft); }
+.card__index { color: var(--c-brand); font-size: var(--fs-sm); font-weight: 900; font-variant-numeric: tabular-nums; }
+.card__main { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--sp-2) var(--sp-4); padding: var(--sp-2); border: 0; border-radius: var(--r-sm); background: transparent; color: var(--c-text); text-align: left; }
+.card__name { font-size: var(--fs-xl); font-weight: 900; overflow-wrap: anywhere; }
+.card__when { align-self: center; font-size: var(--fs-sm); color: var(--c-text-muted); font-variant-numeric: tabular-nums; }
+.card__meta { grid-column: 1 / -1; font-size: var(--fs-sm); color: var(--c-text-muted); overflow-wrap: anywhere; }
+.card__main:hover { background: var(--c-bg-active); }
 
 .viewer { height: min(80vh, 50rem); }
 
-@media (pointer: coarse) {
-  .rrow__x { min-height: var(--control-touch); }
+@media (max-width: 720px) {
+  .card { gap: var(--sp-3); }
+  .card__main { grid-template-columns: minmax(0, 1fr); }
+  .card__name { font-size: var(--fs-lg); }
 }
+@media (pointer: coarse) { .card__main { min-height: var(--control-touch); } }
 </style>

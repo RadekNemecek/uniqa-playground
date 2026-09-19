@@ -9,30 +9,17 @@
    živých stylů na uniqa.cz: modrá #005CA9, inkoust #1B1B1B, studené
    plochy #EEF2FA a #D5DEEE, zelená #026E46, červená #D71C4F.
 
-   Herní plátno má tmavě modré téma. Rampa ploch je čistý odstín
+   Aplikace má jedno téma, tmavě modré. Rampa ploch je čistý odstín
    #005CA9 ztlumený do hloubky, takže deska i rozhraní nesou barvu
-   značky. Příprava a správa kvízu používají světlý pracovní sešit
-   ze stejných značkových barev; samotná hra zůstává tmavá.
+   značky. Platí i pro přípravu a správu otázek: hraje se na projektoru
+   a příprava má vypadat jako součást hry, ne jako cizí nástroj.
+   Světlý pracovní sešit tu chvíli byl a neosvědčil se.
 
    Všechny dvojice text/plocha jsou spočítané podle WCAG a drží aspoň
    4,5:1. Když měníš odstín, přepočítej ho, neodhaduj.
 --------------------------------------------------------------------------- */
 
 :root {
-  /* Pracovní sešit: světlá správa otázek.
-     Kontrast inkoustu na papíru / bílé / výběru: 15,70 / 17,62 / 13,01.
-     Modrá na stejných plochách: 6,03 / 6,77 / 5,00.
-     Zelená: 5,64 / 6,32 / 4,67. Červená (UNIQA ztmavená na 80 %):
-     6,36 / 7,14 / 5,28.
-     Tmavší červená pro hover: 9,16 / 10,28 / 7,59. */
-  --c-paper: #EEF2FA;
-  --c-paper-sheet: #FFFFFF;
-  --c-paper-selected: #D5DEEE;
-  --c-paper-ink: #001A31;
-  --c-paper-blue: #005CA9;
-  --c-paper-green: #026E46;
-  --c-paper-red: #AC163F;
-  --c-paper-red-deep: #810F2F;
   --fs-work-title: clamp(2rem, 1.5rem + 1vw, 2.75rem);
   --fs-work-number: 3.5rem;
   --control-check: 1.25rem;
@@ -353,59 +340,6 @@
   /* Modal musí být nad výsledky: potvrzení „hrát znovu" jde z výherní desky. */
   --z-modal: 140;
   --z-toast: 160;
-}
-
-/* Alias se přepočítávají na pracovní ploše: děděné var() už by nesly
-   původní tmavé hodnoty. Dialogy se teleportují do body. */
-.work-surface,
-body:has(.work-surface) > .modal {
-  color-scheme: light;
-  color: var(--c-text);
-  --c-base: var(--c-paper);
-  --c-abyss: var(--c-paper-selected);
-  --c-surface: var(--c-paper-sheet);
-  --c-surface-2: var(--c-paper);
-  --c-surface-3: var(--c-paper-selected);
-  --c-line: var(--c-paper-blue);
-  --c-line-soft: var(--c-paper-selected);
-  --c-sunken: var(--c-paper-sheet);
-  --c-sunken-focus: var(--c-paper-sheet);
-  --c-text: var(--c-paper-ink);
-  --c-text-muted: var(--c-paper-blue);
-  --c-text-faint: var(--c-paper-blue);
-  --c-brand: var(--c-paper-blue);
-  --c-brand-deep: var(--c-paper-ink);
-  --c-brand-soft: var(--c-paper-blue);
-  --c-brand-wash: var(--c-paper-selected);
-  --c-on-accent: var(--c-paper-sheet);
-  --c-ok: var(--c-paper-green);
-  --c-ok-deep: var(--c-paper-green);
-  --c-bad: var(--c-paper-red);
-  --c-bad-deep: var(--c-paper-red-deep);
-  --c-border: var(--c-line);
-  --c-border-soft: var(--c-line-soft);
-  --c-bg-card: var(--c-surface);
-  --c-bg-raised: var(--c-surface-2);
-  --c-bg-active: var(--c-surface-3);
-  --c-bg-field: var(--c-sunken);
-  --c-bg-field-focus: var(--c-sunken-focus);
-  --focus-ring-c: var(--c-brand);
-  --button-brand-bg: var(--c-brand);
-  --button-brand-hover: var(--c-paper-ink);
-  --button-brand-shadow: none;
-  --button-danger-text: var(--c-paper-sheet);
-  /* Značka na papíře: modrá dlaždice s bílým „M", slovo z inkoustu.
-     Bílé „M" na dlaždici 6,77:1, spodek slova 6,03:1, modré jiskry
-     6,03:1. */
-  --mark-tile-top: var(--c-paper-blue);
-  --mark-tile-bottom: var(--c-paper-blue);
-  --mark-word-top: var(--c-paper-ink);
-  --mark-word-bottom: var(--c-paper-blue);
-  --mark-letter: var(--c-paper-sheet);
-  --mark-spark: var(--c-paper-blue);
-  --r-md: var(--r-sm);
-  --r-lg: var(--r-sm);
-  --r-xl: var(--r-sm);
 }
 
 /* ---------------------------------------------------------------------------

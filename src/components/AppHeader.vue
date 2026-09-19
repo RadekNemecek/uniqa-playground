@@ -10,11 +10,16 @@ import BrandTile from '@/components/BrandTile.vue'
 const props = withDefaults(
   defineProps<{
     compact?: boolean
-    work?: boolean
+    /**
+     * Obrazovka, kde se kvíz chystá a spravuje, ne hraje. Navigace je
+     * na ní řada záložek místo plovoucích pilulek a první z nich se
+     * jmenuje Příprava, ne Hrát.
+     */
+    prep?: boolean
     game?: string
     section?: 'play' | 'questions' | 'reports'
   }>(),
-  { compact: false, work: false, game: '', section: undefined },
+  { compact: false, prep: false, game: '', section: undefined },
 )
 
 const currentGame = computed(() => GAMES.find((entry) => entry.slug === props.game) ?? null)
@@ -49,7 +54,7 @@ onBeforeUnmount(() => document.removeEventListener('fullscreenchange', syncFulls
 </script>
 
 <template>
-  <header class="head" :class="{ 'head--compact': compact, 'head--work': work }">
+  <header class="head" :class="{ 'head--compact': compact, 'head--prep': prep }">
     <div class="identity">
       <RouterLink to="/" class="brand" aria-label="Mučírna, vybrat jinou hru">
         <BrandTile class="brand__mark" aria-hidden="true" />
@@ -71,7 +76,7 @@ onBeforeUnmount(() => document.removeEventListener('fullscreenchange', syncFulls
         :class="{ 'nav__item--active': section === 'play' }"
         :aria-current="section === 'play' ? 'page' : undefined"
       >
-        {{ work ? 'Příprava' : 'Hrát' }}
+        {{ prep ? 'Příprava' : 'Hrát' }}
       </RouterLink>
       <RouterLink
         :to="currentGame.editRoute"
@@ -201,10 +206,10 @@ onBeforeUnmount(() => document.removeEventListener('fullscreenchange', syncFulls
   .brand__name { display: none; }
 }
 
-.head--work { border-bottom: var(--border-w) solid var(--c-border-soft); }
-.head--work .nav { border: 0; border-radius: 0; background: transparent; gap: var(--sp-5); }
-.head--work .nav__item { border-radius: 0; padding-inline: var(--sp-1); border-bottom: var(--border-w-strong) solid transparent; }
-.head--work .nav__item--active { border-color: var(--c-brand); background: transparent; box-shadow: none; }
+.head--prep { border-bottom: var(--border-w) solid var(--c-border-soft); }
+.head--prep .nav { border: 0; border-radius: 0; background: transparent; gap: var(--sp-5); }
+.head--prep .nav__item { border-radius: 0; padding-inline: var(--sp-1); border-bottom: var(--border-w-strong) solid transparent; }
+.head--prep .nav__item--active { border-color: var(--c-brand); background: transparent; box-shadow: none; }
 
 @media (pointer: coarse) {
   .brand { min-height: var(--control-touch); min-width: var(--control-touch); }

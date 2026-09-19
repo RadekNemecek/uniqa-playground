@@ -45,15 +45,13 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
   výsledkové obrazovce.
   Nikdy nenese otázku, odpověď, hodnotu ani ovládací prvek, ty se čtou
   z druhého konce místnosti a tam vyhrává čitelnost nad charakterem.
-- **Tmavá je výchozí, světlá je výjimka pro správu otázek.** Rampa je
-  čistý odstín `#005CA9` ztlumený do hloubky a nese hru, rozcestník
-  i přípravu kvízu: všechno tohle se promítá nebo na to je vidět,
-  a patří to k sobě. Rozcestník i příprava světlé být zkoušely
-  a nefungovalo to. Světlý pracovní sešit zůstal správě otázek, kde se
-  opravdu jen píše. Nese ho třída `work-surface`, která přemapuje
-  aliasy v `tokens.css`; komponenty z `ui/` o žádném tématu nevědí
-  a nesmí se to změnit. Když se plocha převléká, mění se **jen barvy**:
-  rozvržení, pořadí ani prvky obrazovky s tím nemají co do činění.
+- **Jedno téma, tmavě modré.** Rampa ploch je čistý odstín `#005CA9`
+  ztlumený do hloubky. Platí na všechno: hru, rozcestník, přípravu,
+  správu otázek i výsledky. Hraje se na projektoru a příprava má
+  vypadat jako součást hry, ne jako cizí nástroj. Světlý pracovní sešit
+  tu chvíli byl, obrazovku po obrazovce se vracel do tmy a nezůstalo
+  z něj nic; nezavádět ho znovu bez pádnějšího důvodu, než že se
+  správa „dělá u stolu".
 - **Žádná zlatá ani žlutá.** UNIQA je nemá. Akcent je `--c-brand`, hodnoty
   na dlaždicích nese `--c-value`. Žlutá chybí i mezi barvami týmů, jinak by
   se zlatá vrátila zadními dveřmi.
@@ -249,7 +247,14 @@ dat.
 U kvízu se ukládají přezdívky účastníků. Patří k nim doba uchování, viz
 `DEPLOY.md`.
 
-Výsledky kvízu mají **vlastní záložku** vedle Hrát a Otázky
+Tři záložky kvízu, tedy Příprava, Otázky a Výsledky, jsou **jedna
+obrazovka ve třech stavech**, ne tři různé nástroje: tentýž nadpisový
+blok (nadhoz, tvrzení s tečkou, jednořádkový lead), tentýž linkovaný
+seznam s pořadovým číslem a nabídkou akcí na řádku, tatáž hlavička.
+Hlavičku přepíná `prep`, který z pilulek udělá řádku záložek
+a z „Hrát" „Přípravu".
+
+Výsledky kvízu mají **vlastní záložku** vedle Přípravy a Otázek
 (`src/views/KvizReportsView.vue`, cesta z `reportsRoute` v registru her).
 Jsou to dvě různé práce: otázky se chystají před školením, výsledky se
 čtou po něm, a jako oddíl pod knihovnou balíčků se k nim muselo

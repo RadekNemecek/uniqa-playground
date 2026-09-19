@@ -180,14 +180,14 @@ function badge(id: string): { text: string; tone: 'ok' | 'warn' | 'muted' } {
 </script>
 
 <template>
-  <div class="admin work-surface">
+  <div class="admin">
     <template v-if="!unlocked">
-      <AppHeader game="kviz" section="questions" work />
+      <AppHeader game="kviz" section="questions" prep />
       <AdminGate @unlocked="onUnlocked" />
     </template>
 
     <template v-else>
-      <AppHeader game="kviz" section="questions" work>
+      <AppHeader game="kviz" section="questions" prep>
         <template #tools>
           <UiMenu label="Účet správy" v-slot="{ close }">
             <button type="button" role="menuitem" @click="lock(); close()">Zamknout</button>

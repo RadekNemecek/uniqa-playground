@@ -192,7 +192,7 @@ onBeforeUnmount(() => {
     <!-- Hlavička aplikace patří do přípravy, ne na projektor. Jakmile hra
          běží, zůstane nad plátnem jen moderátorský pás. -->
     <template v-if="!hasQuiz">
-      <AppHeader game="kviz" section="play" work />
+      <AppHeader game="kviz" section="play" prep />
       <HostSetup :busy="starting" @start="onStart" />
     </template>
 
