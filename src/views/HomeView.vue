@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { endGame, game, hasGame } from '@/stores/game'
 import { endQuiz, hasQuiz, quiz } from '@/stores/quizHost'
@@ -91,6 +91,47 @@ const DRIFT: DriftTile[] = [
   { x: 2, y: 78, size: 10, rot: 6, dx: 11, dy: -13, slow: 57, delay: -26, tone: 'azur' },
   { x: 55, y: 22, size: 6, rot: -14, dx: -16, dy: 11, slow: 71, delay: -12, tone: 'board' },
 ]
+
+/**
+ * Odpočet v náhledu kvízu.
+ *
+ * Rozcestník visí na plátně, než se začne hrát, a náhled, ve kterém stojí
+ * čas, je obrázek hry. Ubývající vteřiny z něj dělají běžící otázku,
+ * a je to jediné místo na stránce, kde se mění text; víc takových míst by
+ * z toho udělalo blikající výlohu.
+ *
+ * Pod vypnutým pohybem se nespouští: ubývající číslo je pohyb jako každý
+ * jiný, jen se odehrává v textu, takže si ho `prefers-reduced-motion`
+ * musí ohlídat ručně.
+ */
+const PREVIEW_FROM = 14
+const previewSeconds = ref(PREVIEW_FROM)
+const stillness = window.matchMedia('(prefers-reduced-motion: reduce)')
+let ticker: number | undefined
+
+/** Přepínač pohybu platí i tady, a platí hned. Styly na jeho přepnutí
+ *  reagují samy, tohle je jediný pohyb na stránce, který si to musí
+ *  ohlídat ručně. */
+function retime(): void {
+  window.clearInterval(ticker)
+  ticker = undefined
+  if (stillness.matches) {
+    previewSeconds.value = PREVIEW_FROM
+    return
+  }
+  ticker = window.setInterval(() => {
+    previewSeconds.value = previewSeconds.value > 1 ? previewSeconds.value - 1 : PREVIEW_FROM
+  }, 1000)
+}
+
+onMounted(() => {
+  retime()
+  stillness.addEventListener('change', retime)
+})
+onBeforeUnmount(() => {
+  window.clearInterval(ticker)
+  stillness.removeEventListener('change', retime)
+})
 
 function open(entry: GameEntry): void {
   void router.push(entry.route)
@@ -191,7 +232,7 @@ async function discard(entry: GameEntry): Promise<void> {
                 <div class="mini-quiz">
                   <div class="mini-quiz__top">
                     <span>Otázka 7 z 10</span>
-                    <span class="mini-quiz__time">14 s</span>
+                    <span class="mini-quiz__time">{{ previewSeconds }} s</span>
                   </div>
                   <p>Která odpověď platí?</p>
                   <div class="mini-quiz__options">
@@ -282,13 +323,47 @@ async function discard(entry: GameEntry): Promise<void> {
   position: relative;
   /* Vlastní vrstvení. Zrno se míchá s pozadím, a bez vlastního kontextu
      by se míchalo s celou stránkou: obsah pak zmizí. Proto jsou vrstvy
-     očíslované a obsah stojí nad nimi, ne na záporném z-indexu. */
+     očíslované, ne na záporném z-indexu:
+
+       0  světlo a plující dlaždice, tedy pozadí
+       1  obsah
+       2  zrno, to má ležet i přes obsah
+
+     Obsah tu musí být vypsaný taky. Pozicovaný pseudoprvek se vykreslí
+     nad nepozicovaným blokem bez ohledu na pořadí v dokumentu, takže
+     dlaždice jinak plují přes karty, ne za nimi. */
   isolation: isolate;
   min-height: 100dvh;
   overflow: clip;
   background:
     radial-gradient(circle at 82% 8%, color-mix(in oklab, var(--c-brand) 16%, transparent), transparent 30%),
     radial-gradient(circle at 10% 38%, color-mix(in oklab, var(--c-team-2) 8%, transparent), transparent 34%);
+}
+
+/* Světlo putující plochou.
+   Rozcestník visí na plátně, než se začne hrát, a úplně nehybný obraz
+   na projektoru vypadá jako zamrzlá aplikace. Je to jeden veliký měkký
+   kruh na dlouhé smyčce, ne efekt: pozná se, že se něco děje, a přitom
+   se na to nedá dívat. Leží pod dlaždicemi, protože je to pozadí
+   pozadí. */
+.home::before {
+  content: '';
+  position: absolute;
+  /* Přetahuje přes okraje, aby při zvětšení nikde nevznikla ostrá hrana. */
+  inset: -20%;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    circle at 32% 42%,
+    color-mix(in oklab, var(--c-brand) 11%, transparent),
+    transparent 46%
+  );
+  animation: home-glow var(--dur-orbit-slow) var(--ease-both) infinite alternate;
+}
+
+@keyframes home-glow {
+  from { opacity: 0.65; transform: translate3d(0, 0, 0) scale(1); }
+  to { opacity: 1; transform: translate3d(11%, -7%, 0) scale(1.14); }
 }
 
 /* Dlaždice v pozadí. Nesou tvar i hmotu dlaždic z desky, jen ztlumené
@@ -334,13 +409,19 @@ async function discard(entry: GameEntry): Promise<void> {
   content: '';
   position: absolute;
   inset: 0;
-  z-index: 1;
+  z-index: 2;
   pointer-events: none;
   /* Overlay, ne soft-light: tmavá místa nechá tmavá, takže se pozadí
      nezamlží. Síla je schválně na hraně viditelnosti. */
   opacity: 0.14;
   mix-blend-mode: overlay;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Obsah nad dekoracemi, pod zrnem. Viz vrstvení u `.home`. */
+main {
+  position: relative;
+  z-index: 1;
 }
 
 /* Úvod vyplní obrazovku tak, aby pod jeho spodní hranou zbyla přesně
@@ -707,6 +788,7 @@ async function discard(entry: GameEntry): Promise<void> {
 .game-card__resume span { width: var(--sp-2); height: var(--sp-2); border-radius: var(--r-full); background: var(--c-ok); box-shadow: 0 0 0 var(--sp-1) color-mix(in oklab, var(--c-ok) 18%, transparent); }
 
 @media (prefers-reduced-motion: reduce) {
+  .home::before,
   .hero::before,
   .hero__kicker,
   .drift__tile,

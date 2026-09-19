@@ -40,6 +40,8 @@ const TILT = 7
 const GAP = FS * 0.02
 /** Místo nad dlaždicí pro jiskry. */
 const SPARKS = FS * 0.3
+/** Šířka pruhu světla, který přejíždí po slovu. */
+const GLINT = FS * 0.55
 
 const textEl = ref<SVGTextElement | null>(null)
 
@@ -56,6 +58,8 @@ const reach = (TILE / 2) * (Math.cos(rad) + Math.sin(rad))
 
 const wordX = tileCx + reach + GAP
 const viewBox = ref(`0 0 ${FS * 5} ${FS * 1.4}`)
+/** Kam až slovo sahá. Odlesk po něm přejíždí, takže musí vědět, kde skončit. */
+const wordEnd = ref(wordX + FS * 2.7)
 
 /**
  * Nápis se ukáže a rozjede teprve s hotovým písmem.
@@ -79,6 +83,7 @@ function measure(): void {
   }
   if (width === 0) return
 
+  wordEnd.value = wordX + width
   const pad = FS * 0.08
   const left = tileCx - reach - pad
   const right = wordX + width + pad
@@ -132,6 +137,12 @@ onBeforeUnmount(() => window.removeEventListener('resize', measure))
            takže sedí v téže soustavě jako nakloněná dlaždice. -->
       <clipPath id="mark-tile-clip">
         <rect :x="0" :y="tileY" :width="TILE" :height="TILE" :rx="TILE * 0.2" />
+      </clipPath>
+      <!-- Týž odlesk přejede i slovo, ořezaný jeho písmeny. Světlo tak
+           přes nápis přejde jednou, ne dvakrát: nejdřív dlaždice, pak
+           písmena. -->
+      <clipPath id="mark-word-clip">
+        <use href="#mark-word-text" />
       </clipPath>
     </defs>
 
@@ -219,7 +230,21 @@ onBeforeUnmount(() => window.removeEventListener('resize', measure))
       </g>
     </g>
 
-    <text ref="textEl" class="mark__word" :x="wordX" :y="FS" :font-size="FS">učírna</text>
+    <text id="mark-word-text" ref="textEl" class="mark__word" :x="wordX" :y="FS" :font-size="FS">
+      učírna
+    </text>
+
+    <g clip-path="url(#mark-word-clip)">
+      <rect
+        class="mark__word-glint"
+        :style="{ '--from': `${wordX - GLINT}px`, '--to': `${wordEnd}px` }"
+        :x="0"
+        :y="FS - FS * 0.95"
+        :width="GLINT"
+        :height="FS * 1.15"
+        fill="url(#mark-glint)"
+      />
+    </g>
   </svg>
 </template>
 
@@ -255,7 +280,8 @@ onBeforeUnmount(() => window.removeEventListener('resize', measure))
 /* Mimo přejezd je odlesk neviditelný. Bez toho by ve vypnutém pohybu,
    kde se animace nespustí, zůstal navěky ležet přes levou třetinu
    dlaždice jako bílý pruh. */
-.mark__glint { opacity: 0; }
+.mark__glint,
+.mark__word-glint { opacity: 0; }
 
 /* Sekvence se rozjede s odkrytím, ne s připojením do stránky. Kdyby
    běžela pod nulovou průhledností, odehrála by se dřív, než je vidět. */
@@ -277,12 +303,30 @@ onBeforeUnmount(() => window.removeEventListener('resize', measure))
   animation: spark-out var(--dur-base) var(--ease-back)
     calc(var(--mark-land) + var(--dur-slow) * 0.7 + var(--dur-instant) * var(--i)) backwards;
 }
-/* Odlesk. Jediný pohyb, který na nápisu zůstane i potom: bez něj je
-   dlaždice po dosednutí mrtvý obrázek, s ním je to lesklý předmět. */
+/* Odlesk. Přejede nápis jednou za čas, nejdřív dlaždici a hned po ní
+   písmena, takže je to jeden pohyb světla přes celou značku a ne dvě
+   blikátka. Bez něj je nápis po dosednutí mrtvý obrázek.
+
+   Jiskry mezitím podle svého, v jiném rytmu: kdyby šly zároveň
+   s odleskem, byla by z toho choreografie. */
 .mark--ready .mark__glint {
   transform-box: fill-box;
   transform-origin: center;
   animation: tile-glint var(--dur-ambient) linear calc(var(--mark-land) + var(--dur-slow)) infinite;
+}
+/* Pruh se posouvá v jednotkách výřezu, ne v procentech vlastní šířky:
+   kde slovo končí, ví až měření, a v `--to` je to rovnou v týchž
+   souřadnicích jako zbytek kresby. */
+.mark--ready .mark__word-glint {
+  animation: word-glint var(--dur-ambient) linear
+    calc(var(--mark-land) + var(--dur-slow) + var(--dur-count)) infinite;
+}
+.mark--ready .mark__spark {
+  animation:
+    spark-out var(--dur-base) var(--ease-back)
+      calc(var(--mark-land) + var(--dur-slow) * 0.7 + var(--dur-instant) * var(--i)) backwards,
+    spark-twinkle var(--dur-orbit) var(--ease-out)
+      calc(var(--dur-stage) * 2 + var(--dur-count) * var(--i)) infinite;
 }
 
 @keyframes word-in {
@@ -305,11 +349,23 @@ onBeforeUnmount(() => window.removeEventListener('resize', measure))
   9% { opacity: 1; transform: translateX(330%) skewX(-16deg); }
   100% { opacity: 1; transform: translateX(330%) skewX(-16deg); }
 }
+@keyframes word-glint {
+  0% { opacity: 1; transform: translateX(var(--from)) skewX(-12deg); }
+  11% { opacity: 1; transform: translateX(var(--to)) skewX(-12deg); }
+  100% { opacity: 1; transform: translateX(var(--to)) skewX(-12deg); }
+}
+/* Jiskra chvíli dřímá a pak krátce vyšlehne. V klidu je o kousek kratší
+   a tlumenější, jinak by nebylo co zesílit. */
+@keyframes spark-twinkle {
+  0%, 84%, 100% { opacity: 0.78; transform: scaleY(0.92); }
+  91% { opacity: 1; transform: scaleY(1.12); }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .mark--ready .mark__word,
   .mark--ready .mark__drop,
   .mark--ready .mark__spark,
-  .mark--ready .mark__glint { animation: none; }
+  .mark--ready .mark__glint,
+  .mark--ready .mark__word-glint { animation: none; }
 }
 </style>
