@@ -194,10 +194,10 @@ async function discard(entry: GameEntry): Promise<void> {
            roluje dál. -->
       <section class="hero page" aria-labelledby="home-title">
         <div class="hero__copy">
-          <p class="hero__kicker">Kvízy, do kterých se zapojí celá místnost</p>
           <h1 id="home-title" class="hero__title">
             <HeroMark class="hero__image" />
           </h1>
+          <p class="hero__kicker">Kvízy, do kterých se zapojí celá místnost</p>
         </div>
       </section>
 
@@ -320,10 +320,10 @@ async function discard(entry: GameEntry): Promise<void> {
      na téže lince. */
   --home-preview-h: 12rem;
   --home-perspective: 40rem;
-  /* Značka dostala přednost před ohybem. Zpod úvodu kouká jen tenhle
-     kus karty, tedy horní pruh náhledu: dost na to, aby bylo vidět, že
-     se roluje dál, a málo na to, aby to soupeřilo se značkou. */
-  --home-peek: 5rem;
+  /* Zpod úvodu kouká celý náhled hry, tedy grafická část karty, a to
+     u obou her na stejné lince. Pod čárou začíná text a ten se čte až
+     po odrolování. Není to odhad, počítá se to z výšky náhledu. */
+  --home-peek: calc(var(--home-preview-h) + var(--border-w) * 2);
   /* Pod co se úvod nesmí srazit ani na nízkém okně. */
   --home-hero-floor: 26rem;
   --home-hero-image-max: 64rem;
@@ -350,7 +350,7 @@ async function discard(entry: GameEntry): Promise<void> {
   position: absolute;
   /* Pole začíná kousek nad ohybem, tedy nad spodní hranou úvodu. Nad
      ním má prostor značka. */
-  top: calc(max(var(--home-hero-floor), calc(100dvh - var(--home-peek))) - var(--sp-9));
+  top: calc(max(var(--home-hero-floor), calc(100dvh - var(--home-peek))) - var(--sp-7));
   inset-inline: 0;
   bottom: 0;
   z-index: 0;
@@ -393,14 +393,18 @@ main {
   display: grid;
   place-items: center;
   min-height: max(var(--home-hero-floor), calc(100dvh - var(--home-peek)));
-  padding-block: var(--sp-7) var(--sp-6);
+  /* Symetricky, jinak by vystředění na výšku lhalo o rozdíl obou
+     odsazení. */
+  padding-block: var(--sp-6);
 }
 .hero__copy { position: relative; display: grid; justify-items: center; gap: var(--sp-5); width: 100%; }
-/* Kicker přichází první a sám. Je to začátek téže věty, kterou pak
-   dopoví nápis: nejdřív se objeví řádek, pak slovo, nakonec do něj
-   dosedne dlaždice. */
+/* Kicker přichází poslední a stojí pod značkou. Vtip s odebraným „M"
+   se přečte sám a věta ho teprve dopoví, takže nemá smysl ji pouštět
+   napřed. Odklad odpovídá konci sekvence nápisu: slovo, dosednutí
+   dlaždice, teprve pak řádek. */
 .hero__kicker {
-  animation: kicker-in var(--dur-stage) var(--ease-out) backwards;
+  animation: kicker-in var(--dur-stage) var(--ease-out)
+    calc(var(--dur-stage) * 0.8 + var(--dur-slow)) backwards;
   color: var(--c-text-muted);
   font-family: var(--font-hand);
   font-size: var(--fs-2xl);

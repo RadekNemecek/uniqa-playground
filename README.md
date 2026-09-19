@@ -174,9 +174,9 @@ telefonu se seznam změní na výběr otázky.
 
 Rozcestníku vévodí nápis **Mučírna**, a je plochý: barevná dlaždice
 s „M", vedle ní slovo, přeliv mezi dvěma odstíny modré, žádný lesk ani
-plastika. Úvod je titulní strana, značka je vystředěná na výšku i na
-šířku a zpod dolní hrany kouká jen pruh karet, aby bylo vidět, že se
-roluje dál.
+plastika. Úvod je titulní strana: značka vystředěná na výšku i na šířku
+a pod ní ruční řádek. Zpod dolní hrany koukají obě hry svou grafickou
+částí, na stejné lince, a text se čte až po odrolování.
 
 **Zlatá v systému není**, UNIQA žádnou nemá. Hodnoty na dlaždicích jsou
 bílé, akcent je modrý a jediná teplá barva patří poli **Riziko!**
