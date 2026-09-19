@@ -69,12 +69,15 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
   přebijí pravidla zapsaná pod nimi.
 - **Texty česky, bez dlouhých pomlček.** A bez řeči o tom, jak je aplikace
   postavená. Uživatelku zajímá, co s tím může dělat, ne architektura.
-- **Rozcestník nemá dekoraci, nese ho nápis.** Žádná fotka, generovaná
-  grafika, plující dlaždice, záře ani zrno. Bylo jich šest naráz a proti
-  značce nemají co nabídnout: vtip s odebraným „M" se přečte sám a
-  hlučné pozadí mu ubírá. Nápis proto stojí bez sloganu, jako hlavička
-  stránky, a pod ním jsou obě hry vidět bez rolování. Náhledy her uvnitř
-  karet zůstávají tmavé, protože ukazují plátno.
+- **Rozcestník nese nápis, pozadí jen dýchá.** Žádná fotka ani
+  generovaná grafika. Ozdob tu běželo šest naráz, tedy záře, zrno, kužel
+  i dopad světla, a značce to ubíralo: vtip s odebraným „M" se přečte
+  sám. Zůstaly plující dlaždice, protože značka je mřížka dlaždic a obě
+  hry na dlaždicích stojí. Na papíře jsou o odstín hlubší plocha, ne
+  tmavý panel, inkoust na nich drží 13,01:1. Animace jede na posunu
+  a natočení a při `prefers-reduced-motion` stojí. Nápis stojí bez
+  sloganu, jako hlavička stránky, a pod ním jsou obě hry vidět bez
+  rolování. Náhledy her uvnitř karet zůstávají tmavé, ukazují plátno.
 - **Hravost patří do hry a na rozcestník, ne do správy otázek.** Tam se
   pracuje, ozdoby by překážely. Ve hře je hmota dlaždic, pohyb a jiskra
   vítaná, protože z tabulky dělá herní desku.

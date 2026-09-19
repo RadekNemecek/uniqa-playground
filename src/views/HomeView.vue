@@ -55,6 +55,46 @@ const cards = computed<GameCard[]>(() =>
 )
 
 /**
+ * Dlaždice plující pozadím.
+ *
+ * Značka Mučírny je mřížka dlaždic a obě hry na dlaždicích stojí, takže
+ * pozadí nenese obrázek odjinud, ale vlastní tvar aplikace. Jsou to jen
+ * souřadnice a tempo, vzhled si řeší styl.
+ *
+ * `slow` je doba jednoho přeletu tam a zpět. Čísla jsou schválně velká
+ * a nesoudělná, aby se dlaždice nikdy nesrovnaly do společného rytmu
+ * a pohyb zůstal na hraně vnímatelnosti.
+ */
+interface DriftTile {
+  /** Poloha v procentech plochy. */
+  x: number
+  y: number
+  /** Hrana dlaždice v rem. */
+  size: number
+  /** Natočení ve stupních. */
+  rot: number
+  /** Posun během přeletu v procentech vlastní velikosti. */
+  dx: number
+  dy: number
+  /** Doba přeletu a odklad startu v sekundách. */
+  slow: number
+  delay: number
+  /** Modrá je vzácná: dvě dlaždice z osmi, jinak by z pozadí byl vzor. */
+  tone: 'papir' | 'modra'
+}
+
+const DRIFT: DriftTile[] = [
+  { x: 6, y: 12, size: 13, rot: -9, dx: 14, dy: -10, slow: 47, delay: 0, tone: 'papir' },
+  { x: 78, y: 8, size: 9, rot: 12, dx: -12, dy: 14, slow: 61, delay: -8, tone: 'modra' },
+  { x: 88, y: 34, size: 15, rot: -6, dx: -9, dy: -12, slow: 53, delay: -21, tone: 'papir' },
+  { x: 16, y: 52, size: 8, rot: 14, dx: 18, dy: 9, slow: 43, delay: -14, tone: 'papir' },
+  { x: 43, y: 74, size: 11, rot: -11, dx: -10, dy: -16, slow: 67, delay: -31, tone: 'papir' },
+  { x: 68, y: 62, size: 7, rot: 8, dx: 15, dy: 12, slow: 39, delay: -5, tone: 'papir' },
+  { x: 2, y: 78, size: 10, rot: 6, dx: 11, dy: -13, slow: 57, delay: -26, tone: 'modra' },
+  { x: 55, y: 22, size: 6, rot: -14, dx: -16, dy: 11, slow: 71, delay: -12, tone: 'papir' },
+]
+
+/**
  * Odpočet v náhledu kvízu.
  *
  * Rozcestník visí na plátně, než se začne hrát, a náhled, ve kterém stojí
@@ -117,6 +157,27 @@ async function discard(entry: GameEntry): Promise<void> {
 
 <template>
   <div class="home work-surface">
+    <!-- Dlaždice v pozadí. Pohyb je pomalý schválně: má dát ploše život,
+         ne přetahovat se o pozornost se značkou. -->
+    <div class="drift" aria-hidden="true">
+      <span
+        v-for="(tile, i) in DRIFT"
+        :key="i"
+        class="drift__tile"
+        :class="`drift__tile--${tile.tone}`"
+        :style="{
+          '--x': `${tile.x}%`,
+          '--y': `${tile.y}%`,
+          '--s': `${tile.size}rem`,
+          '--r': `${tile.rot}deg`,
+          '--dx': `${tile.dx}%`,
+          '--dy': `${tile.dy}%`,
+          '--slow': `${tile.slow}s`,
+          '--delay': `${tile.delay}s`,
+        }"
+      />
+    </div>
+
     <!-- Rozcestník je bez hlavičky. Nebylo v ní nic, co by odtud šlo
          ovládat: celá obrazovka i velikost písma patří ke hře, značka
          stála podruhé kousek nad nápisem a navigace hry se ukáže, až
@@ -255,8 +316,54 @@ async function discard(entry: GameEntry): Promise<void> {
   --home-hero-image-max: 34rem;
   --home-card-side-min: 17rem;
 
+  /* Vlastní vrstvení: dlaždice plují pod obsahem. Obsah musí být
+     vypsaný taky, pozicovaný pseudoprvek se jinak vykreslí nad
+     nepozicovaným blokem bez ohledu na pořadí v dokumentu. */
+  position: relative;
+  isolation: isolate;
+  overflow: clip;
   display: flex;
   flex-direction: column;
+}
+
+/* Dlaždice v pozadí. Nesou tvar dlaždic z desky, jen na papíře: světlá
+   plocha o odstín hlubší než pozadí, ne tmavý panel. Inkoust na nich
+   drží 13,01:1, takže pod nápisem se nemá co zhoršit. Animuje se jen
+   posun a natočení, tedy to, co umí grafická karta bez překreslování
+   stránky. */
+.drift {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.drift__tile {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  width: var(--s);
+  height: var(--s);
+  border-radius: var(--r-xl);
+  background: var(--c-paper-selected);
+  opacity: 0.55;
+  /* Jen tolik rozostření, aby dlaždice ustoupila do pozadí a přitom
+     zůstala dlaždicí. Víc z ní udělá šmouhu. */
+  filter: blur(calc(var(--sp-1) / 2));
+  animation: drift var(--slow) var(--ease-out) var(--delay) infinite alternate;
+}
+/* Dvě modré dlaždice, aby plocha nebyla jen šedá na šedé. Význam
+   nenesou, tady je to plocha, ne volba. */
+.drift__tile--modra { background: var(--c-paper-blue); opacity: 0.07; }
+
+@keyframes drift {
+  from { transform: translate3d(0, 0, 0) rotate(var(--r)); }
+  to { transform: translate3d(var(--dx), var(--dy), 0) rotate(calc(var(--r) * -1)); }
+}
+
+main {
+  position: relative;
+  z-index: 1;
 }
 
 /* Úvod je hlavička stránky, ne scéna. Dřív se roztahoval na celé okno
@@ -491,6 +598,7 @@ async function discard(entry: GameEntry): Promise<void> {
 .game-card__resume span { width: var(--sp-2); height: var(--sp-2); border-radius: var(--r-full); background: var(--c-ok); box-shadow: 0 0 0 var(--sp-1) color-mix(in oklab, var(--c-ok) 18%, transparent); }
 
 @media (prefers-reduced-motion: reduce) {
+  .drift__tile,
   .game-card,
   .mini-board__tile,
   .mini-option { animation: none; }
@@ -504,6 +612,8 @@ async function discard(entry: GameEntry): Promise<void> {
 }
 
 @media (max-width: 720px) {
+  /* Na úzké obrazovce by osm dlaždic dělalo nepořádek, půlka stačí. */
+  .drift__tile:nth-child(n + 5) { display: none; }
   .hero { padding-block: var(--sp-7) var(--sp-5); }
   .choice { padding-block: 0 var(--sp-8); }
   .game-card { display: block; }
