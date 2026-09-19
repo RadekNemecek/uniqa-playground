@@ -65,11 +65,11 @@ const cards = computed<GameCard[]>(() =>
  * a nesoudělná, aby se dlaždice nikdy nesrovnaly do společného rytmu
  * a pohyb zůstal na hraně vnímatelnosti.
  *
- * Nad nápisem žádná neleží. Značka jde přes většinu šířky a dlaždice
- * kolem ní se s ní přetahovaly, takže celé pole začíná až kousek nad
- * ohybem: pár dlaždic vykoukne v mezeře pod značkou, zbytek pluje za
- * kartami a objeví se zase u patičky. Souřadnice jsou v procentech
- * toho pole, ne celé stránky.
+ * Pole je celá stránka včetně úvodu, klidně i za nápisem: dlaždice jsou
+ * tlumené a rozostřené natolik, že značce neubírají. U okrajů je
+ * zaříznutá hrana stránky, takže z nich kouká jen kus a čtou se jako
+ * geometrie, ne jako obrázky. Za nápisem je navíc měkký kruh světla,
+ * který je ztlumí ještě o kus víc.
  */
 interface DriftTile {
   /** Poloha v procentech plochy. */
@@ -90,14 +90,14 @@ interface DriftTile {
 }
 
 const DRIFT: DriftTile[] = [
-  { x: 4, y: 0, size: 13, rot: -9, dx: 14, dy: -10, slow: 47, delay: 0, tone: 'papir' },
-  { x: 80, y: 4, size: 9, rot: 12, dx: -12, dy: 14, slow: 61, delay: -8, tone: 'modra' },
-  { x: 88, y: 14, size: 15, rot: -6, dx: -9, dy: -12, slow: 53, delay: -21, tone: 'papir' },
-  { x: 16, y: 28, size: 8, rot: 14, dx: 18, dy: 9, slow: 43, delay: -14, tone: 'papir' },
-  { x: 43, y: 62, size: 11, rot: -11, dx: -10, dy: -16, slow: 67, delay: -31, tone: 'papir' },
-  { x: 68, y: 46, size: 7, rot: 8, dx: 15, dy: 12, slow: 39, delay: -5, tone: 'papir' },
-  { x: 1, y: 74, size: 10, rot: 6, dx: 11, dy: -13, slow: 57, delay: -26, tone: 'modra' },
-  { x: 57, y: 8, size: 6, rot: -14, dx: -16, dy: 11, slow: 71, delay: -12, tone: 'papir' },
+  { x: -5, y: 3, size: 14, rot: -9, dx: 10, dy: -7, slow: 47, delay: 0, tone: 'papir' },
+  { x: 91, y: 7, size: 11, rot: 12, dx: -9, dy: 10, slow: 61, delay: -8, tone: 'modra' },
+  { x: 27, y: 6, size: 8, rot: 14, dx: 13, dy: 8, slow: 43, delay: -14, tone: 'papir' },
+  { x: 62, y: 15, size: 7, rot: -6, dx: -11, dy: -9, slow: 53, delay: -21, tone: 'papir' },
+  { x: -2, y: 26, size: 12, rot: 6, dx: 11, dy: -10, slow: 57, delay: -26, tone: 'papir' },
+  { x: 84, y: 30, size: 13, rot: 8, dx: -8, dy: 9, slow: 39, delay: -5, tone: 'papir' },
+  { x: 19, y: 36, size: 9, rot: -11, dx: -9, dy: -12, slow: 67, delay: -31, tone: 'modra' },
+  { x: 55, y: 80, size: 11, rot: -14, dx: -13, dy: 9, slow: 71, delay: -12, tone: 'papir' },
 ]
 
 /**
@@ -348,11 +348,7 @@ async function discard(entry: GameEntry): Promise<void> {
    stránky. */
 .drift {
   position: absolute;
-  /* Pole začíná kousek nad ohybem, tedy nad spodní hranou úvodu. Nad
-     ním má prostor značka. */
-  top: calc(max(var(--home-hero-floor), calc(100dvh - var(--home-peek))) - var(--sp-7));
-  inset-inline: 0;
-  bottom: 0;
+  inset: 0;
   z-index: 0;
   overflow: hidden;
   pointer-events: none;

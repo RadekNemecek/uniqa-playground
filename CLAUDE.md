@@ -77,7 +77,11 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
   i dopad světla, a značce to ubíralo: vtip s odebraným „M" se přečte
   sám. Zůstaly plující dlaždice, protože značka je mřížka dlaždic a obě
   hry na dlaždicích stojí, a jeden měkký kruh světla pod nápisem, aby
-  v nich nestál v závoji. Animace jede na posunu a natočení a při
+  v nich nestál v závoji. Dlaždice plují po celé stránce včetně úvodu
+  a klidně i za nápisem: jsou tlumené a rozostřené natolik, že mu
+  neubírají, a to světlo je za ním ztlumí ještě o kus víc. U okrajů je
+  zaříznutá hrana stránky, takže z nich kouká jen kus a čtou se jako
+  geometrie. Animace jede na posunu a natočení a při
   `prefers-reduced-motion` stojí. Úvod je titulní strana: značka
   vystředěná na výšku i na šířku a pod ní ruční kicker. Vtip
   s odebraným „M" se přečte sám a věta ho jen dopoví, proto stojí až za
