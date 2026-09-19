@@ -4,3 +4,7 @@ dist-ssr
 .DS_Store
 *.local
 .vite
+
+# Zdrojové podklady k otázkám. Jsou to interní materiály klienta
+# a repozitář je veřejný. Otázky patří do balíčků ve Firestore.
+questions/
