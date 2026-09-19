@@ -236,7 +236,10 @@ async function duplicate(): Promise<void> {
 </template>
 
 <style scoped>
-.ed { display: grid; gap: var(--sp-5); }
+/* Táž sazba jako knihovna, příprava i výsledky. Editor se dřív roztáhl
+   do celé šířky stránky, takže otevření balíčku odskočilo obsah o čtvrt
+   obrazovky doleva. */
+.ed { display: grid; gap: var(--sp-5); max-width: var(--content-reading); margin-inline: auto; width: 100%; }
 .ed__toolbar { display: flex; gap: var(--sp-3); align-items: center; flex-wrap: wrap; }
 .ed__state { margin-left: auto; color: var(--c-text-faint); font-size: var(--fs-sm); }
 .ed__state[data-state='saved'] { color: var(--c-ok); }
@@ -249,7 +252,10 @@ async function duplicate(): Promise<void> {
 .ed__layout { display: grid; grid-template-columns: minmax(0, .4fr) minmax(0, 1fr); gap: var(--sp-6); align-items: start; }
 .ed__sidebar { position: sticky; top: var(--sp-5); display: flex; flex-direction: column; gap: var(--sp-4); max-height: calc(100dvh - var(--sp-7)); min-width: 0; }
 .ed__mobile-select { display: none; }
-.questions { list-style: none; padding: var(--sp-1); margin: calc(-1 * var(--sp-1)); overflow-y: auto; min-height: 0; }
+/* Linka nad seznamem je táž jako nad knihovnou a nad výsledky. Sedí na
+   okraji rolovacího boxu, takže se neodroluje pryč. */
+.questions { list-style: none; padding: var(--sp-1); margin: calc(-1 * var(--sp-1)); overflow-y: auto; min-height: 0; border-top: var(--border-w-strong) solid var(--c-text); }
+.questions li:first-child .question { border-top: 0; }
 .question { display: flex; gap: var(--sp-3); width: 100%; padding: var(--sp-4) var(--sp-3); border: 0; border-top: var(--border-w) solid var(--c-border-soft); border-left: var(--border-w-strong) solid transparent; background: transparent; color: var(--c-text); text-align: left; }
 .question:hover { background: var(--c-bg-active); }
 .question[aria-current] { border-left-color: var(--c-brand); background: var(--c-bg-active); }

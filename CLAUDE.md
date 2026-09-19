@@ -27,9 +27,9 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
   měří šířku i výšku a snižuje `--fit-text`, dokud se obsah nevejde.
   Styl si to bere jako násobek tokenu, takže velikost dál vychází
   z tokenu, ne ze syrové hodnoty. `overflow-wrap: anywhere` se na plátně
-  nepoužívá. Na pracovní ploše smí: název balíčku ani znění otázky se
-  nečtou ze zadní řady a autorka tam píše, co chce. Na plátně je výjimka
-  jediná, adresa pod QR kódem: to není slovo, opisuje se po
+  nepoužívá. Ve správě, v přípravě a ve výsledcích smí: název balíčku
+  ani znění otázky se nečtou ze zadní řady a autorka tam píše, co chce.
+  Na plátně je výjimka jediná, adresa pod QR kódem: to není slovo, opisuje se po
   znacích a zmenšit ji nejde, ze zadní řady by ji nikdo nepřepsal.
 - **Deska i otázka se vejdou na jednu obrazovku.** Na projektoru se
   nescrolluje. Velikost otázky a odpovědi neodhaduj z počtu znaků, měř ji:
