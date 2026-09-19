@@ -9,6 +9,7 @@ const props = withDefaults(
     /** Text chyby. Když je vyplněný, pole se obarví a hint ustoupí. */
     error?: string
     required?: boolean
+    labelHidden?: boolean
   }>(),
   { hint: '', id: '', error: '', required: false },
 )
@@ -19,7 +20,7 @@ const describedBy = computed(() => (props.error ? `${props.id || fallbackId}-err
 
 <template>
   <label class="field" :class="{ 'field--invalid': !!error }" :for="id || undefined">
-    <span class="field__label">
+    <span class="field__label" :class="{ vh: labelHidden }">
       {{ label }}
       <!-- Hvězdička sama o sobě nic neříká tomu, kdo ji nevidí, proto
            k ní patří i text pro odečítač. -->
@@ -68,7 +69,7 @@ const describedBy = computed(() => (props.error ? `${props.id || fallbackId}-err
   font-size: var(--fs-md);
   transition: var(--tr-surface);
 }
-.field :deep(textarea) { resize: vertical; min-height: 5.5rem; line-height: var(--lh-body); }
+.field :deep(textarea) { resize: vertical; min-height: var(--field-textarea-min); line-height: var(--lh-body); }
 .field :deep(input:hover),
 .field :deep(textarea:hover) { border-color: var(--c-bg-active); }
 

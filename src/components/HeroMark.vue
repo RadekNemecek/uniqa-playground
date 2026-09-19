@@ -119,12 +119,12 @@ onBeforeUnmount(() => window.removeEventListener('resize', measure))
     <defs>
       <!-- Slovo má spád shora dolů, nahoře skoro bílé, dole modré. -->
       <linearGradient id="mark-word" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="var(--c-value)" />
-        <stop offset="100%" stop-color="var(--c-brand)" />
+        <stop offset="0%" stop-color="var(--mark-word-top)" />
+        <stop offset="100%" stop-color="var(--mark-word-bottom)" />
       </linearGradient>
       <linearGradient id="mark-tile" x1="0" y1="0" x2="0.35" y2="1">
-        <stop offset="0%" stop-color="var(--c-light)" />
-        <stop offset="100%" stop-color="var(--c-brand-deep)" />
+        <stop offset="0%" stop-color="var(--mark-tile-top)" />
+        <stop offset="100%" stop-color="var(--mark-tile-bottom)" />
       </linearGradient>
       <!-- Odlesk, který dlaždici jednou za čas přejede. Bílá do ztracena
            na obou koncích, aby to byl přejezd světla a ne pruh. -->
@@ -271,12 +271,12 @@ onBeforeUnmount(() => window.removeEventListener('resize', measure))
   letter-spacing: -0.03em;
 }
 .mark__word { fill: url(#mark-word); }
-.mark__letter { fill: var(--c-value); letter-spacing: 0; }
+.mark__letter { fill: var(--mark-letter); letter-spacing: 0; }
 
 .mark__tile-face { fill: url(#mark-tile); }
-.mark__tile-edge { fill: var(--c-tile-edge); }
-.mark__tile-sheen { fill: var(--c-tile-sheen); }
-.mark__sparks { stroke: var(--c-light); stroke-linecap: round; }
+.mark__tile-edge { fill: var(--mark-edge); }
+.mark__tile-sheen { fill: var(--mark-sheen); }
+.mark__sparks { stroke: var(--mark-spark); stroke-linecap: round; }
 /* Mimo přejezd je odlesk neviditelný. Bez toho by ve vypnutém pohybu,
    kde se animace nespustí, zůstal navěky ležet přes levou třetinu
    dlaždice jako bílý pruh. */
@@ -345,14 +345,14 @@ onBeforeUnmount(() => window.removeEventListener('resize', measure))
 /* Přejezd zabere první desetinu cyklu, zbytek je klid. Je to ozdoba
    na rozcestníku, ne blikátko. */
 @keyframes tile-glint {
-  0% { opacity: 1; transform: translateX(-190%) skewX(-16deg); }
-  9% { opacity: 1; transform: translateX(330%) skewX(-16deg); }
-  100% { opacity: 1; transform: translateX(330%) skewX(-16deg); }
+  0% { opacity: var(--mark-gloss); transform: translateX(-190%) skewX(-16deg); }
+  9% { opacity: var(--mark-gloss); transform: translateX(330%) skewX(-16deg); }
+  100% { opacity: var(--mark-gloss); transform: translateX(330%) skewX(-16deg); }
 }
 @keyframes word-glint {
-  0% { opacity: 1; transform: translateX(var(--from)) skewX(-12deg); }
-  11% { opacity: 1; transform: translateX(var(--to)) skewX(-12deg); }
-  100% { opacity: 1; transform: translateX(var(--to)) skewX(-12deg); }
+  0% { opacity: var(--mark-gloss); transform: translateX(var(--from)) skewX(-12deg); }
+  11% { opacity: var(--mark-gloss); transform: translateX(var(--to)) skewX(-12deg); }
+  100% { opacity: var(--mark-gloss); transform: translateX(var(--to)) skewX(-12deg); }
 }
 /* Jiskra chvíli dřímá a pak krátce vyšlehne. V klidu je o kousek kratší
    a tlumenější, jinak by nebylo co zesílit. */

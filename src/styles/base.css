@@ -122,3 +122,9 @@ a {
   width: min(100% - var(--sp-6), var(--page-max));
   margin-inline: auto;
 }
+
+.work-surface {
+  min-height: 100dvh;
+  background: var(--c-base);
+  color: var(--c-text);
+}

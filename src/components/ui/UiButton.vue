@@ -83,11 +83,11 @@ withDefaults(
 .btn--loading { cursor: progress; opacity: 1; }
 
 .btn--brand {
-  --btn-bg: linear-gradient(180deg, var(--c-brand) 0%, var(--c-brand-deep) 100%);
-  --btn-bg-hover: linear-gradient(180deg, var(--c-brand-soft) 0%, var(--c-brand) 100%);
+  --btn-bg: var(--button-brand-bg);
+  --btn-bg-hover: var(--button-brand-hover);
   --btn-fg: var(--c-on-accent);
   --btn-line: transparent;
-  box-shadow: 0 6px 20px -8px var(--c-brand-glow);
+  box-shadow: var(--button-brand-shadow);
 }
 
 .btn--spark {
@@ -114,7 +114,7 @@ withDefaults(
 .btn--danger {
   --btn-bg: var(--c-bad);
   --btn-bg-hover: color-mix(in oklab, var(--c-bad) 85%, var(--c-bad-deep));  /* 7,0:1 */
-  --btn-fg: var(--c-text-ink);
+  --btn-fg: var(--button-danger-text);
   --btn-line: transparent;
 }
 

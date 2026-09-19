@@ -9,16 +9,48 @@
    živých stylů na uniqa.cz: modrá #005CA9, inkoust #1B1B1B, studené
    plochy #EEF2FA a #D5DEEE, zelená #026E46, červená #D71C4F.
 
-   Aplikace má jedno téma, tmavě modré. Rampa ploch je čistý odstín
+   Herní plátno má tmavě modré téma. Rampa ploch je čistý odstín
    #005CA9 ztlumený do hloubky, takže deska i rozhraní nesou barvu
-   značky. Hraje se na projektoru a správa otázek má vypadat stejně jako
-   hra, ne jako cizí nástroj.
+   značky. Příprava a správa kvízu používají světlý pracovní sešit
+   ze stejných značkových barev; samotná hra zůstává tmavá.
 
    Všechny dvojice text/plocha jsou spočítané podle WCAG a drží aspoň
    4,5:1. Když měníš odstín, přepočítej ho, neodhaduj.
 --------------------------------------------------------------------------- */
 
 :root {
+  /* Pracovní sešit: schválená světlá příprava a správa kvízu.
+     Kontrast inkoustu na papíru / bílé / výběru: 15,70 / 17,62 / 13,01.
+     Modrá na stejných plochách: 6,03 / 6,77 / 5,00.
+     Zelená: 5,64 / 6,32 / 4,67. Červená (UNIQA ztmavená na 80 %):
+     6,36 / 7,14 / 5,28.
+     Tmavší červená pro hover: 9,16 / 10,28 / 7,59.
+     Studio: světlý text 16,35:1 a akcent 8,59:1 na tmavém inkoustu. */
+  --c-paper: #EEF2FA;
+  --c-paper-sheet: #FFFFFF;
+  --c-paper-selected: #D5DEEE;
+  --c-paper-ink: #001A31;
+  --c-paper-blue: #005CA9;
+  /* Spodek dlaždice ve značce a její hrana. Bílé „M" na nich drží
+     9,82:1 a 12,56:1, takže nejslabší místo je vršek dlaždice se 6,77:1.
+     Hrana je ztlumená modř, ne skoro černá: na papíře by z ní byl
+     tvrdý stín. */
+  --c-paper-blue-deep: #004480;
+  --c-paper-blue-edge: #003463;
+  --c-paper-green: #026E46;
+  --c-paper-red: #AC163F;
+  --c-paper-red-deep: #810F2F;
+  --c-studio: #001A31;
+  --c-studio-text: #F2F7FD;
+  --c-studio-accent: #7DBBF0;
+  --fs-work-title: clamp(2rem, 1.5rem + 1vw, 2.75rem);
+  --fs-work-number: 3.5rem;
+  --control-check: 1.25rem;
+  --field-textarea-min: 5.5rem;
+  --image-preview-w: 8rem;
+  --menu-width: 12rem;
+  --content-sidebar: 20rem;
+  --content-reading: 72rem;
   /* --- Plocha ------------------------------------------------------------ */
   /* Rampa je čistý odstín #005CA9 ztlumený do hloubky, tedy rgb(0, x, y).
      Kroky drží odstup kolem 1,18, aby se vrstvy daly rozeznat, ale
@@ -67,6 +99,10 @@
   --c-brand-soft:   #A8D3F6;
   --c-brand-wash:   #00243F;  /* tlumená plocha pod modrou */
   --c-brand-glow:   rgba(125, 187, 240, 0.28);
+  --button-brand-bg: linear-gradient(180deg, var(--c-brand), var(--c-brand-deep));
+  --button-brand-hover: linear-gradient(180deg, var(--c-brand-soft), var(--c-brand));
+  --button-brand-shadow: 0 6px 20px -8px var(--c-brand-glow);
+  --button-danger-text: var(--c-text-ink);
 
   /* --- Stavy ------------------------------------------------------------- */
   --c-ok:           #3FCF8E;  /* 8,8:1 na --c-base */
@@ -127,6 +163,21 @@
   --c-light:       #5AAAF5;
   --c-value:       #FFFFFF;  /* hodnota na dlaždici, 7,5:1 na --c-tile-top */
   --c-value-glow:  rgba(255, 255, 255, 0.22);
+
+  /* --- Nápis Mučírna ----------------------------------------------------- */
+  /* Značka se kreslí na obou plochách, takže si barvy bere odtud a ne
+     z herních dlaždic. Výchozí je tmavá varianta; pracovní plocha si
+     je níž přepíše. `--mark-gloss` je síla přejíždějícího odlesku:
+     na papíře stačí polovina, jinak z hmoty dlaždice bude výloha. */
+  --mark-word-top:    var(--c-value);
+  --mark-word-bottom: var(--c-brand);
+  --mark-tile-top:    var(--c-light);
+  --mark-tile-bottom: var(--c-brand-deep);
+  --mark-letter:      var(--c-value);
+  --mark-edge:        var(--c-tile-edge);
+  --mark-sheen:       var(--c-tile-sheen);
+  --mark-spark:       var(--c-light);
+  --mark-gloss:       1;
 
   /* --- Barvy týmů -------------------------------------------------------- */
   /* Všechny mají nejméně 7:1 vůči tmavému inkoustu, takže na nich může
@@ -307,6 +358,62 @@
   /* Modal musí být nad výsledky: potvrzení „hrát znovu" jde z výherní desky. */
   --z-modal: 140;
   --z-toast: 160;
+}
+
+/* Alias se přepočítávají na pracovní ploše: děděné var() už by nesly
+   původní tmavé hodnoty. Dialogy se teleportují do body. */
+.work-surface,
+body:has(.work-surface) > .modal {
+  color-scheme: light;
+  color: var(--c-text);
+  --c-base: var(--c-paper);
+  --c-abyss: var(--c-paper-selected);
+  --c-surface: var(--c-paper-sheet);
+  --c-surface-2: var(--c-paper);
+  --c-surface-3: var(--c-paper-selected);
+  --c-line: var(--c-paper-blue);
+  --c-line-soft: var(--c-paper-selected);
+  --c-sunken: var(--c-paper-sheet);
+  --c-sunken-focus: var(--c-paper-sheet);
+  --c-text: var(--c-paper-ink);
+  --c-text-muted: var(--c-paper-blue);
+  --c-text-faint: var(--c-paper-blue);
+  --c-brand: var(--c-paper-blue);
+  --c-brand-deep: var(--c-paper-ink);
+  --c-brand-soft: var(--c-paper-blue);
+  --c-brand-wash: var(--c-paper-selected);
+  --c-on-accent: var(--c-paper-sheet);
+  --c-ok: var(--c-paper-green);
+  --c-ok-deep: var(--c-paper-green);
+  --c-bad: var(--c-paper-red);
+  --c-bad-deep: var(--c-paper-red-deep);
+  --c-border: var(--c-line);
+  --c-border-soft: var(--c-line-soft);
+  --c-bg-card: var(--c-surface);
+  --c-bg-raised: var(--c-surface-2);
+  --c-bg-active: var(--c-surface-3);
+  --c-bg-field: var(--c-sunken);
+  --c-bg-field-focus: var(--c-sunken-focus);
+  --focus-ring-c: var(--c-brand);
+  --button-brand-bg: var(--c-brand);
+  --button-brand-hover: var(--c-paper-ink);
+  --button-brand-shadow: none;
+  --button-danger-text: var(--c-paper-sheet);
+  /* Značka na papíře: modrá dlaždice s bílým „M", slovo z inkoustu.
+     Jiskry jdou z modré, ne ze světla desky: to má na papíru 2,2:1
+     a zmizelo by. */
+  --mark-word-top: var(--c-paper-ink);
+  --mark-word-bottom: var(--c-paper-ink);
+  --mark-tile-top: var(--c-paper-blue);
+  --mark-tile-bottom: var(--c-paper-blue-deep);
+  --mark-letter: var(--c-paper-sheet);
+  --mark-edge: var(--c-paper-blue-edge);
+  --mark-sheen: rgba(255, 255, 255, 0.18);
+  --mark-spark: var(--c-paper-blue);
+  --mark-gloss: 0.45;
+  --r-md: var(--r-sm);
+  --r-lg: var(--r-sm);
+  --r-xl: var(--r-sm);
 }
 
 /* ---------------------------------------------------------------------------

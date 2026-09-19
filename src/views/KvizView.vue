@@ -43,6 +43,7 @@ const playing = computed(() => hasQuiz.value && quiz.value?.phase !== 'final')
 
 /** Vyhodnocení se otevře přes vyhlášení, ne místo něj. */
 const reportOpen = ref(false)
+const starting = ref(false)
 const withPhones = computed(() => quiz.value?.code !== null && quiz.value?.code !== undefined)
 
 /** Rozložení voleb se ukazuje až po zamčení. */
@@ -65,6 +66,8 @@ watch(
 )
 
 async function onStart(list: QuizPack[], setup: QuizSetup): Promise<void> {
+  if (starting.value) return
+  starting.value = true
   try {
     const state = await startQuiz(list, setup)
     if (setup.withPhones && !state.code) {
@@ -72,6 +75,8 @@ async function onStart(list: QuizPack[], setup: QuizSetup): Promise<void> {
     }
   } catch (e) {
     toast(e instanceof Error ? e.message : 'Kvíz se nepodařilo spustit.', 'bad')
+  } finally {
+    starting.value = false
   }
 }
 
@@ -183,12 +188,12 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="kviz" :class="{ 'kviz--playing': playing }">
+  <div class="kviz" :class="{ 'kviz--playing': playing, 'work-surface': !hasQuiz }">
     <!-- Hlavička aplikace patří do přípravy, ne na projektor. Jakmile hra
          běží, zůstane nad plátnem jen moderátorský pás. -->
     <template v-if="!hasQuiz">
-      <AppHeader game="kviz" section="play" />
-      <HostSetup @start="onStart" />
+      <AppHeader game="kviz" section="play" work />
+      <HostSetup :busy="starting" @start="onStart" />
     </template>
 
     <template v-else-if="quiz">

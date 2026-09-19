@@ -29,6 +29,8 @@ const route = useRoute()
 const router = useRouter()
 
 const unlocked = ref(db().isUnlocked())
+const creating = ref(false)
+const packEditor = ref<InstanceType<typeof QuizPackEditor> | null>(null)
 const fileInput = ref<HTMLInputElement | null>(null)
 
 /** Po odemčení se musí sledování nasadit znovu: listener, který
@@ -66,9 +68,17 @@ function closePack(): void {
 }
 
 async function onCreate(): Promise<void> {
-  const pack = await createQuizPack()
-  toast('Balíček založen. Pojmenuj ho a vyplň otázky.', 'ok')
-  openPack(pack.id)
+  if (creating.value) return
+  creating.value = true
+  try {
+    const pack = await createQuizPack()
+    toast('Balíček založen. Pojmenuj ho a vyplň otázky.', 'ok')
+    openPack(pack.id)
+  } catch {
+    toast('Balíček se nepodařilo založit. Zkus to znovu.', 'bad')
+  } finally {
+    creating.value = false
+  }
 }
 
 async function onCreateDemo(): Promise<void> {
@@ -152,7 +162,8 @@ async function onImportFile(event: Event): Promise<void> {
   }
 }
 
-function lock(): void {
+async function lock(): Promise<void> {
+  if (packEditor.value && !await packEditor.value.flush()) return
   db().lock()
   unlocked.value = false
   closePack()
@@ -169,14 +180,14 @@ function badge(id: string): { text: string; tone: 'ok' | 'warn' | 'muted' } {
 </script>
 
 <template>
-  <div class="admin">
+  <div class="admin work-surface">
     <template v-if="!unlocked">
-      <AppHeader game="kviz" section="questions" />
+      <AppHeader game="kviz" section="questions" work />
       <AdminGate @unlocked="onUnlocked" />
     </template>
 
     <template v-else>
-      <AppHeader game="kviz" section="questions">
+      <AppHeader game="kviz" section="questions" work>
         <template #tools>
           <UiMenu label="Účet správy" v-slot="{ close }">
             <button type="button" role="menuitem" @click="lock(); close()">Zamknout</button>
@@ -189,16 +200,15 @@ function badge(id: string): { text: string; tone: 'ok' | 'warn' | 'muted' } {
         <section v-if="!current" class="library">
           <header class="library__head">
             <div>
-              <p class="eyebrow">Na kolik to dáš?</p>
-              <h1 class="library__title">Balíčky otázek</h1>
+              <p class="eyebrow">Tvoje knihovna</p>
+              <h1 class="library__title">Otázky do hry.</h1>
               <p class="library__lead">
-                Otázka se čtyřmi možnostmi, nebo tvrzení na pravda a nepravda.
-                Kvíz má vlastní balíčky, s deskou Pojišťuj! se nemíchají.
+                Balíčky pro kvíz Na kolik to dáš? Vyber balíček a uprav jeho otázky.
               </p>
             </div>
             <div class="library__actions">
               <UiButton size="sm" variant="ghost" @click="triggerImport">Importovat</UiButton>
-              <UiButton size="sm" variant="brand" @click="onCreate">Nový</UiButton>
+              <UiButton size="sm" variant="brand" :loading="creating" @click="onCreate">Nový balíček</UiButton>
             </div>
           </header>
 
@@ -214,11 +224,15 @@ function badge(id: string): { text: string; tone: 'ok' | 'warn' | 'muted' } {
           <!-- Dokud data nedorazila, není pravda, že tu nic není. -->
           <UiSkeleton v-if="!quizPacks.loaded" :lines="4" />
 
+          <UiEmpty v-else-if="quizPacks.denied" title="Balíčky se nepodařilo načíst" text="Zkontroluj připojení a zkus to znovu.">
+            <UiButton variant="brand" @click="reloadQuizPacks">Zkusit znovu</UiButton>
+          </UiEmpty>
+
           <UiEmpty
             v-else-if="quizPacks.packs.length === 0"
             icon="info"
             title="Zatím tu není žádný balíček"
-            text="Založ prázdný tlačítkem Nový, naimportuj JSON, nebo si napřed prohlédni ukázku."
+            text="Založ prázdný tlačítkem Nový balíček, naimportuj JSON, nebo si napřed prohlédni ukázku."
           >
             <UiButton size="sm" variant="ghost" @click="onCreateDemo">
               Vytvořit ukázkový kvíz
@@ -226,7 +240,8 @@ function badge(id: string): { text: string; tone: 'ok' | 'warn' | 'muted' } {
           </UiEmpty>
 
           <ul v-else class="library__items">
-            <li v-for="p in quizPacks.packs" :key="p.id" class="card">
+            <li v-for="(p, i) in quizPacks.packs" :key="p.id" class="card">
+              <span class="card__index" aria-hidden="true">{{ String(i + 1).padStart(2, '0') }}</span>
               <button type="button" class="card__main" @click="openPack(p.id)">
                 <span class="card__name">{{ p.name }}</span>
                 <span class="card__badge" :class="`card__badge--${badge(p.id).tone}`">
@@ -235,16 +250,12 @@ function badge(id: string): { text: string; tone: 'ok' | 'warn' | 'muted' } {
                 <span class="card__meta">
                   {{ quizPackProgress(p).done }} z {{ quizPackProgress(p).total }} otázek hotových
                 </span>
-                <span class="card__bar" aria-hidden="true">
-                  <span
-                    :style="{
-                      width: `${quizPackProgress(p).total ? (quizPackProgress(p).done / quizPackProgress(p).total) * 100 : 0}%`,
-                    }"
-                  />
+                <span v-if="quizPackProgress(p).done < quizPackProgress(p).total" class="card__remaining">
+                  Zbývá doplnit {{ count(quizPackProgress(p).total - quizPackProgress(p).done, 'otázku', 'otázky', 'otázek') }}
                 </span>
               </button>
 
-              <UiMenu label="Akce balíčku" v-slot="{ close }">
+              <UiMenu :label="`Akce balíčku ${p.name}`" v-slot="{ close }">
                 <button type="button" role="menuitem" @click="openPack(p.id); close()">Otevřít</button>
                 <button type="button" role="menuitem" @click="onDuplicate(p.id); close()">Duplikovat</button>
                 <button type="button" role="menuitem" @click="void onExport(p.id); close()">Exportovat JSON</button>
@@ -257,6 +268,7 @@ function badge(id: string): { text: string; tone: 'ok' | 'warn' | 'muted' } {
 
         <!-- Editor ---------------------------------------------------------- -->
         <QuizPackEditor
+          ref="packEditor"
           v-else-if="current"
           :key="current.id"
           :pack="current"
@@ -270,89 +282,24 @@ function badge(id: string): { text: string; tone: 'ok' | 'warn' | 'muted' } {
 </template>
 
 <style scoped>
-.admin { min-height: 100dvh; }
-.admin__body { padding-block: var(--sp-5) var(--sp-8); }
-
-.library { display: grid; gap: var(--sp-5); align-content: start; max-width: 40rem; }
-.library__head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--sp-4);
-}
-.library__title { font-size: var(--fs-2xl); margin-top: var(--sp-1); }
-.library__lead {
-  margin-top: var(--sp-1);
-  font-size: var(--fs-sm);
-  color: var(--c-text-muted);
-  line-height: var(--lh-body);
-  max-width: 28rem;
-}
-.library__actions { display: flex; gap: var(--sp-2); }
+.admin { display: flex; flex-direction: column; }
+.admin__body { padding-block: var(--sp-6) var(--sp-8); }
+.library { display: grid; gap: var(--sp-6); max-width: var(--content-reading); margin-inline: auto; }
+.library__head { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: var(--sp-5); }
+.library__title { font-size: var(--fs-work-title); margin-top: var(--sp-2); }
+.library__lead { margin-top: var(--sp-3); color: var(--c-text-muted); font-size: var(--fs-sm); }
+.library__actions { display: flex; gap: var(--sp-3); flex-wrap: wrap; }
 .library__file { display: none; }
-.library__blank { display: grid; gap: var(--sp-3); max-width: 28rem; }
-.library__empty { font-size: var(--fs-sm); color: var(--c-text-faint); line-height: var(--lh-body); }
-
-.library__items { list-style: none; padding: 0; display: grid; gap: var(--sp-2); }
-
-.card {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: var(--sp-2);
-  align-items: stretch;
-  padding: var(--sp-2);
-  border: 1px solid var(--c-line);
-  border-radius: var(--r-lg);
-  background: var(--c-surface);
-  transition: border-color var(--dur-fast) var(--ease-out);
-}
-.card:hover { border-color: var(--c-surface-3); }
-
-.card__main {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-areas:
-    'name badge'
-    'meta meta'
-    'bar bar';
-  gap: var(--sp-1) var(--sp-3);
-  text-align: left;
-  padding: var(--sp-2) var(--sp-3);
-  border: 0;
-  border-radius: var(--r-md);
-  background: transparent;
-  color: var(--c-text);
-}
-.card__main:hover { background: color-mix(in oklab, var(--c-brand) 7%, transparent); }
-.card__name { grid-area: name; font-weight: 700; font-size: var(--fs-md); }
-.card__badge {
-  grid-area: badge;
-  align-self: start;
-  padding: var(--sp-1) var(--sp-2);
-  border-radius: var(--r-full);
-  font-size: var(--fs-xs);
-  font-weight: 700;
-  background: var(--c-surface-2);
-  color: var(--c-text-faint);
-}
-.card__badge--ok { background: color-mix(in oklab, var(--c-ok) 22%, transparent); color: var(--c-ok); }
-.card__badge--warn { background: color-mix(in oklab, var(--c-brand) 18%, transparent); color: var(--c-brand); }
-.card__meta { grid-area: meta; font-size: var(--fs-xs); color: var(--c-text-faint); }
-.card__bar {
-  grid-area: bar;
-  display: block;
-  height: 3px;
-  border-radius: var(--r-full);
-  background: var(--c-sunken);
-  overflow: hidden;
-  margin-top: var(--sp-1);
-}
-.card__bar span {
-  display: block;
-  height: 100%;
-  background: var(--c-brand);
-  transition: width var(--dur-base) var(--ease-out);
-}
-
+.library__items { list-style: none; padding: 0; border-top: var(--border-w-strong) solid var(--c-text); }
+.card { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--sp-5); align-items: center; padding-block: var(--sp-5); border-bottom: var(--border-w) solid var(--c-border-soft); }
+.card__index { color: var(--c-brand); font-size: var(--fs-sm); font-weight: 900; font-variant-numeric: tabular-nums; }
+.card__main { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--sp-2) var(--sp-4); padding: var(--sp-2); border: 0; border-radius: var(--r-sm); background: transparent; color: var(--c-text); text-align: left; }
+.card__main:hover { background: var(--c-bg-active); }
+.card__name { font-size: var(--fs-xl); font-weight: 900; overflow-wrap: anywhere; }
+.card__meta { grid-column: 1; font-size: var(--fs-sm); color: var(--c-text-muted); }
+.card__remaining { grid-column: 1 / -1; font-size: var(--fs-sm); }
+.card__badge { align-self: center; font-size: var(--fs-sm); font-weight: 700; color: var(--c-text-muted); }
+.card__badge--ok { color: var(--c-ok); }
+@media (max-width: 720px) { .card { gap: var(--sp-3); } .card__main { grid-template-columns: minmax(0, 1fr); } .card__badge { grid-row: 3; } .card__name { font-size: var(--fs-lg); } }
+@media (pointer: coarse) { .card__main { min-height: var(--control-touch); } }
 </style>

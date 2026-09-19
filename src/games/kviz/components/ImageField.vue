@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import UiIcon from '@/components/ui/UiIcon.vue'
+import UiButton from '@/components/ui/UiButton.vue'
 import { IMAGE_ACCEPT, imageSizeLabel, prepareQuizImage } from '../image'
 import { cachedImage, loadImage, putImage, removeImage } from '@/stores/quizImages'
 import { confirmAction, toast } from '@/stores/ui'
@@ -63,7 +63,7 @@ async function drop(): Promise<void> {
   if (!target) return
   const ok = await confirmAction({
     title: 'Odebrat obrázek',
-    text: 'Obrázek se smaže i z databáze. Vrátit to nejde, ale nahrát znovu ano.',
+    text: 'Obrázek se odebere z otázky. Vrátit to nejde, ale nahrát znovu ano.',
     confirmLabel: 'Odebrat',
     danger: true,
   })
@@ -144,12 +144,8 @@ watch(
         <div class="img__meta">
           <p class="img__size">{{ image.w }} krát {{ image.h }} px, {{ imageSizeLabel(image.bytes) }}</p>
           <div class="img__tools">
-            <button type="button" class="tool" :disabled="busy" @click="pick">
-              {{ busy ? 'Zpracovávám…' : 'Vyměnit' }}
-            </button>
-            <button type="button" class="tool tool--danger" :disabled="busy" @click="drop">
-              Odebrat
-            </button>
+            <UiButton size="sm" variant="ghost" :loading="busy" @click="pick">Vyměnit</UiButton>
+            <UiButton size="sm" variant="danger" :disabled="busy" @click="drop">Odebrat</UiButton>
           </div>
         </div>
       </template>
@@ -160,14 +156,13 @@ watch(
         <p class="img__state img__state--bad">
           Obrázek se nenačetl. Zkontroluj připojení, nebo nahraj nový.
         </p>
-        <button type="button" class="tool" :disabled="busy" @click="pick">Nahrát jiný</button>
+        <UiButton size="sm" variant="ghost" :loading="busy" @click="pick">Nahrát jiný</UiButton>
       </template>
 
-      <button v-else type="button" class="img__add" :disabled="busy" @click="pick">
-        <UiIcon name="image" size="md" />
-        <span class="img__add-word">{{ busy ? 'Zpracovávám…' : 'Přidat obrázek' }}</span>
+      <div v-else class="img__add">
+        <UiButton size="sm" variant="ghost" icon="image" :loading="busy" @click="pick">Přidat obrázek</UiButton>
         <span class="img__add-hint">Přetáhni sem soubor nebo vlož ze schránky</span>
-      </button>
+      </div>
     </div>
   </div>
 </template>
@@ -177,21 +172,23 @@ watch(
 .img__label {
   display: flex;
   align-items: baseline;
+  flex-wrap: wrap;
   gap: var(--sp-2);
   font-size: var(--fs-sm);
-  font-weight: 600;
+  font-weight: 700;
   color: var(--c-text);
 }
-.img__label em { font-style: normal; font-size: var(--fs-xs); font-weight: 500; color: var(--c-text-faint); }
+.img__label em { font-style: normal; font-size: var(--fs-xs); font-weight: 400; color: var(--c-text-faint); }
 
 .img__file { display: none; }
 
 .img__zone {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--sp-4);
   padding: var(--sp-3);
-  border: 1px dashed var(--c-line);
+  border: var(--border-w) dashed var(--c-line);
   border-radius: var(--r-md);
   background: var(--c-sunken);
   transition: var(--tr-surface);
@@ -203,8 +200,8 @@ watch(
    stejně jako na plátně, kde mají bílý podklad. */
 .img__thumb {
   flex: none;
-  width: 8rem;
-  height: 5.5rem;
+  width: var(--image-preview-w);
+  height: var(--field-textarea-min);
   border-radius: var(--r-sm);
   background: var(--c-photo-mat);
   object-fit: contain;
@@ -230,29 +227,6 @@ watch(
   text-align: left;
   transition: var(--tr-surface);
 }
-.img__add:hover:not(:disabled) { color: var(--c-text); }
-.img__add-word { font-size: var(--fs-sm); font-weight: 700; }
 .img__add-hint { font-size: var(--fs-xs); color: var(--c-text-faint); }
 
-.tool {
-  padding: var(--sp-2) var(--sp-3);
-  border: 1px solid var(--c-line);
-  border-radius: var(--r-md);
-  background: transparent;
-  color: var(--c-text-muted);
-  font-size: var(--fs-xs);
-  font-weight: 600;
-  transition: var(--tr-surface);
-}
-.tool:hover:not(:disabled) { color: var(--c-text); border-color: var(--c-surface-3); background: var(--c-surface-2); }
-.tool:disabled { opacity: 0.5; cursor: not-allowed; }
-.tool--danger:hover:not(:disabled) {
-  color: var(--c-bad);
-  border-color: color-mix(in oklab, var(--c-bad) 45%, transparent);
-}
-
-@media (pointer: coarse) {
-  .tool { min-height: var(--control-touch); }
-  .img__add { min-height: var(--control-touch); }
-}
 </style>

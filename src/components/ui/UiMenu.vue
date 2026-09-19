@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import UiIcon from '@/components/ui/UiIcon.vue'
+import UiIconButton from '@/components/ui/UiIconButton.vue'
 
 defineProps<{ label: string }>()
 const open = ref(false)
@@ -14,16 +14,36 @@ function close() {
   open.value = false
 }
 
+function focusTrigger() {
+  root.value?.querySelector<HTMLButtonElement>('.iconbtn')?.focus()
+}
+
+function onFocusOut(e: FocusEvent) {
+  if (!root.value?.contains(e.relatedTarget as Node | null)) close()
+}
+
 function onDoc(e: MouseEvent) {
   if (!open.value || !root.value) return
   if (!root.value.contains(e.target as Node)) close()
 }
 
 function onKey(e: KeyboardEvent) {
-  if (e.key === 'Escape' && open.value) {
+  if (!open.value) return
+  if (e.key === 'Escape') {
+    e.preventDefault()
     e.stopPropagation()
     close()
+    focusTrigger()
+    return
   }
+  if (!root.value?.contains(document.activeElement)) return
+  const items = Array.from(root.value.querySelectorAll<HTMLElement>('[role="menuitem"]:not(:disabled)'))
+  if (!items.length || !['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key)) return
+  e.preventDefault()
+  const at = items.indexOf(document.activeElement as HTMLElement)
+  const next = e.key === 'Home' ? 0 : e.key === 'End' ? items.length - 1
+    : (at + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length
+  items[next]?.focus()
 }
 
 watch(open, async (v) => {
@@ -45,18 +65,15 @@ defineExpose({ close })
 </script>
 
 <template>
-  <div ref="root" class="menu">
-    <button
-      type="button"
-      class="menu__btn"
+  <div ref="root" class="menu" @focusout="onFocusOut">
+    <UiIconButton
+      icon="dots"
+      :label="label"
       :aria-expanded="open"
-      :aria-label="label"
+      aria-haspopup="menu"
       @click="toggle"
-    >
-      <slot name="trigger">
-        <UiIcon name="dots" size="md" />
-      </slot>
-    </button>
+      @keydown.down.prevent="open = true"
+    />
 
     <div v-if="open" class="menu__panel" role="menu" :aria-label="label">
       <slot :close="close" />
@@ -67,34 +84,14 @@ defineExpose({ close })
 <style scoped>
 .menu { position: relative; display: inline-flex; }
 
-.menu__btn {
-  display: grid;
-  place-items: center;
-  width: 2.25rem;
-  height: 2.25rem;
-  border: 1px solid var(--c-line);
-  border-radius: var(--r-md);
-  background: transparent;
-  color: var(--c-text-muted);
-  transition:
-    color var(--dur-fast) var(--ease-out),
-    border-color var(--dur-fast) var(--ease-out),
-    background-color var(--dur-fast) var(--ease-out);
-}
-.menu__btn:hover {
-  color: var(--c-text);
-  border-color: var(--c-surface-3);
-  background: var(--c-surface-2);
-}
-
 .menu__panel {
   position: absolute;
   top: calc(100% + var(--sp-1));
   right: 0;
   z-index: var(--z-header);
-  min-width: 12rem;
+  min-width: var(--menu-width);
   padding: var(--sp-1);
-  border: 1px solid var(--c-line);
+  border: var(--border-w) solid var(--c-line);
   border-radius: var(--r-md);
   background: var(--c-surface);
   box-shadow: var(--shadow-md);
@@ -113,7 +110,7 @@ defineExpose({ close })
   background: transparent;
   color: var(--c-text);
   font-size: var(--fs-sm);
-  font-weight: 600;
+  font-weight: 700;
   text-align: left;
   text-decoration: none;
   cursor: pointer;
@@ -127,15 +124,14 @@ defineExpose({ close })
 }
 .menu__panel :deep(hr) {
   border: 0;
-  border-top: 1px solid var(--c-line-soft);
+  border-top: var(--border-w) solid var(--c-line-soft);
   margin: var(--sp-1) 0;
 }
 
 @media (pointer: coarse) {
-  .menu__btn { width: 2.75rem; height: 2.75rem; }
   .menu__panel :deep(button[role='menuitem']),
   .menu__panel :deep(a[role='menuitem']) {
-    min-height: 2.75rem;
+    min-height: var(--control-touch);
   }
 }
 </style>

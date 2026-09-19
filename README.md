@@ -165,10 +165,17 @@ kterým UNIQA sází, a **Caveat**, ruční řez, který si na svůj web pustila
 sama tam, kde chce znít lidsky. Hravost se tedy ke značce nepřilepuje,
 jen se zesiluje to, co v ní už je.
 
-**Jedno téma, tmavě modré.** Rampa ploch je čistý odstín `#005CA9`
-ztlumený do hloubky, takže deska i rozhraní nesou barvu značky. Platí
-i pro správu otázek: hraje se na projektoru a správa má vypadat jako
-součást hry, ne jako cizí nástroj.
+**Herní plátno tmavé, pracovní sešit světlý.** Hra zůstává v hluboké
+modré odvozené od `#005CA9`. Rozcestník, příprava a správa kvízu
+používají světlé plochy `#EEF2FA`, `#D5DEEE` a bílou, s tmavým inkoustem
+a modrým akcentem. Knihovna má přehledné řádky; editor drží seznam
+otázek vedle jedné otevřené otázky. Na telefonu se seznam změní na výběr
+otázky. Herní pravidla a barvy odpovědí zůstávají stejné.
+
+Na rozcestníku nese světlo nápis **Mučírna**: modrá dlaždice s bílým „M"
+a slovo z inkoustu. Stojí sám, bez sloganu, a pod ním jsou obě hry vidět
+bez rolování. Náhledy her uvnitř karet zůstávají tmavé, protože ukazují
+plátno.
 
 **Zlatá v systému není**, UNIQA žádnou nemá. Hodnoty na dlaždicích jsou
 bílé, akcent je modrý a jediná teplá barva patří poli **Riziko!**

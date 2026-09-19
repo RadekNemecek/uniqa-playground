@@ -1,132 +1,146 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, toRaw, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, toRaw, watch } from 'vue'
+import { onBeforeRouteLeave, onBeforeRouteUpdate } from 'vue-router'
 import UiButton from '@/components/ui/UiButton.vue'
+import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiMenu from '@/components/ui/UiMenu.vue'
+import UiField from '@/components/ui/UiField.vue'
+import UiModal from '@/components/ui/UiModal.vue'
+import UiEmpty from '@/components/ui/UiEmpty.vue'
+import UiIcon from '@/components/ui/UiIcon.vue'
 import QuizItemEditor from './QuizItemEditor.vue'
 import { db } from '@/lib/db'
 import { clone } from '@/lib/clone'
 import { emptyQuizItem, isItemReady, quizPackProgress } from '@/stores/quizPacks'
 import { removeImage } from '@/stores/quizImages'
 import { confirmAction, toast } from '@/stores/ui'
-import { count } from '@/lib/format'
 import { downloadQuizPack } from '../packIo'
-import { BOOLEAN_LABELS, kindOf, quizOption } from '../options'
+import { BOOLEAN_LABELS, kindOf } from '../options'
 import type { QuizPack } from '../types'
-import UiIcon from '@/components/ui/UiIcon.vue'
 
-/** Strop je tu proto, aby se balíček vešel do jednoho dokumentu a aby se
- *  dal ještě rozumně projít očima. Sto otázek je víc než dost na školení. */
 const MAX_ITEMS = 100
-
 const props = defineProps<{ pack: QuizPack }>()
 const emit = defineEmits<{ duplicate: []; remove: []; back: [] }>()
-
 const draft = ref<QuizPack>(clone(toRaw(props.pack)))
-const saveState = ref<'idle' | 'saving' | 'saved'>('idle')
+const saveState = ref<'idle' | 'saving' | 'saved' | 'error'>('idle')
 const conflict = ref(false)
-const openId = ref<string | null>(null)
-
-let lastWrittenAt = props.pack.updatedAt
-let timer = 0
-
+const openId = ref(props.pack.items[0]?.id ?? '')
+const metadataOpen = ref(false)
+const editor = ref<InstanceType<typeof QuizItemEditor> | null>(null)
 const progress = computed(() => quizPackProgress(draft.value))
 const canAdd = computed(() => draft.value.items.length < MAX_ITEMS)
+const currentIndex = computed(() => draft.value.items.findIndex(q => q.id === openId.value))
+const current = computed(() => draft.value.items[currentIndex.value])
+let lastWrittenAt = props.pack.updatedAt
+let timer = 0
+let revision = 0
+let savedRevision = 0
+let inFlight: Promise<boolean> | null = null
 
-watch(
-  () => props.pack.id,
-  () => {
-    draft.value = clone(toRaw(props.pack))
-    lastWrittenAt = props.pack.updatedAt
-    conflict.value = false
-    saveState.value = 'idle'
-    openId.value = null
-  },
-)
+watch(() => props.pack.updatedAt, at => {
+  if (at !== lastWrittenAt) conflict.value = true
+})
 
-// Balíček je jeden dokument, takže při souběžné editaci vyhraje poslední
-// zápis. Upozornit na to je to nejmenší, co se dá udělat.
-watch(
-  () => props.pack.updatedAt,
-  (at) => {
-    if (at !== lastWrittenAt) conflict.value = true
-  },
-)
+// Požadavky ukládáme v pořadí. Potvrzení staršího zápisu nesmí hlásit
+// „Uloženo“, když už autorka píše další změnu.
+watch(draft, () => {
+  revision++
+  saveState.value = 'saving'
+  window.clearTimeout(timer)
+  timer = window.setTimeout(() => void flush(), 600)
+}, { deep: true, flush: 'sync' })
 
-function reloadFromSource(): void {
-  draft.value = clone(toRaw(props.pack))
-  lastWrittenAt = props.pack.updatedAt
-  conflict.value = false
-  toast('Balíček načten znovu.', 'ok')
+async function flush(): Promise<boolean> {
+  window.clearTimeout(timer)
+  if (inFlight) {
+    if (!await inFlight) return false
+    return flush()
+  }
+  if (revision === savedRevision) return true
+  const writingRevision = revision
+  const at = Math.max(Date.now(), lastWrittenAt + 1)
+  const snapshot = { ...clone(toRaw(draft.value)), updatedAt: at }
+  lastWrittenAt = at
+  saveState.value = 'saving'
+  inFlight = db().saveQuizPack(snapshot).then(() => {
+    savedRevision = writingRevision
+    saveState.value = revision === writingRevision ? 'saved' : 'saving'
+    return true
+  }).catch(() => {
+    saveState.value = 'error'
+    return false
+  })
+  const ok = await inFlight
+  inFlight = null
+  if (ok && revision !== savedRevision) return flush()
+  return ok
 }
 
-// Ukládá se samo, aby se nedalo odejít s neuloženou otázkou. Prodleva
-// sráží počet zápisů při psaní.
-watch(
-  draft,
-  () => {
-    saveState.value = 'saving'
-    window.clearTimeout(timer)
-    timer = window.setTimeout(flush, 600)
-  },
-  { deep: true },
-)
+defineExpose({ flush })
 
-async function flush(): Promise<void> {
-  const at = Date.now()
-  lastWrittenAt = at
-  try {
-    await db().saveQuizPack({ ...clone(toRaw(draft.value)), updatedAt: at })
-    saveState.value = 'saved'
-  } catch (e) {
-    saveState.value = 'idle'
-    toast('Uložení se nepovedlo.', 'bad')
-    console.error(e)
-  }
+// I odchod přes hlavní navigaci nejdřív dokončí ukládání.
+onBeforeRouteLeave(() => flush())
+onBeforeRouteUpdate(() => flush())
+
+onBeforeUnmount(() => {
+  window.clearTimeout(timer)
+  if (revision !== savedRevision) void flush().then(ok => {
+    if (!ok) toast('Poslední změny balíčku se nepodařilo uložit.', 'bad', 8000)
+  })
+})
+
+async function back(): Promise<void> {
+  if (await flush()) emit('back')
+}
+
+async function reloadFromSource(): Promise<void> {
+  // Rozpracovaný zápis musí doběhnout před výměnou konceptu.
+  window.clearTimeout(timer)
+  if (inFlight) await inFlight
+  draft.value = clone(toRaw(props.pack))
+  window.clearTimeout(timer)
+  savedRevision = revision
+  lastWrittenAt = props.pack.updatedAt
+  conflict.value = false
+  saveState.value = 'idle'
+  if (!draft.value.items.some(q => q.id === openId.value)) openId.value = draft.value.items[0]?.id ?? ''
+}
+
+async function openItem(id: string): Promise<void> {
+  openId.value = id
+  await nextTick()
+  editor.value?.focusPrompt()
 }
 
 async function addItem(): Promise<void> {
   if (!canAdd.value) return
   const item = emptyQuizItem()
   draft.value.items.push(item)
-  openId.value = item.id
-  await nextTick()
-  document.getElementById(`q-${item.id}`)?.scrollIntoView({ block: 'center' })
+  await openItem(item.id)
 }
 
-async function removeItem(id: string): Promise<void> {
-  const at = draft.value.items.findIndex((q) => q.id === id)
-  if (at < 0) return
-  const item = draft.value.items[at]!
-  if (isItemReady(item)) {
-    const ok = await confirmAction({
-      title: 'Smazat otázku',
-      text: 'Otázka se smaže i s možnostmi. Vrátit to nejde.',
-      confirmLabel: 'Smazat',
-      danger: true,
-    })
-    if (!ok) return
-  }
+async function removeItem(): Promise<void> {
+  const item = current.value
+  if (!item) return
+  if (isItemReady(item) && !await confirmAction({ title: 'Smazat otázku', text: 'Otázka se smaže i s možnostmi. Vrátit to nejde.', confirmLabel: 'Smazat', danger: true })) return
+  const at = currentIndex.value
   draft.value.items.splice(at, 1)
-  if (openId.value === id) openId.value = null
+  openId.value = draft.value.items[Math.min(at, draft.value.items.length - 1)]?.id ?? ''
   if (item.imageId) await removeImage(item.imageId)
+  await nextTick()
+  editor.value?.focusPrompt()
 }
 
-function move(id: string, by: number): void {
-  const at = draft.value.items.findIndex((q) => q.id === id)
+function move(by: number): void {
+  const at = currentIndex.value
   const to = at + by
   if (at < 0 || to < 0 || to >= draft.value.items.length) return
   const [item] = draft.value.items.splice(at, 1)
   draft.value.items.splice(to, 0, item!)
 }
 
-function toggle(id: string): void {
-  openId.value = openId.value === id ? null : id
-}
-
-/** Náhled správné odpovědi do sbaleného řádku. U tvrzení je to slovo,
- *  ne text možnosti: ty se u něj nečtou. */
 function correctText(id: string): string {
-  const item = draft.value.items.find((q) => q.id === id)
+  const item = draft.value.items.find(q => q.id === id)
   if (!item) return ''
   if (kindOf(item) === 'boolean') return BOOLEAN_LABELS[item.correctIndex] ?? ''
   return item.options[item.correctIndex]?.trim() ?? ''
@@ -136,239 +150,122 @@ async function exportPack(): Promise<void> {
   await downloadQuizPack(clone(toRaw(draft.value)))
   toast('Balíček stažen jako JSON.', 'ok')
 }
+async function removePack(): Promise<void> {
+  if (await flush()) emit('remove')
+}
+async function duplicate(): Promise<void> {
+  if (await flush()) emit('duplicate')
+}
 </script>
 
 <template>
   <section class="ed">
-    <header class="ed__head">
-      <button type="button" class="ed__back" @click="emit('back')">
-        <UiIcon name="chevron-left" size="sm" />
-        Balíčky
-      </button>
-
-      <div class="ed__state" :data-state="saveState">
-        <span v-if="saveState === 'saving'">Ukládám…</span>
-        <span v-else-if="saveState === 'saved'" class="ed__saved">Uloženo</span>
+    <header class="ed__toolbar">
+      <UiButton variant="quiet" size="sm" icon="chevron-left" @click="back">Všechny balíčky</UiButton>
+      <div class="ed__state" role="status" :data-state="saveState">
+        {{ saveState === 'saving' ? 'Ukládám…' : saveState === 'saved' ? 'Uloženo' : saveState === 'error' ? 'Změny nejsou uložené' : 'Ukládá se automaticky' }}
       </div>
-
-      <UiMenu label="Akce balíčku" v-slot="{ close }">
+      <UiButton v-if="saveState === 'error'" size="sm" variant="brand" @click="flush">Zkusit uložit znovu</UiButton>
+      <UiMenu label="Akce otevřeného balíčku" v-slot="{ close }">
         <button type="button" role="menuitem" @click="void exportPack(); close()">Stáhnout jako JSON</button>
-        <button type="button" role="menuitem" @click="emit('duplicate'); close()">Duplikovat</button>
-        <button type="button" role="menuitem" @click="emit('remove'); close()">Smazat balíček</button>
+        <button type="button" role="menuitem" @click="void duplicate(); close()">Duplikovat</button>
+        <button type="button" role="menuitem" class="danger" @click="void removePack(); close()">Smazat balíček</button>
       </UiMenu>
     </header>
-
-    <p v-if="conflict" class="conflict">
-      Balíček mezitím změnil někdo jiný. Tvoje úpravy tu pořád jsou, ale při
-      uložení cizí změny přepíšou.
-      <button type="button" @click="reloadFromSource">Načíst znovu</button>
-    </p>
-
-    <div class="ed__id">
-      <input v-model="draft.name" class="ed__name" type="text" aria-label="Název balíčku" placeholder="Název balíčku" maxlength="60" />
-      <input v-model="draft.description" class="ed__desc" type="text" aria-label="Popis balíčku" placeholder="K čemu balíček slouží, pro koho je" maxlength="160" />
+    <div v-if="conflict" class="conflict" role="alert">
+      <p>Balíček mezitím změnil někdo jiný. Další úpravou jeho změny přepíšeš.</p>
+      <UiButton size="sm" variant="ghost" @click="reloadFromSource">Načíst znovu</UiButton>
     </div>
-
-    <div class="bar">
-      <div class="bar__track">
-        <div class="bar__fill" :style="{ transform: `scaleX(${progress.total ? progress.done / progress.total : 0})` }" />
+    <header class="ed__identity">
+      <div>
+        <p class="eyebrow">Úprava balíčku</p>
+        <h1>{{ draft.name || 'Nepojmenovaný balíček' }}</h1>
+        <p v-if="draft.description" class="ed__description">{{ draft.description }}</p>
+        <p class="ed__progress">{{ progress.done }} z {{ progress.total }} otázek hotových</p>
       </div>
-      <p class="bar__num">
-        {{ progress.done }} z {{ progress.total }} otázek hotových
-      </p>
-    </div>
+      <UiButton size="sm" variant="ghost" icon="edit" @click="metadataOpen = true">Název a popis</UiButton>
+    </header>
 
-    <ol class="list">
-      <li v-for="(item, i) in draft.items" :key="item.id" :id="`q-${item.id}`" class="qrow" :class="{ 'qrow--open': openId === item.id }">
-        <div class="qrow__head">
-          <button type="button" class="qrow__toggle" :aria-expanded="openId === item.id" @click="toggle(item.id)">
-            <span class="qrow__num">{{ i + 1 }}</span>
-            <span class="qrow__text">
-              <span v-fit-text class="qrow__prompt">
-                <UiIcon
-                  v-if="item.imageId"
-                  name="image"
-                  size="sm"
-                  class="qrow__img"
-                  aria-label="Otázka má obrázek"
-                />{{ item.prompt.trim() || 'Nová otázka' }}
+    <div v-if="draft.items.length" class="ed__layout">
+      <aside class="ed__sidebar" aria-label="Otázky balíčku">
+        <UiField class="ed__mobile-select" label="Vybraná otázka">
+          <select :value="openId" @change="openItem(($event.target as HTMLSelectElement).value)">
+            <option v-for="(item, i) in draft.items" :key="item.id" :value="item.id">{{ i + 1 }}. {{ item.prompt.trim() || 'Nová otázka' }}</option>
+          </select>
+        </UiField>
+        <ol class="questions">
+          <li v-for="(item, i) in draft.items" :key="item.id">
+            <button type="button" class="question" :aria-current="openId === item.id ? 'true' : undefined" @click="openItem(item.id)">
+              <span class="question__num">{{ String(i + 1).padStart(2, '0') }}</span>
+              <span class="question__copy">
+                <span class="question__prompt">{{ item.prompt.trim() || 'Nová otázka' }}</span>
+                <span v-if="isItemReady(item)" class="question__answer">{{ correctText(item.id) }}</span>
+                <span v-else class="question__todo">{{ kindOf(item) === 'boolean' ? 'Chybí znění tvrzení' : 'Chybí znění nebo možnosti' }}</span>
+                <span v-if="item.imageId" class="question__image"><UiIcon name="image" size="sm" /> S obrázkem</span>
               </span>
-              <span v-if="isItemReady(item)" v-fit-text class="qrow__answer">
-                <span class="qrow__letter" :style="{ color: `var(${quizOption(item.correctIndex).color.cssVar})` }">
-                  {{ quizOption(item.correctIndex).letter }}
-                </span>
-                {{ correctText(item.id) }}
-              </span>
-              <span v-else class="qrow__todo">
-                {{ kindOf(item) === 'boolean' ? 'Chybí znění tvrzení' : 'Chybí znění nebo možnosti' }}
-              </span>
-            </span>
-          </button>
-
-          <div class="qrow__tools">
-            <button type="button" :disabled="i === 0" :aria-label="`Posunout otázku ${i + 1} nahoru`" @click="move(item.id, -1)">
-              <UiIcon name="chevron-up" size="sm" />
             </button>
-            <button type="button" :disabled="i === draft.items.length - 1" :aria-label="`Posunout otázku ${i + 1} dolů`" @click="move(item.id, 1)">
-              <UiIcon name="chevron-down" size="sm" />
-            </button>
+          </li>
+        </ol>
+        <UiButton icon="plus" variant="brand" :disabled="!canAdd" @click="addItem">Přidat otázku</UiButton>
+        <p v-if="!canAdd" class="hint">Nejvýše {{ MAX_ITEMS }} otázek v balíčku.</p>
+      </aside>
+      <section v-if="current" class="sheet" aria-labelledby="editor-question-title">
+        <header class="sheet__head">
+          <h2 id="editor-question-title">Otázka {{ currentIndex + 1 }} <span>z {{ draft.items.length }}</span></h2>
+          <div class="sheet__tools">
+            <UiIconButton icon="chevron-up" label="Posunout otázku nahoru" :disabled="currentIndex === 0" @click="move(-1)" />
+            <UiIconButton icon="chevron-down" label="Posunout otázku dolů" :disabled="currentIndex === draft.items.length - 1" @click="move(1)" />
+            <UiButton variant="danger" size="sm" icon="trash" @click="removeItem">Smazat</UiButton>
           </div>
-        </div>
+        </header>
+        <QuizItemEditor :key="current.id" ref="editor" :item="current" />
+      </section>
+    </div>
+    <UiEmpty v-else title="První otázka čeká na tebe" text="Přidej otázku se čtyřmi možnostmi nebo tvrzení na pravda a nepravda.">
+      <UiButton icon="plus" variant="brand" @click="addItem">Přidat otázku</UiButton>
+    </UiEmpty>
 
-        <QuizItemEditor
-          v-if="openId === item.id"
-          :item="item"
-          @collapse="openId = null"
-          @remove="removeItem(item.id)"
-        />
-      </li>
-    </ol>
-
-    <footer class="ed__foot">
-      <UiButton variant="brand" :disabled="!canAdd" @click="addItem">Přidat otázku</UiButton>
-      <p v-if="!canAdd" class="hint">Víc než {{ count(MAX_ITEMS, 'otázka', 'otázky', 'otázek') }} se do balíčku nevejde.</p>
-    </footer>
+    <UiModal :open="metadataOpen" title="Název a popis balíčku" size="md" @close="metadataOpen = false">
+      <div class="stack">
+        <UiField label="Název balíčku"><input v-model="draft.name" maxlength="60" placeholder="Název balíčku" /></UiField>
+        <UiField label="Popis (nepovinné)"><textarea v-model="draft.description" maxlength="160" rows="3" placeholder="Pro koho balíček je a co si v něm procvičí" /></UiField>
+      </div>
+      <template #footer><UiButton variant="brand" @click="metadataOpen = false">Hotovo</UiButton></template>
+    </UiModal>
   </section>
 </template>
 
 <style scoped>
-.ed { display: grid; gap: var(--sp-4); align-content: start; }
-
-.ed__head { display: flex; align-items: center; gap: var(--sp-3); }
-.ed__back {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-2);
-  padding: var(--sp-2) var(--sp-3);
-  border: 0;
-  background: transparent;
-  color: var(--c-text-muted);
-  font-size: var(--fs-sm);
-  font-weight: 600;
-}
-.ed__back:hover { color: var(--c-text); }
-.ed__state { margin-left: auto; font-size: var(--fs-xs); color: var(--c-text-faint); }
-.ed__saved { color: var(--c-ok); }
-
-.conflict {
-  padding: var(--sp-3) var(--sp-4);
-  border: 1px solid color-mix(in oklab, var(--c-bad) 45%, transparent);
-  border-radius: var(--r-md);
-  background: color-mix(in oklab, var(--c-bad) 10%, transparent);
-  font-size: var(--fs-sm);
-  line-height: var(--lh-body);
-}
-.conflict button {
-  margin-left: var(--sp-2);
-  border: 0;
-  background: transparent;
-  color: var(--c-brand);
-  font-weight: 700;
-  text-decoration: underline;
-}
-
-.ed__id { display: grid; gap: var(--sp-2); }
-.ed__name,
-.ed__desc {
-  width: 100%;
-  padding: var(--sp-2) var(--sp-3);
-  border: 1px solid transparent;
-  border-radius: var(--r-md);
-  background: transparent;
-  color: var(--c-text);
-  transition: var(--tr-surface);
-}
-.ed__name { font-size: var(--fs-2xl); font-weight: 800; letter-spacing: -0.02em; }
-.ed__desc { font-size: var(--fs-sm); color: var(--c-text-muted); }
-.ed__name:hover, .ed__desc:hover { border-color: var(--c-line-soft); }
-.ed__name:focus, .ed__desc:focus { border-color: var(--c-brand); background: var(--c-sunken); }
-.ed__name::placeholder, .ed__desc::placeholder { color: var(--c-text-faint); }
-
-.bar { display: flex; align-items: center; gap: var(--sp-3); }
-.bar__track {
-  flex: 1;
-  height: 0.4rem;
-  border-radius: var(--r-full);
-  background: var(--c-sunken);
-  overflow: hidden;
-}
-.bar__fill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--c-brand-deep), var(--c-brand));
-  transform-origin: left center;
-  transition: transform var(--dur-base) var(--ease-out);
-}
-.bar__num { flex: none; font-size: var(--fs-xs); color: var(--c-text-faint); font-variant-numeric: tabular-nums; }
-
-/* Seznam otázek ------------------------------------------------------------ */
-.list { list-style: none; padding: 0; display: grid; gap: var(--sp-2); }
-.qrow {
-  border: 1px solid var(--c-line);
-  border-radius: var(--r-lg);
-  background: var(--c-surface);
-  overflow: hidden;
-  transition: border-color var(--dur-fast) var(--ease-out);
-}
-.qrow:hover { border-color: var(--c-surface-3); }
-.qrow--open { border-color: var(--c-brand); }
-
-.qrow__head { display: flex; align-items: stretch; gap: var(--sp-2); }
-.qrow__toggle {
-  flex: 1;
-  display: flex;
-  align-items: flex-start;
-  gap: var(--sp-3);
-  min-width: 0;
-  padding: var(--sp-3) var(--sp-4);
-  border: 0;
-  background: transparent;
-  color: var(--c-text);
-  text-align: left;
-}
-.qrow__num {
-  flex: none;
-  min-width: 1.5rem;
-  font-weight: 800;
-  color: var(--c-text-faint);
-  font-variant-numeric: tabular-nums;
-}
-.qrow__text { display: grid; gap: var(--sp-1); min-width: 0; }
-.qrow__prompt {
-  font-weight: 600;
-  line-height: var(--lh-snug);
-  font-size: calc(1em * var(--fit-text, 1));
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-/* Otázka s obrázkem je poznat i ze sbaleného řádku, jinak by se dal
-   obrázek hledat jen otevíráním jedné otázky po druhé. */
-.qrow__img { margin-right: var(--sp-2); color: var(--c-text-faint); vertical-align: -0.15em; }
-.qrow__answer { font-size: calc(var(--fs-xs) * var(--fit-text, 1)); color: var(--c-text-muted); }
-.qrow__letter { font-family: var(--font-display); font-weight: 900; margin-right: var(--sp-1); }
-.qrow__todo { font-size: var(--fs-xs); color: var(--c-text-faint); }
-
-.qrow__tools { display: flex; flex-direction: column; justify-content: center; gap: var(--sp-1); padding-right: var(--sp-3); }
-.qrow__tools button {
-  display: grid;
-  place-items: center;
-  width: 1.75rem;
-  height: 1.6rem;
-  border: 1px solid var(--c-line);
-  border-radius: var(--r-sm);
-  background: transparent;
-  color: var(--c-text-muted);
-}
-.qrow__tools button:hover:not(:disabled) { color: var(--c-text); border-color: var(--c-surface-3); background: var(--c-surface-2); }
-.qrow__tools button:disabled { opacity: 0.3; cursor: not-allowed; }
-
-.ed__foot { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; }
-.hint { font-size: var(--fs-xs); color: var(--c-text-faint); }
-
-@media (pointer: coarse) {
-  .ed__back { min-height: var(--control-touch); }
-  .qrow__tools button { width: var(--control-touch); height: 32px; }
-}
+.ed { display: grid; gap: var(--sp-5); }
+.ed__toolbar { display: flex; gap: var(--sp-3); align-items: center; flex-wrap: wrap; }
+.ed__state { margin-left: auto; color: var(--c-text-faint); font-size: var(--fs-sm); }
+.ed__state[data-state='saved'] { color: var(--c-ok); }
+.ed__state[data-state='error'] { color: var(--c-bad); font-weight: 700; }
+.conflict { display: flex; align-items: center; flex-wrap: wrap; gap: var(--sp-4); padding: var(--sp-4); border: var(--border-w) solid var(--c-bad); background: var(--c-surface); color: var(--c-bad); font-size: var(--fs-sm); }
+.ed__identity { display: flex; align-items: start; justify-content: space-between; gap: var(--sp-5); }
+.ed__identity h1 { font-size: var(--fs-work-title); margin-top: var(--sp-2); overflow-wrap: anywhere; }
+.ed__description { margin-top: var(--sp-3); max-width: var(--content-narrow); font-size: var(--fs-sm); color: var(--c-text-muted); overflow-wrap: anywhere; }
+.ed__progress { margin-top: var(--sp-3); font-size: var(--fs-sm); color: var(--c-text-muted); }
+.ed__layout { display: grid; grid-template-columns: minmax(0, .4fr) minmax(0, 1fr); gap: var(--sp-6); align-items: start; }
+.ed__sidebar { position: sticky; top: var(--sp-5); display: flex; flex-direction: column; gap: var(--sp-4); max-height: calc(100dvh - var(--sp-7)); min-width: 0; }
+.ed__mobile-select { display: none; }
+.questions { list-style: none; padding: var(--sp-1); margin: calc(-1 * var(--sp-1)); overflow-y: auto; min-height: 0; }
+.question { display: flex; gap: var(--sp-3); width: 100%; padding: var(--sp-4) var(--sp-3); border: 0; border-top: var(--border-w) solid var(--c-border-soft); border-left: var(--border-w-strong) solid transparent; background: transparent; color: var(--c-text); text-align: left; }
+.question:hover { background: var(--c-bg-active); }
+.question[aria-current] { border-left-color: var(--c-brand); background: var(--c-bg-active); }
+.question__num { font-weight: 900; font-size: var(--fs-sm); color: var(--c-brand); font-variant-numeric: tabular-nums; }
+.question__copy { display: grid; gap: var(--sp-2); min-width: 0; overflow-wrap: anywhere; }
+.question__prompt { font-size: var(--fs-sm); font-weight: 700; line-height: var(--lh-snug); }
+.question__answer, .question__todo, .question__image { font-size: var(--fs-xs); color: var(--c-text-muted); }
+.question__todo { color: var(--c-bad); }
+.question__image { display: flex; gap: var(--sp-2); align-items: center; }
+.sheet { min-width: 0; padding: var(--sp-5); background: var(--c-surface); border-top: var(--border-w-strong) solid var(--c-brand); }
+.sheet__head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); flex-wrap: wrap; margin-bottom: var(--sp-5); }
+.sheet__head h2 { font-size: var(--fs-xl); }
+.sheet__head h2 span { color: var(--c-text-muted); font-size: var(--fs-sm); font-weight: 400; }
+.sheet__tools { display: flex; gap: var(--sp-2); align-items: center; }
+.hint { font-size: var(--fs-sm); color: var(--c-text-muted); }
+@media (max-width: 960px) { .ed__layout { gap: var(--sp-4); grid-template-columns: minmax(0, .5fr) minmax(0, 1fr); } }
+@media (max-width: 720px) { .ed__identity { flex-direction: column; } .ed__layout { grid-template-columns: minmax(0, 1fr); } .ed__sidebar { position: static; max-height: none; } .ed__mobile-select { display: grid; } .questions { display: none; } .sheet { padding: var(--sp-4); } }
+@media (pointer: coarse) { .question { min-height: var(--control-touch); } }
 </style>

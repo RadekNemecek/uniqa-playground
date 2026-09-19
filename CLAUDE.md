@@ -26,8 +26,10 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
   boxu nevejde, ubere se na velikosti: `v-fit-text` z `src/lib/fitText.ts`
   měří šířku i výšku a snižuje `--fit-text`, dokud se obsah nevejde.
   Styl si to bere jako násobek tokenu, takže velikost dál vychází
-  z tokenu, ne ze syrové hodnoty. `overflow-wrap: anywhere` se nepoužívá.
-  Výjimka je jediná, adresa pod QR kódem: to není slovo, opisuje se po
+  z tokenu, ne ze syrové hodnoty. `overflow-wrap: anywhere` se na plátně
+  nepoužívá. Na pracovní ploše smí: název balíčku ani znění otázky se
+  nečtou ze zadní řady a autorka tam píše, co chce. Na plátně je výjimka
+  jediná, adresa pod QR kódem: to není slovo, opisuje se po
   znacích a zmenšit ji nejde, ze zadní řady by ji nikdo nepřepsal.
 - **Deska i otázka se vejdou na jednu obrazovku.** Na projektoru se
   nescrolluje. Velikost otázky a odpovědi neodhaduj z počtu znaků, měř ji:
@@ -38,13 +40,17 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
   tam, kde je property deklarovaná, takže samotné přepsání `--scale` na
   potomkovi by nestačilo.
 - **Dvě písma, Lato a Caveat.** Lato nese všechno, je to písmo UNIQA, řezy
-  400, 700 a 900. Caveat je ruční a smí být jen na třech místech: kicker
-  rozcestníku, kicker v dialogu sázky, blahopřání na výsledkové obrazovce.
+  400, 700 a 900. Caveat je ruční a smí být jen na dvou místech: kicker
+  v dialogu sázky a blahopřání na výsledkové obrazovce.
   Nikdy nenese otázku, odpověď, hodnotu ani ovládací prvek, ty se čtou
   z druhého konce místnosti a tam vyhrává čitelnost nad charakterem.
-- **Jedno téma, tmavě modré.** Rampa ploch je čistý odstín `#005CA9`
-  ztlumený do hloubky. Platí i pro správu otázek: hraje se na projektoru
-  a správa má vypadat jako součást hry, ne jako cizí nástroj.
+- **Dvě plochy podle práce, ne podle obrazovky.** Hra je tmavá: rampa je
+  čistý odstín `#005CA9` ztlumený do hloubky. Rozcestník, příprava a
+  správa jsou světlý pracovní sešit ze stejných značkových barev. Nese
+  ho třída `work-surface`, která přemapuje aliasy v `tokens.css`;
+  komponenty z `ui/` o žádném tématu nevědí a nesmí se to změnit.
+  Tmavý blok uvnitř světla (shrnutí v přípravě, náhled hry na
+  rozcestníku) si aliasy vrátí u sebe, přes `--c-studio*`.
 - **Žádná zlatá ani žlutá.** UNIQA je nemá. Akcent je `--c-brand`, hodnoty
   na dlaždicích nese `--c-value`. Žlutá chybí i mezi barvami týmů, jinak by
   se zlatá vrátila zadními dveřmi.
@@ -63,11 +69,12 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
   přebijí pravidla zapsaná pod nimi.
 - **Texty česky, bez dlouhých pomlček.** A bez řeči o tom, jak je aplikace
   postavená. Uživatelku zajímá, co s tím může dělat, ne architektura.
-- **Pozadí rozcestníku nenese obrázek.** Plují po něm ztlumené dlaždice,
-  protože značka je mřížka dlaždic a obě hry na dlaždicích stojí; fotka
-  nebo generovaná grafika by soupeřila s nápisem a kartami a netrefila
-  by změřenou paletu. Animace jede na posunu a průhlednosti a při
-  `prefers-reduced-motion` stojí.
+- **Rozcestník nemá dekoraci, nese ho nápis.** Žádná fotka, generovaná
+  grafika, plující dlaždice, záře ani zrno. Bylo jich šest naráz a proti
+  značce nemají co nabídnout: vtip s odebraným „M" se přečte sám a
+  hlučné pozadí mu ubírá. Nápis proto stojí bez sloganu, jako hlavička
+  stránky, a pod ním jsou obě hry vidět bez rolování. Náhledy her uvnitř
+  karet zůstávají tmavé, protože ukazují plátno.
 - **Hravost patří do hry a na rozcestník, ne do správy otázek.** Tam se
   pracuje, ozdoby by překážely. Ve hře je hmota dlaždic, pohyb a jiskra
   vítaná, protože z tabulky dělá herní desku.

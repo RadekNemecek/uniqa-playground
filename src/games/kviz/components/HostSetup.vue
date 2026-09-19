@@ -2,14 +2,19 @@
 import { computed, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import UiButton from '@/components/ui/UiButton.vue'
-import { quizPacks, quizPackProgress } from '@/stores/quizPacks'
+import { quizPacks, quizPackProgress, reloadQuizPacks } from '@/stores/quizPacks'
 import { count } from '@/lib/format'
 import { availableCount } from '../questions'
 import { hasSessionDb } from '@/lib/sessionDb'
 import type { QuizPack, QuizSetup } from '../types'
-import UiIcon from '@/components/ui/UiIcon.vue'
+import UiCheckbox from '@/components/ui/UiCheckbox.vue'
+import UiSegmented from '@/components/ui/UiSegmented.vue'
+import UiSwitch from '@/components/ui/UiSwitch.vue'
+import UiSkeleton from '@/components/ui/UiSkeleton.vue'
+import UiEmpty from '@/components/ui/UiEmpty.vue'
 import UiField from '@/components/ui/UiField.vue'
 
+withDefaults(defineProps<{ busy?: boolean }>(), { busy: false })
 const emit = defineEmits<{ start: [packs: QuizPack[], setup: QuizSetup] }>()
 
 const LIMITS = [10, 15, 20, 30]
@@ -114,350 +119,128 @@ function start(): void {
 </script>
 
 <template>
-  <div class="setup page">
+  <main id="obsah" class="setup page">
     <header class="setup__head">
       <p class="eyebrow">Na kolik to dáš?</p>
-      <h1 class="setup__title">Připrav kvíz</h1>
+      <h1 class="setup__title">Připrav kvíz.</h1>
+      <p class="lead">Vyber otázky a nastav průběh.</p>
     </header>
 
-    <section v-if="usable.length === 0" class="empty">
-      <span class="empty__step" aria-hidden="true">1</span>
-      <div>
-        <h2 class="empty__title">
-          {{ quizPacks.denied ? 'Balíčky se nepodařilo načíst' : 'Připrav první balíček' }}
-        </h2>
-        <p v-if="quizPacks.denied">
-          Databáze čtení odmítla. Zkontroluj publikovaná pravidla Firestore a načti stránku znovu.
-        </p>
-        <p v-else>Ke spuštění stačí jedna hotová otázka nebo jedno tvrzení.</p>
-      </div>
-      <RouterLink v-if="!quizPacks.denied" to="/kviz/otazky" class="empty__action">Přejít k otázkám</RouterLink>
-    </section>
+    <UiSkeleton v-if="!quizPacks.loaded" :lines="5" />
+    <UiEmpty v-else-if="quizPacks.denied" title="Balíčky se nepodařilo načíst" text="Zkontroluj připojení a zkus to znovu.">
+      <UiButton variant="brand" @click="reloadQuizPacks">Zkusit znovu</UiButton>
+    </UiEmpty>
+    <UiEmpty v-else-if="!usable.length" title="Připrav první otázky" text="Ke spuštění stačí jedna hotová otázka nebo jedno tvrzení.">
+      <RouterLink to="/kviz/otazky">Přejít k otázkám</RouterLink>
+    </UiEmpty>
 
-    <div v-else-if="usable.length" class="setup__grid">
-      <!-- Balíčky -------------------------------------------------------- -->
-      <section class="panel">
-        <div class="panel__head">
-          <h2 class="panel__title"><span class="panel__num">1</span> Balíčky</h2>
-          <RouterLink to="/kviz/otazky" class="panel__new">Upravit otázky</RouterLink>
-        </div>
-        <p class="hint">Zaškrtni, odkud se mají otázky brát. Klidně z několika naráz.</p>
-
-        <ul class="packs">
-          <li v-for="p in usable" :key="p.id">
-            <button
-              type="button"
-              class="pick"
-              :class="{ 'pick--on': chosen.has(p.id) }"
-              :aria-pressed="chosen.has(p.id)"
-              @click="toggle(p.id)"
-            >
-              <span class="pick__box" aria-hidden="true">
-                <UiIcon v-if="chosen.has(p.id)" name="check" size="sm" />
-              </span>
-              <span class="pick__text">
-                <span class="pick__name">{{ p.name }}</span>
-                <span class="pick__meta">
-                  {{ count(quizPackProgress(p).done, 'hotová otázka', 'hotové otázky', 'hotových otázek') }}
+    <div v-else class="setup__grid">
+      <div class="setup__form">
+        <section class="section" aria-labelledby="setup-packs">
+          <div class="section__head">
+            <h2 id="setup-packs"><span class="section__num" aria-hidden="true">01</span> Z čeho se bude hrát</h2>
+            <RouterLink to="/kviz/otazky" class="edit-link">Upravit otázky</RouterLink>
+          </div>
+          <p class="hint">Vyber jeden nebo více balíčků.</p>
+          <ul class="packs">
+            <li v-for="p in usable" :key="p.id">
+              <UiCheckbox class="pick" :model-value="chosen.has(p.id)" @update:model-value="toggle(p.id)">
+                <span class="pick__row">
+                  <span class="pick__text">
+                    <strong>{{ p.name }}</strong>
+                    <span class="hint">{{ quizPackProgress(p).done }} z {{ quizPackProgress(p).total }} otázek hotových</span>
+                  </span>
+                  <span class="pick__count" aria-hidden="true">{{ quizPackProgress(p).done }}</span>
                 </span>
-              </span>
-            </button>
-          </li>
-        </ul>
-      </section>
+              </UiCheckbox>
+            </li>
+          </ul>
+        </section>
 
-      <!-- Průběh --------------------------------------------------------- -->
-      <section class="panel">
-        <h2 class="panel__title"><span class="panel__num">2</span> Průběh</h2>
-
-        <UiField
-          label="Skupina"
-          hint="Nepovinné. Objeví se ve vyhodnocení a v názvu staženého souboru."
-        >
-          <input v-model="groupName" type="text" maxlength="60" placeholder="např. Obchod Morava" />
-        </UiField>
-
-        <div class="rule">
-          <span class="rule__label">Počet otázek</span>
-          <div class="segmented">
-            <button
-              type="button"
-              :class="{ 'seg--on': wantCount === 0 }"
-              @click="wantCount = 0"
-            >
-              Všechny
-            </button>
-            <button
-              v-for="n in offered"
-              :key="n"
-              type="button"
-              :class="{ 'seg--on': wantCount === n }"
-              @click="wantCount = n"
-            >
-              {{ n }}
-            </button>
+        <section class="section" aria-labelledby="setup-rules">
+          <div class="section__head"><h2 id="setup-rules"><span class="section__num" aria-hidden="true">02</span> Jak bude kvíz probíhat</h2></div>
+          <div class="rules">
+            <UiField label="Počet otázek">
+              <select v-model="wantCount">
+                <option :value="0">Všechny ({{ pool }})</option>
+                <option v-for="n in offered" :key="n" :value="n">{{ n }}</option>
+              </select>
+            </UiField>
+            <div class="rule">
+              <p class="rule__label">Čas na odpověď</p>
+              <UiSegmented v-model="limitSeconds" :options="LIMITS.map(s => ({ value: s, label: `${s} s` }))" aria-label="Čas na odpověď" />
+            </div>
           </div>
           <p class="hint">
-            <template v-if="wantCount === 0">
-              Zahrají se všechny otázky z vybraných balíčků, zamíchané dohromady.
-            </template>
-            <template v-else-if="perPack > 0">
-              Vylosuje se {{ count(willPlay, 'otázka', 'otázky', 'otázek') }},
-              z každého balíčku zhruba {{ perPack }}. Pořadí se zamíchá.
-            </template>
-            <template v-else>
-              Z balíčku se vylosuje {{ count(willPlay, 'otázka', 'otázky', 'otázek') }}.
-              Pořadí se zamíchá.
-            </template>
+            <template v-if="wantCount === 0">Zahrají se všechny vybrané otázky. Pořadí otázek i možností se zamíchá.</template>
+            <template v-else-if="perPack > 0">Vylosuje se {{ count(willPlay, 'otázka', 'otázky', 'otázek') }}, z každého balíčku zhruba {{ perPack }}. Pořadí se zamíchá.</template>
+            <template v-else>Vylosuje se {{ count(willPlay, 'otázka', 'otázky', 'otázek') }}. Pořadí se zamíchá.</template>
           </p>
-        </div>
+          <UiField label="Skupina (nepovinné)" hint="Název najdeš ve vyhodnocení a ve staženém souboru.">
+            <input v-model="groupName" type="text" maxlength="60" placeholder="Např. Obchod Morava" />
+          </UiField>
+          <UiSwitch v-if="canUsePhones" v-model="withPhones" label="Hráči odpovídají z telefonů" hint="Připojí se přes QR kód. Bez telefonů se kvíz jen promítá a body se nepočítají." />
+          <p v-else class="notice">Telefony se teď nepřipojí. Kvíz můžeš promítat bez nich, body si počítáš sama.</p>
+        </section>
+      </div>
 
-        <div class="rule">
-          <span class="rule__label">Telefony hráčů</span>
-          <label v-if="canUsePhones" class="toggle">
-            <input v-model="withPhones" type="checkbox" />
-            <span>Hráči se připojí přes QR kód</span>
-          </label>
-          <p v-if="canUsePhones" class="hint">
-            Bez nich se kvíz jen promítá a body se nepočítají.
-          </p>
-          <!-- Když telefony nejdou, musí to být vidět tady i u tlačítka.
-               Kdo čeká QR kód a nedostane ho, hledá chybu ve hře. -->
-          <p v-else class="warn">
-            Sdílená databáze není dostupná, takže QR kód se neobjeví a telefony
-            se nepřipojí. Kvíz půjde promítat a body si počítáš sama.
-          </p>
-        </div>
-
-        <div class="rule">
-          <span class="rule__label">Čas na odpověď</span>
-          <div class="segmented">
-            <button
-              v-for="s in LIMITS"
-              :key="s"
-              type="button"
-              :class="{ 'seg--on': limitSeconds === s }"
-              @click="limitSeconds = s"
-            >
-              {{ s }} s
-            </button>
-          </div>
-          <p class="hint">Po vypršení už odpovídat nejde.</p>
-        </div>
-      </section>
+      <aside class="summary" aria-label="Shrnutí připraveného kvízu">
+        <p class="eyebrow">Tvůj kvíz</p>
+        <h2>Na kolik to dáš?</h2>
+        <p class="summary__total" aria-live="polite"><strong>{{ willPlay }}</strong><span>{{ willPlay === 1 ? 'otázka' : willPlay >= 2 && willPlay <= 4 ? 'otázky' : 'otázek' }} ve hře</span></p>
+        <dl>
+          <dt>Vybrané balíčky</dt><dd>{{ chosen.size }}</dd>
+          <dt>Na odpověď</dt><dd>{{ limitSeconds }} s</dd>
+          <dt>Odpovídání</dt><dd>{{ setup.withPhones ? 'Z telefonů' : 'Jen promítání' }}</dd>
+        </dl>
+        <UiButton variant="brand" block :disabled="!canStart" :loading="busy" @click="start">{{ setup.withPhones ? 'Otevřít čekárnu' : 'Spustit promítání' }}</UiButton>
+        <p class="summary__next">{{ !canStart ? 'Vyber alespoň jeden balíček.' : setup.withPhones ? 'Hru spustíš, až se hráči připojí.' : 'Bez telefonů se body nepočítají.' }}</p>
+      </aside>
     </div>
-
-    <footer v-if="usable.length" class="setup__foot">
-      <p class="tally">
-        <template v-if="pool === 0">Vyber aspoň jeden balíček.</template>
-        <template v-else>
-          <template v-if="wantCount === 0">
-            Všech {{ count(pool, 'otázka', 'otázky', 'otázek') }} · {{ limitSeconds }} s na každou
-          </template>
-          <template v-else>
-            {{ willPlay }} z {{ count(pool, 'otázky', 'otázek', 'otázek') }} ·
-            {{ limitSeconds }} s na každou
-          </template>
-          <!-- U tlačítka se rozhoduje, u tlačítka to má být napsané. -->
-          <span class="tally__mode">
-            {{ setup.withPhones ? '· s telefony, začne se čekárnou s QR kódem' : '· bez telefonů, jen promítání' }}
-          </span>
-        </template>
-      </p>
-      <UiButton size="lg" variant="brand" :disabled="!canStart" @click="start">
-        Spustit kvíz
-      </UiButton>
-    </footer>
-  </div>
+  </main>
 </template>
 
 <style scoped>
-.setup { padding-block: var(--sp-5) var(--sp-8); }
+.setup { max-width: var(--content-reading); padding-block: var(--sp-6) var(--sp-8); }
 .setup__head { margin-bottom: var(--sp-6); }
-.setup__title { font-size: var(--fs-3xl); letter-spacing: -0.03em; margin-top: var(--sp-2); }
-
-.setup__grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--sp-4);
-  align-items: start;
+.setup__title { font-size: var(--fs-work-title); margin-top: var(--sp-2); }
+.lead { color: var(--c-text-muted); margin-top: var(--sp-3); font-size: var(--fs-sm); }
+.setup__grid { display: grid; grid-template-columns: minmax(0, 1fr) var(--content-sidebar); gap: var(--sp-7); align-items: start; }
+.setup__form { display: grid; gap: var(--sp-6); min-width: 0; }
+.section { display: grid; gap: var(--sp-4); }
+.section__head { display: flex; flex-wrap: wrap; gap: var(--sp-3); justify-content: space-between; align-items: center; }
+.section__head h2 { display: flex; align-items: baseline; gap: var(--sp-3); font-size: var(--fs-xl); }
+.section__num { font-size: var(--fs-sm); color: var(--c-brand); font-variant-numeric: tabular-nums; }
+.edit-link { display: inline-flex; align-items: center; min-height: var(--control-touch); font-size: var(--fs-sm); font-weight: 700; }
+.hint { font-size: var(--fs-sm); line-height: var(--lh-body); color: var(--c-text-faint); }
+.packs { list-style: none; padding: 0; border-top: var(--border-w) solid var(--c-border-soft); }
+.packs li { border-bottom: var(--border-w) solid var(--c-border-soft); }
+.pick { padding: var(--sp-4) var(--sp-2); }
+.pick:hover { background: var(--c-bg-active); }
+.pick__row { display: flex; justify-content: space-between; gap: var(--sp-4); align-items: center; }
+.pick__text { display: grid; gap: var(--sp-1); overflow-wrap: anywhere; }
+.pick__count { font-weight: 900; color: var(--c-brand); font-variant-numeric: tabular-nums; }
+.rules { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--sp-4); align-items: start; }
+.rule { display: grid; gap: var(--sp-2); }
+.rule__label { font-size: var(--fs-sm); font-weight: 700; color: var(--c-text-muted); }
+.notice { border-top: var(--border-w) solid var(--c-border-soft); padding-top: var(--sp-4); font-size: var(--fs-sm); color: var(--c-text-muted); }
+.summary {
+  --c-brand: var(--c-studio-accent);
+  --c-on-accent: var(--c-studio);
+  --button-brand-bg: var(--c-studio-accent);
+  --button-brand-hover: var(--c-paper);
+  --focus-ring-c: var(--c-studio-accent);
+  position: sticky; top: var(--sp-5); padding: var(--sp-5); border-radius: var(--r-sm);
+  background: var(--c-studio); color: var(--c-studio-text);
 }
-
-.panel {
-  display: grid;
-  gap: var(--sp-4);
-  align-content: start;
-  padding: var(--sp-5);
-  border: 1px solid var(--c-line);
-  border-radius: var(--r-xl);
-  background: var(--c-surface);
-}
-.panel__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--sp-3);
-}
-.panel__new {
-  flex: none;
-  padding: var(--sp-2) var(--sp-4);
-  border: 1px solid var(--c-line);
-  border-radius: var(--r-md);
-  color: var(--c-text-muted);
-  font-size: var(--fs-sm);
-  font-weight: 700;
-  text-decoration: none;
-  transition: var(--tr-surface);
-}
-.panel__new:hover { color: var(--c-text); border-color: var(--c-surface-3); }
-
-.panel__title { display: flex; align-items: center; gap: var(--sp-3); font-size: var(--fs-lg); }
-.panel__num {
-  display: grid;
-  place-items: center;
-  width: 1.6rem;
-  height: 1.6rem;
-  border-radius: var(--r-full);
-  background: var(--c-sunken);
-  color: var(--c-brand);
-  font-size: var(--fs-xs);
-  font-weight: 800;
-}
-
-.hint { font-size: var(--fs-xs); line-height: var(--lh-body); color: var(--c-text-faint); }
-.empty {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--sp-4);
-  max-width: var(--content-narrow);
-  padding: var(--sp-5);
-  border: 1px solid var(--c-line);
-  border-radius: var(--r-xl);
-  background: var(--c-surface);
-  color: var(--c-text-muted);
-  line-height: var(--lh-body);
-}
-.empty__step {
-  display: grid;
-  place-items: center;
-  width: var(--control-touch);
-  height: var(--control-touch);
-  border-radius: var(--r-full);
-  background: var(--c-brand);
-  color: var(--c-on-accent);
-  font-weight: 900;
-}
-.empty__title { margin-bottom: var(--sp-1); color: var(--c-text); font-size: var(--fs-lg); }
-.empty__action {
-  padding: var(--sp-3) var(--sp-5);
-  border-radius: var(--r-md);
-  background: var(--c-brand);
-  color: var(--c-on-accent);
-  font-weight: 700;
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-/* Balíček se zaškrtává, ne vybírá. Hraje se klidně z několika naráz. */
-.packs { list-style: none; padding: 0; display: grid; gap: var(--sp-2); }
-.pick {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-3);
-  width: 100%;
-  padding: var(--sp-3) var(--sp-4);
-  border: 1px solid var(--c-line);
-  border-radius: var(--r-lg);
-  background: var(--c-sunken);
-  color: var(--c-text-muted);
-  text-align: left;
-  transition: var(--tr-surface);
-}
-.pick:hover { border-color: var(--c-surface-3); color: var(--c-text); }
-.pick--on {
-  border-color: var(--c-brand);
-  background: color-mix(in oklab, var(--c-brand) 12%, var(--c-sunken));
-  color: var(--c-text);
-}
-.pick__box {
-  flex: none;
-  display: grid;
-  place-items: center;
-  width: 1.4rem;
-  height: 1.4rem;
-  border: 1px solid var(--c-line);
-  border-radius: var(--r-sm);
-  background: var(--c-surface);
-  color: var(--c-on-accent);
-}
-.pick--on .pick__box { background: var(--c-brand); border-color: var(--c-brand); }
-.pick__text { display: grid; gap: var(--sp-1); min-width: 0; }
-.pick__name { font-weight: 700; }
-.pick__meta { font-size: var(--fs-xs); color: var(--c-text-faint); }
-
-
-.rule { display: grid; gap: var(--sp-2); align-content: start; }
-.toggle { display: flex; align-items: center; gap: var(--sp-2); font-size: var(--fs-sm); color: var(--c-text-muted); }
-.rule__label { font-size: var(--fs-sm); font-weight: 600; }
-.segmented {
-  display: flex;
-  gap: var(--sp-1);
-  padding: var(--sp-1);
-  border: 1px solid var(--c-line);
-  border-radius: var(--r-md);
-  background: var(--c-sunken);
-}
-.segmented button {
-  flex: 1;
-  padding: var(--sp-2) var(--sp-1);
-  border: 0;
-  border-radius: var(--r-sm);
-  background: transparent;
-  color: var(--c-text-muted);
-  font-size: var(--fs-sm);
-  font-weight: 600;
-  transition: var(--tr-surface);
-}
-.segmented button:hover { color: var(--c-text); background: var(--c-surface); }
-.segmented .seg--on { background: var(--c-brand); color: var(--c-on-accent); }
-
-.setup__foot {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--sp-4);
-  flex-wrap: wrap;
-  margin-top: var(--sp-5);
-  padding-top: var(--sp-5);
-  border-top: 1px solid var(--c-line-soft);
-}
-.tally { font-size: var(--fs-sm); color: var(--c-text-muted); }
-.tally__mode { color: var(--c-text-faint); }
-
-.warn {
-  padding: var(--sp-2) var(--sp-3);
-  border-radius: var(--r-md);
-  background: color-mix(in oklab, var(--c-bad) 14%, transparent);
-  color: var(--c-bad);
-  font-size: var(--fs-xs);
-  line-height: var(--lh-body);
-}
-
-@media (max-width: 960px) {
-  .setup__grid { grid-template-columns: minmax(0, 1fr); }
-}
-
-@media (max-width: 720px) {
-  .empty { grid-template-columns: auto minmax(0, 1fr); }
-  .empty__action { grid-column: 1 / -1; text-align: center; }
-}
-
-/* Dotyk patří na konec, jinak ho přebíjí pravidla zapsaná pod ním. */
-@media (pointer: coarse) {
-  .empty__action { min-height: var(--control-touch); }
-  .pick { min-height: var(--control-touch); }
-  .panel__new { display: grid; place-items: center; min-height: var(--control-touch); }
-  .segmented button { min-height: var(--control-touch); }
-}
+.summary .eyebrow, .summary__next { color: var(--c-studio-accent); }
+.summary h2 { margin-top: var(--sp-2); font-size: var(--fs-xl); }
+.summary__total { display: grid; margin-block: var(--sp-5); }
+.summary__total strong { font-size: var(--fs-work-number); font-weight: 900; line-height: var(--lh-tight); font-variant-numeric: tabular-nums; }
+.summary__total span { font-size: var(--fs-sm); margin-top: var(--sp-2); }
+.summary dl { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--sp-3); margin-block: var(--sp-5); font-size: var(--fs-sm); }
+.summary dd { margin: 0; font-weight: 700; text-align: right; }
+.summary__next { font-size: var(--fs-sm); margin-top: var(--sp-3); }
+@media (max-width: 960px) { .setup__grid { gap: var(--sp-5); grid-template-columns: minmax(0, 1fr) minmax(0, .65fr); } .rules { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 720px) { .setup__grid { grid-template-columns: minmax(0, 1fr); } .summary { position: static; } .section__head h2 { font-size: var(--fs-lg); } }
 </style>

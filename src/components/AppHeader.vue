@@ -10,10 +10,11 @@ import BrandTile from '@/components/BrandTile.vue'
 const props = withDefaults(
   defineProps<{
     compact?: boolean
+    work?: boolean
     game?: string
     section?: 'play' | 'questions' | 'reports'
   }>(),
-  { compact: false, game: '', section: undefined },
+  { compact: false, work: false, game: '', section: undefined },
 )
 
 const currentGame = computed(() => GAMES.find((entry) => entry.slug === props.game) ?? null)
@@ -48,7 +49,7 @@ onBeforeUnmount(() => document.removeEventListener('fullscreenchange', syncFulls
 </script>
 
 <template>
-  <header class="head" :class="{ 'head--compact': compact }">
+  <header class="head" :class="{ 'head--compact': compact, 'head--work': work }">
     <div class="identity">
       <RouterLink to="/" class="brand" aria-label="Mučírna, vybrat jinou hru">
         <BrandTile class="brand__mark" aria-hidden="true" />
@@ -70,7 +71,7 @@ onBeforeUnmount(() => document.removeEventListener('fullscreenchange', syncFulls
         :class="{ 'nav__item--active': section === 'play' }"
         :aria-current="section === 'play' ? 'page' : undefined"
       >
-        Hrát
+        {{ work ? 'Příprava' : 'Hrát' }}
       </RouterLink>
       <RouterLink
         :to="currentGame.editRoute"
@@ -199,6 +200,11 @@ onBeforeUnmount(() => document.removeEventListener('fullscreenchange', syncFulls
   .nav { grid-row: 2; grid-column: 1 / -1; width: 100%; }
   .brand__name { display: none; }
 }
+
+.head--work { border-bottom: var(--border-w) solid var(--c-border-soft); }
+.head--work .nav { border: 0; border-radius: 0; background: transparent; gap: var(--sp-5); }
+.head--work .nav__item { border-radius: 0; padding-inline: var(--sp-1); border-bottom: var(--border-w-strong) solid transparent; }
+.head--work .nav__item--active { border-color: var(--c-brand); background: transparent; box-shadow: none; }
 
 @media (pointer: coarse) {
   .brand { min-height: var(--control-touch); min-width: var(--control-touch); }
