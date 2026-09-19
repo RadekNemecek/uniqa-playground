@@ -80,13 +80,17 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
   `prefers-reduced-motion` stojí. Nápis stojí vystředěný, bez sloganu
   a má přednost před ohybem: celá karta se pod něj na notebooku nevejde,
   její horní hrana s náhledem hry ano, takže je vidět, že se roluje dál.
-- **Nápis Mučírna je plochý.** Jedna barva na dlaždici, jedna na slovo,
-  žádná spodní hrana, lesk ani přejíždějící odlesk. Ve velikosti, jakou
-  má na rozcestníku, tedy přes tisíc pixelů, z těch tří věcí byla ikona
+- **Nápis Mučírna je plochý.** Žádná spodní hrana, lesk ani přejíždějící
+  odlesk. Přeliv na dlaždici i na slově zůstal, ale je to spád mezi
+  dvěma sousedními odstíny modré, ne světlo dopadající na hmotu: bez něj
+  byla značka placka. Ve velikosti, jakou má na rozcestníku, tedy přes
+  tisíc pixelů, z hrany, lesku a odlesku byla ikona
   aplikace z roku 2012. Zůstala nakloněná dlaždice, jiskry a dosednutí,
   protože to nese ten vtip; povrchová úprava ho nenese. Barvy jdou přes
   `--mark-*`, takže kresba neví, na které ploše leží. Hmota dlaždic
-  patří herní desce a náhledům her, ne značce.
+  patří herní desce a náhledům her, ne značce. Nad nápisem neleží žádná
+  plující dlaždice: značka jde přes většinu šířky a dlaždice kolem ní
+  se s ní přetahovaly, takže začínají až u jejího spodního okraje.
 - **Hravost patří do hry a na rozcestník, ne do správy otázek.** Tam se
   pracuje, ozdoby by překážely. Ve hře je hmota dlaždic, pohyb a jiskra
   vítaná, protože z tabulky dělá herní desku.

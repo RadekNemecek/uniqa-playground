@@ -64,6 +64,10 @@ const cards = computed<GameCard[]>(() =>
  * `slow` je doba jednoho přeletu tam a zpět. Čísla jsou schválně velká
  * a nesoudělná, aby se dlaždice nikdy nesrovnaly do společného rytmu
  * a pohyb zůstal na hraně vnímatelnosti.
+ *
+ * Nad nápisem žádná neleží. Značka jde přes většinu šířky a dlaždice
+ * kolem ní se s ní přetahovaly, takže začínají až u jejího spodního
+ * okraje a zbytek plují za kartami.
  */
 interface DriftTile {
   /** Poloha v procentech plochy. */
@@ -84,14 +88,14 @@ interface DriftTile {
 }
 
 const DRIFT: DriftTile[] = [
-  { x: 6, y: 12, size: 13, rot: -9, dx: 14, dy: -10, slow: 47, delay: 0, tone: 'papir' },
-  { x: 78, y: 8, size: 9, rot: 12, dx: -12, dy: 14, slow: 61, delay: -8, tone: 'modra' },
-  { x: 88, y: 34, size: 15, rot: -6, dx: -9, dy: -12, slow: 53, delay: -21, tone: 'papir' },
-  { x: 16, y: 52, size: 8, rot: 14, dx: 18, dy: 9, slow: 43, delay: -14, tone: 'papir' },
-  { x: 43, y: 74, size: 11, rot: -11, dx: -10, dy: -16, slow: 67, delay: -31, tone: 'papir' },
-  { x: 68, y: 62, size: 7, rot: 8, dx: 15, dy: 12, slow: 39, delay: -5, tone: 'papir' },
-  { x: 2, y: 78, size: 10, rot: 6, dx: 11, dy: -13, slow: 57, delay: -26, tone: 'modra' },
-  { x: 55, y: 22, size: 6, rot: -14, dx: -16, dy: 11, slow: 71, delay: -12, tone: 'papir' },
+  { x: 4, y: 30, size: 13, rot: -9, dx: 14, dy: -10, slow: 47, delay: 0, tone: 'papir' },
+  { x: 80, y: 27, size: 9, rot: 12, dx: -12, dy: 14, slow: 61, delay: -8, tone: 'modra' },
+  { x: 88, y: 41, size: 15, rot: -6, dx: -9, dy: -12, slow: 53, delay: -21, tone: 'papir' },
+  { x: 16, y: 55, size: 8, rot: 14, dx: 18, dy: 9, slow: 43, delay: -14, tone: 'papir' },
+  { x: 43, y: 80, size: 11, rot: -11, dx: -10, dy: -16, slow: 67, delay: -31, tone: 'papir' },
+  { x: 68, y: 66, size: 7, rot: 8, dx: 15, dy: 12, slow: 39, delay: -5, tone: 'papir' },
+  { x: 1, y: 84, size: 10, rot: 6, dx: 11, dy: -13, slow: 57, delay: -26, tone: 'modra' },
+  { x: 57, y: 36, size: 6, rot: -14, dx: -16, dy: 11, slow: 71, delay: -12, tone: 'papir' },
 ]
 
 /**

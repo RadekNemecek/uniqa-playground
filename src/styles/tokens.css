@@ -165,12 +165,18 @@
      Zůstala nakloněná dlaždice, jiskry a dosednutí, tedy to, co nese
      vtip, ne povrchová úprava. Barvy se berou odtud, ne z herních
      dlaždic: značka se kreslí i na světlé ploše.
-     Dlaždice a slovo na --c-base: 8,6:1 a 16,4:1. Tmavé „M" na
-     dlaždici: 8,6:1. */
-  --mark-tile:   var(--c-brand);
-  --mark-letter: var(--c-on-accent);
-  --mark-word:   var(--c-text);
-  --mark-spark:  var(--c-brand);
+
+     Přeliv zůstal, protože bez něj byla značka placka. Je to spád mezi
+     dvěma sousedními odstíny modré, ne lesk: nekreslí se jím světlo
+     dopadající na hmotu, jen se tím barva rozhýbe. Nejslabší místo je
+     spodní konec obou spádů, 8,6:1 na `--c-base` a tmavé „M" na spodku
+     dlaždice taky 8,6:1. */
+  --mark-tile-top:    var(--c-brand-soft);
+  --mark-tile-bottom: var(--c-brand);
+  --mark-word-top:    var(--c-text);
+  --mark-word-bottom: var(--c-brand);
+  --mark-letter:      var(--c-on-accent);
+  --mark-spark:       var(--c-brand);
 
   /* --- Barvy týmů -------------------------------------------------------- */
   /* Všechny mají nejméně 7:1 vůči tmavému inkoustu, takže na nich může
@@ -393,11 +399,13 @@ body:has(.work-surface) > .modal {
   --button-brand-shadow: none;
   --button-danger-text: var(--c-paper-sheet);
   /* Značka na papíře: modrá dlaždice s bílým „M", slovo z inkoustu.
-     Bílé „M" na dlaždici 6,77:1, inkoust na papíru 15,70:1, modré
-     jiskry 6,03:1. */
-  --mark-tile: var(--c-paper-blue);
+     Bílé „M" na dlaždici 6,77:1, spodek slova 6,03:1, modré jiskry
+     6,03:1. */
+  --mark-tile-top: var(--c-paper-blue);
+  --mark-tile-bottom: var(--c-paper-blue);
+  --mark-word-top: var(--c-paper-ink);
+  --mark-word-bottom: var(--c-paper-blue);
   --mark-letter: var(--c-paper-sheet);
-  --mark-word: var(--c-paper-ink);
   --mark-spark: var(--c-paper-blue);
   --r-md: var(--r-sm);
   --r-lg: var(--r-sm);

@@ -110,6 +110,19 @@ onBeforeUnmount(() => window.removeEventListener('resize', measure))
     aria-label="Mučírna"
     preserveAspectRatio="xMidYMid meet"
   >
+    <defs>
+      <!-- Přeliv mezi dvěma sousedními odstíny modré. Není to lesk, je
+           to rozhýbaná barva: žádný pruh světla, žádná hrana. -->
+      <linearGradient id="mark-word" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="var(--mark-word-top)" />
+        <stop offset="100%" stop-color="var(--mark-word-bottom)" />
+      </linearGradient>
+      <linearGradient id="mark-tile" x1="0" y1="0" x2="0.35" y2="1">
+        <stop offset="0%" stop-color="var(--mark-tile-top)" />
+        <stop offset="100%" stop-color="var(--mark-tile-bottom)" />
+      </linearGradient>
+    </defs>
+
     <!-- Jiskry nad dlaždicí. Tři tahy, stejně jako na původním nápisu.
          Vyletí až na dopad dlaždice, každý o chlup později než předchozí. -->
     <g class="mark__sparks" :stroke-width="FS * 0.05">
@@ -198,9 +211,9 @@ onBeforeUnmount(() => window.removeEventListener('resize', measure))
   font-weight: 900;
   letter-spacing: -0.03em;
 }
-.mark__word { fill: var(--mark-word); }
+.mark__word { fill: url(#mark-word); }
 .mark__letter { fill: var(--mark-letter); letter-spacing: 0; }
-.mark__tile-face { fill: var(--mark-tile); }
+.mark__tile-face { fill: url(#mark-tile); }
 .mark__sparks { stroke: var(--mark-spark); stroke-linecap: round; }
 /* Sekvence se rozjede s odkrytím, ne s připojením do stránky. Kdyby
    běžela pod nulovou průhledností, odehrála by se dřív, než je vidět. */
