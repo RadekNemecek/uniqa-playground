@@ -7,6 +7,7 @@ import { count } from '@/lib/format'
 import { availableCount } from '../questions'
 import { hasSessionDb } from '@/lib/sessionDb'
 import type { QuizPack, QuizSetup } from '../types'
+import type { Segment } from '@/components/ui/segmented'
 import UiCheckbox from '@/components/ui/UiCheckbox.vue'
 import UiSegmented from '@/components/ui/UiSegmented.vue'
 import UiSwitch from '@/components/ui/UiSwitch.vue'
@@ -17,13 +18,13 @@ import UiField from '@/components/ui/UiField.vue'
 withDefaults(defineProps<{ busy?: boolean }>(), { busy: false })
 const emit = defineEmits<{ start: [packs: QuizPack[], setup: QuizSetup] }>()
 
-const LIMITS = [10, 15, 20, 30]
+const LIMITS = [10, 20, 30, 40, 50]
 
 /** Nabízené stropy. Nula je „všechny" a stojí první, protože je výchozí. */
 const COUNTS = [5, 10, 15, 20, 30]
 
 const chosen = ref(new Set<string>())
-const limitSeconds = ref(20)
+const limitSeconds = ref(30)
 /**
  * Strop na počet otázek. Nula znamená všechny a je to výchozí stav:
  * balíček se chystá na konkrétní školení, takže se obvykle hraje celý.
@@ -77,6 +78,13 @@ const canStart = computed(() => pool.value > 0)
  * zahraje se totéž co u „všech".
  */
 const offered = computed(() => COUNTS.filter((n) => n < pool.value))
+
+/** Stejný přepínač jako u času: dvě volby vedle sebe se nemají lišit
+ *  tvarem, když dělají totéž. Nula je „všechny" a stojí první. */
+const countOptions = computed<Segment<number>[]>(() => [
+  { value: 0, label: 'Všechny' },
+  ...offered.value.map((n) => ({ value: n, label: String(n) })),
+])
 
 /** Kolik se vezme z každého balíčku. Losuje se po balíčcích kolem
  *  dokola, takže díl je stejný, dokud je z čeho brát. */
@@ -160,12 +168,10 @@ function start(): void {
         <section class="section" aria-labelledby="setup-rules">
           <div class="section__head"><h2 id="setup-rules"><span class="section__num" aria-hidden="true">02</span> Jak bude kvíz probíhat</h2></div>
           <div class="rules">
-            <UiField label="Počet otázek">
-              <select v-model="wantCount">
-                <option :value="0">Všechny ({{ pool }})</option>
-                <option v-for="n in offered" :key="n" :value="n">{{ n }}</option>
-              </select>
-            </UiField>
+            <div class="rule">
+              <p class="rule__label">Počet otázek</p>
+              <UiSegmented v-model="wantCount" :options="countOptions" aria-label="Počet otázek" />
+            </div>
             <div class="rule">
               <p class="rule__label">Čas na odpověď</p>
               <UiSegmented v-model="limitSeconds" :options="LIMITS.map(s => ({ value: s, label: `${s} s` }))" aria-label="Čas na odpověď" />
