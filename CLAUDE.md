@@ -77,9 +77,10 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
   tmavý panel, inkoust na nich drží 13,01:1. Animace jede na posunu
   a natočení a při `prefers-reduced-motion` stojí. Pod značkou uklízí
   dlaždice bílé světlo, aby nápis nestál v závoji; na světlé ploše je
-  světlo bílá plocha, ne záře. Nápis stojí vystředěný a bez sloganu,
-  a pod ním jsou obě hry vidět bez rolování. Náhledy her uvnitř karet
-  zůstávají tmavé, ukazují plátno.
+  světlo bílá plocha, ne záře. Nápis stojí vystředěný a bez sloganu
+  a má přednost před ohybem: celá karta se pod něj na notebooku nevejde,
+  její horní hrana s náhledem hry ano, takže je vidět, že se roluje dál.
+  Náhledy her uvnitř karet zůstávají tmavé, ukazují plátno.
 - **Rozcestník si bere zpátky měkké poloměry.** Pracovní sešit srovnává
   `--r-md`, `--r-lg` i `--r-xl` na `--r-sm`, protože ve správě otázek se
   pracuje. Rozcestník jsou dveře do hry, takže si je vrací na 8, 12 a 20

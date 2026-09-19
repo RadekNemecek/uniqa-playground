@@ -311,9 +311,9 @@ async function discard(entry: GameEntry): Promise<void> {
      na téže lince. */
   --home-preview-h: 12rem;
   --home-perspective: 40rem;
-  /* Nápis je hlavička stránky, ne titulní strana: pod ním mají být obě
-     hry rovnou vidět, bez rolování. */
-  --home-hero-image-max: 40rem;
+  /* Značka dostala přednost před ohybem. Nevejde se pod ni celá karta,
+     ale její horní hrana ano, takže je vidět, že se roluje dál. */
+  --home-hero-image-max: 64rem;
   --home-card-side-min: 17rem;
 
   /* Rozcestník není pracovní sešit, je to dveře do hry. Hranatost, kterou
@@ -377,7 +377,7 @@ main {
    a karty pod ním jen vykukovaly, takže se muselo rolovat i tehdy, když
    moderátorka jen jde spustit hru, kterou zná. Nápis teď začíná na téže
    svislé lince jako všechno pod ním a jako nadpisy v přípravě. */
-.hero { position: relative; padding-block: var(--sp-6) var(--sp-4); }
+.hero { position: relative; padding-block: var(--sp-7) var(--sp-6); }
 
 /* Světlo pod značkou. Dlaždice plují po celé ploše a pod nápisem z nich
    byl závoj; tohle jim tam uklidí a značka stojí na čistém papíře. Na
@@ -642,7 +642,7 @@ main {
 @media (max-width: 720px) {
   /* Na úzké obrazovce by osm dlaždic dělalo nepořádek, půlka stačí. */
   .drift__tile:nth-child(n + 5) { display: none; }
-  .hero { position: relative; padding-block: var(--sp-6) var(--sp-4); }
+  .hero { position: relative; padding-block: var(--sp-7) var(--sp-6); }
 
 /* Světlo pod značkou. Dlaždice plují po celé ploše a pod nápisem z nich
    byl závoj; tohle jim tam uklidí a značka stojí na čistém papíře. Na

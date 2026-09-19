@@ -173,9 +173,9 @@ otázek vedle jedné otevřené otázky. Na telefonu se seznam změní na výbě
 otázky. Herní pravidla a barvy odpovědí zůstávají stejné.
 
 Na rozcestníku nese světlo nápis **Mučírna**: modrá dlaždice s bílým „M"
-a slovo z inkoustu. Stojí sám, bez sloganu, a pod ním jsou obě hry vidět
-bez rolování. Náhledy her uvnitř karet zůstávají tmavé, protože ukazují
-plátno.
+a slovo z inkoustu. Stojí sám, bez sloganu, a má přednost před ohybem:
+zpod něj vykukují karty obou her. Náhledy her uvnitř karet zůstávají
+tmavé, protože ukazují plátno.
 
 **Zlatá v systému není**, UNIQA žádnou nemá. Hodnoty na dlaždicích jsou
 bílé, akcent je modrý a jediná teplá barva patří poli **Riziko!**
