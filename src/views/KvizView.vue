@@ -318,19 +318,21 @@ onBeforeUnmount(() => {
   gap: var(--sp-3);
   flex-wrap: wrap;
   padding: var(--sp-2) var(--sp-4);
+  border-bottom: var(--border-w-strong) solid var(--c-border);
   background: var(--c-bad-deep);
-  color: var(--c-text);
+  color: var(--c-on-accent);
   font-size: var(--fs-sm);
-  font-weight: 600;
+  font-weight: 700;
   text-align: center;
 }
 .warn button {
-  border: var(--border-w) solid var(--c-text);
+  border: var(--border-w-strong) solid var(--c-border);
   border-radius: var(--r-md);
   padding: var(--sp-1) var(--sp-3);
-  background: transparent;
-  color: var(--c-text);
-  font-weight: 700;
+  background: var(--c-surface);
+  box-shadow: var(--shadow-sm);
+  color: var(--c-text-ink);
+  font-weight: 900;
 }
 
 

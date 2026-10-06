@@ -79,10 +79,10 @@ const revealed = computed(() => props.votes !== null)
   min-width: 0;
   min-height: calc(var(--sp-9) * var(--fit, 1));
   padding: calc(var(--sp-4) * var(--fit, 1)) calc(var(--sp-5) * var(--fit, 1));
-  border: var(--separator-w) solid color-mix(in oklab, var(--c-text-ink) 30%, var(--tint));
+  border: var(--border-w-heavy) solid var(--c-border);
   border-radius: var(--r-lg);
   background: var(--tint);
-  box-shadow: var(--shadow-md), inset 0 var(--separator-w) 0 color-mix(in oklab, var(--c-value) 42%, transparent);
+  box-shadow: var(--shadow-md);
   color: var(--c-text-ink);
   overflow: hidden;
   transition:
@@ -101,14 +101,14 @@ const revealed = computed(() => props.votes !== null)
   place-items: center;
   width: calc(var(--sp-8) * var(--fit, 1));
   aspect-ratio: 1;
-  border-radius: var(--r-lg);
-  background: color-mix(in oklab, var(--c-text-ink) 10%, transparent);
+  border: var(--border-w-strong) solid var(--c-border);
+  border-radius: var(--r-md);
+  background: var(--c-surface);
   font-family: var(--font-display);
   font-weight: 900;
   font-size: calc(var(--fs-2xl) * var(--fit, 1));
   line-height: 1;
   color: var(--c-text-ink);
-  box-shadow: inset 0 0 0 var(--separator-w) color-mix(in oklab, var(--c-text-ink) 28%, transparent);
 }
 
 .chip__text {
@@ -116,7 +116,7 @@ const revealed = computed(() => props.votes !== null)
   /* Slovo se nedělí. Když se do dlaždice nevejde, ubere `v-fit-text`
      na velikosti; rozseknuté slovo se z místnosti čte jako dvě. */
   font-size: calc(var(--fs-answer) * var(--fit, 1) * var(--fit-text, 1));
-  font-weight: 700;
+  font-weight: 900;
   line-height: var(--lh-snug);
   text-wrap: balance;
 }
@@ -149,8 +149,9 @@ const revealed = computed(() => props.votes !== null)
   right: calc(var(--sp-5) * var(--fit, 1));
   bottom: calc(var(--sp-3) * var(--fit, 1));
   height: calc(var(--sp-2) * var(--fit, 1));
+  border: var(--border-w) solid var(--c-border);
   border-radius: var(--r-full);
-  background: color-mix(in oklab, var(--c-text-ink) 18%, transparent);
+  background: var(--c-surface);
   overflow: hidden;
 }
 .chip__bar--hidden { visibility: hidden; }
@@ -158,49 +159,35 @@ const revealed = computed(() => props.votes !== null)
   display: block;
   width: calc(var(--share) * 100%);
   height: 100%;
-  border-radius: var(--r-full);
-  background: var(--c-text-ink);
+  background: var(--c-ink);
   transition: width var(--dur-slow) var(--ease-out);
 }
 
 /* --- Verdikt --------------------------------------------------------------
-   Chybná možnost nezhasíná průhledností, ale ztrácí barvu a propadá pod
-   plochu. Je to schválně tvrdý rozdíl: z poslední řady se svítící deska
-   proti zhaslé pozná okamžitě, kdežto ztlumení jasu vypadalo jen jako
-   slabší barva. Dřív to byla `opacity: 0.55`, se kterou text na dlaždici
-   spadl na 2:1, hluboko pod hranici 4,5:1, kterou si projekt drží.
+   Chybná možnost nezhasíná průhledností, ale ztrácí barvu a stín:
+   zbude z ní čárkovaný obrys na šedomodrém papíře. Z poslední řady se
+   barevná deska se stínem proti ploché šedé pozná okamžitě. Text
+   zůstává tmavý a drží 6,4:1, průhlednost by ho stáhla pod 4,5:1.
 
-   Takhle se plocha i text mění spolu, takže kontrast nespadne: světlý
-   text na propadlé ploše drží kolem 8:1. Odstín možnosti v ní zůstává
-   jen v náznaku, aby se dlaždice dala spárovat s tím, co má hráč na
-   telefonu, ale barvu už nenese, tu si nechává jediná správná.
-
-   Počet hlasů musí zůstat čitelný, to je to, co učí: pruh i číslo se
-   proto překlápějí z inkoustu do světlé, jinak by tmavý pruh na
-   propadlé ploše zmizel. */
+   Posunout se chybná nesmí, ani do stínu: obsah plátna je změřený
+   a po odhalení se nesmí pohnout. Počet hlasů zůstává čitelný, pruh
+   je dál inkoust na bílé. */
 .chip--wrong {
-  border-color: color-mix(in oklab, var(--tint) 20%, transparent);
-  background: color-mix(in oklab, var(--tint) 14%, var(--c-abyss));
-  box-shadow: var(--shadow-inset-well);
+  border-style: dashed;
+  background: var(--c-dead);
+  box-shadow: var(--shadow-none);
   color: var(--c-text-muted);
 }
-.chip--wrong .chip__letter {
-  background: color-mix(in oklab, var(--c-value) 6%, transparent);
-  color: var(--c-text-muted);
-  box-shadow: inset 0 0 0 var(--separator-w) color-mix(in oklab, var(--tint) 32%, transparent);
-}
+.chip--wrong .chip__letter { color: var(--c-text-muted); }
 .chip--wrong .chip__tick {
   background: transparent;
-  color: var(--c-text-faint);
-  box-shadow: inset 0 0 0 var(--separator-w) color-mix(in oklab, var(--c-text-faint) 55%, transparent);
+  color: var(--c-text-muted);
+  box-shadow: inset 0 0 0 var(--border-w) var(--c-text-muted);
 }
-.chip--wrong .chip__bar { background: color-mix(in oklab, var(--c-value) 10%, transparent); }
-.chip--wrong .chip__fill { background: var(--c-text-muted); }
 
-/* Správná drží plnou barvu a navíc silnější rámeček, ne jen odstín. */
+/* Správná drží plnou barvu a navíc velký stín. */
 .chip--right {
-  border-color: var(--c-text-ink);
-  box-shadow: var(--shadow-lg), inset 0 0 0 calc(var(--sp-1) * var(--fit, 1)) color-mix(in oklab, var(--c-text-ink) 22%, transparent);
+  box-shadow: var(--shadow-lg);
 }
 
 @media (prefers-reduced-motion: reduce) {

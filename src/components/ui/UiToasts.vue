@@ -75,21 +75,23 @@ const notices = computed(() => ui.toasts.filter((t) => t.tone !== 'bad'))
   gap: var(--sp-3);
   max-width: min(92vw, 34rem);
   padding: var(--sp-3) var(--sp-5);
-  border: var(--border-w) solid var(--c-border);
+  border: var(--border-w-strong) solid var(--c-border);
   border-radius: var(--r-full);
-  background: var(--c-bg-raised);
+  background: var(--c-bg-card);
   color: var(--c-text);
   font-size: var(--fs-sm);
-  font-weight: 500;
+  font-weight: 700;
   text-align: left;
   box-shadow: var(--shadow-md);
   transition: var(--tr-surface);
 }
-.toast:hover { background: var(--c-bg-active); }
+.toast:hover { background: var(--c-bg-raised); }
 
-.toast--ok { border-color: color-mix(in oklab, var(--c-ok) 50%, transparent); color: var(--c-ok); }
+.toast--ok { background: var(--c-ok-fill); color: var(--c-text-ink); }
+.toast--ok:hover { background: var(--c-ok-fill); }
 .toast--ok .toast__text { color: var(--c-text); }
-.toast--bad { border-color: color-mix(in oklab, var(--c-bad) 55%, transparent); color: var(--c-bad); }
+.toast--bad { background: var(--c-bad-fill); color: var(--c-text-ink); }
+.toast--bad:hover { background: var(--c-bad-fill); }
 .toast--bad .toast__text { color: var(--c-text); font-weight: 600; }
 
 .toast__text { flex: 1 1 auto; line-height: 1.4; }
@@ -97,5 +99,5 @@ const notices = computed(() => ui.toasts.filter((t) => t.tone !== 'bad'))
 .toast:hover .toast__x { opacity: 1; }
 
 .toast-enter-active, .toast-leave-active { transition: var(--tr-enter); }
-.toast-enter-from, .toast-leave-to { opacity: 0; transform: translateY(10px) scale(0.96); }
+.toast-enter-from, .toast-leave-to { opacity: 0; transform: translateY(16px) scale(0.9) rotate(-2deg); }
 </style>

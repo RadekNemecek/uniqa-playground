@@ -454,11 +454,12 @@ function onExport() {
   font-size: var(--fs-sm);
   font-weight: 600;
 }
-.ed__back:hover { color: var(--c-text); background: var(--c-surface-2); }
+.ed__back:hover { color: var(--c-text); background: var(--c-bg-active); }
 .ed__save {
   margin-left: auto;
   font-size: var(--fs-xs);
-  color: var(--c-text-faint);
+  font-weight: 700;
+  color: var(--c-text-muted);
   min-height: 1.25rem;
 }
 .ed__saved { display: inline-flex; align-items: center; gap: var(--sp-1); color: var(--c-ok); }
@@ -477,9 +478,9 @@ function onExport() {
   padding: var(--sp-1) var(--sp-2);
   margin-left: calc(var(--sp-2) * -1);
   font-family: var(--font-display);
-  font-size: var(--fs-2xl);
-  font-weight: 800;
-  letter-spacing: -0.025em;
+  font-size: var(--fs-3xl);
+  font-weight: 900;
+  letter-spacing: -0.035em;
   color: var(--c-text);
 }
 .ed__desc {
@@ -493,8 +494,8 @@ function onExport() {
   text-overflow: ellipsis;
 }
 .ed__desc:focus { text-overflow: clip; }
-.ed__name:hover, .ed__desc:hover { border-color: var(--c-line); }
-.ed__name:focus, .ed__desc:focus { border-color: var(--c-brand); background: var(--c-sunken-focus); }
+.ed__name:hover, .ed__desc:hover { border-color: var(--c-line-soft); }
+.ed__name:focus, .ed__desc:focus { border-color: var(--c-line); background: var(--c-sunken-focus); box-shadow: var(--shadow-sm); }
 
 .ed__progress {
   display: flex;
@@ -505,16 +506,16 @@ function onExport() {
 .ed__bar-track {
   flex: 1;
   min-width: 8rem;
-  height: 6px;
+  height: var(--sp-3);
+  border: var(--border-w) solid var(--c-border);
   border-radius: var(--r-full);
-  background: var(--c-surface-2);
+  background: var(--c-surface);
   overflow: hidden;
 }
 .ed__bar-track span {
   display: block;
   height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, var(--c-brand-deep), var(--c-brand));
+  background: var(--c-brand);
   transition: width var(--dur-slow) var(--ease-out);
 }
 .ed__stats { display: grid; gap: 2px; }
@@ -525,11 +526,11 @@ function onExport() {
 
 .ed__conflict {
   padding: var(--sp-3) var(--sp-4);
-  border: 1px solid color-mix(in oklab, var(--c-brand) 45%, transparent);
+  border: var(--border-w-strong) solid var(--c-border);
   border-radius: var(--r-md);
-  background: color-mix(in oklab, var(--c-brand) 9%, transparent);
+  background: var(--c-brand-wash);
   font-size: var(--fs-sm);
-  color: var(--c-text-muted);
+  color: var(--c-text);
 }
 .ed__conflict button {
   border: 0; background: transparent; color: var(--c-brand);
@@ -545,10 +546,10 @@ function onExport() {
 .ed__overflow {
   margin-bottom: var(--sp-3);
   padding: var(--sp-3) var(--sp-4);
-  border: var(--border-w) solid color-mix(in oklab, var(--c-brand) 40%, transparent);
+  border: var(--border-w-strong) solid var(--c-border);
   border-radius: var(--r-md);
   background: var(--c-brand-wash);
-  color: var(--c-text-muted);
+  color: var(--c-text);
   font-size: var(--fs-sm);
   line-height: 1.4;
 }
@@ -562,10 +563,10 @@ function onExport() {
   max-height: calc(100dvh - 4rem);
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--c-line);
+  border: var(--border-w-heavy) solid var(--c-line);
   border-radius: var(--r-xl);
   background: var(--c-surface);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-lg);
   overflow: hidden;
 }
 .ed__panel > * { min-height: 0; flex: 1; }
@@ -582,7 +583,6 @@ function onExport() {
   position: absolute;
   inset: 0;
   background: var(--c-scrim);
-  backdrop-filter: blur(6px);
 }
 .dialog__panel {
   position: relative;
@@ -590,7 +590,7 @@ function onExport() {
   flex-direction: column;
   width: min(100%, 40rem);
   max-height: min(90dvh, 56rem);
-  border: 1px solid var(--c-line);
+  border: var(--border-w-heavy) solid var(--c-line);
   border-radius: var(--r-xl);
   background: var(--c-surface);
   box-shadow: var(--shadow-lg);

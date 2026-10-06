@@ -53,8 +53,8 @@ export default defineConfig({
         // Na šířku se promítá, ale hráč drží telefon na výšku. Zámek
         // orientace by mu obrazovku otočil na bok.
         orientation: 'any',
-        background_color: '#001A31',
-        theme_color: '#001A31',
+        background_color: '#EEF2FA',
+        theme_color: '#EEF2FA',
         categories: ['education', 'games'],
         icons: [
           { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },

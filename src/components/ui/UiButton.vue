@@ -11,6 +11,8 @@ withDefaults(
     type?: 'button' | 'submit'
     /** Ikona před popiskem. */
     icon?: IconName | ''
+    /** Ikona za popiskem, typicky šipka, kam tlačítko vede. */
+    iconAfter?: IconName | ''
     /**
      * Ukládá se. Tlačítko zůstane široké, jen popisek vystřídá kolečko:
      * kdyby se zúžilo, poskočí celý řádek pod ním.
@@ -24,6 +26,7 @@ withDefaults(
     disabled: false,
     type: 'button',
     icon: '',
+    iconAfter: '',
     loading: false,
   },
 )
@@ -40,15 +43,21 @@ withDefaults(
     <span v-if="loading" class="btn__spinner" aria-hidden="true"></span>
     <UiIcon v-else-if="icon" :name="icon" :size="size === 'sm' ? 'sm' : 'md'" />
     <span class="btn__label"><slot /></span>
+    <UiIcon v-if="iconAfter && !loading" :name="iconAfter" :size="size === 'sm' ? 'sm' : 'md'" />
   </button>
 </template>
 
 <style scoped>
+/* Tlačítko je kus papíru s inkoustovou hranou a tvrdým stínem. Při
+   najetí se pootočí do stínu, při stisku se do něj zamáčkne celé. Tenhle
+   pohyb je celá hravost rozhraní, nic dalšího se na tlačítko nekreslí. */
 .btn {
-  --btn-bg: var(--c-bg-raised);
+  --btn-bg: var(--c-bg-card);
   --btn-fg: var(--c-text);
   --btn-line: var(--c-border);
-  --btn-bg-hover: var(--c-bg-active);
+  --btn-bg-hover: var(--c-bg-raised);
+  --btn-shadow: var(--shadow-sm);
+  --btn-press: var(--shadow-x-sm);
 
   position: relative;
   display: inline-flex;
@@ -56,29 +65,32 @@ withDefaults(
   justify-content: center;
   gap: var(--sp-2);
   padding: var(--sp-3) var(--sp-5);
-  border: var(--border-w) solid var(--btn-line);
+  border: var(--border-w-strong) solid var(--btn-line);
   border-radius: var(--r-md);
   background: var(--btn-bg);
   color: var(--btn-fg);
+  box-shadow: var(--btn-shadow);
   font-family: var(--font-ui);
   font-size: var(--fs-md);
-  font-weight: 600;
+  font-weight: 900;
   line-height: 1.2;
-  letter-spacing: 0.01em;
   text-align: center;
   transition:
-    background var(--dur-fast) var(--ease-out),
-    border-color var(--dur-fast) var(--ease-out),
-    transform var(--dur-instant) var(--ease-out),
-    box-shadow var(--dur-fast) var(--ease-out);
+    background-color var(--dur-fast) var(--ease-out),
+    translate var(--dur-instant) var(--ease-out),
+    box-shadow var(--dur-instant) var(--ease-out);
 }
 
-/* Hover mění plochu, ne filtr přes celé tlačítko. `brightness()` rozjasní
-   i stín pod gradientovými variantami, takže tlačítko na chvíli ztratí
-   hmotu. */
-.btn:hover:not(:disabled) { background: var(--btn-bg-hover); border-color: var(--c-bg-active); }
-.btn:active:not(:disabled) { transform: translateY(1px) scale(0.995); }
-.btn:disabled { opacity: 0.42; }
+.btn:hover:not(:disabled) {
+  background: var(--btn-bg-hover);
+  translate: calc(var(--btn-press) / 2) calc(var(--btn-press) / 2);
+  box-shadow: calc(var(--btn-press) / 2) calc(var(--btn-press) / 2) 0 var(--c-ink);
+}
+.btn:active:not(:disabled) {
+  translate: var(--btn-press) var(--btn-press);
+  box-shadow: var(--shadow-none);
+}
+.btn:disabled { opacity: 0.45; box-shadow: var(--shadow-none); }
 /* Během ukládání nemá kurzor slibovat, že se dá kliknout. */
 .btn--loading { cursor: progress; opacity: 1; }
 
@@ -86,56 +98,54 @@ withDefaults(
   --btn-bg: var(--button-brand-bg);
   --btn-bg-hover: var(--button-brand-hover);
   --btn-fg: var(--c-on-accent);
-  --btn-line: transparent;
-  box-shadow: var(--button-brand-shadow);
 }
 
 .btn--spark {
-  --btn-bg: linear-gradient(180deg, var(--c-spark) 0%, var(--c-spark-mid) 100%);
-  --btn-bg-hover: linear-gradient(180deg, var(--c-spark) 0%, var(--c-spark) 100%);
+  --btn-bg: var(--c-spark);
+  --btn-bg-hover: var(--c-spark-mid);
   --btn-fg: var(--c-text-ink);
-  --btn-line: transparent;
-  box-shadow: 0 6px 22px -8px var(--c-spark-glow);
 }
 
 .btn--ok {
-  --btn-bg: linear-gradient(180deg, var(--c-ok) 0%, var(--c-ok-deep) 100%);
-  --btn-bg-hover: linear-gradient(180deg, var(--c-ok) 0%, var(--c-ok) 100%);
-  --btn-fg: var(--c-on-accent);
-  --btn-line: transparent;
+  --btn-bg: var(--c-ok-fill);
+  --btn-bg-hover: var(--c-ok-fill);
+  --btn-fg: var(--c-text-ink);
 }
 
 /* Destruktivní akce má mít stejnou váhu jako potvrzovací. Prázdný obrys
    vedle vyplněného „Uložit" čte oko jako slabší volbu, i když je to ta,
-   po které se nic nevrátí.
-
-   Plocha je plná, ne přechod: tmavý text na --c-bad drží 8,1:1, ale na
-   --c-bad-deep spadne na 3,0:1, takže spodek přechodu by text pohltil. */
+   po které se nic nevrátí. Bílý text na --c-bad-deep drží 8,9:1. */
 .btn--danger {
-  --btn-bg: var(--c-bad);
-  --btn-bg-hover: color-mix(in oklab, var(--c-bad) 85%, var(--c-bad-deep));  /* 7,0:1 */
+  --btn-bg: var(--c-bad-deep);
+  --btn-bg-hover: var(--c-bad);
   --btn-fg: var(--button-danger-text);
-  --btn-line: transparent;
 }
 
-.btn--ghost { --btn-bg: transparent; --btn-bg-hover: var(--c-bg-card); --btn-line: var(--c-border); }
+.btn--ghost { --btn-bg: transparent; --btn-bg-hover: var(--c-bg-card); }
+/* Tiché tlačítko nemá obrys ani stín: patří do řádku vedle jiných
+   prvků, kde by orámovaná tlačítka dělala plot. */
 .btn--quiet {
   --btn-bg: transparent;
-  --btn-bg-hover: color-mix(in oklab, var(--c-bg-raised) 70%, transparent);
+  --btn-bg-hover: var(--c-bg-active);
   --btn-line: transparent;
   --btn-fg: var(--c-text-muted);
+  --btn-shadow: var(--shadow-none);
   padding-inline: var(--sp-3);
 }
-.btn--quiet:hover:not(:disabled) { --btn-fg: var(--c-text); border-color: transparent; }
+.btn--quiet:hover:not(:disabled),
+.btn--quiet:active:not(:disabled) { --btn-fg: var(--c-text); translate: none; box-shadow: var(--shadow-none); }
 
 .btn--sm { padding: var(--sp-2) var(--sp-3); font-size: var(--fs-sm); }
-.btn--lg { padding: var(--sp-4) var(--sp-6); font-size: var(--fs-lg); border-radius: var(--r-lg); }
+.btn--lg { padding: var(--sp-4) var(--sp-6); font-size: var(--fs-lg); border-radius: var(--r-lg); --btn-shadow: var(--shadow-md); --btn-press: var(--shadow-x-md); }
 .btn--xl {
   padding: var(--sp-5) var(--sp-7);
   font-family: var(--font-display);
   font-size: var(--fs-xl);
-  font-weight: 700;
+  font-weight: 900;
   border-radius: var(--r-lg);
+  border-width: var(--border-w-heavy);
+  --btn-shadow: var(--shadow-md);
+  --btn-press: var(--shadow-x-md);
 }
 
 .btn--block { width: 100%; }

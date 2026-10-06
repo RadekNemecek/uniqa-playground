@@ -61,139 +61,93 @@ function open(e: MouseEvent) {
 </template>
 
 <style scoped>
+/* Dlaždice desky: plná modrá UNIQA, inkoustová hrana a tvrdý stín.
+   Hmotu jí dává stín, ne přechod ani lesk. Odehrané políčko se do
+   stínu zamáčkne a vezme si barvu týmu, takže je z dálky vidět, co je
+   pryč a komu to patří. */
 .cell {
   --i: 0;
   position: relative;
   display: grid;
   place-items: center;
   height: 100%;
-  min-height: 2.75rem;
+  min-height: var(--control-lg);
   padding: var(--sp-2);
-  border: 0;
+  border: var(--border-w-heavy) solid var(--c-tile-edge);
   border-radius: var(--r-tile);
-  background: linear-gradient(178deg, var(--c-tile-top) 0%, var(--c-tile-bottom) 100%);
+  background: var(--c-tile-top);
   color: var(--c-value);
   overflow: hidden;
-  box-shadow:
-    inset 0 1.5px 0 var(--c-tile-sheen),
-    inset 0 -2px 0 var(--shade-strong),
-    inset 0 0 0 var(--border-w) var(--sheen-faint),
-    0 4px 0 var(--c-tile-edge),
-    0 10px 18px -8px rgba(0, 0, 0, 0.7);
+  box-shadow: var(--shadow-md);
   transition:
-    transform var(--dur-fast) var(--ease-out),
-    box-shadow var(--dur-fast) var(--ease-out),
-    filter var(--dur-fast) var(--ease-out),
-    color var(--dur-fast) var(--ease-out);
-  animation: dealIn var(--dur-slow) var(--ease-out) calc(var(--i) * 22ms) both;
-}
-
-.cell::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(115deg, transparent 35%, rgba(255, 255, 255, 0.14) 50%, transparent 65%);
-  translate: -120% 0;
-  transition: translate var(--dur-slow) var(--ease-out);
+    translate var(--dur-press) var(--ease-out),
+    box-shadow var(--dur-press) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out);
+  animation: dealIn var(--dur-slow) var(--ease-back) calc(var(--i) * 22ms) both;
 }
 
 /* Pole Riziko! tady vlastní styl nemá. Na desce vypadá jako každé jiné
    a --c-spark se objeví až v dialogu se sázkou a nad otázkou. */
 
 /* Výběr myší: jediný kurzor na desce, musí jít přečíst z projektoru.
-   Overflow zůstává hidden, ať záře nepřeteče na sousední políčko.
-   Vnější rámeček nese outline, ten se neořezává. */
+   Dlaždice se zvedne ze stránky a ztmavne, prstenec nese obrys. */
 .cell--open:hover,
 .cell--open:focus-visible {
   outline: var(--focus-ring-w) solid var(--focus-ring-c);
   outline-offset: var(--focus-ring-offset);
   z-index: 1;
-  transform: translateY(-5px) scale(1.06);
-  filter: brightness(1.18);
-  color: var(--c-brand-soft);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.28),
-    inset 0 0 0 2px color-mix(in oklab, var(--c-brand) 70%, white),
-    0 10px 0 var(--c-tile-edge),
-    0 22px 40px -8px var(--c-brand-glow);
-}
-.cell--open:hover .cell__value,
-.cell--open:focus-visible .cell__value {
-  color: var(--c-brand-soft);
-  text-shadow:
-    0 0 22px var(--c-brand-glow),
-    0 0 8px color-mix(in oklab, var(--c-brand) 70%, transparent),
-    0 2px 0 rgba(0, 0, 0, 0.5);
+  translate: calc(var(--shadow-x-sm) * -1) calc(var(--shadow-x-sm) * -1);
+  background: var(--c-brand-deep);
+  box-shadow: var(--shadow-x-md) var(--shadow-x-md) 0 var(--c-ink), var(--shadow-x-lg) var(--shadow-x-lg) 0 var(--c-ink);
 }
 
 .cell--open:active {
-  transform: translateY(3px) scale(1);
-  box-shadow:
-    inset 0 2px 6px rgba(0, 0, 0, 0.5),
-    0 0 0 var(--c-tile-edge);
+  translate: var(--shadow-x-md) var(--shadow-x-md);
+  box-shadow: var(--shadow-none);
 }
 
 .cell__value {
   font-family: var(--font-display);
   font-size: var(--fs-value);
-  font-weight: 800;
-  letter-spacing: -0.01em;
+  font-weight: 900;
+  letter-spacing: -0.02em;
   line-height: 1;
-  text-shadow:
-    0 -1px 0 rgba(255, 255, 255, 0.18),
-    0 2px 0 rgba(0, 0, 0, 0.45),
-    0 4px 22px var(--c-value-glow);
-  transition:
-    color var(--dur-fast) var(--ease-out),
-    text-shadow var(--dur-fast) var(--ease-out);
 }
 
 .cell--won,
 .cell--lost {
   cursor: default;
+  translate: var(--shadow-x-md) var(--shadow-x-md);
+  box-shadow: var(--shadow-none);
   animation: settle var(--dur-slow) var(--ease-out) both;
-  /* Odehrané ustoupí: méně hrany, méně zdvihu, ať živá dlaždice drží pozornost. */
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 1px 0 color-mix(in oklab, var(--c-tile-edge) 55%, transparent);
-  transform: scale(0.97);
 }
 
-/* Odehrané políčko ustupuje do desky, ale ne krytím celého prvku.
-   `opacity` by zředila i písmeno týmu pod 4,5:1. Ztlumení nese
-   pozadí (víc --c-base) a text je světlý, protože na tmavším mixu
-   --c-text-ink neprojde. --c-text na mixu 48 % / 34 % drží nejméně
-   4,7:1 (limeta nahoře); písmeno týmu bere stejnou barvu. */
+/* Odehrané patří týmu: jeho barva, inkoustové písmeno. Barvy týmů drží
+   aspoň 7:1 vůči inkoustu. */
 .cell--won {
-  background: linear-gradient(
-    178deg,
-    color-mix(in oklab, var(--team) 48%, var(--c-base)) 0%,
-    color-mix(in oklab, var(--team) 34%, var(--c-base)) 100%
-  );
-  color: var(--c-text);
+  background: var(--team);
+  color: var(--c-text-ink);
 }
 .cell__won { display: grid; justify-items: center; gap: 2px; }
 .cell__badge {
   font-family: var(--font-display);
   font-size: calc(var(--fs-value) * 0.58);
-  font-weight: 800;
+  font-weight: 900;
   line-height: 1;
 }
 /* Body jsou jen stopa, ne údaj k rozhodnutí. */
 .cell__points {
   font-size: var(--fs-xs);
-  font-weight: 700;
-  color: var(--c-text-muted);
+  font-weight: 900;
+  color: var(--c-text-ink);
 }
 
-/* Neuhodnuté zhasne ještě hlouběji. Razítko je červené (--c-bad na
-   --c-dead: 9,2:1), chladnější než jiskra u Rizika, ať se nepletou. */
+/* Neuhodnuté zůstane prázdné a čárkované. Razítko je tmavě červené
+   (--c-bad-deep na --c-dead), chladnější než jiskra u Rizika. */
 .cell--lost {
+  border-style: dashed;
   background: var(--c-dead);
-  color: var(--c-bad);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.03),
-    0 1px 0 color-mix(in oklab, var(--c-tile-edge) 55%, transparent);
+  color: var(--c-bad-deep);
 }
 .cell__lost {
   display: grid;
@@ -204,7 +158,7 @@ function open(e: MouseEvent) {
 .cell__lostWord {
   font-family: var(--font-display);
   font-size: calc(var(--fs-value) * 0.3);
-  font-weight: 800;
+  font-weight: 900;
   letter-spacing: 0.01em;
   line-height: 1.05;
   text-align: center;
@@ -212,21 +166,15 @@ function open(e: MouseEvent) {
 }
 
 @keyframes dealIn {
-  from { opacity: 0; transform: translateY(18px) scale(0.94); }
+  from { opacity: 0; transform: translateY(-1.5rem) scale(0.7) rotate(-6deg); }
   to { opacity: 1; transform: none; }
 }
 @keyframes settle {
-  0% { transform: scale(1.06); }
-  60% { transform: scale(0.95); }
-  100% { transform: scale(0.97); }
-}
-.cell--won::after { animation: sweep var(--dur-slow) var(--ease-out) var(--dur-fast) both; }
-@keyframes sweep {
-  from { translate: -120% 0; }
-  to { translate: 120% 0; }
+  0% { transform: scale(1.08) rotate(-3deg); }
+  60% { transform: scale(0.95) rotate(1deg); }
+  100% { transform: none; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .cell { animation: none; }
-  .cell::after { display: none; }
+  .cell, .cell--won, .cell--lost { animation: none; }
 }
 </style>

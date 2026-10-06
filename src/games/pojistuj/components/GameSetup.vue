@@ -546,15 +546,24 @@ function start() {
    chystají stejně, takže se to nemá lišit. */
 .setup { max-width: var(--content-reading); padding-block: var(--sp-6) var(--sp-8); }
 .setup__head { margin-bottom: var(--sp-6); }
-.setup__title { font-size: var(--fs-work-title); margin-top: var(--sp-2); }
-.lead { color: var(--c-text-muted); margin-top: var(--sp-3); font-size: var(--fs-sm); }
+.setup__title { font-size: var(--fs-work-title); letter-spacing: -0.045em; margin-top: var(--sp-2); }
+.lead { color: var(--c-text-muted); margin-top: var(--sp-3); font-size: var(--fs-md); }
 
 .setup__grid { display: grid; grid-template-columns: minmax(0, 1fr) var(--content-sidebar); gap: var(--sp-7); align-items: start; }
 .setup__form { display: grid; gap: var(--sp-6); min-width: 0; }
 .section { display: grid; gap: var(--sp-4); }
 .section__head { display: flex; flex-wrap: wrap; gap: var(--sp-3); justify-content: space-between; align-items: center; }
 .section__head h2 { display: flex; align-items: baseline; gap: var(--sp-3); font-size: var(--fs-xl); }
-.section__num { font-size: var(--fs-sm); color: var(--c-brand); font-variant-numeric: tabular-nums; }
+.section__num {
+  align-self: center;
+  padding: var(--sp-1) var(--sp-2);
+  border-radius: var(--r-sm);
+  background: var(--c-ink);
+  color: var(--c-on-ink);
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+  rotate: -4deg;
+}
 .edit-link { display: inline-flex; align-items: center; min-height: var(--control-touch); font-size: var(--fs-sm); font-weight: 700; }
 .hint { font-size: var(--fs-sm); line-height: var(--lh-body); color: var(--c-text-faint); }
 .sub { font-size: var(--fs-md); margin-top: var(--sp-2); }
@@ -562,29 +571,49 @@ function start() {
 
 /* Balíček je jeden, ne několik, takže přepínač místo zaškrtávátka.
    Řádek je jinak týž jako v přípravě kvízu. */
-.packs { list-style: none; padding: 0; border-top: var(--border-w) solid var(--c-border-soft); }
-.packs li { border-bottom: var(--border-w) solid var(--c-border-soft); }
-.pick { display: flex; align-items: center; gap: var(--sp-3); cursor: pointer; min-height: var(--control-touch); padding: var(--sp-4) var(--sp-2); }
-.pick:hover { background: var(--c-bg-active); }
+.packs {
+  list-style: none;
+  padding: 0;
+  border: var(--border-w-strong) solid var(--c-border);
+  border-radius: var(--r-lg);
+  background: var(--c-surface);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.packs li + li { border-top: var(--border-w) solid var(--c-border-soft); }
+.pick { display: flex; align-items: center; gap: var(--sp-3); cursor: pointer; min-height: var(--control-touch); padding: var(--sp-4); }
+.pick:hover { background: var(--c-brand-wash); }
 .pick input { flex: none; width: var(--control-check); height: var(--control-check); margin: 0; accent-color: var(--c-brand); }
 .pick__row { flex: 1; min-width: 0; display: flex; justify-content: space-between; gap: var(--sp-4); align-items: center; }
 .pick__text { display: grid; gap: var(--sp-1); overflow-wrap: anywhere; }
 .pick__count { font-weight: 900; color: var(--c-brand); font-variant-numeric: tabular-nums; }
 
 .chips { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+/* Vybraná kategorie je modrá a vystoupí ze stránky stínem, nevybraná
+   je čárkovaná a leží na papíře. Dřív byly obě vyplněné a nedalo se
+   poznat, které jsou zapnuté. */
 .chip {
   padding: var(--sp-2) var(--sp-4);
-  border: var(--border-w) solid var(--c-border);
-  border-radius: var(--r-sm);
-  background: transparent;
+  border: var(--border-w-strong) dashed var(--c-border);
+  border-radius: var(--r-md);
+  background: var(--c-surface);
   color: var(--c-text-muted);
   font-size: var(--fs-sm);
-  font-weight: 700;
-  transition: var(--tr-surface);
+  font-weight: 900;
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    translate var(--dur-press) var(--ease-out),
+    box-shadow var(--dur-press) var(--ease-out);
 }
-.chip:hover:not(:disabled) { color: var(--c-text); background: var(--c-bg-raised); }
+.chip:hover:not(:disabled) { color: var(--c-text); background: var(--c-brand-wash); }
 .chip:disabled { opacity: 0.35; cursor: not-allowed; }
-.chip--on { color: var(--c-on-accent); background: var(--c-brand); border-color: var(--c-brand); }
+.chip--on,
+.chip--on:hover:not(:disabled) {
+  border-style: solid;
+  color: var(--c-on-accent);
+  background: var(--c-brand);
+  box-shadow: var(--shadow-sm);
+}
 
 .teams { list-style: none; padding: 0; display: grid; gap: var(--sp-2); }
 /* Sekce je mřížka, takže by se tlačítko roztáhlo přes celou šířku. */
@@ -595,12 +624,13 @@ function start() {
   flex: none;
   width: var(--control-md);
   height: var(--control-md);
-  border: 0;
+  border: var(--border-w-strong) solid var(--c-border);
   border-radius: var(--r-md);
+  box-shadow: var(--shadow-sm);
   color: var(--c-text-ink);
   font-family: var(--font-display);
   font-weight: 900;
-  font-size: var(--fs-sm);
+  font-size: var(--fs-md);
   transition: transform var(--dur-fast) var(--ease-back);
 }
 .team__dot:hover { transform: scale(1.08); }
@@ -608,13 +638,14 @@ function start() {
   flex: 1;
   min-width: 0;
   padding: var(--sp-2) var(--sp-3);
-  border: var(--border-w) solid var(--c-border);
+  border: var(--border-w-strong) solid var(--c-border);
   border-radius: var(--r-md);
   background: var(--c-bg-field);
   color: var(--c-text);
   font-size: var(--fs-md);
+  font-weight: 700;
 }
-.team__name:focus { border-color: var(--c-brand); }
+.team__name:focus { box-shadow: var(--shadow-sm); }
 
 .swatches {
   position: absolute;
@@ -625,7 +656,7 @@ function start() {
   grid-template-columns: repeat(3, auto);
   gap: var(--sp-2);
   padding: var(--sp-3);
-  border: var(--border-w) solid var(--c-border);
+  border: var(--border-w-strong) solid var(--c-border);
   border-radius: var(--r-md);
   background: var(--c-surface);
   box-shadow: var(--shadow-md);
@@ -633,29 +664,31 @@ function start() {
 .swatch {
   width: var(--control-sm);
   height: var(--control-sm);
-  border: var(--border-w-strong) solid transparent;
+  border: var(--border-w-strong) solid var(--c-border);
   border-radius: var(--r-full);
-  transition: transform var(--dur-fast) var(--ease-back), border-color var(--dur-fast) var(--ease-out);
+  transition: transform var(--dur-fast) var(--ease-back), box-shadow var(--dur-fast) var(--ease-out);
 }
 .swatch:hover:not(:disabled) { transform: scale(1.14); }
-.swatch--on { border-color: var(--c-text); }
+.swatch--on { box-shadow: 0 0 0 var(--border-w-strong) var(--c-surface), 0 0 0 calc(var(--border-w-strong) * 2) var(--c-ink); }
 .swatch:disabled { opacity: 0.28; cursor: not-allowed; }
 
 .rules { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--sp-4); align-items: start; }
 .rule { display: grid; gap: var(--sp-2); }
-.rule__label { font-size: var(--fs-sm); font-weight: 700; color: var(--c-text-muted); }
+.rule__label { font-size: var(--fs-sm); font-weight: 900; color: var(--c-text); }
 
 .summary {
   position: sticky; top: var(--sp-5); padding: var(--sp-5);
-  border: var(--border-w) solid var(--c-border-soft); border-radius: var(--r-lg);
+  border: var(--border-w-heavy) solid var(--c-border); border-radius: var(--r-xl);
   background: var(--c-surface);
+  box-shadow: var(--shadow-lg);
 }
-.summary .eyebrow, .summary__next { color: var(--c-brand); }
+.summary .eyebrow { color: var(--c-text); }
+.summary__next { color: var(--c-text-muted); }
 .summary h2 { margin-top: var(--sp-2); font-size: var(--fs-xl); }
 .summary__total { display: grid; margin-block: var(--sp-5) var(--sp-4); }
 .summary__total strong { font-size: var(--fs-work-number); font-weight: 900; line-height: var(--lh-tight); font-variant-numeric: tabular-nums; }
 .summary__total span { font-size: var(--fs-sm); margin-top: var(--sp-2); color: var(--c-text-muted); }
-.summary__preview { padding: var(--sp-3); border-radius: var(--r-md); background: var(--c-bg-field); }
+.summary__preview { padding: var(--sp-3); border: var(--border-w-strong) solid var(--c-border); border-radius: var(--r-md); background: var(--c-base); }
 .summary__empty { font-size: var(--fs-xs); color: var(--c-text-faint); line-height: var(--lh-snug); }
 .summary dl { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--sp-3); margin-block: var(--sp-5); font-size: var(--fs-sm); color: var(--c-text-muted); }
 .summary dd { margin: 0; font-weight: 700; text-align: right; color: var(--c-text); }
@@ -666,6 +699,7 @@ function start() {
   place-items: center;
   width: var(--control-xs);
   height: var(--control-xs);
+  border: var(--border-w) solid var(--c-border);
   border-radius: var(--r-sm);
   background: var(--team);
   color: var(--c-text-ink);
@@ -685,9 +719,9 @@ function start() {
   display: block;
   aspect-ratio: 1.35 / 1;
   min-height: var(--sp-3);
+  border: var(--border-w) solid var(--c-tile-edge);
   border-radius: var(--r-sm);
-  background: linear-gradient(178deg, var(--c-tile-top), var(--c-tile-bottom));
-  box-shadow: var(--shadow-inset-top);
+  background: var(--c-tile-top);
 }
 
 @media (max-width: 960px) {

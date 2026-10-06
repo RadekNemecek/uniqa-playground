@@ -108,21 +108,27 @@ onBeforeUnmount(() => {
 
 .bar__title {
   font-family: var(--font-display);
-  font-weight: 800;
-  font-size: var(--fs-md);
+  font-weight: 900;
+  font-size: var(--fs-lg);
   letter-spacing: -0.02em;
-  color: var(--c-text-muted);
+  color: var(--c-text);
 }
 
 .bar__hint {
   justify-self: center;
   min-height: 1em;
+  padding: var(--sp-1) var(--sp-4);
+  border: var(--border-w-strong) solid var(--c-border);
+  border-radius: var(--r-full);
+  background: var(--c-surface);
   color: var(--c-text);
   font-size: var(--fs-md);
-  font-weight: 600;
+  font-weight: 700;
   text-align: center;
   text-wrap: balance;
 }
+
+.bar__hint:empty { border-color: transparent; background: transparent; }
 
 .bar__tools { display: flex; justify-self: end; align-items: center; gap: var(--sp-2); }
 

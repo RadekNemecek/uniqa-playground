@@ -161,6 +161,7 @@ function rate(run: PojistujRun): number {
   place-items: center;
   width: var(--control-xs);
   height: var(--control-xs);
+  border: var(--border-w) solid var(--c-border);
   border-radius: var(--r-sm);
   background: var(--team);
   color: var(--c-text-ink);
@@ -180,8 +181,8 @@ function rate(run: PojistujRun): number {
   font-size: var(--fs-xs);
 }
 .cat__name { font-size: calc(1em * var(--fit-text, 1)); color: var(--c-text-muted); }
-.cat__bar { height: var(--sp-2); border-radius: var(--r-full); background: var(--c-bg-field); overflow: hidden; }
-.cat__fill { display: block; height: 100%; background: var(--c-ok); border-radius: var(--r-full); }
+.cat__bar { height: var(--sp-3); border: var(--border-w) solid var(--c-border); border-radius: var(--r-full); background: var(--c-bg-field); overflow: hidden; }
+.cat__fill { display: block; height: 100%; background: var(--c-ok-fill); }
 .cat__n { color: var(--c-text-faint); font-variant-numeric: tabular-nums; }
 
 @media (max-width: 720px) {

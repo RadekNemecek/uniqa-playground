@@ -15,17 +15,15 @@ import { mkdir, readFile } from 'node:fs/promises'
 import opentype from 'opentype.js'
 import sharp from 'sharp'
 
-// Musí odpovídat tmavé vrstvě v src/styles/tokens.css.
-const BASE = '#001A31' // --c-base
-const LIT = '#7DBBF0' // --c-brand
-const GLOW = '#002846' // --c-surface
+// Musí odpovídat papíru v src/styles/tokens.css.
+const BASE = '#EEF2FA' // --c-base
+const INK = '#1B1B1B' // --c-ink
+const MUTED = '#454B59' // --c-text-muted
 
-// Dlaždice značky. Tytéž hodnoty jako gradient `mark-tile` v HeroMark.
-const TILE_TOP = '#5AAAF5' // --c-light
-const TILE_BOTTOM = '#4E9BDD' // --c-brand-deep
-const TILE_EDGE = '#01182E' // --c-tile-edge
-const TILE_SHEEN = 'rgba(255, 255, 255, 0.16)' // --c-tile-sheen
-const LETTER = '#FFFFFF' // --c-value
+// Dlaždice značky. Tytéž hodnoty jako v HeroMark: plná modrá UNIQA,
+// inkoustová hrana a tvrdý posunutý stín.
+const TILE_FACE = '#005CA9' // --mark-tile-top
+const LETTER = '#FFFFFF' // --mark-letter
 
 /** Naklonění dlaždice ve stupních. Stejné jako v nápisu. */
 const TILT = 7
@@ -115,25 +113,19 @@ function textPath(font, text, x, y, size, tracking = 0) {
     .join('')
 }
 
-/** Dlaždice s „M". Hrana zespodu a lesk nahoře jsou tytéž jako na
- *  dlaždicích herní desky, bez nich by to byl jen barevný čtvereček. */
+/** Dlaždice s „M". Inkoustová hrana a tvrdý stín posunutý doprava
+ *  dolů, tytéž jako na dlaždicích herní desky a v hlavičce. */
 function markSvg(letter) {
   const x = CENTER - TILE / 2
   const y = CENTER - TILE / 2
   const r = TILE * 0.2
-  const drop = TILE * 0.05
+  const drop = TILE * 0.09
+  const stroke = TILE * 0.07
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${CANVAS}" height="${CANVAS}" viewBox="0 0 ${CANVAS} ${CANVAS}">
-  <defs>
-    <linearGradient id="tile" x1="0" y1="0" x2="0.35" y2="1">
-      <stop offset="0%" stop-color="${TILE_TOP}"/>
-      <stop offset="100%" stop-color="${TILE_BOTTOM}"/>
-    </linearGradient>
-  </defs>
   <g transform="rotate(${-TILT} ${CENTER} ${CENTER})">
-    <rect x="${x}" y="${y + drop}" width="${TILE}" height="${TILE}" rx="${r}" fill="${TILE_EDGE}"/>
-    <rect x="${x}" y="${y}" width="${TILE}" height="${TILE}" rx="${r}" fill="url(#tile)"/>
-    <rect x="${x + TILE * 0.09}" y="${y + drop}" width="${TILE * 0.82}" height="${TILE * 0.035}" rx="${TILE * 0.02}" fill="${TILE_SHEEN}"/>
+    <rect x="${x + drop}" y="${y + drop}" width="${TILE}" height="${TILE}" rx="${r}" fill="${INK}"/>
+    <rect x="${x}" y="${y}" width="${TILE}" height="${TILE}" rx="${r}" fill="${TILE_FACE}" stroke="${INK}" stroke-width="${stroke}"/>
     <path d="${letter}" fill="${LETTER}"/>
   </g>
 </svg>`
@@ -181,20 +173,8 @@ function cardSvg() {
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
   <rect width="${width}" height="${height}" fill="${BASE}"/>
-  <defs>
-    <radialGradient id="g1" cx="16%" cy="0%" r="70%">
-      <stop offset="0%" stop-color="${LIT}" stop-opacity="0.20"/>
-      <stop offset="100%" stop-color="${BASE}" stop-opacity="0"/>
-    </radialGradient>
-    <radialGradient id="g2" cx="92%" cy="104%" r="60%">
-      <stop offset="0%" stop-color="${GLOW}"/>
-      <stop offset="100%" stop-color="${BASE}" stop-opacity="0"/>
-    </radialGradient>
-  </defs>
-  <rect width="${width}" height="${height}" fill="url(#g1)"/>
-  <rect width="${width}" height="${height}" fill="url(#g2)"/>
-  <path d="${textPath(black, 'Mučírna', 388, 297, 118, -3)}" fill="#F2F7FD"/>
-  <path d="${textPath(regular, 'Školicí hry pro týmy', 392, 371, 40)}" fill="#A9C6E2"/>
+  <path d="${textPath(black, 'Mučírna', 388, 297, 118, -3)}" fill="${INK}"/>
+  <path d="${textPath(regular, 'Školicí hry pro týmy', 392, 371, 40)}" fill="${MUTED}"/>
 </svg>`
 }
 

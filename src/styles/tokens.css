@@ -9,18 +9,18 @@
    živých stylů na uniqa.cz: modrá #005CA9, inkoust #1B1B1B, studené
    plochy #EEF2FA a #D5DEEE, zelená #026E46, červená #D71C4F.
 
-   Aplikace má jedno téma, tmavě modré. Rampa ploch je čistý odstín
-   #005CA9 ztlumený do hloubky, takže deska i rozhraní nesou barvu
-   značky. Platí i pro přípravu a správu otázek: hraje se na projektoru
-   a příprava má vypadat jako součást hry, ne jako cizí nástroj.
-   Světlý pracovní sešit tu chvíli byl a neosvědčil se.
+   Vzhled je hravý neobrutalismus: světlý papír UNIQA, inkoustové obrysy
+   a tvrdé posunuté stíny bez rozmazání. Hloubku nedělá světlo, ale
+   stín, do kterého se prvek při stisku zamáčkne. Tmavě modré téma tu
+   bylo dřív a působilo jako studentská práce: všechno mělo jeden
+   odstín, takže oko nemělo co vést.
 
    Všechny dvojice text/plocha jsou spočítané podle WCAG a drží aspoň
    4,5:1. Když měníš odstín, přepočítej ho, neodhaduj.
 --------------------------------------------------------------------------- */
 
 :root {
-  --fs-work-title: clamp(2rem, 1.5rem + 1vw, 2.75rem);
+  --fs-work-title: clamp(2.5rem, 1.5rem + 2.5vw, 4rem);
   --fs-work-number: 3.5rem;
   --control-check: 1.25rem;
   --field-textarea-min: 5.5rem;
@@ -29,32 +29,35 @@
   --content-sidebar: 20rem;
   --content-reading: 72rem;
   /* --- Plocha ------------------------------------------------------------ */
-  /* Rampa je čistý odstín #005CA9 ztlumený do hloubky, tedy rgb(0, x, y).
-     Kroky drží odstup kolem 1,18, aby se vrstvy daly rozeznat, ale
-     nekřičely. */
-  --c-abyss:        #001120;  /* nejhlubší vrstva, pozadí za vším */
-  --c-base:         #001A31;  /* základní plocha aplikace */
-  --c-surface:      #002846;  /* karty, panely */
-  --c-surface-2:    #00355C;  /* vyvýšené plochy, hover */
-  --c-surface-3:    #003F6D;  /* aktivní stav */
-  --c-line:         #00558F;  /* dělítka */
-  --c-line-soft:    #002F52;
+  /* Papír a karty. Plochy se od sebe neliší odstínem, ale obrysem:
+     karta je bílá s inkoustovou hranou, ne o stupeň tmavší modrá. */
+  --c-abyss:        #E3E9F5;  /* nejspodnější vrstva, pás pod pozadím */
+  --c-base:         #EEF2FA;  /* papír, základní plocha aplikace */
+  --c-surface:      #FFFFFF;  /* karty, panely */
+  --c-surface-2:    #F5F7FC;  /* hover */
+  --c-surface-3:    #D5DEEE;  /* aktivní stav */
+  --c-line:         #1B1B1B;  /* obrysy a silná dělítka jsou inkoust */
+  --c-line-soft:    #C5D0E4;  /* jemná dělítka uvnitř karty */
   /* Zapadlá plocha: políčko formuláře, prázdná buňka v editoru, dráha
-     posuvníku. Není to pozadí stránky, proto vlastní token, ne --c-abyss:
-     pole má být zapadlé i tam, kde pod ním žádné pozadí stránky není. */
-  --c-sunken:       #001120;
-  --c-sunken-focus: #001A31;
+     posuvníku. Bílá s inkoustovým obrysem, odlišená od karty hranou. */
+  --c-sunken:       #FFFFFF;
+  --c-sunken-focus: #FFFFFF;
   /* Podklad pod obrázkem k otázce. Obrázek se při nahrání usadí na bílou
-     (viz `games/kviz/image.ts`), takže plocha pod ním musí být stejná.
-     Jinak by průhledné okraje výřezu udělaly na tmavém plátně rám. */
+     (viz `games/kviz/image.ts`), takže plocha pod ním musí být stejná. */
   --c-photo-mat:    #FFFFFF;
+  /* Inkoust jako plocha: QR kód, tmavý štítek, pruh hlasů. Nesmí se
+     brát z rampy ploch, ta je světlá. */
+  --c-ink:          #1B1B1B;
+  /* Tečky v pozadí rozcestníku. */
+  --c-dots:         #C5D0E4;
 
   /* --- Text -------------------------------------------------------------- */
-  --c-text:         #F2F7FD;  /* 16,4:1 na --c-base, 10,1:1 i na --c-surface-3 */
-  --c-text-muted:   #A9C6E2;  /* 10,0:1 na --c-base */
-  --c-text-faint:   #96B8D8;  /* 4,8:1 i na nejsvětlejší ploše --c-surface-3 */
-  --c-text-ink:     #001A31;  /* text na světlé barevné ploše, třeba na týmu */
-  --c-on-accent:    #001A31;  /* text na akcentu, ten je světlý: 8,6:1 */
+  --c-text:         #1B1B1B;  /* 15,4:1 na --c-base, 12,7:1 i na --c-surface-3 */
+  --c-text-muted:   #454B59;  /* 7,8:1 na --c-base */
+  --c-text-faint:   #545B6B;  /* 5,0:1 i na nejtmavší ploše --c-surface-3 */
+  --c-text-ink:     #1B1B1B;  /* text na barevné ploše, třeba na týmu */
+  --c-on-accent:    #FFFFFF;  /* text na modré UNIQA: 6,8:1 */
+  --c-on-ink:       #FFFFFF;  /* text na inkoustu */
 
   /* --- Sémantika nad paletou --------------------------------------------- */
   /* Komponenta sahá na tyhle, ne přímo na rampu. Díky tomu je „změnit
@@ -68,111 +71,103 @@
   --c-bg-field-focus: var(--c-sunken-focus);
 
   /* --- Značka ------------------------------------------------------------ */
-  /* Modrá UNIQA je #005CA9. Na tmavé ploše by ale zmizela v modré, proto
-     akcent zesvětlává. Nese odkazy, focus, primární tlačítko a označení
-     textu. Nahradil zlatou, která tady dřív dělala všechno naráz. */
-  --c-brand:        #7DBBF0;  /* 8,6:1 na --c-base, 5,3:1 na --c-surface-3 */
-  --c-brand-deep:   #4E9BDD;
-  --c-brand-soft:   #A8D3F6;
-  --c-brand-wash:   #00243F;  /* tlumená plocha pod modrou */
-  --c-brand-glow:   rgba(125, 187, 240, 0.28);
-  --button-brand-bg: linear-gradient(180deg, var(--c-brand), var(--c-brand-deep));
-  --button-brand-hover: linear-gradient(180deg, var(--c-brand-soft), var(--c-brand));
-  --button-brand-shadow: 0 6px 20px -8px var(--c-brand-glow);
-  --button-danger-text: var(--c-text-ink);
+  /* Modrá UNIQA je na papíře sama akcentem, nemusí se zesvětlovat.
+     Nese primární tlačítko, odkazy, focus a vybraný stav. */
+  --c-brand:        #005CA9;  /* 6,0:1 na --c-base, bílý text na ní 6,8:1 */
+  --c-brand-deep:   #00498A;  /* 8,1:1 na --c-base */
+  --c-brand-soft:   #7CC0F0;  /* jen plocha, tmavý text na ní 8,7:1 */
+  --c-brand-wash:   #DCEAF8;  /* tlumená plocha pod modrou */
+  --c-brand-glow:   rgba(0, 92, 169, 0.22);
+  --button-brand-bg: var(--c-brand);
+  --button-brand-hover: var(--c-brand-deep);
+  --button-brand-shadow: var(--shadow-sm);
+  --button-danger-text: var(--c-on-accent);
 
   /* --- Stavy ------------------------------------------------------------- */
-  --c-ok:           #3FCF8E;  /* 8,8:1 na --c-base */
-  --c-ok-deep:      #17A06A;
-  --c-bad:          #E89BAD;  /* chladnější než jiskra, aby se nepletly */
-  --c-bad-deep:     #B4325A;
-  --c-dead:         #000A14;  /* políčko Nepojištěno (nikdo neuhodl) */
+  --c-ok:           #026E46;  /* zelená UNIQA, 5,6:1 na --c-base */
+  --c-ok-deep:      #01573A;
+  --c-ok-fill:      #3FCF8E;  /* plocha pod tmavým textem, 8,6:1 */
+  --c-bad:          #B4325A;  /* 5,3:1 na --c-base, chladnější než jiskra */
+  --c-bad-deep:     #8E1F42;  /* bílý text na ní 8,9:1 */
+  --c-bad-fill:     #E89BAD;  /* plocha pod tmavým textem, 8,0:1 */
+  --c-dead:         #D5DEEE;  /* políčko Nepojištěno (nikdo neuhodl) */
 
   /* --- Obrys a rámeček --------------------------------------------------- */
-  /* Zaměření má v celé aplikaci jednu tloušťku. Dřív bylo 3px zapsané
-     natvrdo na čtyřech místech a v jednom editoru 2px, takže prstenec
-     vypadal pokaždé trochu jinak. */
+  /* Obrys je inkoust a je tlustý. Tenká šedá linka je to, co dělalo
+     z tmavého tématu šablonu. */
   --focus-ring-c:      var(--c-brand);
   --focus-ring-w:      3px;
   --focus-ring-offset: 3px;
-  --border-w:          1px;
-  --border-w-strong:   2px;
+  --border-w:          2px;
+  --border-w-strong:   3px;
+  --border-w-heavy:    4px;
 
   /* --- Stíny ------------------------------------------------------------- */
-  --shadow-sm:   0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-md:   0 8px 24px -8px rgba(0, 0, 0, 0.6);
-  --shadow-lg:   0 24px 64px -16px rgba(0, 0, 0, 0.7);
-  --shadow-glow: 0 0 0 var(--border-w) var(--c-brand), 0 0 32px -4px var(--c-brand-glow);
-  --c-scrim:     rgba(0, 8, 16, 0.76);
-  /* Vnitřní stín a lesk. Dlaždice desky je fyzický panel, takže potřebuje
-     světlo shora a hranu zespodu. Dřív si to každá komponenta kreslila
-     vlastním rgba(), dohromady třináctkrát. */
-  --sheen-strong:     rgba(255, 255, 255, 0.22);
-  --sheen-soft:       rgba(255, 255, 255, 0.10);
-  --sheen-faint:      rgba(255, 255, 255, 0.05);
-  --shade-strong:     rgba(0, 0, 0, 0.40);
-  --shade-soft:       rgba(0, 0, 0, 0.22);
-  --shadow-inset-top: inset 0 1px 0 var(--sheen-soft);
-  --shadow-inset-lip: inset 0 -2px 0 var(--shade-strong);
-  --shadow-inset-well: inset 0 2px 6px var(--shade-soft);
+  /* Stín je tvrdý, posunutý a inkoustový. Prvek, na který se dá
+     kliknout, se při stisku posune o celý stín a „zamáčkne se". */
+  --shadow-x-sm: 3px;
+  --shadow-x-md: 5px;
+  --shadow-x-lg: 10px;
+  --shadow-sm:   var(--shadow-x-sm) var(--shadow-x-sm) 0 var(--c-ink);
+  --shadow-md:   var(--shadow-x-md) var(--shadow-x-md) 0 var(--c-ink);
+  --shadow-lg:   var(--shadow-x-lg) var(--shadow-x-lg) 0 var(--c-ink);
+  --shadow-none: 0 0 0 var(--c-ink);
+  --shadow-glow: 0 0 0 var(--border-w-strong) var(--c-brand);
+  --c-scrim:     rgba(27, 27, 27, 0.55);
+  /* Lesk a vnitřní stín z tmavého tématu. Na papíře se nekreslí, tokeny
+     zůstávají, aby komponenty, které je čtou, nemusely vědět o změně. */
+  --sheen-strong:     transparent;
+  --sheen-soft:       transparent;
+  --sheen-faint:      transparent;
+  --shade-strong:     rgba(27, 27, 27, 0.18);
+  --shade-soft:       rgba(27, 27, 27, 0.10);
+  --shadow-inset-top: 0 0 0 transparent;
+  --shadow-inset-lip: 0 0 0 transparent;
+  --shadow-inset-well: 0 0 0 transparent;
 
   /* --- Jiskra ------------------------------------------------------------ */
   /* Používá se výhradně pro pole Riziko!, protože je to jediný
-     okamžik hry, který má být divoký. Po zrušení zlaté je to zároveň
-     jediná teplá barva celého systému, takže jakmile se objeví jinde,
-     přestane fungovat. --c-spark-deep je doslova červená, kterou UNIQA
-     dává na chyby: rizikové pole je obarvené varovnou barvou značky. */
-  --c-spark:      #FF8B70;  /* 6,7:1 na --c-base, tmavý text na ní 6,7:1 */
-  --c-spark-mid:  #EE7154;  /* spodek přechodu, tmavý text na něm drží 5,2:1 */
+     okamžik hry, který má být divoký. Je to zároveň jediná teplá barva
+     systému, takže jakmile se objeví jinde, přestane fungovat.
+     --c-spark-deep je doslova červená, kterou UNIQA dává na chyby. */
+  --c-spark:      #FF8B70;  /* plocha, tmavý text na ní 7,5:1 */
+  --c-spark-mid:  #EE7154;  /* tmavý text na ní 5,8:1 */
   --c-spark-deep: #D71C4F;  /* UNIQA */
-  --c-spark-glow: rgba(255, 139, 112, 0.30);
+  --c-spark-ink:  #B4321F;  /* jiskra jako text na papíře, 5,5:1 */
+  --c-spark-glow: rgba(255, 139, 112, 0.35);
 
   /* --- Dlaždice desky ---------------------------------------------------- */
-  /* Dlaždice má působit jako fyzický panel: světlo shora, hrana zespodu.
-     Právě tahle hmotnost dělá z tabulky herní desku, ne barva čísla. */
-  --c-tile-top:    #12559A;
-  --c-tile-bottom: #063764;
-  --c-tile-edge:   #01182E;
-  --c-tile-sheen:  rgba(255, 255, 255, 0.16);
-  /* Studiové světlo nad deskou a reflektor na rozcestníku. Ředí se přes
-     color-mix, aby každé místo mohlo mít vlastní sílu, ale odstín zůstal
-     jeden. Dřív to byly tři různé indigové rgba() zapsané natvrdo. */
-  --c-light:       #5AAAF5;
-  --c-value:       #FFFFFF;  /* hodnota na dlaždici, 7,5:1 na --c-tile-top */
-  --c-value-glow:  rgba(255, 255, 255, 0.22);
+  /* Dlaždice je plná modrá UNIQA s inkoustovou hranou a tvrdým stínem.
+     Hmotu jí dává stín, ne přechod. */
+  --c-tile-top:    #005CA9;
+  --c-tile-bottom: #005CA9;
+  --c-tile-edge:   #1B1B1B;
+  --c-tile-sheen:  transparent;
+  --c-light:       #7CC0F0;
+  --c-value:       #FFFFFF;  /* hodnota na dlaždici, 6,8:1 na --c-tile-top */
+  --c-value-glow:  transparent;
 
   /* --- Nápis Mučírna ----------------------------------------------------- */
-  /* Značka je plochá: jedna barva na dlaždici, jedna na slovo. Lesk,
-     spodní hrana a přejíždějící odlesk z ní dělaly ve velkém ikonu
-     z roku 2012, a na rozcestníku je nápis přes tisíc pixelů široký.
-     Zůstala nakloněná dlaždice, jiskry a dosednutí, tedy to, co nese
-     vtip, ne povrchová úprava. Barvy se berou odtud, ne z herních
-     dlaždic: značka se kreslí i na světlé ploše.
-
-     Přeliv zůstal, protože bez něj byla značka placka. Je to spád mezi
-     dvěma sousedními odstíny modré, ne lesk: nekreslí se jím světlo
-     dopadající na hmotu, jen se tím barva rozhýbe. Nejslabší místo je
-     spodní konec obou spádů, 8,6:1 na `--c-base` a tmavé „M" na spodku
-     dlaždice taky 8,6:1. */
-  --mark-tile-top:    var(--c-brand-soft);
+  /* Dlaždice s M je modrá UNIQA s bílým písmenem, slovo je inkoust.
+     Nakloněná dlaždice nese vtip s odebraným „M", povrchová úprava ne. */
+  --mark-tile-top:    var(--c-brand);
   --mark-tile-bottom: var(--c-brand);
   --mark-word-top:    var(--c-text);
-  --mark-word-bottom: var(--c-brand);
+  --mark-word-bottom: var(--c-text);
   --mark-letter:      var(--c-on-accent);
-  --mark-spark:       var(--c-brand);
+  --mark-spark:       var(--c-ink);
 
   /* --- Barvy týmů -------------------------------------------------------- */
-  /* Všechny mají nejméně 7:1 vůči tmavému inkoustu, takže na nich může
-     být tmavý text. Tým se nikdy nerozlišuje jen barvou,
-     vždy i písmenem. Žlutá v sadě schválně chybí, jinak by se zlatá
-     vrátila zadními dveřmi. Odstíny jsou rozprostřené po celém kruhu:
-     205, 176, 86, 253, 333 a 31 stupňů. */
-  --c-team-1: #7CC0F0;  /* azur      */
-  --c-team-2: #55D6CE;  /* tyrkys    */
-  --c-team-3: #ABDD6B;  /* limeta    */
-  --c-team-4: #B7A6F2;  /* levandule */
-  --c-team-5: #F79DC6;  /* růžová    */
-  --c-team-6: #EFC08D;  /* písek     */
+  /* Všechny mají nejméně 7:1 vůči inkoustu, takže na nich může být
+     tmavý text. Tým se nikdy nerozlišuje jen barvou, vždy i písmenem.
+     Žlutá v sadě schválně chybí. Odstíny jsou rozprostřené po celém
+     kruhu: 205, 176, 86, 253, 333 a 31 stupňů. */
+  --c-team-1: #7CC0F0;  /* azur      8,7:1 */
+  --c-team-2: #55D6CE;  /* tyrkys    9,8:1 */
+  --c-team-3: #ABDD6B;  /* limeta   10,9:1 */
+  --c-team-4: #B7A6F2;  /* levandule 8,0:1 */
+  --c-team-5: #F79DC6;  /* růžová    8,7:1 */
+  --c-team-6: #EFC08D;  /* písek     10,3:1 */
 
   /* --- Typografie -------------------------------------------------------- */
   /* Lato je písmo UNIQA. Nadpisy jdou v 900, stejně jako na uniqa.cz. */
@@ -213,6 +208,9 @@
      protože nese celé slovo, a pořád čitelné na délku paže. */
   --fs-phone-word:   clamp(2rem, 1rem + 7vw, 3.5rem);
   --fs-home-hero: clamp(4rem, 2rem + 5.5vw, 8.5rem);
+  /* Nápis Mučírna na rozcestníku. Jde přes většinu šířky. */
+  --fs-home-mark: clamp(4rem, 1rem + 11vw, 11.5rem);
+  --fs-home-title: clamp(2.25rem, 1.25rem + 3vw, 4rem);
 
   /* Násobič velikosti písma. Mimo herní plochu zůstává na jedné. */
   --scale: 1;
@@ -236,14 +234,15 @@
   --sp-9:  6rem;
 
   /* --- Poloměry ---------------------------------------------------------- */
-  /* UNIQA jede na 4 a 8 px, rozhraní se tomu drží. Dlaždice desky má
-     vlastní token, protože je to objekt ve hře, ne prvek webu. */
-  --r-xs:   2px;
-  --r-sm:   4px;
-  --r-md:   8px;
-  --r-lg:   12px;
-  --r-xl:   20px;
-  --r-tile: 16px;
+  /* Kulatější než web UNIQA: s tlustým obrysem a tvrdým stínem čte
+     ostrý roh jako formulář z úřadu. Dlaždice desky má vlastní token,
+     protože je to objekt ve hře, ne prvek webu. */
+  --r-xs:   3px;
+  --r-sm:   6px;
+  --r-md:   10px;
+  --r-lg:   14px;
+  --r-xl:   24px;
+  --r-tile: 18px;
   --r-full: 999px;
 
   /* --- Pohyb ------------------------------------------------------------- */
@@ -261,6 +260,23 @@
   --dur-podium-sequence: 10s;
   --dur-podium-place: 900ms;
   --dur-spin: 700ms;    /* jedna otáčka čekacího kolečka */
+  /* Rozcestník. Dlaždice s M spadne, slovo se otřese, nálepka se
+     plácne. Nečinný nápis pak jednou za čas sám od sebe do něčeho
+     šťouchne: cyklus je dlouhý, aby se to dělo „občas", ne pořád. */
+  --dur-pop:     550ms;   /* vyskočení písmene, nálepky, karty */
+  --dur-drop:    950ms;   /* pád dlaždice s M včetně odskoku */
+  --dur-shake:   350ms;   /* otřes slova při dopadu */
+  --dur-press:   120ms;   /* zamáčknutí do stínu */
+  --dur-float:   5s;      /* pohupování dlaždic v pozadí */
+  --dur-idle:    18s;     /* jeden cyklus šťouchanců nápisu */
+  --dur-flip:    6s;      /* otočka políčka v náhledu desky */
+  --dur-pick:    4s;      /* volba a časomíra v náhledu kvízu */
+  --stagger:     70ms;    /* rozestup písmen a karet v sekvenci */
+  --delay-mark-land:  850ms;  /* kdy začne padat M */
+  --delay-mark-hit:   1420ms; /* kdy M dopadne */
+  --delay-mark-kick:  1900ms; /* nálepka */
+  --delay-mark-cta:   2300ms; /* tlačítka */
+  --delay-mark-idle:  3200ms; /* první šťouchanec */
   /* Záporné prodlevy, ne trvání: rozjedou oběžnice na rozcestníku každou
      v jiné fázi. Vlastní prefix, aby je `--dur-*` nesváděl nulovat. */
   --delay-orbit-score:  -4s;
@@ -385,5 +401,9 @@
     --dur-breathe: 1ms;
     --dur-podium-sequence: 1ms;
     --dur-podium-place: 1ms;
+    --dur-pop: 1ms;
+    --dur-drop: 1ms;
+    --dur-shake: 1ms;
+    --dur-press: 1ms;
   }
 }

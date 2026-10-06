@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { endGame, game, hasGame } from '@/stores/game'
 import { endQuiz, hasQuiz, quiz } from '@/stores/quizHost'
@@ -55,95 +55,37 @@ const cards = computed<GameCard[]>(() =>
 )
 
 /**
- * Dlaždice plující pozadím.
+ * Dlaždice v pozadí úvodu.
  *
  * Značka Mučírny je mřížka dlaždic a obě hry na dlaždicích stojí, takže
- * pozadí nenese obrázek odjinud, ale vlastní tvar aplikace. Jsou to jen
- * souřadnice a tempo, vzhled si řeší styl.
+ * pozadí nenese obrázek odjinud, ale vlastní tvar aplikace: barevné
+ * dlaždice s inkoustovou hranou v barvách možností A až D. Leží u okrajů,
+ * pomalu se pohupují, a když dlaždice s M dopadne, všechny nadskočí.
+ * Náraz tak zasáhne celou obrazovku, ne jen nápis.
  *
- * `slow` je doba jednoho okruhu. Čísla jsou schválně velká
- * a nesoudělná, aby se dlaždice nikdy nesrovnaly do společného rytmu.
- * Dráha není úsečka tam a zpět, ale uzavřený čtyřbodový okruh: dlaždice
- * se tím nekývá, ale plave. Na jeden úsek vychází kolem deseti vteřin,
- * takže je pohyb vidět, když se člověk zastaví, a nerve se o pozornost,
- * když ne.
- *
- * Pole je celá stránka včetně úvodu, klidně i za nápisem: dlaždice jsou
- * tlumené a rozostřené natolik, že značce neubírají. U okrajů je
- * zaříznutá hrana stránky, takže z nich kouká jen kus a čtou se jako
- * geometrie, ne jako obrázky. Za nápisem je navíc měkký kruh světla,
- * který je ztlumí ještě o kus víc.
+ * Poloha je v procentech plochy úvodu, hrana v rem.
  */
-interface DriftTile {
-  /** Poloha v procentech plochy. */
+interface BackTile {
   x: number
   y: number
-  /** Hrana dlaždice v rem. */
   size: number
-  /** Natočení ve stupních. */
   rot: number
-  /** Nejzazší bod dráhy v procentech vlastní velikosti. Zbytek dráhy
-   *  se z něj odvozuje, takže tvar plavby je jeden a délka vlastní. */
-  dx: number
-  dy: number
-  /** Doba jednoho okruhu a odklad startu v sekundách. */
-  slow: number
-  delay: number
-  /** Modrá je vzácná: dvě dlaždice z osmi, jinak by z pozadí byl vzor. */
-  tone: 'papir' | 'modra'
+  tone: 'azur' | 'limeta' | 'levandule' | 'ruzova' | 'modra' | 'papir'
 }
 
-const DRIFT: DriftTile[] = [
-  { x: -5, y: 3, size: 14, rot: -9, dx: 38, dy: -26, slow: 79, delay: 0, tone: 'papir' },
-  { x: 91, y: 7, size: 11, rot: 12, dx: -34, dy: 41, slow: 97, delay: -13, tone: 'modra' },
-  { x: 27, y: 6, size: 8, rot: 14, dx: 52, dy: 33, slow: 67, delay: -28, tone: 'papir' },
-  { x: 62, y: 15, size: 7, rot: -6, dx: -46, dy: -37, slow: 83, delay: -41, tone: 'papir' },
-  { x: -2, y: 26, size: 12, rot: 6, dx: 41, dy: -31, slow: 89, delay: -54, tone: 'papir' },
-  { x: 84, y: 30, size: 13, rot: 8, dx: -29, dy: 36, slow: 61, delay: -9, tone: 'papir' },
-  { x: 19, y: 36, size: 9, rot: -11, dx: -44, dy: -48, slow: 73, delay: -62, tone: 'modra' },
-  { x: 55, y: 80, size: 11, rot: -14, dx: -39, dy: 28, slow: 101, delay: -35, tone: 'papir' },
+const TILES: BackTile[] = [
+  { x: 4, y: 19, size: 7.5, rot: -14, tone: 'azur' },
+  { x: 72, y: 6, size: 3.5, rot: 14, tone: 'modra' },
+  { x: 87, y: 10, size: 6.5, rot: 10, tone: 'limeta' },
+  { x: 90, y: 45, size: 4.5, rot: -8, tone: 'papir' },
+  { x: 5, y: 53, size: 5.25, rot: 8, tone: 'levandule' },
+  { x: 16, y: 72, size: 3.75, rot: 10, tone: 'papir' },
+  { x: 79, y: 68, size: 5.5, rot: -12, tone: 'ruzova' },
 ]
 
-/**
- * Odpočet v náhledu kvízu.
- *
- * Rozcestník visí na plátně, než se začne hrát, a náhled, ve kterém stojí
- * čas, je obrázek hry. Ubývající vteřiny z něj dělají běžící otázku,
- * a je to jediné místo na stránce, kde se mění text; víc takových míst by
- * z toho udělalo blikající výlohu.
- *
- * Pod vypnutým pohybem se nespouští: ubývající číslo je pohyb jako každý
- * jiný, jen se odehrává v textu, takže si ho `prefers-reduced-motion`
- * musí ohlídat ručně.
- */
-const PREVIEW_FROM = 14
-const previewSeconds = ref(PREVIEW_FROM)
-const stillness = window.matchMedia('(prefers-reduced-motion: reduce)')
-let ticker: number | undefined
-
-/** Přepínač pohybu platí i tady, a platí hned. Styly na jeho přepnutí
- *  reagují samy, tohle je jediný pohyb na stránce, který si to musí
- *  ohlídat ručně. */
-function retime(): void {
-  window.clearInterval(ticker)
-  ticker = undefined
-  if (stillness.matches) {
-    previewSeconds.value = PREVIEW_FROM
-    return
-  }
-  ticker = window.setInterval(() => {
-    previewSeconds.value = previewSeconds.value > 1 ? previewSeconds.value - 1 : PREVIEW_FROM
-  }, 1000)
+function toGames(): void {
+  document.getElementById('hry')?.scrollIntoView({ block: 'start' })
 }
-
-onMounted(() => {
-  retime()
-  stillness.addEventListener('change', retime)
-})
-onBeforeUnmount(() => {
-  window.clearInterval(ticker)
-  stillness.removeEventListener('change', retime)
-})
 
 function open(entry: GameEntry): void {
   void router.push(entry.route)
@@ -167,45 +109,55 @@ async function discard(entry: GameEntry): Promise<void> {
 
 <template>
   <div class="home">
-    <!-- Dlaždice v pozadí. Pohyb je pomalý schválně: má dát ploše život,
-         ne přetahovat se o pozornost se značkou. -->
-    <div class="drift" aria-hidden="true">
-      <span
-        v-for="(tile, i) in DRIFT"
-        :key="i"
-        class="drift__tile"
-        :class="`drift__tile--${tile.tone}`"
-        :style="{
-          '--x': `${tile.x}%`,
-          '--y': `${tile.y}%`,
-          '--s': `${tile.size}rem`,
-          '--r': `${tile.rot}deg`,
-          '--dx': `${tile.dx}%`,
-          '--dy': `${tile.dy}%`,
-          '--slow': `${tile.slow}s`,
-          '--delay': `${tile.delay}s`,
-        }"
-      />
-    </div>
-
     <!-- Rozcestník je bez hlavičky. Nebylo v ní nic, co by odtud šlo
-         ovládat: celá obrazovka i velikost písma patří ke hře, značka
-         stála podruhé kousek nad nápisem a navigace hry se ukáže, až
-         je nějaká vybraná. -->
+         ovládat: celá obrazovka i velikost písma patří ke hře a navigace
+         hry se ukáže, až je nějaká vybraná. -->
     <main id="obsah">
-      <!-- Úvod je titulní strana: značka vystředěná na výšku i na šířku
-           a zpod dolní hrany vykukuje kus náhledu, aby bylo vidět, že se
-           roluje dál. -->
-      <section class="hero page" aria-labelledby="home-title">
+      <!-- Úvod je titulní strana: nápis vystředěný na výšku i na šířku,
+           pod ním nálepka a dvě cesty dál. Zpod dolní hrany vykukují
+           karty her, aby bylo vidět, že se roluje dál. -->
+      <section class="hero" aria-labelledby="home-title">
+        <div class="hero__tiles" aria-hidden="true">
+          <span
+            v-for="(tile, i) in TILES"
+            :key="i"
+            class="hero__tile"
+            :class="`hero__tile--${tile.tone}`"
+            :style="{
+              '--x': `${tile.x}%`,
+              '--y': `${tile.y}%`,
+              '--s': `${tile.size}rem`,
+              '--r': `${tile.rot}deg`,
+              '--i': i,
+            }"
+          ><i></i></span>
+        </div>
+
+        <p class="hero__eyebrow">Hry na školení · pro tým UNIQA</p>
+
         <div class="hero__copy">
-          <h1 id="home-title" class="hero__title">
-            <HeroMark class="hero__image" />
-          </h1>
+          <h1 id="home-title" class="hero__title"><HeroMark /></h1>
           <p class="hero__kicker">Kvízy, do kterých se zapojí celá místnost</p>
+          <div class="hero__actions">
+            <UiButton variant="brand" size="lg" icon-after="arrow-down" @click="toGames">
+              Vybrat hru
+            </UiButton>
+            <UiButton size="lg" icon="phone" @click="router.push('/k')">
+              Připojit se telefonem
+            </UiButton>
+          </div>
         </div>
       </section>
 
-      <section class="choice page" aria-label="Vyber hru">
+      <section id="hry" class="choice page" aria-labelledby="choice-title">
+        <header class="choice__head">
+          <div>
+            <p class="choice__eyebrow">Vyber hru</p>
+            <h2 id="choice-title" class="choice__title">Co se dnes bude hrát?</h2>
+          </div>
+          <p class="choice__lead">Obě hry se vedou z notebooku na plátně a posouvají se mezerníkem.</p>
+        </header>
+
         <!-- Varování nese jinak hlavička, a ta tu není. Bez něj by se
              o chybějící sdílené databázi člověk dozvěděl až ve správě
              otázek, tedy typicky před místností. -->
@@ -224,56 +176,44 @@ async function discard(entry: GameEntry): Promise<void> {
             :style="{ '--i': index }"
             @click="open(card.entry)"
           >
-            <div class="game-card__preview" aria-hidden="true">
-              <template v-if="card.entry.slug === 'pojistuj'">
-                <div class="mini-board">
-                  <span class="mini-board__category">Majetek</span>
-                  <span class="mini-board__category">Život</span>
-                  <span class="mini-board__category">Auto</span>
-                  <template v-for="(value, row) in [200, 400, 600]" :key="value">
-                    <span
-                      v-for="column in 3"
-                      :key="`${value}-${column}`"
-                      class="mini-board__tile"
-                      :style="{ '--i': row * 3 + column - 1 }"
-                    >
-                      {{ value }}
-                    </span>
-                  </template>
-                </div>
-                <span class="preview-label">Týmy si volí pole</span>
-              </template>
+            <span class="game-card__sticker" aria-hidden="true">
+              {{ card.entry.slug === 'kviz' ? 'Telefony' : 'Týmy' }}
+            </span>
 
-              <template v-else>
-                <div class="mini-quiz">
-                  <div class="mini-quiz__top">
-                    <span>Otázka 7 z 10</span>
-                    <span class="mini-quiz__time">{{ previewSeconds }} s</span>
-                  </div>
-                  <p>Která odpověď platí?</p>
-                  <div class="mini-quiz__options">
-                    <span class="mini-option mini-option--a" style="--i: 0">A</span>
-                    <span class="mini-option mini-option--b" style="--i: 2">B</span>
-                    <span class="mini-option mini-option--c" style="--i: 3">C</span>
-                    <span class="mini-option mini-option--d" style="--i: 1">D</span>
-                  </div>
+            <div class="game-card__preview" aria-hidden="true">
+              <div v-if="card.entry.slug === 'pojistuj'" class="mini-board">
+                <span
+                  v-for="n in 15"
+                  :key="n"
+                  class="mini-board__cell"
+                  :class="{ 'mini-board__cell--live': n === 4 || n === 8 || n === 12 }"
+                  :style="{ '--i': n % 4 }"
+                >
+                  <span class="mini-board__face">{{ [200, 400, 600][Math.floor((n - 1) / 5)] }}</span>
+                  <span class="mini-board__face mini-board__face--back">?</span>
+                </span>
+              </div>
+
+              <div v-else class="mini-quiz">
+                <span class="mini-quiz__timer"><span></span></span>
+                <div class="mini-quiz__options">
+                  <span class="mini-option mini-option--a">A</span>
+                  <span class="mini-option mini-option--b">B<UiIcon name="check" size="xs" /></span>
+                  <span class="mini-option mini-option--c">C</span>
+                  <span class="mini-option mini-option--d">D</span>
                 </div>
-                <span class="preview-label">Každý odpovídá za sebe</span>
-              </template>
+              </div>
             </div>
 
             <div class="game-card__body">
-              <div class="game-card__index">0{{ index + 1 }}</div>
-              <div class="game-card__heading">
-                <p class="game-card__tagline">{{ card.entry.tagline }}</p>
-                <h3>{{ card.entry.title }}</h3>
-              </div>
+              <p class="game-card__tagline">{{ card.entry.tagline }}</p>
+              <h3 class="game-card__title">{{ card.entry.title }}</h3>
               <p class="game-card__description">{{ card.entry.description }}</p>
 
-              <div class="game-card__meta">
+              <p class="game-card__meta">
                 <UiIcon name="projector" size="xs" />
                 {{ card.entry.needs }}
-              </div>
+              </p>
 
               <p v-if="card.warn" class="game-card__warn">{{ card.warn }}</p>
 
@@ -284,7 +224,7 @@ async function discard(entry: GameEntry): Promise<void> {
                    polohovaný a překryv by se zastavil na jeho okraji.
                    K balíčkům se chodí z hlavičky hry, ne odtud. -->
               <div class="game-card__actions">
-                <UiButton class="game-card__play" variant="brand" @click.stop="open(card.entry)">
+                <UiButton class="game-card__play" variant="brand" icon-after="arrow-right" @click.stop="open(card.entry)">
                   {{ card.resume ? 'Pokračovat' : 'Připravit hru' }}
                 </UiButton>
               </div>
@@ -305,9 +245,9 @@ async function discard(entry: GameEntry): Promise<void> {
         </ul>
       </section>
 
-      <!-- Patička. Tichá řádka, ne podpis přes celou šířku: říká, pro koho
-           to je a kdo to postavil, a tím splňuje i to, co se o původu má
-           na rozcestníku objevit, dokud tu není logo UNIQA. -->
+      <!-- Patička. Tichá řádka: říká, pro koho to je a kdo to postavil,
+           a tím splňuje i to, co se o původu má na rozcestníku objevit,
+           dokud tu není logo UNIQA. -->
       <footer class="credit page">
         <p>
           Vytvořeno pro tým UNIQA. Postavil
@@ -320,397 +260,463 @@ async function discard(entry: GameEntry): Promise<void> {
 </template>
 
 <style scoped>
-/* Rozměry rozcestníku. Nikdo jiný je nepoužívá, proto jsou tady a ne
-   mezi tokeny: do :root patří jen to, co sdílí víc obrazovek. */
 .home {
-  /* Hlavička karty. Je to pevná výška, ne spodní mez: obě hry mají
-     v náhledu jinak vysokou ukázku a karty vedle sebe se musí potkat
-     na téže lince. */
-  --home-preview-h: 12rem;
-  --home-perspective: 40rem;
-  /* Zpod úvodu kouká celý náhled hry, tedy grafická část karty, a to
-     u obou her na stejné lince. Pod čárou začíná text a ten se čte až
-     po odrolování. Není to odhad, počítá se to z výšky náhledu. */
-  --home-peek: calc(var(--home-preview-h) + var(--border-w) * 2);
-  /* Pod co se úvod nesmí srazit ani na nízkém okně. */
-  --home-hero-floor: 26rem;
-  --home-hero-image-max: 64rem;
-  --home-card-side-min: 17rem;
-
-  /* Vlastní vrstvení: dlaždice plují pod obsahem. Obsah musí být
-     vypsaný taky, pozicovaný pseudoprvek se jinak vykreslí nad
-     nepozicovaným blokem bez ohledu na pořadí v dokumentu. */
+  /* Kolik z karet her vykoukne zpod úvodu. Tolik, aby byla vidět
+     nálepka a horní hrana náhledu, takže je jasné, že se roluje dál. */
+  --home-peek: 9rem;
   position: relative;
-  isolation: isolate;
-  overflow: clip;
-  display: flex;
-  flex-direction: column;
-  min-height: 100dvh;
-  background: var(--c-base);
 }
 
-/* Dlaždice v pozadí. Nesou tvar dlaždic z desky, jen na papíře: světlá
-   plocha o odstín výš než pozadí, bez hrany a lesku, stejně jako sama
-   značka. Světlý text na nich drží 10,1:1. Animuje se jen posun
-   a natočení, tedy to, co umí grafická karta bez překreslování
-   stránky. */
-.drift {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  overflow: hidden;
-  pointer-events: none;
+/* --- Úvod ---------------------------------------------------------------- */
+
+.hero {
+  position: relative;
+  min-height: calc(100svh - var(--home-peek));
+  display: grid;
+  place-items: center;
+  padding: var(--sp-8) var(--sp-5) var(--sp-7);
+  overflow: clip;
 }
-.drift__tile {
+
+.hero__eyebrow {
+  position: absolute;
+  top: var(--sp-5);
+  left: var(--sp-6);
+  font-size: var(--fs-sm);
+  font-weight: 900;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+}
+
+.hero__copy {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: var(--sp-6);
+  text-align: center;
+}
+
+.hero__title { line-height: 1; letter-spacing: 0; }
+
+/* Ruční kicker. Jedno ze tří míst, kde smí být Caveat. Nálepka se při
+   příchodu plácne na papír, natočení drží i bez animace. */
+.hero__kicker {
+  display: inline-block;
+  padding: var(--sp-2) var(--sp-5);
+  border: var(--border-w-heavy) solid var(--c-ink);
+  border-radius: var(--r-lg);
+  background: var(--c-surface);
+  box-shadow: var(--shadow-md);
+  color: var(--c-brand);
+  font-family: var(--font-hand);
+  font-size: var(--fs-3xl);
+  font-weight: 600;
+  line-height: var(--lh-snug);
+  rotate: -4deg;
+  animation: home-slap var(--dur-pop) var(--ease-out) var(--delay-mark-kick) both;
+}
+
+.hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--sp-4);
+  animation: home-rise var(--dur-pop) var(--ease-out) var(--delay-mark-cta) both;
+}
+
+/* Dlaždice v pozadí. Obal nese polohu, natočení a pohupování, vnitřek
+   vyskočí na místo a nadskočí, když dopadne M. Každá část animuje jinou
+   vlastnost, takže se navzájem nepřebíjejí. */
+.hero__tiles { position: absolute; inset: 0; pointer-events: none; }
+
+.hero__tile {
   position: absolute;
   left: var(--x);
   top: var(--y);
   width: var(--s);
   height: var(--s);
-  border-radius: var(--r-xl);
-  background: var(--c-surface-2);
-  opacity: 0.5;
-  /* Jen tolik rozostření, aby dlaždice ustoupila do pozadí a přitom
-     zůstala dlaždicí. Víc z ní udělá šmouhu. */
-  filter: blur(calc(var(--sp-1) / 2));
-  /* Okruh je uzavřený, takže se nesmyčkuje přes `alternate`: dlaždice
-     doplave zpátky tam, odkud vyrazila, a smyčka nikde neucukne.
-     Náběh se počítá na každý úsek zvlášť, proto to na obrátkách
-     nedrhne. */
-  animation: drift var(--slow) var(--ease-both) var(--delay) infinite;
-}
-/* Dvě modré dlaždice, aby plocha nebyla jen šedá na šedé. Význam
-   nenesou, tady je to plocha, ne volba. */
-.drift__tile--modra { background: var(--c-brand); opacity: 0.08; }
-
-@keyframes drift {
-  0%, 100% { transform: translate3d(0, 0, 0) rotate(var(--r)); }
-  25% {
-    transform: translate3d(var(--dx), calc(var(--dy) * 0.3), 0)
-      rotate(calc(var(--r) * 0.1));
-  }
-  50% {
-    transform: translate3d(calc(var(--dx) * 0.45), var(--dy), 0)
-      rotate(calc(var(--r) * -1));
-  }
-  75% {
-    transform: translate3d(calc(var(--dx) * -0.5), calc(var(--dy) * 0.55), 0)
-      rotate(calc(var(--r) * -0.35));
-  }
+  rotate: var(--r);
+  animation: home-float var(--dur-float) var(--ease-both) calc(var(--i) * -0.7s) infinite;
 }
 
-main {
-  position: relative;
-  z-index: 1;
+.hero__tile i {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: var(--border-w-heavy) solid var(--c-ink);
+  border-radius: 24%;
+  background: var(--tone);
+  box-shadow: var(--shadow-md);
+  animation:
+    home-tile-in var(--dur-pop) var(--ease-out) calc(var(--i) * var(--stagger)) both,
+    home-hop var(--dur-pop) var(--ease-out) calc(var(--delay-mark-hit) + var(--i) * 30ms);
 }
 
-/* Úvod je hlavička stránky, ne scéna. Dřív se roztahoval na celé okno
-   a karty pod ním jen vykukovaly, takže se muselo rolovat i tehdy, když
-   moderátorka jen jde spustit hru, kterou zná. Nápis teď začíná na téže
-   svislé lince jako všechno pod ním a jako nadpisy v přípravě. */
-.hero {
+.hero__tile--azur { --tone: var(--c-team-1); }
+.hero__tile--limeta { --tone: var(--c-team-3); }
+.hero__tile--levandule { --tone: var(--c-team-4); }
+.hero__tile--ruzova { --tone: var(--c-team-5); }
+.hero__tile--modra { --tone: var(--c-brand); }
+.hero__tile--papir { --tone: var(--c-surface); }
+
+/* --- Výběr hry ----------------------------------------------------------- */
+
+.choice {
   display: grid;
-  place-items: center;
-  min-height: max(var(--home-hero-floor), calc(100dvh - var(--home-peek)));
-  /* Symetricky, jinak by vystředění na výšku lhalo o rozdíl obou
-     odsazení. */
-  padding-block: var(--sp-6);
-}
-.hero__copy { position: relative; display: grid; justify-items: center; gap: var(--sp-5); width: 100%; }
-/* Kicker přichází poslední a stojí pod značkou. Vtip s odebraným „M"
-   se přečte sám a věta ho teprve dopoví, takže nemá smysl ji pouštět
-   napřed. Odklad odpovídá konci sekvence nápisu: slovo, dosednutí
-   dlaždice, teprve pak řádek. */
-.hero__kicker {
-  animation: kicker-in var(--dur-stage) var(--ease-out)
-    calc(var(--dur-stage) * 0.8 + var(--dur-slow)) backwards;
-  color: var(--c-text-muted);
-  font-family: var(--font-hand);
-  font-size: var(--fs-2xl);
-  font-weight: 500;
-  line-height: var(--lh-snug);
-  text-align: center;
-}
-@keyframes kicker-in {
-  from { opacity: 0; transform: translateY(var(--sp-3)); }
-  to { opacity: 1; transform: none; }
-}
-
-/* Světlo pod značkou. Dlaždice plují po celé ploše a pod nápisem z nich
-   byl závoj; tohle jim tam uklidí a značka stojí na čisté ploše. Je to
-   jeden měkký kruh, ne kužel: kužel s okraji se na ploše čte jako
-   trojúhelník. Leží nad dlaždicemi a pod nápisem, vystředěný s ním. */
-.hero__copy::before {
-  content: '';
-  position: absolute;
-  inset: calc(var(--sp-8) * -1) calc(var(--sp-6) * -1);
-  z-index: -1;
-  pointer-events: none;
-  background: radial-gradient(
-    ellipse 58% 62% at 50% 50%,
-    color-mix(in oklab, var(--c-brand) 13%, transparent),
-    transparent 72%
-  );
-}
-.hero__title { display: flex; justify-content: center; width: 100%; }
-.hero__image { width: min(100%, var(--home-hero-image-max)); height: auto; }
-
-.choice { padding-block: 0 var(--sp-7); }
-
-/* Patička. Nejtišší text na stránce, ale odkaz musí být poznat i bez
-   barvy, proto podtržení. */
-.credit {
+  gap: var(--sp-7);
   padding-block: var(--sp-5) var(--sp-8);
-  color: var(--c-text-faint);
-  font-size: var(--fs-xs);
-  line-height: var(--lh-body);
-  text-align: center;
+  scroll-margin-top: var(--sp-6);
 }
-.credit a {
-  color: var(--c-text-muted);
-  text-decoration: underline;
-  text-underline-offset: 0.2em;
-  transition: color var(--dur-fast) var(--ease-out);
-}
-.credit a:hover { color: var(--c-brand); }
 
-/* Chybějící sdílená databáze. Tichý řádek, ne poplach: hrát se dá dál,
-   jen z jednoho počítače a bez telefonů. */
-.offline {
+.choice__head {
   display: flex;
-  align-items: center;
-  gap: var(--sp-3);
-  margin-bottom: var(--sp-5);
-  padding: var(--sp-4);
-  border-left: var(--border-w-strong) solid var(--c-bad);
-  background: var(--c-surface);
-  color: var(--c-bad);
-  font-size: var(--fs-sm);
-  font-weight: 700;
-  line-height: var(--lh-body);
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--sp-6);
 }
-.offline svg { flex: none; }
+
+.choice__eyebrow {
+  font-size: var(--fs-sm);
+  font-weight: 900;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+}
+
+.choice__title {
+  margin-top: var(--sp-2);
+  font-size: var(--fs-home-title);
+  letter-spacing: -0.045em;
+  line-height: 1;
+}
+
+.choice__lead {
+  max-width: 22rem;
+  color: var(--c-text-muted);
+  font-size: var(--fs-lg);
+  line-height: var(--lh-snug);
+}
 
 .games {
+  list-style: none;
+  padding: 0;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--sp-5);
-  padding: 0;
-  list-style: none;
+  gap: var(--sp-7);
 }
-.game-card {
-  /* Odklad ambientního pohybu v náhledu. Bez něj by obě karty blikaly
-     naráz a z náhledů by byl jeden rytmus místo dvou her. */
-  --preview-phase: 0s;
 
-  /* Karty nastupují jedna po druhé. Nástup je jediné místo, kde se dá
-     ukázat, že jsou dvě a ne jedna dlouhá plocha. */
-  animation: card-in var(--dur-stage) var(--ease-out) calc(var(--dur-fast) * var(--i)) backwards;
+/* Karta hry je klikatelná celá. Mírně natočená, každá na jinou stranu,
+   stejně jako dlaždice v pozadí: leží na stole, nevisí v mřížce. */
+.game-card {
   position: relative;
-  min-width: 0;
-  overflow: hidden;
+  display: grid;
+  align-content: start;
+  gap: var(--sp-5);
+  padding: var(--sp-6);
+  border: var(--border-w-heavy) solid var(--c-ink);
+  border-radius: var(--r-xl);
+  background: var(--card);
+  box-shadow: var(--shadow-lg);
+  color: var(--c-text-ink);
   cursor: pointer;
-  border: var(--border-w) solid var(--c-border-soft);
+  rotate: -1.5deg;
+  transition:
+    translate var(--dur-press) var(--ease-out),
+    box-shadow var(--dur-press) var(--ease-out);
+}
+.game-card:nth-child(even) { rotate: 1.5deg; }
+.game-card--pojistuj { --card: var(--c-team-1); }
+.game-card--kviz { --card: var(--c-team-3); }
+
+.game-card:hover {
+  translate: var(--shadow-x-md) var(--shadow-x-md);
+  box-shadow: var(--shadow-md);
+}
+
+.game-card__sticker {
+  position: absolute;
+  top: calc(var(--sp-5) * -1);
+  right: var(--sp-6);
+  padding: var(--sp-1) var(--sp-4);
+  border: var(--border-w-heavy) solid var(--c-ink);
+  border-radius: var(--r-full);
+  background: var(--c-surface);
+  box-shadow: var(--shadow-sm);
+  font-size: var(--fs-sm);
+  font-weight: 900;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  rotate: 5deg;
+}
+.game-card:nth-child(even) .game-card__sticker { rotate: -5deg; }
+
+.game-card__preview {
+  height: 9.5rem;
+  padding: var(--sp-4);
+  border: var(--border-w-heavy) solid var(--c-ink);
   border-radius: var(--r-lg);
   background: var(--c-surface);
-  transition:
-    border-color var(--dur-base) var(--ease-out),
-    transform var(--dur-base) var(--ease-out);
-}
-.game-card--kviz { --preview-phase: calc(var(--dur-ambient) * 0.26); }
-/* Karta se pod prstem nadzvedne. Je to dlaždice, ne řádek v tabulce. */
-.game-card:hover { border-color: var(--c-brand); transform: translateY(calc(var(--sp-1) * -1)); }
-
-@keyframes card-in {
-  from { opacity: 0; transform: translateY(var(--sp-5)); }
-  to { opacity: 1; transform: none; }
-}
-/* Náhled je plátno zapuštěné do karty: karta je vyvýšená plocha,
-   ukázka hry leží o patro níž, na téže barvě jako samotná hra. */
-.game-card__preview {
-  /* Štítek má vlastní řádek, neleží přes ukázku. Dřív byl odsazený
-     absolutně a stačilo náhled o kus zkrátit, aby seděl na dlaždicích. */
-  display: grid;
-  grid-template-rows: minmax(0, 1fr) auto;
-  justify-items: center;
-  align-items: center;
-  gap: var(--sp-3);
-  block-size: var(--home-preview-h);
-  padding: var(--sp-5);
-  overflow: hidden;
-  background: var(--c-base);
-}
-.preview-label {
-  justify-self: end;
-  color: var(--c-text-faint);
-  font-size: var(--fs-xs);
-  font-weight: 700;
 }
 
 .mini-board {
+  height: 100%;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: var(--sp-2);
-  width: 78%;
-  transform: perspective(var(--home-perspective)) rotateX(7deg) rotateZ(-2deg);
-  transform-origin: bottom left;
 }
-.mini-board__category {
-  overflow: hidden;
-  color: var(--c-text-muted);
-  font-size: var(--fs-xs);
-  font-weight: 700;
-  text-align: center;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+
+.mini-board__cell {
+  position: relative;
+  transform-style: preserve-3d;
 }
-.mini-board__tile {
+.mini-board__cell--live {
+  animation: home-flip var(--dur-flip) var(--ease-out) calc(1.4s + var(--i) * 2s) infinite;
+}
+
+.mini-board__face {
+  position: absolute;
+  inset: 0;
   display: grid;
   place-items: center;
-  min-height: var(--sp-6);
+  border: var(--border-w-strong) solid var(--c-ink);
   border-radius: var(--r-md);
-  background: linear-gradient(180deg, var(--c-tile-top), var(--c-tile-bottom));
-  box-shadow: inset 0 var(--separator-w) 0 var(--c-tile-sheen), 0 var(--sp-1) 0 var(--c-tile-edge);
+  background: var(--c-tile-top);
   color: var(--c-value);
   font-size: var(--fs-sm);
   font-weight: 900;
-  /* Deskou jednou za čas přejede vlna: dlaždice se po řadě nadzvednou
-     a zase dosednou. Dřív tu byl hover na jediné dlaždici, o kterém se
-     nikdo nedozvěděl, dokud na kartu nenajel myší. Vlna jde zleva
-     doprava a shora dolů, takže to je pohyb se směrem, ne blikání. */
-  animation: tile-wave var(--dur-ambient) var(--ease-out)
-    calc(var(--dur-ambient) / 48 * var(--i) + var(--preview-phase)) infinite;
+  font-variant-numeric: tabular-nums;
+  backface-visibility: hidden;
+}
+.mini-board__face--back {
+  transform: rotateY(180deg);
+  background: var(--c-surface);
+  color: var(--c-text-ink);
+  font-size: var(--fs-xl);
 }
 
-/* Špička je krátká a zbytek cyklu je klid. Je to náhled na rozcestníku,
-   ne prvek, který si říká o pozornost. */
-/* Rozsvícení je spočítané, ne odhadnuté: `brightness(1.3)` posune
-   `--c-tile-top` z #12559A na zhruba #176FC8 a bílá hodnota na něm drží
-   5,1:1, tedy pořád nad 4,5:1. */
-@keyframes tile-wave {
-  0% { transform: none; filter: none; }
-  2% { transform: translateY(calc(var(--sp-1) * -0.75)); filter: brightness(1.3); }
-  8%, 100% { transform: none; filter: none; }
+.mini-quiz {
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: var(--sp-3);
 }
 
-.mini-quiz { display: grid; gap: var(--sp-2); width: 82%; }
-.mini-quiz__top { display: flex; justify-content: space-between; color: var(--c-text-faint); font-size: var(--fs-xs); font-weight: 700; }
-.mini-quiz__time { color: var(--c-brand); }
-.mini-quiz > p { color: var(--c-text); font-size: var(--fs-lg); font-weight: 900; }
-.mini-quiz__options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-2); }
+.mini-quiz__timer {
+  height: var(--sp-3);
+  border: var(--border-w-strong) solid var(--c-ink);
+  border-radius: var(--r-full);
+  overflow: hidden;
+}
+.mini-quiz__timer span {
+  display: block;
+  height: 100%;
+  background: var(--c-ink);
+  transform-origin: left;
+  animation: home-timer var(--dur-pick) linear 1.6s infinite;
+}
+
+.mini-quiz__options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-3);
+}
+
 .mini-option {
   display: flex;
   align-items: center;
-  gap: var(--sp-2);
-  min-height: var(--sp-6);
+  justify-content: space-between;
   padding-inline: var(--sp-3);
+  border: var(--border-w-strong) solid var(--c-ink);
   border-radius: var(--r-md);
-  color: var(--c-text-ink);
-  font-size: var(--fs-sm);
+  box-shadow: var(--shadow-sm);
   font-weight: 900;
-  /* Možnosti se rozsvěcují na přeskáčku, jako když do kvízu padají
-     hlasy z telefonů. Proto je pořadí v šabloně jiné než A, B, C, D:
-     odpovědi taky nechodí popořadě. */
-  animation: option-ping var(--dur-ambient) var(--ease-out)
-    calc(var(--dur-ambient) / 36 * var(--i) + var(--preview-phase)) infinite;
-}
-
-@keyframes option-ping {
-  0% { transform: none; filter: none; }
-  2% { transform: translateX(var(--sp-1)); filter: brightness(1.16); }
-  9%, 100% { transform: none; filter: none; }
+  font-size: var(--fs-lg);
 }
 .mini-option--a { background: var(--c-team-1); }
-.mini-option--b { background: var(--c-team-3); }
+.mini-option--b { background: var(--c-surface); animation: home-pick var(--dur-pick) var(--ease-out) 1.6s infinite; }
 .mini-option--c { background: var(--c-team-4); }
 .mini-option--d { background: var(--c-team-5); }
+.mini-option :deep(svg) {
+  width: var(--icon-xl);
+  height: var(--icon-xl);
+  padding: var(--sp-1);
+  border-radius: var(--r-full);
+  background: var(--c-ink);
+  color: var(--c-on-ink);
+  transform: scale(0);
+  animation: home-check var(--dur-pick) var(--ease-back) 1.6s infinite;
+}
 
-.game-card__body { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--sp-4); padding: var(--sp-5); }
-.game-card__index {
-  padding-top: var(--sp-2);
-  color: var(--c-brand);
+.game-card__body { display: grid; gap: var(--sp-3); }
+
+.game-card__tagline {
+  font-size: var(--fs-xs);
+  font-weight: 900;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+}
+
+.game-card__title {
+  font-size: var(--fs-3xl);
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.game-card__description { font-size: var(--fs-md); line-height: var(--lh-body); }
+
+.game-card__meta {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-1) var(--sp-3);
+  border: var(--border-w-strong) solid var(--c-ink);
+  border-radius: var(--r-full);
+  background: var(--c-surface);
   font-size: var(--fs-sm);
   font-weight: 900;
-  font-variant-numeric: tabular-nums;
 }
-.game-card__heading h3 { margin-top: var(--sp-1); font-size: var(--fs-2xl); }
-.game-card__tagline { color: var(--c-brand); font-size: var(--fs-sm); font-weight: 700; }
-.game-card__description { grid-column: 2; color: var(--c-text-muted); line-height: var(--lh-body); }
-.game-card__meta {
-  grid-column: 2;
+
+.game-card__warn,
+.offline {
   display: flex;
   align-items: center;
   gap: var(--sp-2);
-  color: var(--c-text-faint);
+  padding: var(--sp-3) var(--sp-4);
+  border: var(--border-w-strong) solid var(--c-ink);
+  border-radius: var(--r-md);
+  background: var(--c-bad-fill);
+  color: var(--c-text-ink);
   font-size: var(--fs-sm);
   font-weight: 700;
 }
-.game-card__meta svg { width: var(--fs-lg); flex: none; }
-.game-card__warn {
-  grid-column: 2;
-  padding-left: var(--sp-3);
-  border-left: var(--border-w-strong) solid var(--c-bad);
-  color: var(--c-bad);
-  font-size: var(--fs-sm);
-  line-height: var(--lh-body);
+.offline svg { flex: none; }
+
+.game-card__actions { margin-top: var(--sp-2); }
+
+/* Hlavní tlačítko karty je inkoustové, ne modré: na barevné kartě by
+   modrá UNIQA soupeřila s plochou. */
+.game-card__play {
+  --btn-bg: var(--c-ink);
+  --btn-bg-hover: var(--c-ink);
+  --btn-fg: var(--c-on-ink);
 }
-.game-card__actions { grid-column: 2; display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; margin-top: var(--sp-2); }
+
+.game-card__resume {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+}
+.game-card__resume span {
+  width: var(--sp-3);
+  height: var(--sp-3);
+  border: var(--border-w) solid var(--c-ink);
+  border-radius: var(--r-full);
+  background: var(--c-ok-fill);
+}
 .game-card__discard {
+  padding: 0;
   border: 0;
-  background: transparent;
-  color: var(--c-text-faint);
-  font-size: inherit;
-  font-weight: 700;
+  background: none;
+  color: var(--c-text-ink);
+  font-weight: 900;
   text-decoration: underline;
   text-underline-offset: 0.2em;
 }
-.game-card__discard:hover { color: var(--c-bad); }
 
-.game-card__resume { grid-column: 2; display: flex; align-items: center; gap: var(--sp-2); color: var(--c-text-muted); font-size: var(--fs-xs); }
-.game-card__resume span { width: var(--sp-2); height: var(--sp-2); border-radius: var(--r-full); background: var(--c-ok); box-shadow: 0 0 0 var(--sp-1) color-mix(in oklab, var(--c-ok) 18%, transparent); }
+.credit {
+  padding-block: var(--sp-6) var(--sp-7);
+  text-align: center;
+  font-size: var(--fs-sm);
+  color: var(--c-text-muted);
+}
+.credit a { color: var(--c-text); font-weight: 900; }
+.credit a:hover { color: var(--c-brand); }
 
-@media (prefers-reduced-motion: reduce) {
-  .drift__tile,
-  .hero__kicker,
-  .game-card,
-  .mini-board__tile,
-  .mini-option { animation: none; }
-  .game-card:hover { transform: none; }
+/* --- Pohyb --------------------------------------------------------------- */
+
+@keyframes home-slap {
+  0% { transform: scale(2.4) rotate(14deg); opacity: 0; }
+  55% { transform: scale(0.9) rotate(-3deg); opacity: 1; }
+  100% { transform: none; opacity: 1; }
+}
+@keyframes home-rise {
+  0% { transform: translateY(2.5rem); opacity: 0; }
+  70% { transform: translateY(-0.4rem); opacity: 1; }
+  100% { transform: none; opacity: 1; }
+}
+@keyframes home-tile-in {
+  0% { transform: scale(0) rotate(-40deg); }
+  70% { transform: scale(1.1); }
+  100% { transform: none; }
+}
+@keyframes home-hop {
+  0%, 100% { transform: none; }
+  30% { transform: translateY(-2rem) rotate(-9deg); }
+  60% { transform: translateY(0.25rem) rotate(4deg); }
+  80% { transform: translateY(-0.4rem); }
+}
+@keyframes home-float {
+  0%, 100% { translate: 0 0; }
+  50% { translate: 0 -0.6rem; }
+}
+@keyframes home-flip {
+  0%, 30%, 100% { transform: rotateY(0); }
+  36%, 70% { transform: rotateY(180deg); }
+}
+@keyframes home-timer {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+@keyframes home-pick {
+  0%, 20%, 100% { translate: 0 0; box-shadow: var(--shadow-sm); }
+  26%, 70% { translate: var(--shadow-x-sm) var(--shadow-x-sm); box-shadow: var(--shadow-none); }
+}
+@keyframes home-check {
+  0%, 26% { transform: scale(0); }
+  32%, 70% { transform: scale(1); }
+  76%, 100% { transform: scale(0); }
 }
 
+/* Bez pohybu je všechno rovnou na místě. Klíčové snímky tokeny trvání
+   nevypnou, nekonečné cykly by běžely dál. */
+@media (prefers-reduced-motion: reduce) {
+  .hero__kicker,
+  .hero__actions,
+  .hero__tile,
+  .hero__tile i,
+  .mini-board__cell--live,
+  .mini-quiz__timer span,
+  .mini-option--b,
+  .mini-option :deep(svg) { animation: none; }
+  .mini-option :deep(svg) { transform: none; }
+}
+
+/* --- Šířky --------------------------------------------------------------- */
+
 @media (max-width: 960px) {
-  .games { grid-template-columns: minmax(0, 1fr); }
-  .game-card { display: grid; grid-template-columns: minmax(var(--home-card-side-min), 0.8fr) minmax(0, 1.2fr); }
-  /* Na užším okně stojí náhled vedle textu, takže se výška řídí kartou. */
-  .game-card__preview { block-size: auto; min-height: 100%; }
+  .games { grid-template-columns: minmax(0, 1fr); max-width: 40rem; margin-inline: auto; width: 100%; }
+}
+
+/* Na užší obrazovce by dlaždice v plné velikosti vlezly do nápisu.
+   Zmenší se a zůstanou u okrajů. */
+@media (max-width: 960px) {
+  .hero__tile { width: calc(var(--s) * 0.6); height: calc(var(--s) * 0.6); }
 }
 
 @media (max-width: 720px) {
-  /* Na úzké obrazovce by osm dlaždic dělalo nepořádek, půlka stačí. */
-  .drift__tile:nth-child(n + 5) { display: none; }
-  /* Na telefonu se roluje rád a celá obrazovka pro značku je tam
-     plýtvání: úvod se srazí na svůj obsah. */
-  .hero { min-height: 0; padding-block: var(--sp-7) var(--sp-6); }
-  .hero__copy { gap: var(--sp-4); }
-  .hero__kicker { font-size: var(--fs-xl); }
-  .choice { padding-block: 0 var(--sp-8); }
-  .game-card { display: block; }
-  /* Zpátky na pevnou výšku. `min-height: 100%` z širšího rozvržení se
-     musí zrušit, jinak by se náhled natáhl přes celou kartu. */
-  .game-card__preview { block-size: var(--home-preview-h); min-height: 0; }
+  .home { --home-peek: 4rem; }
+  .choice__head { flex-direction: column; align-items: flex-start; gap: var(--sp-3); }
+  .hero__eyebrow { left: var(--sp-4); right: var(--sp-4); text-align: center; }
+  .hero__tile { width: calc(var(--s) * 0.45); height: calc(var(--s) * 0.45); }
+  .hero__kicker { font-size: var(--fs-2xl); }
 }
 
 @media (max-width: 560px) {
-  .game-card__preview { padding: var(--sp-4); }
-  .game-card__body { grid-template-columns: minmax(0, 1fr); padding: var(--sp-5); }
-  .game-card__index { display: none; }
-  .game-card__description,
-  .game-card__meta,
-  .game-card__warn,
-  .game-card__actions,
-  .game-card__resume { grid-column: 1; }
-  .game-card__actions { align-items: stretch; }
-  .game-card__actions :deep(.btn) { width: 100%; }
+  .hero__actions { flex-direction: column; align-items: stretch; width: 100%; }
+  .game-card { padding: var(--sp-5); rotate: -0.75deg; }
+  .game-card:nth-child(even) { rotate: 0.75deg; }
 }
-
 </style>

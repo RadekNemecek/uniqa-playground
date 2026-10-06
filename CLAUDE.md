@@ -45,13 +45,14 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
   výsledkové obrazovce.
   Nikdy nenese otázku, odpověď, hodnotu ani ovládací prvek, ty se čtou
   z druhého konce místnosti a tam vyhrává čitelnost nad charakterem.
-- **Jedno téma, tmavě modré.** Rampa ploch je čistý odstín `#005CA9`
-  ztlumený do hloubky. Platí na všechno: hru, rozcestník, přípravu,
-  správu otázek i výsledky. Hraje se na projektoru a příprava má
-  vypadat jako součást hry, ne jako cizí nástroj. Světlý pracovní sešit
-  tu chvíli byl, obrazovku po obrazovce se vracel do tmy a nezůstalo
-  z něj nic; nezavádět ho znovu bez pádnějšího důvodu, než že se
-  správa „dělá u stolu".
+- **Jedno téma, světlý papír a inkoust.** Hravý neobrutalismus: plocha je
+  papír UNIQA `#EEF2FA`, karty bílé, obrysy tlusté inkoustové a stíny
+  tvrdé, posunuté a bez rozmazání (`--shadow-sm/md/lg`). Hloubku nedělá
+  světlo, lesk ani přechod, ale stín, do kterého se klikatelný prvek
+  při stisku zamáčkne. Platí na všechno: hru, rozcestník, přípravu,
+  správu otázek i výsledky. Tmavě modré téma tu bylo dřív a působilo
+  jako studentská práce: všechno mělo jeden odstín, takže oko nemělo
+  co vést. Nevracet ho bez pádnějšího důvodu.
 - **Žádná zlatá ani žlutá.** UNIQA je nemá. Akcent je `--c-brand`, hodnoty
   na dlaždicích nese `--c-value`. Žlutá chybí i mezi barvami týmů, jinak by
   se zlatá vrátila zadními dveřmi.
@@ -76,40 +77,34 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
   polohovaný a překryv se zastaví na jeho okraji, takže kliknutí nese
   sama karta a tlačítko uvnitř zastavuje probublání. K balíčkům se
   odtud nechodí, ta cesta vede z hlavičky hry.
-- **Rozcestník nese nápis, pozadí jen dýchá.** Žádná fotka ani
-  generovaná grafika. Ozdob tu běželo šest naráz, tedy záře, zrno, kužel
-  i dopad světla, a značce to ubíralo: vtip s odebraným „M" se přečte
-  sám. Zůstaly plující dlaždice, protože značka je mřížka dlaždic a obě
-  hry na dlaždicích stojí, a jeden měkký kruh světla pod nápisem, aby
-  v nich nestál v závoji. Dlaždice plují po celé stránce včetně úvodu
-  a klidně i za nápisem: jsou tlumené a rozostřené natolik, že mu
-  neubírají, a to světlo je za ním ztlumí ještě o kus víc. U okrajů je
-  zaříznutá hrana stránky, takže z nich kouká jen kus a čtou se jako
-  geometrie. Dráha je uzavřený čtyřbodový okruh, ne úsečka tam a zpět:
-  dlaždice se tím nekývá, ale plave. Na jeden úsek vychází kolem deseti
-  vteřin, takže je pohyb vidět, když se člověk zastaví, a nerve se
-  o pozornost, když ne. Animace jede na posunu a natočení a při
-  `prefers-reduced-motion` stojí. Úvod je titulní strana: značka
-  vystředěná na výšku i na šířku a pod ní ruční kicker. Vtip
-  s odebraným „M" se přečte sám a věta ho jen dopoví, proto stojí až za
-  ním, a v sekvenci taky přijde poslední. Zpod dolní hrany kouká
-  `--home-peek`, což je celý náhled hry: grafická část obou karet je
-  vidět a na stejné lince, text pod čárou se čte až po odrolování.
-  Není to odhad, počítá se to z výšky náhledu.
-- **Nápis Mučírna je plochý.** Žádná spodní hrana, lesk ani přejíždějící
-  odlesk. Přeliv na dlaždici i na slově zůstal, ale je to spád mezi
-  dvěma sousedními odstíny modré, ne světlo dopadající na hmotu: bez něj
-  byla značka placka. Ve velikosti, jakou má na rozcestníku, tedy přes
-  tisíc pixelů, z hrany, lesku a odlesku byla ikona
-  aplikace z roku 2012. Zůstala nakloněná dlaždice, jiskry a dosednutí,
-  protože to nese ten vtip; povrchová úprava ho nenese. Barvy jdou přes
-  `--mark-*`, takže kresba neví, na které ploše leží. Hmota dlaždic
-  patří herní desce a náhledům her, ne značce. Nad nápisem neleží žádná
-  plující dlaždice: značka jde přes většinu šířky a dlaždice kolem ní
-  se s ní přetahovaly, takže začínají až u jejího spodního okraje.
-- **Hravost patří do hry a na rozcestník, ne do správy otázek.** Tam se
-  pracuje, ozdoby by překážely. Ve hře je hmota dlaždic, pohyb a jiskra
-  vítaná, protože z tabulky dělá herní desku.
+- **Rozcestník je titulní strana s dopadem.** Nahoře jen nápis,
+  nálepka s větou a dvě tlačítka (Vybrat hru, Připojit se telefonem).
+  Sekvence: vyskočí písmena „učírna", shora spadne dlaždice s M,
+  dopadne, smáčkne se, slovo se otřese a kolem nadskočí barevné
+  dlaždice v pozadí. Vtip s odebraným „M" se tím přečte sám, věta na
+  nálepce ho jen dopoví, proto přijde až po dopadu. Dlaždice v pozadí
+  jsou v barvách možností A až D s inkoustovou hranou, leží u okrajů
+  a pomalu se pohupují; na užší obrazovce se zmenší, aby nevlezly do
+  nápisu. Žádná fotka ani generovaná grafika. Zpod úvodu vykoukne
+  nadpis výběru her (`--home-peek`), aby bylo vidět, že se roluje.
+  Hry jsou až na druhé obrazovce: dvě barevné karty, mírně natočené
+  každá na jinou stranu, s nálepkou a živým náhledem. Časování drží
+  tokeny `--delay-mark-*`, při `prefers-reduced-motion` stojí všechno
+  rovnou v cíli.
+- **Nápis Mučírna je plochý a živý.** Dlaždice s M je plná modrá UNIQA
+  s inkoustovou hranou a tvrdým stínem, slovo je inkoust. Žádný lesk,
+  přeliv ani odlesk: ve velikosti, jakou má na rozcestníku, z toho byla
+  ikona z roku 2012. Po úvodu nápis nezůstane mrtvý: jednou za čas M
+  strčí do písmen a ta se zhoupnou jako domino, jindy M vyskočí a za
+  ním poskočí písmena, do třetice se M otočí. Cyklus je dlouhý
+  (`--dur-idle`), aby se to dělo občas. Rozměry uvnitř nápisu jsou
+  v `em`, roste jako celek s `--fs-home-mark`. Barvy jdou přes
+  `--mark-*`. Favicona a náhledová karta se kreslí z téže dlaždice
+  (`scripts/make-icons.mjs`).
+- **Hravost patří do hry a na rozcestník, ne do správy otázek.** Obrys,
+  tvrdý stín a zamáčknutí při stisku jsou jazyk celého rozhraní, i ve
+  správě. Ozdoby navíc, tedy nálepky, natočení, poskakování a dlaždice
+  v pozadí, patří jen hře a rozcestníku. Ve správě se pracuje.
 - **Každá hra má vlastní otázky.** Deska chce znění a odpověď, kvíz čtyři
   možnosti a nepovinnou poučku. Společná sada by znamenala, že každá otázka
   nese pole, která druhá hra nepoužije, a že se obě hry musí domlouvat na
@@ -212,8 +207,9 @@ než celá složka `ui/` a šest ikonových tlačítek vypadalo šesti způsoby.
   a žádný křížek zapsaný jako `&#215;`. Jedna velikostní škála
   (`--icon-*`) a jedna tloušťka tahu (`--icon-stroke`).
 - `UiIconButton` na každé tlačítko, které nese jen ikonu.
-- `UiButton` má `loading`, `icon` a plnou `danger` variantu. Destruktivní
-  akce nesmí být vizuálně slabší než potvrzovací.
+- `UiButton` má `loading`, `icon`, `iconAfter` a plnou `danger` variantu.
+  Destruktivní akce nesmí být vizuálně slabší než potvrzovací. Tlačítko
+  se při najetí posune do půlky svého stínu a při stisku do celého.
 - `UiModal` drží focus trap, vrací zaměření a zamyká rolování přes čítač
   v `src/lib/scrollLock.ts`. **Vlastní dialog se nepíše**; potvrzení se umí
   otevřít nad jiným oknem a prostý přepínač `overflow` to rozbije.
@@ -231,7 +227,12 @@ Jiný se nezavádí. Rozvržení jedné obrazovky patří do jejího
 
 Zakázané: `!important`, `transition: all` (jsou na to `--tr-surface`
 a `--tr-enter`), syrové `44px` místo `--control-touch`, syrový prstenec
-zaměření místo `--focus-ring-*`.
+zaměření místo `--focus-ring-*`, rozmazaný stín, `backdrop-filter`
+a barevné písmo v barvě týmu nebo možnosti. Světlé odstíny týmů jsou
+plocha pod inkoustovým textem, na bílé jako text zmizí; tým se proto
+ukazuje štítkem ve své barvě. Stavové barvy mají dvě podoby:
+`--c-ok`/`--c-bad` jako text a `--c-ok-fill`/`--c-bad-fill` jako plocha
+pod inkoustem.
 
 ## Prezentační režim
 

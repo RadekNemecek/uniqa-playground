@@ -91,7 +91,7 @@ defineExpose({ close })
   z-index: var(--z-header);
   min-width: var(--menu-width);
   padding: var(--sp-1);
-  border: var(--border-w) solid var(--c-line);
+  border: var(--border-w-strong) solid var(--c-line);
   border-radius: var(--r-md);
   background: var(--c-surface);
   box-shadow: var(--shadow-md);
@@ -117,7 +117,7 @@ defineExpose({ close })
 }
 .menu__panel :deep(button[role='menuitem']:hover),
 .menu__panel :deep(a[role='menuitem']:hover) {
-  background: var(--c-surface-2);
+  background: var(--c-brand-wash);
 }
 .menu__panel :deep(button[role='menuitem'].danger) {
   color: var(--c-bad);

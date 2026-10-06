@@ -290,13 +290,7 @@ onUnmounted(() => {
   isolation: isolate;
   min-height: 100dvh;
   width: 100%;
-  background:
-    radial-gradient(
-      70% 50% at 50% 28%,
-      color-mix(in oklab, var(--c-brand) 12%, transparent),
-      transparent 70%
-    ),
-    var(--c-abyss);
+  background: var(--c-base);
 }
 .results__fx {
   position: absolute;
@@ -327,6 +321,7 @@ onUnmounted(() => {
   line-height: 1.15;
   color: var(--c-brand);
   margin: 0;
+  rotate: -3deg;
   animation: fadeUp var(--dur-slow) var(--ease-out) both;
 }
 
@@ -381,39 +376,35 @@ onUnmounted(() => {
 .slot__place {
   margin: 0;
   font-size: var(--fs-sm);
-  font-weight: 700;
+  font-weight: 900;
   letter-spacing: var(--tracking-caps);
   text-transform: uppercase;
-  color: var(--c-text-faint);
+  color: var(--c-text-muted);
 }
 .slot--champ .slot__place {
-  color: var(--c-text-muted);
+  color: var(--c-text);
 }
 .slot__badge {
   display: grid;
   place-items: center;
   width: clamp(3.25rem, 2.2rem + 3vw, 4.5rem);
   height: clamp(3.25rem, 2.2rem + 3vw, 4.5rem);
+  border: var(--border-w-heavy) solid var(--c-border);
   border-radius: var(--r-lg);
   background: var(--team);
   color: var(--c-text-ink);
   font-family: var(--font-display);
   font-weight: 900;
   font-size: clamp(var(--fs-xl), 1rem + 1.4vw, var(--fs-3xl));
-  box-shadow:
-    inset 0 2px 0 var(--c-tile-sheen),
-    0 4px 0 color-mix(in oklab, var(--team) 40%, black),
-    0 16px 32px -12px color-mix(in oklab, var(--team) 45%, transparent);
+  box-shadow: var(--shadow-md);
+  rotate: -4deg;
 }
 .slot--champ .slot__badge {
   width: clamp(4.5rem, 3rem + 5vw, 7rem);
   height: clamp(4.5rem, 3rem + 5vw, 7rem);
   border-radius: var(--r-xl);
   font-size: clamp(var(--fs-3xl), 1.4rem + 2.8vw, 4rem);
-  box-shadow:
-    inset 0 2px 0 var(--c-tile-sheen),
-    0 8px 0 color-mix(in oklab, var(--team) 40%, black),
-    0 28px 56px -14px color-mix(in oklab, var(--team) 50%, transparent);
+  box-shadow: var(--shadow-lg);
 }
 .slot__name {
   margin: 0;
@@ -441,7 +432,6 @@ onUnmounted(() => {
 .slot--champ .slot__score {
   font-size: clamp(var(--fs-2xl), 1rem + 2.2vw, 3rem);
   color: var(--c-brand);
-  text-shadow: 0 0 36px var(--c-brand-glow);
 }
 
 /* Samotný sloup stupně: roste zdola nahoru. */
@@ -455,17 +445,9 @@ onUnmounted(() => {
   gap: var(--sp-2);
   padding: var(--sp-3) var(--sp-3) var(--sp-4);
   border-radius: var(--r-lg) var(--r-lg) var(--r-md) var(--r-md);
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in oklab, var(--team) 28%, var(--c-surface-2)),
-      color-mix(in oklab, var(--team) 12%, var(--c-surface))
-    );
-  border: 1px solid color-mix(in oklab, var(--team) 35%, var(--c-line-soft));
-  box-shadow:
-    inset 0 1px 0 var(--c-tile-sheen),
-    0 6px 0 color-mix(in oklab, var(--team) 28%, black),
-    0 18px 36px -16px color-mix(in oklab, var(--team) 40%, transparent);
+  background: var(--c-surface);
+  border: var(--border-w-heavy) solid var(--c-border);
+  box-shadow: var(--shadow-md);
   transform-origin: bottom center;
   animation: riseColumn var(--dur-count) var(--ease-out)
     calc(var(--dur-base) + var(--rise) * var(--dur-slow)) both;
@@ -476,10 +458,7 @@ onUnmounted(() => {
 .slot--champ .slot__riser {
   --riser-h: clamp(8.5rem, 20vh, 12rem);
   border-radius: var(--r-xl) var(--r-xl) var(--r-md) var(--r-md);
-  box-shadow:
-    inset 0 1px 0 var(--c-tile-sheen),
-    0 8px 0 color-mix(in oklab, var(--team) 32%, black),
-    0 28px 48px -16px color-mix(in oklab, var(--team) 45%, transparent);
+  box-shadow: var(--shadow-lg);
 }
 .slot--third .slot__riser {
   --riser-h: clamp(3.75rem, 8vh, 5.25rem);
@@ -522,30 +501,21 @@ onUnmounted(() => {
   width: 100%;
   min-height: 2px;
   height: var(--h);
+  border: var(--border-w) solid var(--c-border);
+  border-bottom: 0;
   border-radius: var(--r-sm) var(--r-sm) 0 0;
   justify-self: stretch;
   align-self: end;
   /* Roste spolu se stupněm, bez vlastního zpoždění. */
-  opacity: 0.95;
 }
-.slot__bar--ok {
-  background: linear-gradient(180deg, color-mix(in oklab, var(--team) 92%, white), var(--team));
-  box-shadow:
-    inset 0 1px 0 var(--c-tile-sheen),
-    0 2px 0 color-mix(in oklab, var(--team) 40%, black);
-}
-.slot__bar--bad {
-  background: linear-gradient(180deg, var(--c-bad), color-mix(in oklab, var(--c-bad) 70%, var(--c-dead)));
-  box-shadow:
-    inset 0 1px 0 color-mix(in oklab, white 18%, transparent),
-    0 2px 0 color-mix(in oklab, var(--c-bad-deep) 80%, black);
-}
+.slot__bar--ok { background: var(--team); }
+.slot__bar--bad { background: var(--c-bad-fill); }
 
 .results__legend {
   display: flex;
   gap: var(--sp-4);
   font-size: var(--fs-xs);
-  font-weight: 700;
+  font-weight: 900;
   color: var(--c-text-muted);
 }
 .results__legend-item {
@@ -557,14 +527,14 @@ onUnmounted(() => {
   content: '';
   width: var(--sp-3);
   height: var(--sp-3);
+  border: var(--border-w) solid var(--c-border);
   border-radius: var(--r-sm);
-  box-shadow: inset 0 1px 0 var(--c-tile-sheen);
 }
 .results__legend-item--ok::before {
   background: var(--c-brand-soft);
 }
 .results__legend-item--bad::before {
-  background: var(--c-bad);
+  background: var(--c-bad-fill);
 }
 
 /* --- Další pořadí -------------------------------------------------------- */
@@ -587,16 +557,17 @@ onUnmounted(() => {
   gap: var(--sp-2);
   padding: var(--sp-2) var(--sp-3);
   border-radius: var(--r-md);
-  background: color-mix(in oklab, var(--c-surface) 70%, transparent);
-  border: 1px solid var(--c-line-soft);
+  background: var(--c-surface);
+  border: var(--border-w-strong) solid var(--c-border);
+  box-shadow: var(--shadow-sm);
   animation: fadeUp var(--dur-slow) var(--ease-out)
     calc(var(--dur-base) + var(--dur-count) + var(--i) * 40ms) both;
 }
 .rest__place {
   font-variant-numeric: tabular-nums;
-  font-weight: 700;
+  font-weight: 900;
   font-size: var(--fs-sm);
-  color: var(--c-text-faint);
+  color: var(--c-text-muted);
   text-align: right;
 }
 .rest__badge {
@@ -610,9 +581,7 @@ onUnmounted(() => {
   font-family: var(--font-display);
   font-weight: 900;
   font-size: var(--fs-xs);
-  box-shadow:
-    inset 0 1px 0 var(--c-tile-sheen),
-    0 2px 0 color-mix(in oklab, var(--team) 40%, black);
+  border: var(--border-w) solid var(--c-border);
 }
 .rest__name {
   font-weight: 700;
@@ -642,12 +611,13 @@ onUnmounted(() => {
   font-variant-numeric: tabular-nums;
   line-height: var(--sp-5);
   color: var(--c-text-ink);
+  border: var(--border-w) solid var(--c-border);
 }
 .rest__chip--ok {
   background: var(--team);
 }
 .rest__chip--bad {
-  background: var(--c-bad);
+  background: var(--c-bad-fill);
 }
 
 .results__foot {
@@ -657,12 +627,12 @@ onUnmounted(() => {
   width: 100%;
   margin-top: var(--sp-2);
   padding-top: var(--sp-4);
-  border-top: 1px solid var(--c-line-soft);
+  border-top: var(--border-w-strong) solid var(--c-border);
 }
 .results__meta {
   margin: 0;
   font-size: var(--fs-sm);
-  color: var(--c-text-faint);
+  color: var(--c-text-muted);
   text-align: center;
   text-wrap: balance;
 }

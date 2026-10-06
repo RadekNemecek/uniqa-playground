@@ -257,7 +257,7 @@ async function onValueChange(index: number, event: Event) {
   align-items: center;
   gap: var(--sp-2);
   padding: var(--sp-2);
-  border: 1px solid var(--c-line);
+  border: var(--border-w-strong) solid var(--c-line);
   border-radius: var(--r-lg);
   background: var(--c-surface);
 }
@@ -284,7 +284,7 @@ async function onValueChange(index: number, event: Event) {
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
-.cat__count--done { background: color-mix(in oklab, var(--c-ok) 22%, transparent); color: var(--c-ok); }
+.cat__count--done { background: var(--c-ok-fill); color: var(--c-text-ink); }
 .cat__tools {
   flex: none;
   display: flex;
@@ -316,7 +316,7 @@ async function onValueChange(index: number, event: Event) {
   grid-template-rows: 1fr auto;
   gap: 2px;
   padding: var(--sp-1);
-  border: 1px solid var(--c-line);
+  border: var(--border-w-strong) solid var(--c-line);
   border-radius: var(--r-md);
   background: var(--c-surface);
 }
@@ -342,7 +342,7 @@ async function onValueChange(index: number, event: Event) {
   background: transparent;
   color: var(--c-text-faint);
 }
-.row-value__x:hover:not(:disabled) { color: var(--c-bad); background: color-mix(in oklab, var(--c-bad) 10%, transparent); }
+.row-value__x:hover:not(:disabled) { color: var(--c-text-ink); background: var(--c-bad-fill); }
 .row-value__x:disabled { opacity: 0.25; }
 
 .row {
@@ -353,7 +353,7 @@ async function onValueChange(index: number, event: Event) {
   align-items: center;
   gap: var(--sp-3);
   padding: var(--sp-3);
-  border: 1px dashed var(--c-line);
+  border: var(--border-w) dashed var(--c-line);
   border-radius: var(--r-md);
   background: var(--c-sunken);
   color: var(--c-text-faint);
@@ -368,7 +368,7 @@ async function onValueChange(index: number, event: Event) {
 .row--on,
 .row--on:hover {
   border-color: var(--c-brand);
-  background: color-mix(in oklab, var(--c-brand) 12%, var(--c-sunken));
+  background: var(--c-brand-wash);
   color: var(--c-text);
 }
 .row__text {
@@ -388,7 +388,7 @@ async function onValueChange(index: number, event: Event) {
 .add {
   min-height: 2.75rem;
   padding: var(--sp-3);
-  border: 1px dashed var(--c-line);
+  border: var(--border-w) dashed var(--c-line);
   border-radius: var(--r-md);
   background: transparent;
   color: var(--c-text-muted);
@@ -426,7 +426,7 @@ async function onValueChange(index: number, event: Event) {
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
-.grid__cat-count--done { background: color-mix(in oklab, var(--c-ok) 22%, transparent); color: var(--c-ok); }
+.grid__cat-count--done { background: var(--c-ok-fill); color: var(--c-text-ink); }
 .grid__cat-name {
   width: 100%;
   border: 0;
@@ -467,7 +467,7 @@ async function onValueChange(index: number, event: Event) {
   display: grid;
   place-items: center;
   min-height: 4rem;
-  border: 1px dashed var(--c-line);
+  border: var(--border-w) dashed var(--c-line);
   border-radius: var(--r-md);
   background: transparent;
   color: var(--c-text-faint);
@@ -513,7 +513,7 @@ async function onValueChange(index: number, event: Event) {
 }
 .grid__value:hover .grid__value-x,
 .grid__value:focus-within .grid__value-x { opacity: 1; }
-.grid__value-x:hover:not(:disabled) { color: var(--c-bad); background: color-mix(in oklab, var(--c-bad) 12%, transparent); }
+.grid__value-x:hover:not(:disabled) { color: var(--c-text-ink); background: var(--c-bad-fill); }
 .grid__value-x:disabled { opacity: 0.2; }
 
 .grid__spacer { }
@@ -522,7 +522,7 @@ async function onValueChange(index: number, event: Event) {
   grid-column: 1 / -1;
   justify-self: start;
   padding: var(--sp-2) var(--sp-3);
-  border: 1px dashed var(--c-line);
+  border: var(--border-w) dashed var(--c-line);
   border-radius: var(--r-md);
   background: transparent;
   color: var(--c-text-muted);
@@ -539,7 +539,7 @@ async function onValueChange(index: number, event: Event) {
   place-items: center;
   min-height: 4.75rem;
   padding: var(--sp-3) var(--sp-3);
-  border: 1px dashed var(--c-line);
+  border: var(--border-w) dashed var(--c-line);
   border-radius: var(--r-md);
   background: var(--c-sunken);
   color: var(--c-text-faint);
@@ -570,7 +570,7 @@ async function onValueChange(index: number, event: Event) {
 .cell--on,
 .cell--on:hover {
   border-color: var(--c-brand);
-  background: color-mix(in oklab, var(--c-brand) 12%, var(--c-sunken));
+  background: var(--c-brand-wash);
   color: var(--c-text);
 }
 
@@ -583,8 +583,8 @@ async function onValueChange(index: number, event: Event) {
   width: 1.1rem;
   height: 1.1rem;
   border-radius: var(--r-full);
-  background: color-mix(in oklab, var(--c-ok) 22%, transparent);
-  color: var(--c-ok);
+  background: var(--c-ok-fill);
+  color: var(--c-text-ink);
 }
 
 .cell__text {

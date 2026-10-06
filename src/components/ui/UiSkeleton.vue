@@ -30,9 +30,9 @@ withDefaults(defineProps<{ lines?: number; height?: string }>(), { lines: 3, hei
   border-radius: var(--r-md);
   background: linear-gradient(
     90deg,
-    var(--c-bg-card) 0%,
-    var(--c-bg-raised) 50%,
-    var(--c-bg-card) 100%
+    var(--c-bg-active) 0%,
+    var(--c-bg-card) 50%,
+    var(--c-bg-active) 100%
   );
   background-size: 200% 100%;
   animation: skel-sweep var(--dur-ambient) linear infinite;

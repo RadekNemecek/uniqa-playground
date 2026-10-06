@@ -26,7 +26,9 @@ const LETTER = 0.55
 const x = CENTER - TILE / 2
 const y = CENTER - TILE / 2
 const radius = TILE * 0.2
-const drop = TILE * 0.05
+const drop = TILE * 0.09
+/** Inkoustová hrana. Stejná tloušťka jako obrys tlačítek v hlavičce. */
+const stroke = TILE * 0.07
 const fontSize = (TILE * LETTER) / CAP
 /** Účaří se posadí tak, aby verzálka stála na středu dlaždice. Počítá se,
  *  protože `dominant-baseline` středí na em, ne na výšku písmene. */
@@ -35,24 +37,9 @@ const baseline = CENTER + (TILE * LETTER) / 2
 
 <template>
   <svg class="tile" :viewBox="`0 0 ${CANVAS} ${CANVAS}`" role="img" aria-label="Mučírna">
-    <defs>
-      <linearGradient id="brand-tile" x1="0" y1="0" x2="0.35" y2="1">
-        <stop offset="0%" stop-color="var(--c-light)" />
-        <stop offset="100%" stop-color="var(--c-brand-deep)" />
-      </linearGradient>
-    </defs>
-
     <g :transform="`rotate(${-TILT} ${CENTER} ${CENTER})`">
-      <rect class="tile__edge" :x="x" :y="y + drop" :width="TILE" :height="TILE" :rx="radius" />
-      <rect class="tile__face" :x="x" :y="y" :width="TILE" :height="TILE" :rx="radius" />
-      <rect
-        class="tile__sheen"
-        :x="x + TILE * 0.09"
-        :y="y + drop"
-        :width="TILE * 0.82"
-        :height="TILE * 0.035"
-        :rx="TILE * 0.02"
-      />
+      <rect class="tile__edge" :x="x + drop" :y="y + drop" :width="TILE" :height="TILE" :rx="radius" />
+      <rect class="tile__face" :x="x" :y="y" :width="TILE" :height="TILE" :rx="radius" :stroke-width="stroke" />
       <text
         class="tile__letter"
         :x="CENTER"
@@ -68,11 +55,10 @@ const baseline = CENTER + (TILE * LETTER) / 2
 
 <style scoped>
 .tile { display: block; }
-.tile__face { fill: url(#brand-tile); }
-.tile__edge { fill: var(--c-tile-edge); }
-.tile__sheen { fill: var(--c-tile-sheen); }
+.tile__face { fill: var(--mark-tile-top); stroke: var(--c-ink); }
+.tile__edge { fill: var(--c-ink); }
 .tile__letter {
-  fill: var(--c-value);
+  fill: var(--mark-letter);
   font-family: var(--font-display);
   font-weight: 900;
 }

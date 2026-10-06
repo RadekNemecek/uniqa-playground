@@ -97,18 +97,18 @@ onMounted(async () => {
 <style scoped>
 .item { display: grid; gap: var(--sp-5); }
 .item__kind { display: grid; gap: var(--sp-2); justify-items: start; }
-.item__label { font-size: var(--fs-sm); color: var(--c-text-muted); font-weight: 700; }
+.item__label { font-size: var(--fs-sm); color: var(--c-text); font-weight: 900; }
 .options { padding: 0; margin: 0; border: 0; min-width: 0; }
-.options legend { font-weight: 700; font-size: var(--fs-sm); margin-bottom: var(--sp-3); }
+.options legend { font-weight: 900; font-size: var(--fs-sm); margin-bottom: var(--sp-3); }
 .hint { font-size: var(--fs-sm); color: var(--c-text-faint); margin-top: var(--sp-3); }
 .option { display: grid; grid-template-columns: var(--control-touch) var(--control-sm) minmax(0, 1fr) var(--sp-8); gap: var(--sp-2); align-items: center; margin-bottom: var(--sp-2); }
 .option__radio { display: grid; place-items: center; min-height: var(--control-touch); cursor: pointer; }
 .option__radio input, .boolean input { width: var(--control-check); height: var(--control-check); accent-color: var(--c-brand); margin: 0; flex: none; }
-.letter { display: grid; place-items: center; background: var(--option-color); color: var(--c-text-ink); width: var(--control-sm); height: var(--control-sm); border-radius: var(--r-sm); font-weight: 900; }
+.letter { display: grid; place-items: center; background: var(--option-color); color: var(--c-text-ink); width: var(--control-sm); height: var(--control-sm); border: var(--border-w) solid var(--c-border); border-radius: var(--r-sm); font-weight: 900; }
 .option__correct { color: var(--c-ok); font-size: var(--fs-xs); font-weight: 700; }
 .boolean { display: flex; flex-wrap: wrap; gap: var(--sp-3); }
-.boolean__option { display: flex; align-items: center; gap: var(--sp-3); min-height: var(--control-touch); padding: var(--sp-3); border: var(--border-w) solid var(--c-border-soft); cursor: pointer; }
-.boolean__option:has(:checked) { border-color: var(--c-brand); background: var(--c-bg-active); }
+.boolean__option { display: flex; align-items: center; gap: var(--sp-3); min-height: var(--control-touch); padding: var(--sp-3); border: var(--border-w-strong) solid var(--c-border); border-radius: var(--r-md); background: var(--c-surface); cursor: pointer; }
+.boolean__option:has(:checked) { background: var(--c-brand-wash); box-shadow: var(--shadow-sm); }
 .image { border-top: var(--border-w) solid var(--c-border-soft); }
 .image summary { display: flex; align-items: center; gap: var(--sp-2); min-height: var(--control-touch); padding-block: var(--sp-3); cursor: pointer; color: var(--c-brand); font-size: var(--fs-sm); font-weight: 700; }
 .image summary::after { content: '+'; margin-left: auto; }

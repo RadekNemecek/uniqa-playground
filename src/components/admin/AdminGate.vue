@@ -95,7 +95,7 @@ async function submit() {
   gap: var(--sp-4);
   width: min(100%, 26rem);
   padding: var(--sp-6);
-  border: 1px solid var(--c-line);
+  border: var(--border-w-strong) solid var(--c-line);
   border-radius: var(--r-xl);
   background: var(--c-surface);
   box-shadow: var(--shadow-md);

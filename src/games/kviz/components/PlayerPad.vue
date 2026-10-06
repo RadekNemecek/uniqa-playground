@@ -70,21 +70,22 @@ function word(i: number): string {
   align-content: center;
   gap: var(--sp-2);
   min-height: 0;
-  border: var(--separator-w) solid color-mix(in oklab, var(--c-text-ink) 30%, var(--tint));
+  border: var(--border-w-heavy) solid var(--c-border);
   border-radius: var(--r-xl);
   background: var(--tint);
   color: var(--c-text-ink);
-  box-shadow: var(--shadow-sm), inset 0 var(--separator-w) 0 color-mix(in oklab, var(--c-value) 42%, transparent);
+  box-shadow: var(--shadow-md);
   transition:
     transform var(--dur-fast) var(--ease-both),
-    opacity var(--dur-base) var(--ease-out),
-    border-color var(--dur-base) var(--ease-out);
+    translate var(--dur-press) var(--ease-out),
+    box-shadow var(--dur-press) var(--ease-out),
+    opacity var(--dur-base) var(--ease-out);
   /* Tlačítka nastupují po sobě, aby bylo znát, že přišla nová otázka.
      Výplň je `backwards`, ne `both`: dojetá animace by jinak držela
      `transform: none` a přebila zvětšení zvolené dlaždice. */
   animation: key-in var(--dur-base) var(--ease-back) calc(var(--d) * 50ms) backwards;
 }
-.key:active:not(:disabled) { transform: scale(0.96); }
+.key:active:not(:disabled) { translate: var(--shadow-x-md) var(--shadow-x-md); box-shadow: var(--shadow-none); }
 
 .key__letter {
   font-family: var(--font-display);
@@ -101,12 +102,13 @@ function word(i: number): string {
   line-height: 1;
 }
 
-/* Zvolená zůstane svítit, ostatní zhasnou. Rozdíl nestojí jen na jasu:
-   zvolená má plný rámeček a zvětšené písmeno. */
+/* Zvolená zůstane zamáčknutá ve stínu a dostane silnější obrys,
+   ostatní zhasnou. Rozdíl nestojí jen na jasu. */
 .key--on {
   outline: var(--sp-1) solid var(--c-text-ink);
   outline-offset: calc(var(--sp-1) * -1);
-  transform: scale(1.02);
+  translate: var(--shadow-x-md) var(--shadow-x-md);
+  box-shadow: var(--shadow-none);
 }
 .key--off { opacity: 0.25; }
 .key:disabled { cursor: default; }
@@ -118,7 +120,7 @@ function word(i: number): string {
 
 @media (prefers-reduced-motion: reduce) {
   .key { animation: none; }
-  .key--on { transform: none; }
-  .key:active:not(:disabled) { transform: none; }
+  .key--on { translate: none; }
+  .key:active:not(:disabled) { translate: none; }
 }
 </style>

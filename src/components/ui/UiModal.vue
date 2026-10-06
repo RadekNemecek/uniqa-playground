@@ -130,7 +130,7 @@ onBeforeUnmount(() => {
   place-items: center;
   padding: var(--sp-5);
 }
-.modal__scrim { position: absolute; inset: 0; background: var(--c-scrim); backdrop-filter: blur(6px); }
+.modal__scrim { position: absolute; inset: 0; background: var(--c-scrim); }
 .modal__panel {
   position: relative;
   /* Panel je jen náhradní místo pro zaměření, když uvnitř není žádné pole.
@@ -140,7 +140,7 @@ onBeforeUnmount(() => {
   max-height: min(86dvh, 52rem);
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--c-line);
+  border: var(--border-w-heavy) solid var(--c-line);
   border-radius: var(--r-xl);
   background: var(--c-surface);
   box-shadow: var(--shadow-lg);
@@ -155,7 +155,7 @@ onBeforeUnmount(() => {
   justify-content: space-between;
   gap: var(--sp-4);
   padding: var(--sp-5) var(--sp-5) var(--sp-4);
-  border-bottom: var(--border-w) solid var(--c-border-soft);
+  border-bottom: var(--border-w-strong) solid var(--c-border);
 }
 .modal__title { font-size: var(--fs-xl); }
 .modal__body { padding: var(--sp-5); overflow-y: auto; }
@@ -164,8 +164,8 @@ onBeforeUnmount(() => {
   justify-content: flex-end;
   gap: var(--sp-3);
   padding: var(--sp-4) var(--sp-5);
-  border-top: 1px solid var(--c-line-soft);
-  background: color-mix(in oklab, var(--c-abyss) 45%, transparent);
+  border-top: var(--border-w-strong) solid var(--c-border);
+  background: var(--c-base);
 }
 
 .modal-enter-active, .modal-leave-active { transition: opacity var(--dur-base) var(--ease-out); }
@@ -173,5 +173,5 @@ onBeforeUnmount(() => {
 
 .modal-enter-active .modal__panel { transition: transform var(--dur-base) var(--ease-back); }
 .modal-enter-from, .modal-leave-to { opacity: 0; }
-.modal-enter-from .modal__panel { transform: translateY(12px) scale(0.97); }
+.modal-enter-from .modal__panel { transform: translateY(24px) scale(0.9) rotate(-2deg); }
 </style>

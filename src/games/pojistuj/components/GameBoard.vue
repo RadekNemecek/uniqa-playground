@@ -181,9 +181,9 @@ function onGridKey(e: KeyboardEvent): void {
   justify-content: space-between;
   gap: var(--sp-3);
   padding: var(--sp-2) var(--sp-4);
-  border: 1px solid color-mix(in oklab, var(--c-brand) 35%, var(--c-line));
+  border: var(--border-w-strong) solid var(--c-border);
   border-radius: var(--r-lg);
-  background: color-mix(in oklab, var(--c-brand) 10%, var(--c-surface));
+  background: var(--c-brand-wash);
   font-size: var(--fs-sm);
   color: var(--c-text-muted);
 }
@@ -198,7 +198,7 @@ function onGridKey(e: KeyboardEvent): void {
   display: inline-flex;
   align-items: center;
   gap: var(--sp-1);
-  font-weight: 700;
+  font-weight: 900;
   color: var(--c-text);
 }
 .board__turn-badge {
@@ -206,6 +206,7 @@ function onGridKey(e: KeyboardEvent): void {
   place-items: center;
   width: 1.25rem;
   height: 1.25rem;
+  border: var(--border-w) solid var(--c-border);
   border-radius: var(--r-sm);
   background: var(--team);
   color: var(--c-text-ink);
@@ -216,34 +217,23 @@ function onGridKey(e: KeyboardEvent): void {
 .board__turn-btn {
   flex: none;
   padding: var(--sp-2) var(--sp-4);
-  border: 1px solid var(--c-brand);
+  border: var(--border-w-strong) solid var(--c-border);
   border-radius: var(--r-md);
   background: var(--c-brand);
+  box-shadow: var(--shadow-sm);
   color: var(--c-on-accent);
   font-size: var(--fs-sm);
-  font-weight: 700;
+  font-weight: 900;
 }
-.board__turn-btn:hover {
-  background: var(--c-brand-soft);
-  border-color: var(--c-brand-soft);
-}
-
-.board__grid::before {
-  content: '';
-  position: absolute;
-  inset: -12% -6% auto;
-  height: 60%;
-  z-index: -1;
-  pointer-events: none;
-  background: radial-gradient(60% 100% at 50% 0%, color-mix(in oklab, var(--c-light) 16%, transparent), transparent 70%);
-}
+.board__turn-btn:hover { background: var(--c-brand-deep); }
+.board__turn-btn:active { translate: var(--shadow-x-sm) var(--shadow-x-sm); box-shadow: var(--shadow-none); }
 
 .board__grid {
   position: relative;
   display: grid;
   grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
   grid-template-rows: auto repeat(var(--rows), minmax(0, 1fr));
-  gap: clamp(6px, 0.7vw, 14px);
+  gap: clamp(8px, 0.9vw, 16px);
   min-height: 0;
   height: 100%;
 }
@@ -255,13 +245,9 @@ function onGridKey(e: KeyboardEvent): void {
   min-height: clamp(3.25rem, 2.4rem + 1.2vh, 4.75rem);
   padding: var(--sp-3) var(--sp-3) calc(var(--sp-3) + 2px);
   border-radius: var(--r-md);
-  background: linear-gradient(180deg, var(--c-brand-soft) 0%, var(--c-brand) 100%);
+  background: var(--c-ink);
   border: 0;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.35),
-    0 2px 0 color-mix(in oklab, var(--c-brand-deep) 70%, black),
-    0 8px 18px -10px color-mix(in oklab, var(--c-brand) 40%, transparent);
-  color: var(--c-text-ink);
+  color: var(--c-on-ink);
   text-align: center;
   animation: dropIn var(--dur-slow) var(--ease-out) both;
 }
@@ -270,8 +256,8 @@ function onGridKey(e: KeyboardEvent): void {
 }
 .board__cat span {
   font-family: var(--font-display);
-  font-weight: 800;
-  letter-spacing: 0.02em;
+  font-weight: 900;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   line-height: 1.2;
   text-wrap: balance;

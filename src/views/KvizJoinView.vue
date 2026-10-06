@@ -379,7 +379,7 @@ onBeforeUnmount(leaveGame)
   min-height: 100dvh;
   display: grid;
   padding: var(--sp-4);
-  background: linear-gradient(180deg, var(--c-base) 0%, var(--c-abyss) 100%);
+  background: var(--c-base);
 }
 
 /* Karta ------------------------------------------------------------------- */
@@ -393,15 +393,15 @@ onBeforeUnmount(leaveGame)
 }
 .card__eyebrow {
   font-size: calc(var(--fs-xs) * var(--fit-text, 1));
-  font-weight: 700;
+  font-weight: 900;
   letter-spacing: var(--tracking-caps);
   text-transform: uppercase;
-  color: var(--c-text-faint);
+  color: var(--c-text-muted);
 }
 .card__title { font-size: var(--fs-2xl); font-weight: 900; letter-spacing: -0.02em; }
 .card__lead { color: var(--c-text-muted); line-height: var(--lh-body); max-width: 22rem; }
-.card__hint { font-size: var(--fs-xs); color: var(--c-text-faint); }
-.card__error { color: var(--c-bad); font-size: var(--fs-sm); }
+.card__hint { font-size: var(--fs-xs); color: var(--c-text-muted); }
+.card__error { color: var(--c-bad); font-size: var(--fs-sm); font-weight: 700; }
 .card__code {
   font-family: var(--font-display);
   font-size: var(--fs-2xl);
@@ -412,23 +412,25 @@ onBeforeUnmount(leaveGame)
 .card__input {
   width: min(100%, 20rem);
   padding: var(--sp-3) var(--sp-4);
-  border: var(--border-w) solid var(--c-border);
+  border: var(--border-w-strong) solid var(--c-border);
   border-radius: var(--r-lg);
   background: var(--c-bg-field);
   color: var(--c-text);
   font-size: var(--fs-lg);
+  font-weight: 900;
   text-align: center;
 }
-.card__input:focus-visible { border-color: var(--c-brand); }
+.card__input:focus-visible { box-shadow: var(--shadow-sm); }
 
 /* Pole na kód. Velké a prostrkané, protože se do něj opisuje z plátna
    a překlep tu stojí hráče celou hru. */
 .code-input {
   width: min(100%, 20rem);
   padding: var(--sp-4);
-  border: var(--border-w-strong) solid var(--c-border);
+  border: var(--border-w-heavy) solid var(--c-border);
   border-radius: var(--r-lg);
   background: var(--c-bg-field);
+  box-shadow: var(--shadow-md);
   color: var(--c-brand);
   font-family: var(--font-display);
   font-size: var(--fs-3xl);
@@ -437,7 +439,7 @@ onBeforeUnmount(leaveGame)
   text-align: center;
   text-transform: uppercase;
 }
-.code-input:focus-visible { border-color: var(--c-brand); }
+.code-input:focus-visible { box-shadow: var(--shadow-lg); }
 
 .card__ava { --ava-size: 4rem; }
 
@@ -448,7 +450,7 @@ onBeforeUnmount(leaveGame)
   gap: var(--sp-2);
   color: var(--c-ok);
   font-size: var(--fs-sm);
-  font-weight: 600;
+  font-weight: 900;
 }
 /* Vypadlé spojení nese slovo i barvu, na slunci u okna by odstín nestačil. */
 .alive--off { color: var(--c-bad); }
@@ -481,8 +483,8 @@ onBeforeUnmount(leaveGame)
   color: var(--c-text);
 }
 .me__ava { --ava-size: 6rem; }
-.me__name { font-weight: 700; }
-.me__swap { font-size: var(--fs-xs); color: var(--c-brand); text-decoration: underline; }
+.me__name { font-weight: 900; }
+.me__swap { font-size: var(--fs-xs); font-weight: 900; color: var(--c-brand); text-decoration: underline; }
 
 .zoo {
   list-style: none;
@@ -497,14 +499,14 @@ onBeforeUnmount(leaveGame)
   place-items: center;
   width: 100%;
   padding: var(--sp-1);
-  border: var(--separator-w) solid transparent;
+  border: var(--border-w-strong) solid transparent;
   border-radius: var(--r-lg);
   background: transparent;
 }
 .zoo__pick :deep(.ava) { --ava-size: 100%; }
 /* Vybrané zvíře pozná i ten, kdo barvy nerozezná: má rámeček a plochu. */
-.zoo__pick--on { border-color: var(--c-brand); background: var(--c-surface-2); }
-.card__score { font-size: var(--fs-lg); font-weight: 700; }
+.zoo__pick--on { border-color: var(--c-border); background: var(--c-surface); box-shadow: var(--shadow-sm); }
+.card__score { font-size: var(--fs-lg); font-weight: 900; }
 
 /* Výsledek otázky --------------------------------------------------------
    Pořadí řádků je pořadí otázek, které si hráč klade: jak jsem dopadl,
@@ -523,10 +525,10 @@ onBeforeUnmount(leaveGame)
   gap: var(--sp-2);
   font-size: var(--fs-xs);
   max-width: 100%;
-  font-weight: 700;
+  font-weight: 900;
   letter-spacing: var(--tracking-caps);
   text-transform: uppercase;
-  color: var(--c-text-faint);
+  color: var(--c-text-muted);
 }
 .result__ava { --ava-size: 1.75rem; }
 .result__nick { min-width: 0; font-size: calc(1em * var(--fit-text, 1)); }
@@ -537,9 +539,18 @@ onBeforeUnmount(leaveGame)
   letter-spacing: -0.02em;
   line-height: var(--lh-tight);
 }
-/* Verdikt nese slovo i barvu. Samotný odstín by na slunci u okna nestačil. */
-.result--ok .result__verdict { color: var(--c-ok); }
-.result--bad .result__verdict { color: var(--c-bad); }
+/* Verdikt nese slovo i barvu. Samotný odstín by na slunci u okna nestačil,
+   proto je to nálepka: barevná plocha, inkoustový text a obrys. */
+.result__verdict {
+  padding: var(--sp-1) var(--sp-5);
+  border: var(--border-w-heavy) solid var(--c-border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-md);
+  color: var(--c-text-ink);
+  rotate: -3deg;
+}
+.result--ok .result__verdict { background: var(--c-ok-fill); }
+.result--bad .result__verdict { background: var(--c-bad-fill); }
 
 .result__correct { color: var(--c-text-muted); font-size: var(--fs-sm); }
 .result__letter {
@@ -561,8 +572,8 @@ onBeforeUnmount(leaveGame)
 .result__gain--zero {
   font-family: inherit;
   font-size: var(--fs-sm);
-  font-weight: 600;
-  color: var(--c-text-faint);
+  font-weight: 700;
+  color: var(--c-text-muted);
 }
 
 /* Vlastní body. Jedna plocha, jedno číslo. */
@@ -573,15 +584,17 @@ onBeforeUnmount(leaveGame)
   width: min(100%, 16rem);
   margin: 0;
   padding: var(--sp-3) var(--sp-4);
+  border: var(--border-w-strong) solid var(--c-border);
   border-radius: var(--r-lg);
   background: var(--c-bg-card);
+  box-shadow: var(--shadow-sm);
 }
 .stat__label {
   font-size: var(--fs-2xs);
-  font-weight: 700;
+  font-weight: 900;
   letter-spacing: var(--tracking-caps);
   text-transform: uppercase;
-  color: var(--c-text-faint);
+  color: var(--c-text-muted);
 }
 .stat__value {
   margin: 0;
@@ -597,7 +610,7 @@ onBeforeUnmount(leaveGame)
 .result__note {
   margin-top: var(--sp-2);
   padding-top: var(--sp-3);
-  border-top: var(--border-w) solid var(--c-border-soft);
+  border-top: var(--border-w-strong) solid var(--c-border);
   max-width: 24rem;
   color: var(--c-text-muted);
   font-size: calc(var(--fs-sm) * var(--fit-text, 1));
@@ -615,17 +628,17 @@ onBeforeUnmount(leaveGame)
   display: flex;
   justify-content: space-between;
   font-size: var(--fs-sm);
-  color: var(--c-text-faint);
+  color: var(--c-text-muted);
 }
 .stage__nick {
-  font-weight: 700;
+  font-weight: 900;
   color: var(--c-text-muted);
   font-size: calc(1em * var(--fit-text, 1));
 }
 .stage__msg {
   text-align: center;
   font-size: var(--fs-lg);
-  font-weight: 700;
+  font-weight: 900;
   color: var(--c-text-muted);
 }
 .stage__msg--go { color: var(--c-brand); }
@@ -642,19 +655,21 @@ onBeforeUnmount(leaveGame)
   gap: var(--sp-3);
   flex-wrap: wrap;
   padding: var(--sp-2) var(--sp-4);
+  border-bottom: var(--border-w-strong) solid var(--c-border);
   background: var(--c-bad-deep);
-  color: var(--c-text);
+  color: var(--c-on-accent);
   font-size: var(--fs-sm);
-  font-weight: 600;
+  font-weight: 700;
   text-align: center;
 }
 .drop button {
-  border: var(--border-w) solid var(--c-text);
+  border: var(--border-w-strong) solid var(--c-border);
   border-radius: var(--r-md);
   padding: var(--sp-1) var(--sp-3);
-  background: transparent;
-  color: var(--c-text);
+  background: var(--c-surface);
+  color: var(--c-text-ink);
   font: inherit;
+  font-weight: 900;
 }
 
 @media (pointer: coarse) {

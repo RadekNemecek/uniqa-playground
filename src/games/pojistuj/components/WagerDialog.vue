@@ -184,7 +184,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey, true))
   color: var(--c-text-muted);
   text-align: center;
 }
-.wager__risk--none { color: var(--c-spark); font-weight: 700; }
+.wager__risk--none { color: var(--c-spark-ink); font-weight: 900; }
 
 .wager {
   position: fixed;
@@ -194,7 +194,6 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey, true))
   place-items: center;
   padding: var(--sp-5);
   background: var(--c-scrim);
-  backdrop-filter: blur(8px);
   animation: fade var(--dur-base) var(--ease-out) both;
 }
 .wager__panel {
@@ -204,10 +203,10 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey, true))
   width: min(100%, 34rem);
   padding: var(--sp-7) var(--sp-6);
   text-align: center;
-  border: 1px solid var(--c-spark-deep);
+  border: var(--border-w-heavy) solid var(--c-border);
   border-radius: var(--r-xl);
-  background: radial-gradient(120% 90% at 50% 0%, color-mix(in oklab, var(--c-spark) 16%, transparent), transparent 60%), var(--c-surface);
-  box-shadow: var(--shadow-lg);
+  background: var(--c-surface);
+  box-shadow: var(--shadow-x-lg) var(--shadow-x-lg) 0 var(--c-spark-deep);
   animation: pop var(--dur-slow) var(--ease-back) both;
 }
 /* Ruční písmo, druhé ze tří povolených míst. Úřední rubrika nad slovem
@@ -215,16 +214,22 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey, true))
 .wager__kicker {
   font-family: var(--font-hand);
   font-weight: 500;
-  font-size: var(--fs-xl);
+  font-size: var(--fs-2xl);
   line-height: 1;
-  color: var(--c-text-faint);
+  color: var(--c-text-muted);
+  rotate: -4deg;
 }
 .wager__title {
+  padding: var(--sp-1) var(--sp-5);
+  border: var(--border-w-heavy) solid var(--c-border);
+  border-radius: var(--r-lg);
+  background: var(--c-spark);
+  box-shadow: var(--shadow-md);
   font-size: var(--fs-3xl);
-  font-weight: 800;
+  font-weight: 900;
   letter-spacing: -0.03em;
-  color: var(--c-spark);
-  text-shadow: 0 4px 30px var(--c-spark-glow);
+  color: var(--c-text-ink);
+  rotate: -3deg;
 }
 .wager__lead {
   color: var(--c-text-muted);
@@ -245,11 +250,12 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey, true))
   flex: none;
   width: 1.35rem;
   height: 1.35rem;
+  border: var(--border-w) solid var(--c-border);
   border-radius: var(--r-sm);
   background: var(--team);
   color: var(--c-text-ink);
   font-family: var(--font-display);
-  font-weight: 800;
+  font-weight: 900;
   font-size: var(--fs-xs);
   line-height: 1;
 }
@@ -258,9 +264,9 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey, true))
 .wager__amount {
   font-family: var(--font-display);
   font-size: clamp(3rem, 9vw, 5rem);
-  font-weight: 800;
+  font-weight: 900;
   line-height: 1;
-  color: var(--c-spark);
+  color: var(--c-spark-ink);
   font-variant-numeric: tabular-nums;
 }
 
@@ -276,21 +282,25 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey, true))
   gap: var(--sp-1);
   min-width: 7rem;
   padding: var(--sp-2) var(--sp-4);
-  border: var(--border-w) solid var(--c-line);
+  border: var(--border-w-strong) solid var(--c-border);
   border-radius: var(--r-lg);
-  background: transparent;
-  color: var(--c-text-muted);
-  transition: var(--tr-surface);
+  background: var(--c-surface);
+  box-shadow: var(--shadow-sm);
+  color: var(--c-text);
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    translate var(--dur-press) var(--ease-out),
+    box-shadow var(--dur-press) var(--ease-out);
 }
 .wager__steps button:hover,
 .wager__steps button:focus-visible {
-  border-color: var(--c-spark-mid);
-  background: color-mix(in oklab, var(--c-spark) 10%, transparent);
-  color: var(--c-text);
+  background: var(--c-spark);
+  color: var(--c-text-ink);
 }
+.wager__steps button:active { translate: var(--shadow-x-sm) var(--shadow-x-sm); box-shadow: var(--shadow-none); }
 .wager__stepWord {
   font-size: var(--fs-2xs);
-  font-weight: 700;
+  font-weight: 900;
   letter-spacing: var(--tracking-caps);
   text-transform: uppercase;
 }
@@ -302,7 +312,6 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey, true))
   line-height: 1;
   color: var(--c-text);
 }
-.wager__steps button:hover { color: var(--c-text); border-color: var(--c-spark); }
 
 .wager__actions { display: flex; gap: var(--sp-3); flex-wrap: wrap; justify-content: center; margin-top: var(--sp-2); }
 
@@ -315,7 +324,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey, true))
 }
 
 @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
-@keyframes pop { from { opacity: 0; transform: translateY(20px) scale(0.94); } to { opacity: 1; transform: none; } }
+@keyframes pop { from { opacity: 0; transform: translateY(2rem) scale(0.8) rotate(-4deg); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) {
   .wager, .wager__panel { animation: none; }
 }

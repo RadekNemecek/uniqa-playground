@@ -184,10 +184,10 @@ function isTrap(q: QuizReportQuestion, at: number): boolean {
 
 .rep__head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-4); flex-wrap: wrap; }
 .rep__title { font-size: var(--fs-2xl); font-weight: 900; }
-.rep__meta { margin-top: var(--sp-1); font-size: var(--fs-sm); color: var(--c-text-faint); }
+.rep__meta { margin-top: var(--sp-1); font-size: var(--fs-sm); color: var(--c-text-muted); }
 .rep__tools { display: flex; gap: var(--sp-2); }
 
-.tabs { display: flex; gap: var(--sp-1); padding: var(--sp-1); border: 1px solid var(--c-line); border-radius: var(--r-md); background: var(--c-sunken); justify-self: start; }
+.tabs { display: flex; gap: var(--sp-1); padding: var(--sp-1); border: var(--border-w-strong) solid var(--c-border); border-radius: var(--r-md); background: var(--c-surface); box-shadow: var(--shadow-sm); justify-self: start; }
 .tabs button {
   padding: var(--sp-2) var(--sp-4);
   border: 0;
@@ -195,12 +195,12 @@ function isTrap(q: QuizReportQuestion, at: number): boolean {
   background: transparent;
   color: var(--c-text-muted);
   font-size: var(--fs-sm);
-  font-weight: 600;
+  font-weight: 900;
 }
-.tabs button:hover { color: var(--c-text); }
+.tabs button:hover { color: var(--c-text); background: var(--c-brand-wash); }
 /* Selektor je schválně stejně hluboký jako `.tabs button`, jinak by ho
    obecnější pravidlo přebilo a zbyl by tmavý text na tmavém pozadí. */
-.tabs button.tabs--on { background: var(--c-brand); color: var(--c-on-accent); }
+.tabs button.tabs--on { background: var(--c-ink); color: var(--c-on-ink); }
 
 /* Otázky ------------------------------------------------------------------- */
 .qs { list-style: none; padding: 0; display: grid; gap: var(--sp-2); min-height: 0; overflow-y: auto; }
@@ -210,25 +210,27 @@ function isTrap(q: QuizReportQuestion, at: number): boolean {
   align-items: center;
   gap: var(--sp-3);
   padding: var(--sp-3);
-  border: 1px solid var(--c-line-soft);
+  border: var(--border-w-strong) solid var(--c-border);
   border-radius: var(--r-lg);
   background: var(--c-surface);
+  box-shadow: var(--shadow-sm);
 }
-.q__bar { height: 0.5rem; border-radius: var(--r-full); background: var(--c-sunken); overflow: hidden; }
-.q__fill { display: block; height: 100%; width: var(--rate); background: var(--c-ok); }
+.q__bar { height: var(--sp-3); border: var(--border-w) solid var(--c-border); border-radius: var(--r-full); background: var(--c-surface); overflow: hidden; }
+.q__fill { display: block; height: 100%; width: var(--rate); background: var(--c-ok-fill); }
 /* Pod polovinou se pruh obarví, ale číslo vedle nese tutéž informaci. */
-.q__fill--weak { background: var(--c-bad); }
+.q__fill--weak { background: var(--c-bad-fill); }
 .q__rate { display: grid; }
 .q__rate strong { font-family: var(--font-display); font-size: var(--fs-lg); font-variant-numeric: tabular-nums; }
-.q__rate span { font-size: var(--fs-xs); color: var(--c-text-faint); }
+.q__rate span { font-size: var(--fs-xs); color: var(--c-text-muted); }
 .q__text { min-width: 0; }
-.q__prompt { font-weight: 600; line-height: var(--lh-snug); font-size: calc(1em * var(--fit-text, 1)); }
+.q__prompt { font-weight: 900; line-height: var(--lh-snug); font-size: calc(1em * var(--fit-text, 1)); }
 /* Náhled je malý schválně: připomíná, o kterou otázku šlo, nečte se z něj. */
 .q__thumb {
   display: block;
   margin-top: var(--sp-2);
   max-width: 12rem;
   max-height: 6rem;
+  border: var(--border-w) solid var(--c-border);
   border-radius: var(--r-sm);
   background: var(--c-photo-mat);
   object-fit: contain;
@@ -246,14 +248,15 @@ function isTrap(q: QuizReportQuestion, at: number): boolean {
 }
 .pick__letter { font-weight: 900; }
 .pick__bar {
-  height: var(--sp-2);
+  height: var(--sp-3);
+  border: var(--border-w) solid var(--c-border);
   border-radius: var(--r-full);
   background: var(--c-bg-field);
   overflow: hidden;
 }
-.pick__fill { display: block; height: 100%; background: var(--c-text-faint); border-radius: var(--r-full); }
-.pick--right .pick__fill { background: var(--c-ok); }
-.pick--trap .pick__fill { background: var(--c-bad); }
+.pick__fill { display: block; height: 100%; background: var(--c-surface-3); }
+.pick--right .pick__fill { background: var(--c-ok-fill); }
+.pick--trap .pick__fill { background: var(--c-bad-fill); }
 .pick--trap .pick__n { color: var(--c-bad); font-weight: 700; }
 .pick__n { text-align: right; color: var(--c-text-muted); font-variant-numeric: tabular-nums; }
 
@@ -262,16 +265,16 @@ function isTrap(q: QuizReportQuestion, at: number): boolean {
 /* Matice ------------------------------------------------------------------- */
 .grid { min-height: 0; overflow: auto; display: grid; gap: var(--sp-3); align-content: start; }
 .grid table { border-collapse: collapse; font-size: var(--fs-sm); }
-.grid th, .grid td { padding: var(--sp-2); border-bottom: 1px solid var(--c-line-soft); text-align: center; }
+.grid th, .grid td { padding: var(--sp-2); border-bottom: var(--border-w) solid var(--c-line-soft); text-align: center; }
 .grid__who { text-align: left; white-space: nowrap; position: sticky; left: 0; background: var(--c-base); }
 .grid__num { font-variant-numeric: tabular-nums; text-align: right; }
-.grid__q { color: var(--c-text-faint); font-weight: 600; }
+.grid__q { color: var(--c-text-muted); font-weight: 900; }
 /* Buňka nese znak, ne jen barvu: tabulka se tiskne i černobíle. */
-.cell span { font-weight: 800; }
+.cell span { font-weight: 900; }
 .cell--ano { color: var(--c-ok); }
 .cell--ne { color: var(--c-bad); }
 .cell--nic { color: var(--c-text-faint); }
-.cell--nebyl { background: color-mix(in oklab, var(--c-abyss) 40%, transparent); }
+.cell--nebyl { background: var(--c-abyss); }
 .grid__legend { font-size: var(--fs-xs); color: var(--c-text-faint); }
 
 @media (max-width: 720px) {

@@ -305,16 +305,16 @@ onBeforeUnmount(() => {
   justify-content: space-between;
   gap: var(--sp-4);
   padding-bottom: var(--sp-3);
-  border-bottom: var(--separator-w) solid var(--c-line-soft);
+  border-bottom: var(--border-w-strong) solid var(--c-border);
 }
 .stage__pos,
 .stage__cat {
   font-size: var(--fs-sm);
-  font-weight: 700;
+  font-weight: 900;
   letter-spacing: var(--tracking-caps);
   text-transform: uppercase;
 }
-.stage__pos { color: var(--c-text-faint); }
+.stage__pos { color: var(--c-text-muted); }
 .stage__cat { color: var(--c-brand); }
 /* Pás s časomírou. Výšku drží i mimo běžící otázku, aby otázka pod ním
    nepoposkočila, až čas doběhne. */
@@ -345,7 +345,7 @@ onBeforeUnmount(() => {
   font-weight: 900;
   letter-spacing: var(--tracking-caps);
   text-transform: uppercase;
-  color: var(--c-text-faint);
+  color: var(--c-text-muted);
 }
 
 /* Tělo. --fit nastavuje fitToScreen(), zmenšuje otázku i možnosti naráz.
@@ -403,8 +403,10 @@ onBeforeUnmount(() => {
   max-inline-size: 100%;
   inline-size: auto;
   block-size: auto;
+  border: var(--border-w-heavy) solid var(--c-border);
   border-radius: var(--r-lg);
   background: var(--c-photo-mat);
+  box-shadow: var(--shadow-md);
   object-fit: contain;
   /* Nástup jen zesvětlí a zvětší do místa, nikdy neposune: posun pod
      dolní okraj by měření přečetlo jako přetečení. */
@@ -431,7 +433,7 @@ onBeforeUnmount(() => {
   padding: calc(var(--sp-5) * var(--fit)) calc(var(--sp-6) * var(--fit));
   font-family: var(--font-display);
   font-size: calc(var(--fs-prompt) * var(--fit));
-  font-weight: 800;
+  font-weight: 900;
   line-height: var(--lh-tight);
   text-align: center;
   text-wrap: balance;
@@ -487,9 +489,10 @@ onBeforeUnmount(() => {
   justify-self: center;
   max-width: min(100%, calc(34ch / var(--fit)));
   padding: calc(var(--sp-5) * var(--fit)) calc(var(--sp-6) * var(--fit));
-  border-left: var(--sp-1) solid var(--c-brand);
-  border-radius: var(--r-md);
-  background: color-mix(in oklab, var(--c-brand) 10%, transparent);
+  border: var(--border-w-heavy) solid var(--c-border);
+  border-radius: var(--r-lg);
+  background: var(--c-surface);
+  box-shadow: var(--shadow-md);
   font-size: calc(var(--fs-note) * var(--fit));
   line-height: var(--lh-body);
   text-align: left;
@@ -508,7 +511,7 @@ onBeforeUnmount(() => {
 .stage__locked {
   font-family: var(--font-display);
   font-size: var(--fs-xl);
-  font-weight: 800;
+  font-weight: 900;
   text-align: center;
   color: var(--c-text-muted);
 }

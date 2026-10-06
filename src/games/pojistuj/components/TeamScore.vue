@@ -51,34 +51,30 @@ watch(
   gap: var(--sp-3);
   padding: var(--sp-3) var(--sp-4);
   min-width: 0;
-  border: 1px solid var(--c-line);
+  border: var(--border-w-strong) solid var(--c-border);
   border-radius: var(--r-lg);
   background: var(--c-surface);
+  box-shadow: var(--shadow-sm);
   color: var(--c-text);
   text-align: left;
   transition:
-    border-color var(--dur-base) var(--ease-out),
     background-color var(--dur-base) var(--ease-out),
-    transform var(--dur-base) var(--ease-out);
+    transform var(--dur-base) var(--ease-back),
+    box-shadow var(--dur-base) var(--ease-out);
 }
-.team:hover { border-color: var(--c-surface-3); }
+.team:hover { background: var(--c-surface-2); }
 
-.team--active {
-  border-color: var(--team);
-  background: color-mix(in oklab, var(--team) 14%, var(--c-surface));
-  transform: translateY(-2px);
-  box-shadow: 0 10px 28px -16px var(--team);
+/* Tým na tahu se vyplní svou barvou a povyskočí nad ostatní. Tým se
+   tím nerozlišuje jen barvou: písmeno i štítek „na tahu" zůstávají. */
+.team--active,
+.team--active:hover {
+  background: var(--team);
+  color: var(--c-text-ink);
+  transform: translateY(calc(var(--sp-1) * -1)) rotate(-1deg);
+  box-shadow: var(--shadow-md);
 }
-.team--active::before {
-  content: '';
-  position: absolute;
-  inset: -1px;
-  border-radius: inherit;
-  border: 1px solid var(--team);
-  opacity: 0.6;
-  animation: pulse 2.6s var(--ease-both) infinite;
-  pointer-events: none;
-}
+.team--active .team__name { color: var(--c-text-ink); }
+.team--active .team__badge { background: var(--c-ink); color: var(--team); }
 
 .team__badge {
   flex: none;
@@ -86,11 +82,12 @@ watch(
   place-items: center;
   width: 2.25rem;
   height: 2.25rem;
+  border: var(--border-w-strong) solid var(--c-border);
   border-radius: var(--r-md);
   background: var(--team);
   color: var(--c-text-ink);
   font-family: var(--font-display);
-  font-weight: 800;
+  font-weight: 900;
   font-size: var(--fs-lg);
   line-height: 1;
 }
@@ -98,7 +95,7 @@ watch(
 .team__body { display: grid; min-width: 0; }
 .team__name {
   font-size: var(--fs-sm);
-  font-weight: 600;
+  font-weight: 900;
   color: var(--c-text-muted);
   white-space: nowrap;
   overflow: hidden;
@@ -107,32 +104,27 @@ watch(
 .team__score {
   font-family: var(--font-display);
   font-size: var(--fs-2xl);
-  font-weight: 800;
+  font-weight: 900;
   line-height: 1.05;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
 }
 .team__score--neg { color: var(--c-bad); }
+.team--active .team__score--neg { color: var(--c-bad-deep); }
 
 .team__turn {
   position: absolute;
   top: calc(var(--sp-2) * -1);
   right: var(--sp-3);
   padding: 1px var(--sp-2);
+  border: var(--border-w) solid var(--c-border);
   border-radius: var(--r-full);
-  background: var(--team);
+  background: var(--c-surface);
   color: var(--c-text-ink);
-  font-size: 0.625rem;
-  font-weight: 800;
+  font-size: var(--fs-2xs);
+  font-weight: 900;
   letter-spacing: var(--tracking-caps);
   text-transform: uppercase;
 }
 
-@keyframes pulse {
-  0%, 100% { opacity: 0.25; }
-  50% { opacity: 0.75; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .team--active::before { animation: none; }
-}
 </style>

@@ -80,17 +80,18 @@ function commit(uid: string): void {
   align-items: center;
   gap: var(--sp-3);
   padding: var(--sp-2) var(--sp-3);
-  border: var(--border-w) solid var(--c-border-soft);
+  border: var(--border-w-strong) solid var(--c-border);
   border-radius: var(--r-md);
   background: var(--c-bg-card);
+  box-shadow: var(--shadow-sm);
 }
 .row__ava { --ava-size: var(--control-lg); }
-.row__nick { font-weight: 700; font-size: calc(var(--fs-md) * var(--fit-text, 1)); }
+.row__nick { font-weight: 900; font-size: calc(var(--fs-md) * var(--fit-text, 1)); }
 .row__tools { display: flex; gap: var(--sp-1); }
 .row__input {
   width: 100%;
   padding: var(--sp-2) var(--sp-3);
-  border: var(--border-w) solid var(--c-brand);
+  border: var(--border-w-strong) solid var(--c-border);
   border-radius: var(--r-sm);
   background: var(--c-bg-field);
   color: var(--c-text);

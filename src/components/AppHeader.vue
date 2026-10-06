@@ -144,18 +144,24 @@ onBeforeUnmount(() => document.removeEventListener('fullscreenchange', syncFulls
 }
 .brand__name { font-weight: 900; font-size: var(--fs-lg); letter-spacing: -0.02em; }
 
-.identity__slash { width: var(--separator-w); height: var(--sp-6); background: var(--c-border); transform: rotate(18deg); }
+.identity__slash { width: var(--border-w); height: var(--sp-6); background: var(--c-border); transform: rotate(18deg); }
 .identity__game {
   min-width: 0;
   overflow: hidden;
-  color: var(--c-text-muted);
-  font-size: var(--fs-sm);
-  font-weight: 700;
+  padding: var(--sp-1) var(--sp-3);
+  border: var(--border-w-strong) solid var(--c-border);
+  border-radius: var(--r-full);
+  background: var(--c-surface);
+  color: var(--c-text);
+  font-size: var(--fs-xs);
+  font-weight: 900;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
   text-decoration: none;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.identity__game:hover { color: var(--c-text); }
+.identity__game:hover { background: var(--c-brand-wash); }
 
 /* Sloupce se dopočítají podle počtu záložek: kvíz má navíc Výsledky,
    Pojišťuj! zůstává u dvou. */
@@ -165,22 +171,24 @@ onBeforeUnmount(() => document.removeEventListener('fullscreenchange', syncFulls
   grid-auto-columns: 1fr;
   gap: var(--sp-1);
   padding: var(--sp-1);
-  border: var(--border-w) solid var(--c-border-soft);
+  border: var(--border-w-strong) solid var(--c-border);
   border-radius: var(--r-full);
-  background: color-mix(in oklab, var(--c-sunken) 74%, transparent);
+  background: var(--c-surface);
+  box-shadow: var(--shadow-sm);
 }
 .nav__item {
   padding: var(--sp-2) var(--sp-5);
   border-radius: var(--r-full);
   color: var(--c-text-muted);
   font-size: var(--fs-sm);
-  font-weight: 700;
+  font-weight: 900;
   text-align: center;
   text-decoration: none;
   transition: color var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out);
 }
-.nav__item:hover { color: var(--c-text); }
-.nav__item--active { background: var(--c-surface-2); color: var(--c-text); box-shadow: var(--shadow-sm); }
+.nav__item:hover { color: var(--c-text); background: var(--c-brand-wash); }
+.nav__item--active,
+.nav__item--active:hover { background: var(--c-ink); color: var(--c-on-ink); }
 
 .tools { display: flex; justify-self: end; align-items: center; gap: var(--sp-2); }
 .local {
@@ -188,12 +196,12 @@ onBeforeUnmount(() => document.removeEventListener('fullscreenchange', syncFulls
   align-items: center;
   gap: var(--sp-2);
   padding: var(--sp-1) var(--sp-3);
-  border: var(--border-w) solid color-mix(in oklab, var(--c-bad) 45%, transparent);
+  border: var(--border-w-strong) solid var(--c-border);
   border-radius: var(--r-full);
-  background: color-mix(in oklab, var(--c-bad) 12%, transparent);
-  color: var(--c-bad);
+  background: var(--c-bad-fill);
+  color: var(--c-text-ink);
   font-size: var(--fs-xs);
-  font-weight: 700;
+  font-weight: 900;
   white-space: nowrap;
 }
 @media (max-width: 720px) {
@@ -206,10 +214,12 @@ onBeforeUnmount(() => document.removeEventListener('fullscreenchange', syncFulls
   .brand__name { display: none; }
 }
 
-.head--prep { border-bottom: var(--border-w) solid var(--c-border-soft); }
-.head--prep .nav { border: 0; border-radius: 0; background: transparent; gap: var(--sp-5); }
-.head--prep .nav__item { border-radius: 0; padding-inline: var(--sp-1); border-bottom: var(--border-w-strong) solid transparent; }
-.head--prep .nav__item--active { border-color: var(--c-brand); background: transparent; box-shadow: none; }
+/* V přípravě je z pilulek řádka záložek: bez rámu, aktivní záložka je
+   inkoustový štítek. Hlavička sedí na papíře a od obsahu ji dělí
+   inkoustová linka. */
+.head--prep { border-bottom: var(--border-w-strong) solid var(--c-border); }
+.head--prep .nav { border: 0; background: transparent; box-shadow: none; gap: var(--sp-2); }
+.head--prep .nav__item { border-radius: var(--r-md); }
 
 @media (pointer: coarse) {
   .brand { min-height: var(--control-touch); min-width: var(--control-touch); }

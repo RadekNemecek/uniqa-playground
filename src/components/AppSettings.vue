@@ -91,9 +91,10 @@ watch(
 }
 .step:hover { border-color: var(--c-bg-active); color: var(--c-text); }
 .step--on {
-  border-color: var(--c-brand);
+  border-color: var(--c-border);
   color: var(--c-text);
-  background: color-mix(in oklab, var(--c-brand) 12%, transparent);
+  background: var(--c-brand-wash);
+  box-shadow: var(--shadow-sm);
 }
 .step__glyph { font-family: var(--font-display); font-weight: 700; line-height: 1; }
 .step__label { font-size: var(--fs-2xs); letter-spacing: 0.02em; }

@@ -26,6 +26,7 @@ const RAW = {
   'chevron-down': { body: '<path d="m5 9 7 7 7-7"/>' },
   'arrow-right': { body: '<path d="M5 12h13M12 5l7 7-7 7"/>' },
   'arrow-left': { body: '<path d="M19 12H6M12 19l-7-7 7-7"/>' },
+  'arrow-down': { body: '<path d="M12 5v13M5 12l7 7 7-7"/>' },
 
   /* --- Akce -------------------------------------------------------------- */
   close: { body: '<path d="M6 6l12 12M18 6L6 18"/>' },

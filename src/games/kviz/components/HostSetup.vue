@@ -209,37 +209,54 @@ function start(): void {
 <style scoped>
 .setup { max-width: var(--content-reading); padding-block: var(--sp-6) var(--sp-8); }
 .setup__head { margin-bottom: var(--sp-6); }
-.setup__title { font-size: var(--fs-work-title); margin-top: var(--sp-2); }
-.lead { color: var(--c-text-muted); margin-top: var(--sp-3); font-size: var(--fs-sm); }
+.setup__title { font-size: var(--fs-work-title); letter-spacing: -0.045em; margin-top: var(--sp-2); }
+.lead { color: var(--c-text-muted); margin-top: var(--sp-3); font-size: var(--fs-md); }
 .setup__grid { display: grid; grid-template-columns: minmax(0, 1fr) var(--content-sidebar); gap: var(--sp-7); align-items: start; }
 .setup__form { display: grid; gap: var(--sp-6); min-width: 0; }
 .section { display: grid; gap: var(--sp-4); }
 .section__head { display: flex; flex-wrap: wrap; gap: var(--sp-3); justify-content: space-between; align-items: center; }
 .section__head h2 { display: flex; align-items: baseline; gap: var(--sp-3); font-size: var(--fs-xl); }
-.section__num { font-size: var(--fs-sm); color: var(--c-brand); font-variant-numeric: tabular-nums; }
+.section__num {
+  align-self: center;
+  padding: var(--sp-1) var(--sp-2);
+  border-radius: var(--r-sm);
+  background: var(--c-ink);
+  color: var(--c-on-ink);
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+  rotate: -4deg;
+}
 .edit-link { display: inline-flex; align-items: center; min-height: var(--control-touch); font-size: var(--fs-sm); font-weight: 700; }
 .hint { font-size: var(--fs-sm); line-height: var(--lh-body); color: var(--c-text-faint); }
-.packs { list-style: none; padding: 0; border-top: var(--border-w) solid var(--c-border-soft); }
-.packs li { border-bottom: var(--border-w) solid var(--c-border-soft); }
-.pick { padding: var(--sp-4) var(--sp-2); }
-.pick:hover { background: var(--c-bg-active); }
+.packs {
+  list-style: none;
+  padding: 0;
+  border: var(--border-w-strong) solid var(--c-border);
+  border-radius: var(--r-lg);
+  background: var(--c-surface);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.packs li + li { border-top: var(--border-w) solid var(--c-border-soft); }
+.pick { padding: var(--sp-4); }
+.pick:hover { background: var(--c-brand-wash); }
 .pick__row { display: flex; justify-content: space-between; gap: var(--sp-4); align-items: center; }
 .pick__text { display: grid; gap: var(--sp-1); overflow-wrap: anywhere; }
 .pick__count { font-weight: 900; color: var(--c-brand); font-variant-numeric: tabular-nums; }
 .rules { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--sp-4); align-items: start; }
 .rule { display: grid; gap: var(--sp-2); }
-.rule__label { font-size: var(--fs-sm); font-weight: 700; color: var(--c-text-muted); }
-.notice { border-top: var(--border-w) solid var(--c-border-soft); padding-top: var(--sp-4); font-size: var(--fs-sm); color: var(--c-text-muted); }
-/* Shrnutí je jediný těžký blok obrazovky. Na světlém sešitu to byl
-   tmavý panel; na plátně je to obráceně, tedy vyvýšená plocha
-   s hranou. Role je táž, barvy jdou z rampy a nic si tu nepřepisuje
-   aliasy. */
+.rule__label { font-size: var(--fs-sm); font-weight: 900; color: var(--c-text); }
+.notice { border-top: var(--border-w-strong) solid var(--c-border); padding-top: var(--sp-4); font-size: var(--fs-sm); color: var(--c-text-muted); }
+/* Shrnutí je jediný těžký blok obrazovky: bílá karta s tlustou hranou
+   a velkým stínem, v níž leží jediné hlavní tlačítko. */
 .summary {
   position: sticky; top: var(--sp-5); padding: var(--sp-5);
-  border: var(--border-w) solid var(--c-border-soft); border-radius: var(--r-lg);
+  border: var(--border-w-heavy) solid var(--c-border); border-radius: var(--r-xl);
   background: var(--c-surface);
+  box-shadow: var(--shadow-lg);
 }
-.summary .eyebrow, .summary__next { color: var(--c-brand); }
+.summary .eyebrow { color: var(--c-text); }
+.summary__next { color: var(--c-text-muted); }
 .summary h2 { margin-top: var(--sp-2); font-size: var(--fs-xl); }
 .summary__total { display: grid; margin-block: var(--sp-5); }
 .summary__total strong { font-size: var(--fs-work-number); font-weight: 900; line-height: var(--lh-tight); font-variant-numeric: tabular-nums; }

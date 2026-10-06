@@ -198,7 +198,7 @@ onBeforeUnmount(() => {
       <!-- Fáze vyhodnocení ------------------------------------------------ -->
       <template v-else>
         <p class="stage__question">
-          Odpověděl <strong :style="{ color: active ? `var(${teamColor(active.color).cssVar})` : undefined }">
+          Odpověděl <strong class="stage__team" :style="{ '--team': active ? `var(${teamColor(active.color).cssVar})` : undefined }">
             {{ active?.name }}
           </strong> správně?
         </p>
@@ -255,9 +255,7 @@ onBeforeUnmount(() => {
   z-index: var(--z-stage);
   display: grid;
   grid-template-rows: auto auto auto 1fr auto;
-  background:
-    radial-gradient(80% 60% at 50% 0%, color-mix(in oklab, var(--c-brand) 7%, transparent), transparent 70%),
-    linear-gradient(180deg, var(--c-surface) 0%, var(--c-abyss) 100%);
+  background: var(--c-base);
   will-change: transform, opacity;
 }
 
@@ -275,32 +273,34 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: var(--sp-4);
   padding: var(--sp-3) var(--sp-6);
-  border-bottom: 1px solid var(--c-line-soft);
+  border-bottom: var(--border-w-strong) solid var(--c-border);
 }
 .stage__id { display: flex; align-items: center; gap: var(--sp-3); flex: 1; min-width: 0; }
 .stage__cat {
   font-family: var(--font-display);
   font-size: var(--fs-lg);
-  font-weight: 700;
+  font-weight: 900;
   letter-spacing: var(--tracking-wide);
   text-transform: uppercase;
-  color: var(--c-text-muted);
+  color: var(--c-text);
 }
 .stage__wagerTag {
   padding: 2px var(--sp-3);
+  border: var(--border-w-strong) solid var(--c-border);
   border-radius: var(--r-full);
-  background: linear-gradient(180deg, var(--c-spark) 0%, var(--c-spark-mid) 100%);
+  background: var(--c-spark);
+  box-shadow: var(--shadow-sm);
   color: var(--c-text-ink);
   font-size: var(--fs-xs);
-  font-weight: 800;
+  font-weight: 900;
   letter-spacing: var(--tracking-caps);
   text-transform: uppercase;
-  box-shadow: 0 0 18px -2px var(--c-spark-glow);
-  animation: sparkle 2.4s var(--ease-both) infinite;
+  rotate: -4deg;
+  animation: sparkle var(--dur-slow) var(--ease-back) both;
 }
 @keyframes sparkle {
-  0%, 100% { box-shadow: 0 0 14px -4px var(--c-spark-glow); }
-  50% { box-shadow: 0 0 26px 0 var(--c-spark-glow); }
+  from { transform: scale(2) rotate(12deg); opacity: 0; }
+  to { transform: none; opacity: 1; }
 }
 @media (prefers-reduced-motion: reduce) {
   .stage__wagerTag { animation: none; }
@@ -315,8 +315,8 @@ onBeforeUnmount(() => {
   justify-content: center;
   gap: var(--sp-4) var(--sp-7);
   padding: var(--sp-4) var(--sp-6);
-  border-bottom: 1px solid var(--c-line-soft);
-  background: color-mix(in oklab, var(--c-brand-wash) 70%, transparent);
+  border-bottom: var(--border-w-strong) solid var(--c-border);
+  background: var(--c-brand-wash);
 }
 .stage__value {
   font-family: var(--font-display);
@@ -324,13 +324,19 @@ onBeforeUnmount(() => {
   font-weight: 900;
   line-height: 1;
   letter-spacing: -0.04em;
-  color: var(--c-brand);
+  padding: var(--sp-2) var(--sp-5);
+  border: var(--border-w-heavy) solid var(--c-tile-edge);
+  border-radius: var(--r-lg);
+  background: var(--c-tile-top);
+  box-shadow: var(--shadow-md);
+  color: var(--c-value);
   font-variant-numeric: tabular-nums;
-  text-shadow: 0 0 40px var(--c-brand-glow);
+  rotate: -2deg;
 }
+/* Sázka nese jiskru. Tmavý text na --c-spark drží 7,5:1. */
 .stage__value--wager {
-  color: var(--c-spark);
-  text-shadow: 0 0 40px var(--c-spark-glow);
+  background: var(--c-spark);
+  color: var(--c-text-ink);
 }
 .stage__who {
   display: inline-flex;
@@ -338,27 +344,26 @@ onBeforeUnmount(() => {
   gap: var(--sp-3);
   padding: var(--sp-3) var(--sp-5) var(--sp-3) var(--sp-3);
   border-radius: var(--r-full);
-  background: color-mix(in oklab, var(--team) 16%, transparent);
-  border: 1px solid color-mix(in oklab, var(--team) 40%, transparent);
+  background: var(--c-surface);
+  border: var(--border-w-strong) solid var(--c-border);
+  box-shadow: var(--shadow-sm);
 }
 .stage__who-badge {
   display: grid;
   place-items: center;
   width: 2.5rem;
   height: 2.5rem;
+  border: var(--border-w-strong) solid var(--c-border);
   border-radius: var(--r-md);
   background: var(--team);
   color: var(--c-text-ink);
   font-family: var(--font-display);
   font-weight: 900;
   font-size: var(--fs-lg);
-  box-shadow:
-    inset 0 1px 0 var(--c-tile-sheen),
-    0 2px 0 color-mix(in oklab, var(--team) 40%, black);
 }
 .stage__who strong {
   font-size: var(--fs-xl);
-  font-weight: 800;
+  font-weight: 900;
   color: var(--c-text);
 }
 
@@ -382,7 +387,7 @@ onBeforeUnmount(() => {
   max-width: min(100%, calc(24ch / var(--fit)));
   font-family: var(--font-display);
   font-size: calc(var(--fs-prompt) * var(--fit));
-  font-weight: 700;
+  font-weight: 900;
   line-height: var(--lh-tight);
   letter-spacing: -0.02em;
   text-wrap: balance;
@@ -396,16 +401,18 @@ onBeforeUnmount(() => {
   width: fit-content;
   max-width: min(100%, calc(46ch / var(--fit)));
   padding: clamp(var(--sp-3), 2.5vh, var(--sp-5)) var(--sp-6);
-  border: 1px solid color-mix(in oklab, var(--c-ok) 40%, transparent);
+  border: var(--border-w-heavy) solid var(--c-border);
   border-radius: var(--r-xl);
-  background: color-mix(in oklab, var(--c-ok) 9%, var(--c-abyss));
+  background: var(--c-ok-fill);
+  box-shadow: var(--shadow-md);
+  color: var(--c-text-ink);
 }
 .stage__answerLabel {
   font-size: var(--fs-xs);
-  font-weight: 700;
+  font-weight: 900;
   letter-spacing: var(--tracking-caps);
   text-transform: uppercase;
-  color: var(--c-ok);
+  color: var(--c-text-ink);
 }
 .stage__answer {
   /* Odpověď smí být širší než otázka. Když se láme do úzkého sloupce,
@@ -413,7 +420,7 @@ onBeforeUnmount(() => {
   max-width: min(100%, calc(38ch / var(--fit)));
   font-family: var(--font-display);
   font-size: calc(var(--fs-answer) * var(--fit));
-  font-weight: 700;
+  font-weight: 900;
   line-height: var(--lh-snug);
   text-wrap: pretty;
 }
@@ -424,14 +431,14 @@ onBeforeUnmount(() => {
   justify-items: center;
   gap: var(--sp-4);
   padding: var(--sp-5) var(--sp-6) var(--sp-6);
-  border-top: 1px solid var(--c-line-soft);
-  background: color-mix(in oklab, var(--c-abyss) 55%, transparent);
+  border-top: var(--border-w-strong) solid var(--c-border);
+  background: var(--c-surface);
 }
 /* Konec času nese stejný řádek jako nápověda, tedy i stejnou velikost:
    jiná by patičku o pár pixelů posunula a otázka nad ní je změřená. */
 .stage__timeout {
   font-family: var(--font-display);
-  font-weight: 800;
+  font-weight: 900;
   color: var(--c-bad);
   letter-spacing: var(--tracking-wide);
   text-transform: uppercase;
@@ -441,9 +448,17 @@ onBeforeUnmount(() => {
 /* Co udělá další stisk. Dřív to bylo nejmenší a nejsvětlejší písmo na
    plátně, tedy jediná informace, kterou moderátorka opravdu potřebuje,
    sázená tak, aby ji z druhé řady nikdo nepřečetl. */
-.stage__hint { font-size: var(--fs-sm); color: var(--c-text-muted); }
+.stage__hint { font-size: var(--fs-sm); font-weight: 700; color: var(--c-text-muted); }
 .stage__question { font-size: var(--fs-lg); color: var(--c-text-muted); }
-.stage__question strong { font-weight: 700; }
+.stage__question strong { font-weight: 900; color: var(--c-text); }
+/* Tým je štítek ve své barvě, ne barevné písmo: světlé odstíny týmů
+   na bílé patičce by z dálky zmizely. */
+.stage__team {
+  padding: 0 var(--sp-2);
+  border: var(--border-w) solid var(--c-border);
+  border-radius: var(--r-sm);
+  background: var(--team, var(--c-surface));
+}
 
 .judge {
   display: grid;
@@ -456,37 +471,35 @@ onBeforeUnmount(() => {
   gap: var(--sp-1);
   justify-items: center;
   padding: var(--sp-5) var(--sp-4);
-  border: 2px solid;
+  border: var(--border-w-heavy) solid var(--c-border);
   border-radius: var(--r-lg);
   background: var(--c-surface);
-  color: var(--c-text);
-  transition: transform var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out);
+  box-shadow: var(--shadow-md);
+  color: var(--c-text-ink);
+  transition: translate var(--dur-press) var(--ease-out), box-shadow var(--dur-press) var(--ease-out);
 }
-.judge__btn:hover { transform: translateY(-2px); }
-.judge__btn:active { transform: translateY(0) scale(0.99); }
-.judge__btn--yes { border-color: color-mix(in oklab, var(--c-ok) 65%, transparent); }
-.judge__btn--yes:hover { background: color-mix(in oklab, var(--c-ok) 16%, var(--c-surface)); }
-.judge__btn--no { border-color: color-mix(in oklab, var(--c-bad) 55%, transparent); }
-.judge__btn--no:hover { background: color-mix(in oklab, var(--c-bad) 14%, var(--c-surface)); }
+.judge__btn:hover { translate: calc(var(--shadow-x-md) / 2) calc(var(--shadow-x-md) / 2); box-shadow: var(--shadow-sm); }
+.judge__btn:active { translate: var(--shadow-x-md) var(--shadow-x-md); box-shadow: var(--shadow-none); }
+.judge__btn--yes { background: var(--c-ok-fill); }
+.judge__btn--no { background: var(--c-bad-fill); }
 
 .judge__key {
   padding: 1px var(--sp-2);
-  border: 1px solid var(--c-line);
+  border: var(--border-w) solid var(--c-border);
   border-radius: var(--r-sm);
-  font-size: 0.625rem;
-  font-weight: 700;
+  background: var(--c-surface);
+  font-size: var(--fs-2xs);
+  font-weight: 900;
   letter-spacing: 0.06em;
-  color: var(--c-text-faint);
+  color: var(--c-text-ink);
 }
 .judge__label {
   font-family: var(--font-display);
   font-size: var(--fs-2xl);
-  font-weight: 800;
+  font-weight: 900;
   line-height: 1;
 }
-.judge__btn--yes .judge__label { color: var(--c-ok); }
-.judge__btn--no .judge__label { color: var(--c-bad); }
-.judge__points { font-size: var(--fs-sm); color: var(--c-text-faint); font-variant-numeric: tabular-nums; }
+.judge__points { font-size: var(--fs-sm); font-weight: 700; color: var(--c-text-ink); font-variant-numeric: tabular-nums; }
 
 .steal { min-height: 2.25rem; display: grid; place-items: center; }
 .steal__toggle {
@@ -507,26 +520,28 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: var(--sp-2);
   padding: var(--sp-2) var(--sp-4) var(--sp-2) var(--sp-2);
-  border: 1px solid color-mix(in oklab, var(--team) 55%, transparent);
+  border: var(--border-w-strong) solid var(--c-border);
   border-radius: var(--r-full);
-  background: color-mix(in oklab, var(--team) 12%, transparent);
-  color: var(--c-text);
+  background: var(--team);
+  box-shadow: var(--shadow-sm);
+  color: var(--c-text-ink);
   font-size: var(--fs-sm);
-  font-weight: 600;
-  transition: background-color var(--dur-fast) var(--ease-out);
+  font-weight: 900;
+  transition: translate var(--dur-press) var(--ease-out), box-shadow var(--dur-press) var(--ease-out);
 }
-.steal__chip:hover { background: color-mix(in oklab, var(--team) 26%, transparent); }
+.steal__chip:hover { translate: var(--shadow-x-sm) var(--shadow-x-sm); box-shadow: var(--shadow-none); }
 .steal__badge {
   display: grid;
   place-items: center;
   width: 1.5rem;
   height: 1.5rem;
+  border: var(--border-w) solid var(--c-border);
   border-radius: var(--r-full);
-  background: var(--team);
+  background: var(--c-surface);
   color: var(--c-text-ink);
   font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 0.75rem;
+  font-weight: 900;
+  font-size: var(--fs-xs);
 }
 .steal__cancel {
   border: 0;

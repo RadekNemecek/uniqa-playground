@@ -268,7 +268,7 @@ async function onRematch() {
   inset: 0;
   z-index: var(--z-results);
   overflow-y: auto;
-  background: linear-gradient(180deg, var(--c-surface) 0%, var(--c-abyss) 100%);
+  background: var(--c-base);
 }
 
 .fade-enter-active, .fade-leave-active { transition: opacity var(--dur-slow) var(--ease-out); }

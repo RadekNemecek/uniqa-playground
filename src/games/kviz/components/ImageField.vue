@@ -188,12 +188,12 @@ watch(
   align-items: center;
   gap: var(--sp-4);
   padding: var(--sp-3);
-  border: var(--border-w) dashed var(--c-line);
+  border: var(--border-w-strong) dashed var(--c-line);
   border-radius: var(--r-md);
   background: var(--c-sunken);
   transition: var(--tr-surface);
 }
-.img__zone--over { border-color: var(--c-brand); background: color-mix(in oklab, var(--c-brand) 12%, transparent); }
+.img__zone--over { border-style: solid; background: var(--c-brand-wash); }
 .img__zone--busy { opacity: 0.7; }
 
 /* Náhled sedí na světlé ploše, aby průhledné i tmavé obrázky byly vidět

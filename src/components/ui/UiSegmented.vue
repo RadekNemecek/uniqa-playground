@@ -56,7 +56,7 @@ function onKey(event: KeyboardEvent, index: number): void {
   display: flex;
   gap: var(--sp-1);
   padding: var(--sp-1);
-  border: var(--border-w) solid var(--c-border);
+  border: var(--border-w-strong) solid var(--c-border);
   border-radius: var(--r-md);
   background: var(--c-bg-field);
 }
@@ -72,14 +72,14 @@ function onKey(event: KeyboardEvent, index: number): void {
   background: transparent;
   color: var(--c-text-muted);
   font-size: var(--fs-sm);
-  font-weight: 700;
+  font-weight: 900;
   transition: var(--tr-surface);
 }
 .seg__item:hover:not(:disabled):not(.seg__item--on) {
   background: var(--c-bg-raised);
   color: var(--c-text);
 }
-.seg__item--on { background: var(--c-brand); color: var(--c-on-accent); }
+.seg__item--on { background: var(--c-team-3); color: var(--c-text-ink); box-shadow: inset 0 0 0 var(--border-w) var(--c-ink); }
 .seg__item:disabled { opacity: 0.3; cursor: not-allowed; }
 
 @media (pointer: coarse) {

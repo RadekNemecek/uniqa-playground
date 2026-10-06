@@ -180,7 +180,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
   justify-content: space-between;
   gap: var(--sp-3);
   padding: var(--sp-4) var(--sp-5);
-  border-bottom: 1px solid var(--c-line-soft);
+  border-bottom: var(--border-w) solid var(--c-line-soft);
 }
 .qe__cat {
   font-size: var(--fs-xs);
@@ -210,7 +210,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
   place-items: center;
   width: 1.9rem;
   height: 1.9rem;
-  border: 1px solid var(--c-line);
+  border: var(--border-w-strong) solid var(--c-line);
   border-radius: var(--r-md);
   background: transparent;
   color: var(--c-text-muted);
@@ -219,7 +219,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 .qe__nav button:hover:not(:disabled) { color: var(--c-text); border-color: var(--c-surface-3); background: var(--c-surface-2); }
 .qe__nav button:disabled { opacity: 0.3; cursor: not-allowed; }
 .qe__close { margin-left: var(--sp-2); }
-.qe__nav button.qe__close:hover { color: var(--c-bad); border-color: color-mix(in oklab, var(--c-bad) 45%, transparent); }
+.qe__nav button.qe__close:hover { color: var(--c-text-ink); background: var(--c-bad-fill); }
 
 /* Tělo -------------------------------------------------------------------- */
 .qe__body { display: grid; gap: var(--sp-4); padding: var(--sp-5); overflow-y: auto; }
@@ -239,7 +239,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 .f textarea {
   width: 100%;
   padding: var(--sp-3) var(--sp-4);
-  border: 1px solid var(--c-line);
+  border: var(--border-w-strong) solid var(--c-line);
   border-radius: var(--r-md);
   background: var(--c-sunken);
   color: var(--c-text);
@@ -279,7 +279,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
   place-items: center;
   width: 1.25rem;
   height: 1.25rem;
-  border: 1px solid var(--c-line);
+  border: var(--border-w-strong) solid var(--c-line);
   border-radius: var(--r-sm);
   font-size: var(--fs-sm);
   line-height: 1;
@@ -289,9 +289,9 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
   display: grid;
   gap: var(--sp-3);
   padding: var(--sp-5) var(--sp-4);
-  border: 1px solid var(--c-line);
+  border: var(--border-w-strong) solid var(--c-line);
   border-radius: var(--r-lg);
-  background: linear-gradient(180deg, var(--c-surface) 0%, var(--c-sunken) 100%);
+  background: var(--c-surface);
   text-align: center;
 }
 .preview__prompt {
@@ -303,9 +303,10 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 }
 .preview__answer {
   padding: var(--sp-2) var(--sp-3);
-  border: 1px solid color-mix(in oklab, var(--c-ok) 40%, transparent);
+  border: var(--border-w-strong) solid var(--c-border);
   border-radius: var(--r-md);
-  background: color-mix(in oklab, var(--c-ok) 9%, transparent);
+  background: var(--c-ok-fill);
+  color: var(--c-text-ink);
   font-family: var(--font-display);
   font-size: var(--fs-md);
   font-weight: 700;
@@ -319,8 +320,8 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
   justify-content: space-between;
   gap: var(--sp-3);
   padding: var(--sp-4) var(--sp-5);
-  border-top: 1px solid var(--c-line-soft);
-  background: color-mix(in oklab, var(--c-abyss) 40%, transparent);
+  border-top: var(--border-w) solid var(--c-line-soft);
+  background: var(--c-base);
 }
 .qe__state { font-size: var(--fs-xs); color: var(--c-text-faint); }
 .qe__saved { display: inline-flex; align-items: center; gap: var(--sp-1); color: var(--c-ok); }

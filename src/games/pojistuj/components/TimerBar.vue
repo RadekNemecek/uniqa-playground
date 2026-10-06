@@ -118,14 +118,14 @@ onBeforeUnmount(() => stopLoop())
   flex: 1;
   height: 1rem;
   border-radius: var(--r-full);
-  background: var(--c-sunken);
+  background: var(--c-surface);
   overflow: hidden;
-  border: 1px solid var(--c-line-soft);
+  border: var(--border-w-strong) solid var(--c-border);
 }
 .timer__fill {
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, var(--c-brand-deep), var(--c-brand));
+  background: var(--c-brand);
   transform-origin: left center;
   transition: background var(--dur-base) var(--ease-out);
 }
@@ -145,14 +145,16 @@ onBeforeUnmount(() => stopLoop())
   place-items: center;
   width: 2.25rem;
   height: 2.25rem;
-  border: 1px solid var(--c-line);
+  border: var(--border-w-strong) solid var(--c-border);
   border-radius: var(--r-md);
-  background: transparent;
-  color: var(--c-text-muted);
+  background: var(--c-surface);
+  box-shadow: var(--shadow-sm);
+  color: var(--c-text);
   flex: none;
 }
-.timer__pause:hover { color: var(--c-text); border-color: var(--c-surface-3); background: var(--c-surface-2); }
-.timer--urgent .timer__fill { background: linear-gradient(90deg, var(--c-bad-deep), var(--c-bad)); }
+.timer__pause:hover { background: var(--c-brand-wash); }
+.timer__pause:active { translate: var(--shadow-x-sm) var(--shadow-x-sm); box-shadow: var(--shadow-none); }
+.timer--urgent .timer__fill { background: var(--c-bad); }
 .timer--urgent .timer__num { color: var(--c-bad); animation: beat 1s var(--ease-both) infinite; }
 .timer--paused .timer__num { color: var(--c-text-faint); }
 

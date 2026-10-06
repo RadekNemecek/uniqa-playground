@@ -41,9 +41,8 @@ const describedBy = computed(() => (props.error ? `${props.id || fallbackId}-err
 .field { display: grid; gap: var(--sp-2); }
 .field__label {
   font-size: var(--fs-sm);
-  font-weight: 600;
-  color: var(--c-text-muted);
-  letter-spacing: 0.01em;
+  font-weight: 900;
+  color: var(--c-text);
 }
 .field__req { color: var(--c-brand); }
 .field__hint { font-size: var(--fs-xs); color: var(--c-text-faint); line-height: 1.4; }
@@ -62,28 +61,29 @@ const describedBy = computed(() => (props.error ? `${props.id || fallbackId}-err
 .field :deep(select) {
   width: 100%;
   padding: var(--sp-3) var(--sp-4);
-  border: var(--border-w) solid var(--c-border);
+  border: var(--border-w-strong) solid var(--c-border);
   border-radius: var(--r-md);
   background: var(--c-bg-field);
+  font-weight: 700;
   color: var(--c-text);
   font-size: var(--fs-md);
   transition: var(--tr-surface);
 }
 .field :deep(textarea) { resize: vertical; min-height: var(--field-textarea-min); line-height: var(--lh-body); }
 .field :deep(input:hover),
-.field :deep(textarea:hover) { border-color: var(--c-bg-active); }
+.field :deep(textarea:hover) { box-shadow: var(--shadow-sm); }
 
 /* :focus-visible, ne :focus. Kliknutím myší do pole už uživatelka ví, kde
    je; prstenec navíc patří tomu, kdo přišel od klávesnice. */
 .field :deep(input:focus-visible),
 .field :deep(textarea:focus-visible),
-.field :deep(select:focus-visible) { border-color: var(--c-brand); background: var(--c-bg-field-focus); }
+.field :deep(select:focus-visible) { background: var(--c-bg-field-focus); box-shadow: var(--shadow-sm); }
 .field :deep(::placeholder) { color: var(--c-text-faint); }
 
 .field--invalid :deep(input),
 .field--invalid :deep(textarea),
 .field--invalid :deep(select) {
   border-color: var(--c-bad);
-  background: color-mix(in oklab, var(--c-bad) 8%, var(--c-bg-field));
+  box-shadow: var(--shadow-x-sm) var(--shadow-x-sm) 0 var(--c-bad);
 }
 </style>

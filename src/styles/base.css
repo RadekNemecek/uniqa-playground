@@ -8,7 +8,7 @@
 
 html {
   -webkit-text-size-adjust: 100%;
-  scrollbar-color: var(--c-line) transparent;
+  scrollbar-color: var(--c-text-faint) transparent;
   /* clip, ne hidden: nevytvoří scroll kontejner, takže position: sticky
      ve správě otázek dál funguje. Drží uvnitř prvky, které schválně
      přetékají za okraj okna, jako natočená deska na rozcestníku. */
@@ -27,28 +27,8 @@ body {
   overflow-x: clip;
 }
 
-/* Atmosféra: dvě tlumená světla a jemné zrno. Nikdy se nesmí prosadit
-   jako efekt, jen zabraňuje tomu, aby tmavá plocha působila plochá. */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: -2;
-  background:
-    radial-gradient(60vw 60vw at 12% -8%, color-mix(in oklab, var(--c-light) 22%, transparent), transparent 62%),
-    radial-gradient(52vw 52vw at 92% 104%, color-mix(in oklab, var(--c-team-2) 10%, transparent), transparent 60%),
-    linear-gradient(180deg, var(--c-base) 0%, var(--c-abyss) 100%);
-}
-
-body::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  opacity: 0.035;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
-}
+/* Papír. Žádné světlo ani zrno: hloubku v tomhle vzhledu nese obrys
+   a tvrdý stín, ne atmosféra. Tečky jsou jen na rozcestníku. */
 
 img, svg, video { display: block; max-width: 100%; }
 

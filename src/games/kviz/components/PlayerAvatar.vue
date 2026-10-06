@@ -33,8 +33,9 @@ const avatar = computed(() => avatarFor(props.id))
   place-items: center;
   width: var(--ava-size, 2.5rem);
   aspect-ratio: 1;
+  border: var(--border-w-strong) solid var(--c-border);
   border-radius: var(--r-full);
-  background: color-mix(in oklab, var(--tint) 32%, var(--c-surface));
+  background: color-mix(in oklab, var(--tint) 45%, var(--c-surface));
   overflow: hidden;
 }
 .ava__art {

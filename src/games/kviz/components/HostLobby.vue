@@ -158,12 +158,13 @@ function commitRename(uid: string): void {
 }
 .lobby__qr { width: min(100%, var(--quiz-qr-max), var(--quiz-qr-vmax)); }
 .lobby__manual { display: grid; justify-items: center; gap: var(--sp-1); }
-.lobby__code-label { color: var(--c-text-faint); font-size: var(--fs-xs); font-weight: 700; letter-spacing: var(--tracking-caps); text-transform: uppercase; }
+.lobby__code-label { color: var(--c-text-muted); font-size: var(--fs-xs); font-weight: 900; letter-spacing: var(--tracking-caps); text-transform: uppercase; }
 .lobby__warn {
   padding: var(--sp-2) var(--sp-3);
+  border: var(--border-w-strong) solid var(--c-border);
   border-radius: var(--r-md);
-  background: color-mix(in oklab, var(--c-bad) 16%, transparent);
-  color: var(--c-bad);
+  background: var(--c-bad-fill);
+  color: var(--c-text-ink);
   font-size: var(--fs-xs);
   line-height: var(--lh-body);
   text-align: left;
@@ -178,7 +179,7 @@ function commitRename(uid: string): void {
 .lobby__url {
   max-width: var(--content-narrow);
   font-size: var(--fs-xs);
-  color: var(--c-text-faint);
+  color: var(--c-text-muted);
   overflow-wrap: anywhere;
   text-align: center;
 }
@@ -194,15 +195,26 @@ function commitRename(uid: string): void {
   letter-spacing: 0.02em;
   color: var(--c-brand);
 }
+/* Každý znak kódu je dlaždice, aby se opisoval po znacích. */
+.lobby__code span {
+  display: grid;
+  place-items: center;
+  min-width: 1.1em;
+  padding: 0.1em 0.12em;
+  border: var(--border-w-heavy) solid var(--c-border);
+  border-radius: var(--r-md);
+  background: var(--c-surface);
+  box-shadow: var(--shadow-sm);
+}
 
 /* Soupiska ---------------------------------------------------------------- */
-.lobby__room { display: grid; grid-template-rows: auto 1fr auto; gap: var(--sp-5); height: 100%; min-height: 0; padding: var(--sp-4); border: var(--separator-w) solid var(--c-line); border-radius: var(--r-xl); background: color-mix(in oklab, var(--c-surface) 72%, transparent); }
+.lobby__room { display: grid; grid-template-rows: auto 1fr auto; gap: var(--sp-5); height: 100%; min-height: 0; padding: var(--sp-5); border: var(--border-w-heavy) solid var(--c-border); border-radius: var(--r-xl); background: var(--c-surface); box-shadow: var(--shadow-lg); }
 .room__head { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: var(--sp-4); }
 .room__title { margin-top: var(--sp-1); font-size: var(--fs-2xl); font-weight: 900; }
 .room__count { display: grid; justify-items: end; line-height: var(--lh-tight); }
 .room__count strong { color: var(--c-brand); font-size: var(--fs-hero); font-weight: 900; font-variant-numeric: tabular-nums; }
 .room__count span { color: var(--c-text-muted); font-size: var(--fs-sm); font-weight: 700; }
-.room__empty { color: var(--c-text-faint); }
+.room__empty { color: var(--c-text-muted); }
 
 /* Soupiska je mřížka karet, ne řádek jmen. Zvíře na kartě je to, podle
    čeho se člověk hledá z druhého konce místnosti, jméno je až druhé. */
@@ -222,9 +234,10 @@ function commitRename(uid: string): void {
   align-content: start;
   gap: var(--sp-2);
   padding: var(--sp-3) var(--sp-2);
-  border: 1px solid var(--c-line);
+  border: var(--border-w-strong) solid var(--c-border);
   border-radius: var(--r-lg);
-  background: var(--c-surface);
+  background: var(--c-base);
+  box-shadow: var(--shadow-sm);
   text-align: center;
   /* Karta nastupuje, aby bylo poznat, že někdo právě přišel. */
   animation: pop var(--dur-base) var(--ease-back) both;
@@ -232,7 +245,7 @@ function commitRename(uid: string): void {
 .who__ava { --ava-size: var(--quiz-lobby-ava); }
 /* Přezdívku nikdo neláme uprostřed, ubere se na velikosti. */
 .who__nick {
-  font-weight: 700;
+  font-weight: 900;
   line-height: var(--lh-snug);
   font-size: calc(var(--fs-md) * var(--fit-text, 1));
 }
@@ -240,15 +253,17 @@ function commitRename(uid: string): void {
 .who__tool {
   border: 0;
   background: transparent;
-  color: var(--c-text-faint);
+  color: var(--c-text-muted);
   font-size: var(--fs-xs);
+  font-weight: 700;
+  text-decoration: underline;
 }
 .who__tool:hover { color: var(--c-text); }
 .who__tool--danger:hover { color: var(--c-bad); }
 .who__input {
   width: 100%;
   padding: var(--sp-1) var(--sp-2);
-  border: 1px solid var(--c-brand);
+  border: var(--border-w-strong) solid var(--c-border);
   border-radius: var(--r-md);
   background: var(--c-sunken);
   color: var(--c-text);
@@ -257,11 +272,11 @@ function commitRename(uid: string): void {
 }
 
 .room__foot { display: grid; gap: var(--sp-2); justify-items: start; }
-.room__hint { font-size: var(--fs-xs); color: var(--c-text-faint); }
+.room__hint { font-size: var(--fs-xs); color: var(--c-text-muted); }
 
 @keyframes pop {
-  from { opacity: 0; transform: scale(0.9); }
-  to { opacity: 1; transform: scale(1); }
+  from { opacity: 0; transform: scale(0.6) rotate(-8deg); }
+  to { opacity: 1; transform: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {

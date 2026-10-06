@@ -44,48 +44,57 @@ withDefaults(
   display: grid;
   place-items: center;
   flex: none;
-  border: var(--border-w) solid transparent;
+  border: var(--border-w-strong) solid transparent;
   border-radius: var(--r-md);
   background: transparent;
   color: var(--c-text-muted);
-  transition: var(--tr-surface);
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    translate var(--dur-instant) var(--ease-out),
+    box-shadow var(--dur-instant) var(--ease-out);
 }
 
 .iconbtn--sm { width: var(--control-sm); height: var(--control-sm); }
 .iconbtn--md { width: var(--control-md); height: var(--control-md); }
 .iconbtn--lg { width: var(--control-lg); height: var(--control-lg); }
 
+/* Orámované ikonové tlačítko se chová jako velké: stín a zamáčknutí. */
 .iconbtn--ghost {
   border-color: var(--c-border);
-  background: color-mix(in oklab, var(--c-bg-card) 55%, transparent);
-}
-.iconbtn--ghost:hover:not(:disabled) {
-  border-color: var(--c-bg-active);
   background: var(--c-bg-card);
   color: var(--c-text);
+  box-shadow: var(--shadow-sm);
+}
+.iconbtn--ghost:hover:not(:disabled) {
+  translate: calc(var(--shadow-x-sm) / 2) calc(var(--shadow-x-sm) / 2);
+  box-shadow: calc(var(--shadow-x-sm) / 2) calc(var(--shadow-x-sm) / 2) 0 var(--c-ink);
+}
+.iconbtn--ghost:active:not(:disabled) {
+  translate: var(--shadow-x-sm) var(--shadow-x-sm);
+  box-shadow: var(--shadow-none);
 }
 
 /* Bez rámečku. Patří do řádku, kde by orámovaná tlačítka dělala plot:
    nástroje u karty hráče, šipky u otázky v seznamu. */
 .iconbtn--plain:hover:not(:disabled) {
-  background: color-mix(in oklab, var(--c-bg-raised) 70%, transparent);
+  background: var(--c-bg-active);
   color: var(--c-text);
 }
 
 .iconbtn--danger { color: var(--c-text-muted); }
 .iconbtn--danger:hover:not(:disabled) {
-  border-color: color-mix(in oklab, var(--c-bad) 45%, transparent);
-  background: color-mix(in oklab, var(--c-bad) 14%, transparent);
-  color: var(--c-bad);
+  border-color: var(--c-bad);
+  background: var(--c-bad-fill);
+  color: var(--c-text-ink);
 }
 
 .iconbtn[aria-pressed='true'] {
-  border-color: var(--c-brand);
-  background: var(--c-brand-wash);
-  color: var(--c-brand);
+  border-color: var(--c-border);
+  background: var(--c-brand);
+  color: var(--c-on-accent);
 }
 
-.iconbtn:disabled { opacity: 0.42; }
+.iconbtn:disabled { opacity: 0.45; box-shadow: var(--shadow-none); }
 
 /* Na dotyku musí i malé tlačítko nabídnout plochu, do které jde trefit. */
 @media (pointer: coarse) {

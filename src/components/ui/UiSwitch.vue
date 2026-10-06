@@ -33,28 +33,30 @@ const model = defineModel<boolean>({ required: true })
   width: 2.6rem;
   height: 1.5rem;
   border-radius: var(--r-full);
-  background: var(--c-bg-raised);
-  border: var(--border-w) solid var(--c-border);
+  background: var(--c-bg-card);
+  border: var(--border-w-strong) solid var(--c-border);
+  box-shadow: var(--shadow-sm);
   position: relative;
   transition: background-color var(--dur-fast) var(--ease-out);
 }
 .switch__box::after {
   content: '';
   position: absolute;
-  top: 2px;
-  left: 2px;
+  top: 1px;
+  left: 1px;
   width: 1.1rem;
   height: 1.1rem;
   border-radius: var(--r-full);
-  background: var(--c-text-muted);
+  background: var(--c-ink);
   transition:
     transform var(--dur-fast) var(--ease-back),
     background-color var(--dur-fast) var(--ease-out);
 }
-.switch input:checked + .switch__box { background: var(--c-brand); border-color: var(--c-brand); }
+.switch input:checked + .switch__box { background: var(--c-brand); }
 .switch input:checked + .switch__box::after {
   transform: translateX(1.1rem);
   background: var(--c-on-accent);
+  box-shadow: inset 0 0 0 var(--border-w) var(--c-ink);
 }
 .switch input:focus-visible + .switch__box {
   outline: var(--focus-ring-w) solid var(--focus-ring-c);
@@ -62,7 +64,7 @@ const model = defineModel<boolean>({ required: true })
 }
 
 .switch__copy { display: grid; gap: 2px; }
-.switch__copy strong { font-size: var(--fs-sm); font-weight: 700; color: var(--c-text); }
+.switch__copy strong { font-size: var(--fs-sm); font-weight: 900; color: var(--c-text); }
 .switch__copy em {
   font-style: normal;
   font-size: var(--fs-xs);

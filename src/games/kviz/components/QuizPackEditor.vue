@@ -244,7 +244,7 @@ async function duplicate(): Promise<void> {
 .ed__state { margin-left: auto; color: var(--c-text-faint); font-size: var(--fs-sm); }
 .ed__state[data-state='saved'] { color: var(--c-ok); }
 .ed__state[data-state='error'] { color: var(--c-bad); font-weight: 700; }
-.conflict { display: flex; align-items: center; flex-wrap: wrap; gap: var(--sp-4); padding: var(--sp-4); border: var(--border-w) solid var(--c-bad); background: var(--c-surface); color: var(--c-bad); font-size: var(--fs-sm); }
+.conflict { display: flex; align-items: center; flex-wrap: wrap; gap: var(--sp-4); padding: var(--sp-4); border: var(--border-w-strong) solid var(--c-border); border-radius: var(--r-md); background: var(--c-bad-fill); color: var(--c-text-ink); font-size: var(--fs-sm); font-weight: 700; }
 .ed__identity { display: flex; align-items: start; justify-content: space-between; gap: var(--sp-5); }
 .ed__identity h1 { font-size: var(--fs-work-title); margin-top: var(--sp-2); overflow-wrap: anywhere; }
 .ed__description { margin-top: var(--sp-3); max-width: var(--content-narrow); font-size: var(--fs-sm); color: var(--c-text-muted); overflow-wrap: anywhere; }
@@ -258,14 +258,14 @@ async function duplicate(): Promise<void> {
 .questions li:first-child .question { border-top: 0; }
 .question { display: flex; gap: var(--sp-3); width: 100%; padding: var(--sp-4) var(--sp-3); border: 0; border-top: var(--border-w) solid var(--c-border-soft); border-left: var(--border-w-strong) solid transparent; background: transparent; color: var(--c-text); text-align: left; }
 .question:hover { background: var(--c-bg-active); }
-.question[aria-current] { border-left-color: var(--c-brand); background: var(--c-bg-active); }
+.question[aria-current] { border-left-color: var(--c-brand); background: var(--c-brand-wash); }
 .question__num { font-weight: 900; font-size: var(--fs-sm); color: var(--c-brand); font-variant-numeric: tabular-nums; }
 .question__copy { display: grid; gap: var(--sp-2); min-width: 0; overflow-wrap: anywhere; }
 .question__prompt { font-size: var(--fs-sm); font-weight: 700; line-height: var(--lh-snug); }
 .question__answer, .question__todo, .question__image { font-size: var(--fs-xs); color: var(--c-text-muted); }
 .question__todo { color: var(--c-bad); }
 .question__image { display: flex; gap: var(--sp-2); align-items: center; }
-.sheet { min-width: 0; padding: var(--sp-5); background: var(--c-surface); border-top: var(--border-w-strong) solid var(--c-brand); }
+.sheet { min-width: 0; padding: var(--sp-5); background: var(--c-surface); border: var(--border-w-heavy) solid var(--c-border); border-radius: var(--r-xl); box-shadow: var(--shadow-lg); }
 .sheet__head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); flex-wrap: wrap; margin-bottom: var(--sp-5); }
 .sheet__head h2 { font-size: var(--fs-xl); }
 .sheet__head h2 span { color: var(--c-text-muted); font-size: var(--fs-sm); font-weight: 400; }

@@ -255,7 +255,7 @@ onUnmounted(() => {
 
 .final__head { display: grid; gap: var(--sp-2); }
 .final__title { font-size: var(--fs-hero); font-weight: 900; letter-spacing: -0.03em; text-wrap: balance; }
-.final__empty { color: var(--c-text-faint); }
+.final__empty { color: var(--c-text-muted); }
 .final__warn {
   display: flex;
   align-items: center;
@@ -264,10 +264,12 @@ onUnmounted(() => {
   flex-wrap: wrap;
   max-width: 40rem;
   padding: var(--sp-2) var(--sp-4);
+  border: var(--border-w-strong) solid var(--c-border);
   border-radius: var(--r-md);
-  background: color-mix(in oklab, var(--c-bad) 15%, transparent);
-  color: var(--c-bad);
+  background: var(--c-bad-fill);
+  color: var(--c-text-ink);
   font-size: var(--fs-sm);
+  font-weight: 700;
 }
 
 /* Stupně vítězů ------------------------------------------------------------ */
@@ -313,7 +315,7 @@ onUnmounted(() => {
 .slot--champ .slot__ava { --ava-size: 5rem; }
 .slot__nick {
   font-size: calc(var(--fs-lg) * var(--fit-text, 1));
-  font-weight: 700;
+  font-weight: 900;
   transition: opacity var(--dur-fast) var(--ease-out);
 }
 .slot--champ .slot__nick { font-size: calc(var(--fs-2xl) * var(--fit-text, 1)); }
@@ -334,9 +336,11 @@ onUnmounted(() => {
   width: 100%;
   height: calc(var(--h) * 100%);
   padding-top: var(--sp-3);
+  border: var(--border-w-heavy) solid var(--c-border);
+  border-bottom: 0;
   border-radius: var(--r-lg) var(--r-lg) 0 0;
-  background: linear-gradient(180deg, var(--tint) 0%, color-mix(in oklab, var(--tint) 35%, var(--c-surface)) 100%);
-  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.3);
+  background: var(--tint);
+  box-shadow: var(--shadow-x-md) 0 0 var(--c-ink);
   transform-origin: bottom center;
   transform: scaleY(0);
 }
@@ -369,8 +373,8 @@ onUnmounted(() => {
 .slot--cued:not(.slot--shown) .slot__riser { animation: rise var(--dur-podium-place) var(--ease-back) both, waiting var(--dur-breathe) ease-in-out var(--dur-podium-place) infinite; }
 
 @keyframes waiting {
-  0%, 100% { filter: brightness(1); }
-  50% { filter: brightness(1.18); }
+  0%, 100% { filter: none; }
+  50% { filter: saturate(1.4); }
 }
 
 @media (prefers-reduced-motion: reduce) {

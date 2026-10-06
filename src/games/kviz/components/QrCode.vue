@@ -42,23 +42,24 @@ watch(() => props.url, render, { immediate: true })
     >
       <!-- Tichá zóna je součástí viewBoxu, bez ní část čteček kód nenajde. -->
       <rect :x="-2" :y="-2" :width="size + 4" :height="size + 4" fill="var(--c-text)" />
-      <path :d="path" fill="var(--c-abyss)" shape-rendering="crispEdges" />
+      <path :d="path" fill="var(--c-ink)" shape-rendering="crispEdges" />
     </svg>
     <div v-else class="qr__wait" aria-hidden="true"></div>
   </div>
 </template>
 
 <style scoped>
-/* Kód se snímá z plátna, takže potřebuje světlou plochu a ostré hrany.
-   Odstíny jsou z tokenů, kontrast mezi nimi je přes 15:1. */
+/* Kód se snímá z plátna: inkoustové moduly na bílé, jak je čtečky
+   čekají. Kontrast je přes 17:1. Rám a stín jsou tytéž jako u karet. */
 .qr {
   display: grid;
   place-items: center;
-  padding: var(--sp-2);
+  padding: var(--sp-3);
+  border: var(--border-w-heavy) solid var(--c-border);
   border-radius: var(--r-lg);
-  background: var(--c-text);
+  background: var(--c-surface);
   box-shadow: var(--shadow-lg);
 }
 .qr svg { display: block; width: 100%; height: auto; }
-.qr__wait { width: 100%; aspect-ratio: 1; background: var(--c-text); }
+.qr__wait { width: 100%; aspect-ratio: 1; background: var(--c-surface); }
 </style>

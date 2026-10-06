@@ -31,9 +31,12 @@ withDefaults(defineProps<{ title: string; text?: string; icon?: IconName }>(), {
   place-items: center;
   width: var(--control-lg);
   height: var(--control-lg);
+  border: var(--border-w-strong) solid var(--c-border);
   border-radius: var(--r-md);
   background: var(--c-bg-card);
-  color: var(--c-text-faint);
+  box-shadow: var(--shadow-sm);
+  color: var(--c-text);
+  rotate: -6deg;
 }
 .empty__title { font-size: var(--fs-lg); }
 .empty__text {
