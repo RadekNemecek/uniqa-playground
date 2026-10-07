@@ -193,8 +193,11 @@
   /* Fluidní stupně herní plochy, kalibrované na projekci. */
   --fs-value:  clamp(1.25rem, 0.5rem + 1.3vw + 1.4vh, 3.5rem);
   --fs-cat:    clamp(1.05rem, 0.7rem + 0.85vw + 0.55vh, 1.85rem);
-  --fs-prompt: clamp(1.5rem, 0.9rem + 1.4vw + 1.4vh, 4rem);
-  --fs-answer: clamp(1.25rem, 0.7rem + 1vw + 1.2vh, 2.75rem);
+  --fs-prompt: clamp(1.75rem, 1rem + 1.9vw + 1.9vh, 5.5rem);
+  --fs-answer: clamp(1.4rem, 0.8rem + 1.3vw + 1.5vh, 3.5rem);
+  /* Skóre týmu nad deskou. Čte se z druhého konce místnosti stejně jako
+     hodnoty na dlaždicích, jen o stupeň menší. */
+  --fs-team-score: clamp(1.75rem, 0.8rem + 1.4vw + 1.2vh, 3.25rem);
   /* Poučka po odhalení. Drží střed plátna, takže je větší než možnosti:
      v tu chvíli je to hlavní věc na obrazovce. Menší než otázka zůstává,
      je to věta k přečtení, ne titulek. */
@@ -376,8 +379,9 @@
 
   --fs-value:  calc(clamp(1.25rem, 0.5rem + 1.3vw + 1.4vh, 3.5rem) * var(--scale));
   --fs-cat:    calc(clamp(1.05rem, 0.7rem + 0.85vw + 0.55vh, 1.85rem) * var(--scale));
-  --fs-prompt: calc(clamp(1.5rem, 0.9rem + 1.4vw + 1.4vh, 4rem) * var(--scale));
-  --fs-answer: calc(clamp(1.25rem, 0.7rem + 1vw + 1.2vh, 2.75rem) * var(--scale));
+  --fs-prompt: calc(clamp(1.75rem, 1rem + 1.9vw + 1.9vh, 5.5rem) * var(--scale));
+  --fs-answer: calc(clamp(1.4rem, 0.8rem + 1.3vw + 1.5vh, 3.5rem) * var(--scale));
+  --fs-team-score: calc(clamp(1.75rem, 0.8rem + 1.4vw + 1.2vh, 3.25rem) * var(--scale));
   --fs-note:   calc(clamp(1.35rem, 0.8rem + 1.1vw + 1.2vh, 3.25rem) * var(--scale));
   --fs-hero:   calc(clamp(2.5rem, 1.5rem + 4.5vw, 6rem) * var(--scale));
   --fs-countdown: calc(clamp(8rem, 3rem + 14vw, 18rem) * var(--scale));

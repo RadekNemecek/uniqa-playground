@@ -384,7 +384,7 @@ onBeforeUnmount(() => {
   overflow-y: auto;
 }
 .stage__prompt {
-  max-width: min(100%, calc(24ch / var(--fit)));
+  max-width: min(100%, calc(30ch / var(--fit)));
   font-family: var(--font-display);
   font-size: calc(var(--fs-prompt) * var(--fit));
   font-weight: 900;

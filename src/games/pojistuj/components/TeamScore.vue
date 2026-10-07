@@ -70,7 +70,7 @@ watch(
 .team--active:hover {
   background: var(--team);
   color: var(--c-text-ink);
-  transform: translateY(calc(var(--sp-1) * -1)) rotate(-1deg);
+  transform: translateY(calc(var(--sp-1) * -1));
   box-shadow: var(--shadow-md);
 }
 .team--active .team__name { color: var(--c-text-ink); }
@@ -80,8 +80,8 @@ watch(
   flex: none;
   display: grid;
   place-items: center;
-  width: 2.25rem;
-  height: 2.25rem;
+  width: var(--control-lg);
+  height: var(--control-lg);
   border: var(--border-w-strong) solid var(--c-border);
   border-radius: var(--r-md);
   background: var(--team);
@@ -94,7 +94,7 @@ watch(
 
 .team__body { display: grid; min-width: 0; }
 .team__name {
-  font-size: var(--fs-sm);
+  font-size: var(--fs-md);
   font-weight: 900;
   color: var(--c-text-muted);
   white-space: nowrap;
@@ -103,7 +103,7 @@ watch(
 }
 .team__score {
   font-family: var(--font-display);
-  font-size: var(--fs-2xl);
+  font-size: var(--fs-team-score);
   font-weight: 900;
   line-height: 1.05;
   font-variant-numeric: tabular-nums;
