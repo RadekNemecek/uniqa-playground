@@ -118,6 +118,11 @@ function settle(): void {
 }
 
 onMounted(() => {
+  const start = (): void => {
+    ready.value = true
+  }
+  if (document.fonts) document.fonts.ready.then(start).catch(start)
+  else start()
   hero.value?.addEventListener('pointermove', follow)
   hero.value?.addEventListener('pointerleave', settle)
 })
@@ -126,6 +131,22 @@ onBeforeUnmount(() => {
   hero.value?.removeEventListener('pointermove', follow)
   hero.value?.removeEventListener('pointerleave', settle)
 })
+
+/**
+ * Dlaždice poskočí jako vlna od místa dopadu: bližší dřív, vzdálenější
+ * později. Všechny naráz v náhodném pořadí působilo jako záškub.
+ */
+function hopDelay(tile: BackTile): string {
+  const distance = Math.hypot(tile.x - 50, (tile.y - 42) * 0.6)
+  return `${Math.round(distance * 7)}ms`
+}
+
+/**
+ * Úvod se rozjede až s hotovým písmem. Nápis na něj čeká kvůli měření,
+ * a kdyby dlaždice, nálepka a tlačítka běžely od načtení stránky,
+ * poskočily by dřív, než M vůbec dopadne.
+ */
+const ready = ref(false)
 
 function toGames(): void {
   document.getElementById('hry')?.scrollIntoView({ block: 'start' })
@@ -160,7 +181,7 @@ async function discard(entry: GameEntry): Promise<void> {
       <!-- Úvod je titulní strana: nápis vystředěný na výšku i na šířku,
            pod ním nálepka a dvě cesty dál. Zpod dolní hrany vykukují
            karty her, aby bylo vidět, že se roluje dál. -->
-      <section ref="hero" class="hero" aria-labelledby="home-title">
+      <section ref="hero" class="hero" :class="{ 'hero--ready': ready }" aria-labelledby="home-title">
         <div class="hero__tiles" aria-hidden="true">
           <span
             v-for="(tile, i) in TILES"
@@ -173,6 +194,7 @@ async function discard(entry: GameEntry): Promise<void> {
               '--s': tile.size,
               '--r': `${tile.rot}deg`,
               '--d': tile.depth,
+              '--hop-delay': hopDelay(tile),
               '--i': i,
             }"
           ><i></i></span>
@@ -376,6 +398,10 @@ async function discard(entry: GameEntry): Promise<void> {
    animuje jinou vlastnost, takže se navzájem nepřebíjejí. */
 .hero__tiles { position: absolute; inset: 0; pointer-events: none; }
 
+/* Dokud nedorazí písmo, stojí celý úvod na prvním snímku, ne jen nápis. */
+.hero:not(.hero--ready) *,
+.hero:not(.hero--ready) *::after { animation-play-state: paused; }
+
 .hero__tile {
   position: absolute;
   left: var(--x);
@@ -398,7 +424,7 @@ async function discard(entry: GameEntry): Promise<void> {
   box-shadow: var(--shadow-md);
   animation:
     home-tile-in var(--dur-pop) var(--ease-out) calc(var(--i) * var(--stagger)) both,
-    home-hop var(--dur-pop) var(--ease-out) calc(var(--delay-mark-hit) + var(--i) * 30ms);
+    home-hop var(--dur-hop) linear calc(var(--delay-mark-hit) + var(--hop-delay));
 }
 
 .hero__tile--azur { --tone: var(--c-team-1); }
@@ -701,11 +727,15 @@ async function discard(entry: GameEntry): Promise<void> {
   70% { transform: scale(1.1); }
   100% { transform: none; }
 }
+/* Poskok s fyzikou: nahoru zpomaluje, dolů zrychluje, dopad dlaždici
+   smáčkne a ta se jednou odrazí. Každý úsek má vlastní průběh; jeden
+   ease-out na všechno dělal ve vrcholu zastavení a dolů trhnutí. */
 @keyframes home-hop {
-  0%, 100% { transform: none; }
-  30% { transform: translateY(-2rem) rotate(-9deg); }
-  60% { transform: translateY(0.25rem) rotate(4deg); }
-  80% { transform: translateY(-0.4rem); }
+  0% { transform: translateY(0) rotate(0deg) scale(1, 1); animation-timing-function: cubic-bezier(0.2, 0.7, 0.4, 1); }
+  34% { transform: translateY(-1.6rem) rotate(-7deg) scale(1, 1); animation-timing-function: cubic-bezier(0.55, 0, 0.8, 0.4); }
+  62% { transform: translateY(0) rotate(1deg) scale(1.06, 0.92); animation-timing-function: cubic-bezier(0.2, 0.7, 0.4, 1); }
+  78% { transform: translateY(-0.35rem) rotate(0deg) scale(0.98, 1.03); animation-timing-function: cubic-bezier(0.55, 0, 0.8, 0.4); }
+  100% { transform: translateY(0) rotate(0deg) scale(1, 1); }
 }
 @keyframes home-float {
   0%, 100% { translate: 0 0; }

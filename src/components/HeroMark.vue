@@ -68,7 +68,8 @@ onMounted(() => {
 .mark__word {
   display: inline-flex;
   letter-spacing: -0.05em;
-  animation: mark-shake var(--dur-shake) var(--ease-out) var(--delay-mark-hit) both;
+  transform-origin: 50% 100%;
+  animation: mark-thump var(--dur-shake) linear var(--delay-mark-hit) both;
 }
 
 .mark__letter {
@@ -132,18 +133,20 @@ onMounted(() => {
 
 /* Pád zrychluje, dopad smáčkne dlaždici a ta jednou odskočí. */
 @keyframes mark-drop {
-  0% { transform: translateY(-4.4em) rotate(-42deg); animation-timing-function: var(--ease-in); }
-  62% { transform: translateY(0) scale(1.16, 0.8); animation-timing-function: var(--ease-out); }
+  0% { transform: translateY(-4.4em) rotate(-42deg) scale(1, 1); animation-timing-function: var(--ease-in); }
+  62% { transform: translateY(0) rotate(0deg) scale(1.16, 0.8); animation-timing-function: var(--ease-out); }
   78% { transform: translateY(-0.19em) rotate(-3deg) scale(0.95, 1.06); animation-timing-function: var(--ease-in); }
-  90% { transform: translateY(0) rotate(1deg) scale(1.04, 0.96); }
-  100% { transform: none; }
+  90% { transform: translateY(0) rotate(1deg) scale(1.04, 0.96); animation-timing-function: var(--ease-out); }
+  100% { transform: translateY(0) rotate(0deg) scale(1, 1); }
 }
 
-@keyframes mark-shake {
-  0%, 100% { transform: none; }
-  20% { transform: translate(-0.045em, 0.016em); }
-  45% { transform: translate(0.032em, -0.01em); }
-  70% { transform: translate(-0.016em, 0.005em); }
+/* Náraz do slova: jedno plynulé propružení, ne otřes. Rychlé cukání sem
+   a tam oko nečte jako náraz, ale jako vynechané snímky, a úvod pak
+   působí, jako by se prohlížeč zasekl. */
+@keyframes mark-thump {
+  0% { transform: translateY(0) scale(1, 1); animation-timing-function: cubic-bezier(0.2, 0.7, 0.4, 1); }
+  28% { transform: translateY(0.035em) scale(1.012, 0.965); animation-timing-function: cubic-bezier(0.3, 0, 0.2, 1); }
+  100% { transform: translateY(0) scale(1, 1); }
 }
 
 @keyframes mark-ray {

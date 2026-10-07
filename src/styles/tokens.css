@@ -267,7 +267,8 @@
      šťouchne: cyklus je dlouhý, aby se to dělo „občas", ne pořád. */
   --dur-pop:     550ms;   /* vyskočení písmene, nálepky, karty */
   --dur-drop:    950ms;   /* pád dlaždice s M včetně odskoku */
-  --dur-shake:   350ms;   /* otřes slova při dopadu */
+  --dur-shake:   520ms;   /* propružení slova při dopadu */
+  --dur-hop:     760ms;   /* poskočení dlaždic v pozadí */
   --dur-press:   120ms;   /* zamáčknutí do stínu */
   --dur-float:   5s;      /* pohupování dlaždic v pozadí */
   --dur-idle:    18s;     /* jeden cyklus šťouchanců nápisu */
@@ -407,6 +408,7 @@
     --dur-pop: 1ms;
     --dur-drop: 1ms;
     --dur-shake: 1ms;
+    --dur-hop: 1ms;
     --dur-press: 1ms;
   }
 }
