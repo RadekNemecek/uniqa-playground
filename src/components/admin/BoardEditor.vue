@@ -218,7 +218,7 @@ async function onValueChange(index: number, event: Event) {
             <UiIcon name="check" size="xs" />
           </span>
 
-          <span v-if="preview(questionOf(cat.id, value)?.prompt)" v-fit-text class="cell__text">
+          <span v-if="preview(questionOf(cat.id, value)?.prompt)" class="cell__text">
             {{ preview(questionOf(cat.id, value)?.prompt) }}
           </span>
           <span v-else class="cell__empty">
@@ -589,11 +589,15 @@ async function onValueChange(index: number, event: Event) {
   color: var(--c-text-ink);
 }
 
+/* Náhled znění se ve správě zalamuje, nezmenšuje. Smí se tu dělit i slova:
+   znění se nečte ze zadní řady a v úzkém sloupci by zmenšování udělalo
+   z textu nečitelné drobné písmo. Co se nevejde, utne trojtečka. */
 .cell__text {
-  font-size: calc(1em * var(--fit-text, 1));
+  overflow-wrap: anywhere;
+  hyphens: auto;
   display: -webkit-box;
-  -webkit-line-clamp: 3;
-  line-clamp: 3;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
   -webkit-box-orient: vertical;
   overflow: hidden;
   padding-right: var(--sp-4);
