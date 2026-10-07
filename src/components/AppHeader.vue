@@ -153,10 +153,8 @@ onBeforeUnmount(() => document.removeEventListener('fullscreenchange', syncFulls
   border-radius: var(--r-full);
   background: var(--c-surface);
   color: var(--c-text);
-  font-size: var(--fs-xs);
+  font-size: var(--fs-sm);
   font-weight: 900;
-  letter-spacing: var(--tracking-wide);
-  text-transform: uppercase;
   text-decoration: none;
   text-overflow: ellipsis;
   white-space: nowrap;

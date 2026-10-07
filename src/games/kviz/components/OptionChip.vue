@@ -42,9 +42,11 @@ const revealed = computed(() => props.votes !== null)
     <!-- Značka verdiktu. Fajfka u správné, křížek u chybné, u obou na
          stejném místě: dlaždice se po odhalení nesmí přesázet. Křížek
          tu není navíc k barvě, je to druhý nositel téhož: kdo barvy
-         nerozezná nebo sedí daleko, čte tvar. -->
-    <span v-if="state !== 'idle'" class="chip__tick" aria-hidden="true">
-      <UiIcon :name="state === 'right' ? 'check' : 'close'" size="md" />
+         nerozezná nebo sedí daleko, čte tvar. Místo si drží od začátku
+         otázky a jen se odkryje: kdyby přibylo až při odhalení, vzalo by
+         textu šířku, ten by se zalomil a dlaždice by povyrostla. -->
+    <span class="chip__tick" :class="{ 'chip__tick--hidden': state === 'idle' }" aria-hidden="true">
+      <UiIcon :name="state === 'wrong' ? 'close' : 'check'" size="md" />
     </span>
 
     <span v-if="withVotes" class="chip__count" :class="{ 'chip__count--hidden': !revealed }" aria-hidden="true">
@@ -131,6 +133,7 @@ const revealed = computed(() => props.votes !== null)
   color: var(--tint);
 }
 .chip__tick svg { width: 62%; height: 62%; }
+.chip__tick--hidden { visibility: hidden; }
 
 .chip__count {
   min-width: 2ch;

@@ -370,8 +370,8 @@ onBeforeUnmount(() => {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  font-size: calc(var(--fs-lg) * var(--fit));
-  font-weight: 700;
+  font-size: calc(var(--fs-xl) * var(--fit));
+  font-weight: 900;
   color: var(--c-text-muted);
   transition: opacity var(--dur-base) var(--ease-out);
 }
