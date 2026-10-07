@@ -445,7 +445,9 @@ onUnmounted(() => {
   gap: var(--sp-2);
   padding: var(--sp-3) var(--sp-3) var(--sp-4);
   border-radius: var(--r-lg) var(--r-lg) var(--r-md) var(--r-md);
-  background: var(--c-surface);
+  /* Sloup patří týmu, takže nese jeho barvu. Bílý stupeň neříkal, čí je,
+     barvu měla jen dlaždice s písmenem nad ním. */
+  background: var(--team);
   border: var(--border-w-heavy) solid var(--c-border);
   box-shadow: var(--shadow-md);
   transform-origin: bottom center;
@@ -494,7 +496,7 @@ onUnmounted(() => {
   font-weight: 900;
   font-variant-numeric: tabular-nums;
   line-height: 1;
-  color: var(--c-text);
+  color: var(--c-text-ink);
 }
 .slot__bar {
   --h: 0%;
@@ -508,8 +510,11 @@ onUnmounted(() => {
   align-self: end;
   /* Roste spolu se stupněm, bez vlastního zpoždění. */
 }
-.slot__bar--ok { background: var(--team); }
-.slot__bar--bad { background: var(--c-bad-fill); }
+/* Na barevném sloupu nemůže pojištěné nést barvu týmu, splynulo by.
+   Pojištěno je inkoust, nepojištěno bílá. Legenda pod stupni říká
+   totéž a platí pro všechny týmy stejně. */
+.slot__bar--ok { background: var(--c-ink); }
+.slot__bar--bad { background: var(--c-surface); }
 
 .results__legend {
   display: flex;
@@ -531,10 +536,10 @@ onUnmounted(() => {
   border-radius: var(--r-sm);
 }
 .results__legend-item--ok::before {
-  background: var(--c-brand-soft);
+  background: var(--c-ink);
 }
 .results__legend-item--bad::before {
-  background: var(--c-bad-fill);
+  background: var(--c-surface);
 }
 
 /* --- Další pořadí -------------------------------------------------------- */
