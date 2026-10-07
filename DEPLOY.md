@@ -137,11 +137,34 @@ npm run dev
    v anonymním okně. Balíček se musí objevit, aniž bys tam cokoli dělal.
    Tím je ověřené, že data opravdu žijí v cloudu a kolegové je uvidí.
 
-### 1.6 Úklid po kvízu
+### 1.6 Úklid po kvízu a Výslechu
 
 Každá odehraná hra kvízu založí dokument v kolekci `quiz` a pod ním
 podkolekce `players` a `answers`. Tlačítko **Ukončit a uklidit** na konci
-hry je všechny smaže.
+hry je všechny smaže. Výslech totéž: sběr založí dokument v `vyslech`
+s podkolekcí `responses` a ukončení sběru je po uložení výsledků smaže.
+
+> **Stav projektu:** TTL politiky **nejsou nastavené a nastavit nejdou.**
+> TTL ve Firestore vyžaduje projekt s aktivním účtováním, tedy tarif
+> **Blaze**. Projekt `uniqa-playground` běží na bezplatném tarifu Spark
+> a Google nastavení odmítne s hláškou *billing disabled*. Rozhodnuto
+> je zůstat na Sparku a běžet bez pojistky.
+>
+> Co to znamená v praxi: úklid obstará ukončení hry nebo sběru. Zůstanou
+> jen data z her a sběrů, které nikdo neukončil (zavřený notebook, spadlý
+> prohlížeč). Ta jednou za čas smaž ručně v konzoli: **Firestore Database
+> → Data**, kolekce `quiz` a `vyslech`, dokumenty se starým `expiresAt`,
+> každý **i s podkolekcemi** (konzole nabídne smazání celé větve). Kódy
+> to neblokuje, pravidla po osmi hodinách dovolí starou session přepsat.
+>
+> Kdyby projekt někdy přešel na Blaze, politiky nastaví pět příkazů:
+>
+> ```bash
+> for g in quiz players answers vyslech responses; do
+>   gcloud firestore fields ttls update expiresAt --collection-group=$g \
+>     --enable-ttl --project=uniqa-playground --async
+> done
+> ```
 
 Pojistka pro případ, že školitelka jen zavřela notebook, je **TTL
 politika**. Ve Firestore ji najdeš pod **Firestore Database → Time-to-live
@@ -175,9 +198,10 @@ Dvě cesty, jak to dodržet:
 1. **Ručně.** Seznam vyhodnocení je na `/kviz/vysledky`, tedy pod
    záložkou *Výsledky* vedle *Hrát* a *Otázky*, a u každého je
    tlačítko na smazání.
-2. **Automaticky.** Přidej TTL politiku i nad `quizReports` nad polem
-   `expiresAt` a do ukládaného dokumentu to pole doplň. Firestore pak
-   záznam smaže sám a nikdo na to nemusí myslet.
+2. **Automaticky.** Jen na tarifu Blaze, viz výš. Přidej TTL politiku
+   i nad `quizReports` nad polem `expiresAt` a do ukládaného dokumentu
+   to pole doplň. Firestore pak záznam smaže sám a nikdo na to nemusí
+   myslet.
 
 Kdo se ptá, co se s jeho přezdívkou stane, má dostat tuhle odpověď:
 zůstane ve vyhodnocení školení, nikam se neposílá a po roce se maže.
