@@ -78,7 +78,9 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
   sama karta a tlačítko uvnitř zastavuje probublání. K balíčkům se
   odtud nechodí, ta cesta vede z hlavičky hry.
 - **Rozcestník je titulní strana s dopadem.** Nahoře jen nápis,
-  nálepka s větou a dvě tlačítka (Vybrat hru, Připojit se telefonem).
+  nálepka s větou a jediné tlačítko Vybrat hru, které k výběru plynule
+  odroluje. Připojení telefonem patří jen kvízu a hráči na něj míří
+  z QR kódu na plátně, na rozcestník nepatří.
   Sekvence: vyskočí písmena „učírna", shora spadne dlaždice s M,
   dopadne, smáčkne se, slovo se otřese a kolem nadskočí barevné
   dlaždice v pozadí. Vtip s odebraným „M" se tím přečte sám, věta na
@@ -253,14 +255,16 @@ pod inkoustem.
 Jakmile hra běží, **rozhraní aplikace zmizí z plátna**. Hlavička se
 značkou a přepínačem Hrát/Otázky patří do přípravy. Nad hrou zůstane jen
 `PresentationBar`: vlevo název hry, uprostřed co udělá další stisk,
-vpravo nástroje.
+vpravo jediné tlačítko s nabídkou.
 
-Pás se po chvíli schová a vrací se **pohybem myši, ne klávesou**. Hra se
-vede mezerníkem, takže na klávesu by byl vidět pořád; takhle plátno
-zčistí, jakmile moderátorka pustí myš.
-
-Schovaný pás si drží místo v toku. Kdyby zmizel, obsah pod ním
-poposkočí, a ten je změřený na jednu obrazovku.
+Pás je **vidět pořád**. Dřív se po chvíli bez myši schovával, ale při
+každém pohybu se vracel a víc rušil, než šetřil. Plátno místo toho
+čistí nabídka: nástroje nesvítí v řadě vedle sebe, leží pod jedním
+tlačítkem. Nahoře to, co patří ke hře (vrácení bodování, výsledky,
+klávesy, hráči), pod tím zobrazení (celá obrazovka, písmo a zvuk)
+a úplně dole, oddělené a červené, ukončení hry. Celou obrazovku
+i nastavení obstará pás sám, hra dodá jen svoje položky a popisek
+ukončení. Mezerník na položce nabídky patří položce, hru neposune.
 
 Stav celé obrazovky se čte z `fullscreenchange`, ne z vlastního
 přepínače: odchází se z ní i Escapem a F11.

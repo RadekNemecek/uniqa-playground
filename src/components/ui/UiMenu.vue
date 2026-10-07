@@ -2,7 +2,14 @@
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
 
-defineProps<{ label: string }>()
+withDefaults(
+  defineProps<{
+    label: string
+    /** Orámované spouštěcí tlačítko, třeba v pásu nad hrou. */
+    variant?: 'plain' | 'ghost'
+  }>(),
+  { variant: 'ghost' },
+)
 const open = ref(false)
 const root = ref<HTMLElement | null>(null)
 
@@ -37,6 +44,12 @@ function onKey(e: KeyboardEvent) {
     return
   }
   if (!root.value?.contains(document.activeElement)) return
+  // Mezerník a Enter na položce patří položce, ne hře pod nabídkou: hra
+  // se vede mezerníkem a jinak by se s výběrem z nabídky i posunula.
+  if (e.key === ' ' || e.key === 'Enter') {
+    e.stopPropagation()
+    return
+  }
   const items = Array.from(root.value.querySelectorAll<HTMLElement>('[role="menuitem"]:not(:disabled)'))
   if (!items.length || !['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key)) return
   e.preventDefault()
@@ -68,6 +81,7 @@ defineExpose({ close })
   <div ref="root" class="menu" @focusout="onFocusOut">
     <UiIconButton
       icon="dots"
+      :variant="variant"
       :label="label"
       :aria-expanded="open"
       aria-haspopup="menu"
@@ -118,6 +132,11 @@ defineExpose({ close })
 .menu__panel :deep(button[role='menuitem']:hover),
 .menu__panel :deep(a[role='menuitem']:hover) {
   background: var(--c-brand-wash);
+}
+.menu__panel :deep(button[role='menuitem']:disabled) {
+  opacity: 0.45;
+  cursor: not-allowed;
+  background: transparent;
 }
 .menu__panel :deep(button[role='menuitem'].danger) {
   color: var(--c-bad);

@@ -2,8 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import AppHeader from '@/components/AppHeader.vue'
 import PresentationBar from '@/components/PresentationBar.vue'
-import UiButton from '@/components/ui/UiButton.vue'
-import UiIconButton from '@/components/ui/UiIconButton.vue'
+import UiIcon from '@/components/ui/UiIcon.vue'
 import HostSetup from '@/games/kviz/components/HostSetup.vue'
 import HostLobby from '@/games/kviz/components/HostLobby.vue'
 import HostFinal from '@/games/kviz/components/HostFinal.vue'
@@ -155,27 +154,8 @@ const barHint = computed(() => {
 
 const rosterOpen = ref(false)
 
-const isFullscreen = ref(false)
-
-async function toggleFullscreen() {
-  try {
-    if (document.fullscreenElement) await document.exitFullscreen()
-    else await document.documentElement.requestFullscreen()
-  } catch {
-    /* prohlížeč to nemusí povolit */
-  }
-}
-
-/* Stav se čte z prohlížeče, ne z vlastního přepínače: z celé obrazovky se
-   odchází i Escapem a F11. */
-function syncFullscreen() {
-  isFullscreen.value = document.fullscreenElement !== null
-}
-
 onMounted(() => {
   void initQuizPacks()
-  syncFullscreen()
-  document.addEventListener('fullscreenchange', syncFullscreen)
   // Po obnovení stránky se listenery musí nasadit znovu, jinak by
   // moderátorka koukala na prázdnou soupisku běžící hry.
   void attachSession()
@@ -183,7 +163,6 @@ onMounted(() => {
 })
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onKey)
-  document.removeEventListener('fullscreenchange', syncFullscreen)
 })
 </script>
 
@@ -197,26 +176,17 @@ onBeforeUnmount(() => {
     </template>
 
     <template v-else-if="quiz">
-      <PresentationBar title="Na kolik to dáš?" :hint="barHint">
-        <template #tools>
-          <UiButton
-            v-if="withPhones && quiz.phase !== 'final'"
-            size="sm"
-            variant="quiet"
-            @click="rosterOpen = true"
-          >
+      <PresentationBar
+        title="Na kolik to dáš?"
+        :hint="barHint"
+        :end-label="quiz.phase !== 'final' ? 'Ukončit kvíz' : ''"
+        @end="onEnd"
+      >
+        <template v-if="withPhones && quiz.phase !== 'final'" #menu="{ close }">
+          <button type="button" role="menuitem" @click="close(); rosterOpen = true">
+            <UiIcon name="phone" size="sm" />
             Hráči ({{ players.length }})
-          </UiButton>
-          <UiIconButton
-            :icon="isFullscreen ? 'fullscreen-exit' : 'fullscreen'"
-            :label="isFullscreen ? 'Opustit celou obrazovku' : 'Celá obrazovka'"
-            :pressed="isFullscreen"
-            size="sm"
-            @click="toggleFullscreen"
-          />
-          <UiButton v-if="quiz.phase !== 'final'" size="sm" variant="quiet" @click="onEnd">
-            Ukončit kvíz
-          </UiButton>
+          </button>
         </template>
       </PresentationBar>
 

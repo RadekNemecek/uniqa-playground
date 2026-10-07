@@ -148,8 +148,13 @@ function hopDelay(tile: BackTile): string {
  */
 const ready = ref(false)
 
+/** K výběru hry se roluje plynule, ne skokem: skok vypadá jako výměna
+ *  stránky a člověk ztratí přehled, kde je. Bez pohybu se skočí. */
 function toGames(): void {
-  document.getElementById('hry')?.scrollIntoView({ block: 'start' })
+  document.getElementById('hry')?.scrollIntoView({
+    block: 'start',
+    behavior: stillness.matches ? 'auto' : 'smooth',
+  })
 }
 
 function open(entry: GameEntry): void {
@@ -209,21 +214,12 @@ async function discard(entry: GameEntry): Promise<void> {
             <UiButton variant="brand" size="lg" icon-after="arrow-down" @click="toGames">
               Vybrat hru
             </UiButton>
-            <UiButton size="lg" icon="phone" @click="router.push('/k')">
-              Připojit se telefonem
-            </UiButton>
           </div>
         </div>
       </section>
 
       <section id="hry" class="choice page" aria-labelledby="choice-title">
-        <header class="choice__head">
-          <div>
-            <p class="choice__eyebrow">Vyber hru</p>
-            <h2 id="choice-title" class="choice__title">Co se dnes bude hrát?</h2>
-          </div>
-          <p class="choice__lead">Obě hry se vedou z notebooku na plátně a posouvají se mezerníkem.</p>
-        </header>
+        <h2 id="choice-title" class="choice__title">Co se dnes bude hrát?</h2>
 
         <!-- Varování nese jinak hlavička, a ta tu není. Bez něj by se
              o chybějící sdílené databázi člověk dozvěděl až ve správě
@@ -443,33 +439,14 @@ async function discard(entry: GameEntry): Promise<void> {
   scroll-margin-top: var(--sp-6);
 }
 
-.choice__head {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: var(--sp-6);
-}
 
-.choice__eyebrow {
-  font-size: var(--fs-sm);
-  font-weight: 900;
-  letter-spacing: var(--tracking-wide);
-  text-transform: uppercase;
-}
 
 .choice__title {
-  margin-top: var(--sp-2);
   font-size: var(--fs-home-title);
   letter-spacing: -0.045em;
   line-height: 1;
 }
 
-.choice__lead {
-  max-width: 22rem;
-  color: var(--c-text-muted);
-  font-size: var(--fs-lg);
-  line-height: var(--lh-snug);
-}
 
 .games {
   list-style: none;
@@ -781,7 +758,6 @@ async function discard(entry: GameEntry): Promise<void> {
 
 @media (max-width: 720px) {
   .home { --home-peek: 4rem; }
-  .choice__head { flex-direction: column; align-items: flex-start; gap: var(--sp-3); }
   .hero__eyebrow { left: var(--sp-4); right: var(--sp-4); text-align: center; }
   /* Na telefonu by dlaždice vlezly do nápisu. Zůstanou jen ty v rozích. */
   .hero__tile:nth-child(3n + 2) { display: none; }

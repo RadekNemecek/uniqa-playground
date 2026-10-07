@@ -501,7 +501,7 @@ function start() {
         </p>
 
         <div class="summary__preview" aria-hidden="true">
-          <div v-if="boardPreview.cols && boardPreview.rows" class="mini" :style="{ '--cols': boardPreview.cols }">
+          <div v-if="boardPreview.cols && boardPreview.rows" class="mini" :style="{ '--cols': boardPreview.cols, '--rows': boardPreview.rows }">
             <div v-for="value in boardPreview.ladder" :key="value" class="mini__row">
               <span v-for="cat in boardPreview.categories" :key="`${cat.id}:${value}`" class="mini__cell" />
             </div>
@@ -691,13 +691,36 @@ function start() {
 .summary__total { display: grid; margin-block: var(--sp-5) var(--sp-4); }
 .summary__total strong { font-size: var(--fs-work-number); font-weight: 900; line-height: var(--lh-tight); font-variant-numeric: tabular-nums; }
 .summary__total span { font-size: var(--fs-sm); margin-top: var(--sp-2); color: var(--c-text-muted); }
-.summary__preview { padding: var(--sp-3); border: var(--border-w-strong) solid var(--c-border); border-radius: var(--r-md); background: var(--c-base); }
+/* Náhled má pevnou výšku a dlaždice ji vyplní. S pevným poměrem stran
+   se při každé přidané kategorii zúžily i snížily a celé shrnutí se
+   smrsklo, při odebrání zase narostlo, takže tlačítko pod ním skákalo. */
+.summary__preview {
+  --summary-preview-h: 8.5rem;
+  display: grid;
+  height: var(--summary-preview-h);
+  padding: var(--sp-3);
+  border: var(--border-w-strong) solid var(--c-border);
+  border-radius: var(--r-md);
+  background: var(--c-base);
+}
 /* Náhled je malý, takže dlaždice nesou jen spodní hranu. Obrys kolem
    každé z pětadvaceti by z něj udělal síť čar. */
-.summary__empty { font-size: var(--fs-xs); color: var(--c-text-faint); line-height: var(--lh-snug); }
+.summary__empty { place-self: center; text-align: center; font-size: var(--fs-xs); color: var(--c-text-faint); line-height: var(--lh-snug); }
 .summary dl { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--sp-3); margin-block: var(--sp-5); font-size: var(--fs-sm); color: var(--c-text-muted); }
 .summary dd { margin: 0; font-weight: 700; text-align: right; color: var(--c-text); }
-.summary__teams { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-bottom: var(--sp-5); }
+/* Týmy ve dvou sloupcích s místem pro všech šest: s přidaným týmem
+   by jinak přibyl řádek a shrnutí s tlačítkem by zase poskočilo. */
+.summary__teams {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: var(--control-xs);
+  align-content: start;
+  gap: var(--sp-2);
+  min-height: calc(var(--control-xs) * 3 + var(--sp-2) * 2);
+  margin-bottom: var(--sp-5);
+}
 .summary__team { display: inline-flex; align-items: center; gap: var(--sp-2); max-width: 100%; min-width: 0; }
 .summary__badge {
   display: grid;
@@ -718,12 +741,11 @@ function start() {
 
 /* Náhled desky. Dlaždice si drží hmotu, protože takhle deska na plátně
    opravdu vypadá. */
-.mini { --cols: 1; display: grid; gap: var(--sp-1); }
+.mini { --cols: 1; --rows: 1; display: grid; grid-template-rows: repeat(var(--rows), minmax(0, 1fr)); gap: var(--sp-1); height: 100%; }
 .mini__row { display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); gap: var(--sp-1); }
 .mini__cell {
   display: block;
-  aspect-ratio: 1.35 / 1;
-  min-height: var(--sp-3);
+  height: 100%;
   border-radius: var(--r-xs);
   background: var(--c-tile-top);
   box-shadow: 0 var(--border-w) 0 var(--c-tile-edge);
