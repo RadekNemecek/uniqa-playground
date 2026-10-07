@@ -41,7 +41,7 @@ watch(() => props.url, render, { immediate: true })
       :aria-label="label ?? 'QR kód pro připojení do hry'"
     >
       <!-- Tichá zóna je součástí viewBoxu, bez ní část čteček kód nenajde. -->
-      <rect :x="-2" :y="-2" :width="size + 4" :height="size + 4" fill="var(--c-text)" />
+      <rect :x="-2" :y="-2" :width="size + 4" :height="size + 4" fill="var(--c-surface)" />
       <path :d="path" fill="var(--c-ink)" shape-rendering="crispEdges" />
     </svg>
     <div v-else class="qr__wait" aria-hidden="true"></div>

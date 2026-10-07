@@ -44,6 +44,19 @@
         "dev:local:alt"
       ],
       "port": 5186
+    },
+    {
+      "name": "playground-lan",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev:lan",
+        "--",
+        "--port",
+        "5187",
+        "--strictPort"
+      ],
+      "port": 5187
     }
   ]
 }

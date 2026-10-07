@@ -150,6 +150,12 @@ withDefaults(
 
 .btn--block { width: 100%; }
 
+/* Velikost přidává stín, tichá varianta ho nemá mít v žádné velikosti.
+   Jinak by tiché velké tlačítko mělo stín bez obrysu a vypadalo
+   vybledle, jako by bylo vypnuté. */
+.btn--quiet.btn--lg,
+.btn--quiet.btn--xl { --btn-shadow: var(--shadow-none); }
+
 .btn__spinner {
   width: var(--icon-md);
   height: var(--icon-md);

@@ -283,6 +283,9 @@ onUnmounted(() => {
   min-height: 0;
   height: 100%;
   width: min(100%, 60rem);
+  /* Podlaha. Sloupy stupňů na ní stojí, jinak by visely ve vzduchu
+     a splývaly s tlačítky pod sebou. */
+  border-bottom: var(--border-w-heavy) solid var(--c-border);
 }
 .slot {
   display: grid;

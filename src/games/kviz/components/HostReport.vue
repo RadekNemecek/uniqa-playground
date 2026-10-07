@@ -99,7 +99,7 @@ function isTrap(q: QuizReportQuestion, at: number): boolean {
           <p v-fit-text class="q__prompt">{{ q.index + 1 }}. {{ q.prompt }}</p>
           <img v-if="thumbOf(q)" class="q__thumb" :src="thumbOf(q) ?? ''" alt="" />
           <p class="q__answer">
-            <span class="q__letter" :style="{ color: `var(${quizOption(q.correctIndex).color.cssVar})` }">
+            <span class="q__letter" :style="{ '--tint': `var(${quizOption(q.correctIndex).color.cssVar})` }">
               {{ quizOption(q.correctIndex).letter }}
             </span>
             {{ q.options[q.correctIndex] }}
@@ -120,7 +120,7 @@ function isTrap(q: QuizReportQuestion, at: number): boolean {
               class="pick"
               :class="{ 'pick--right': at === q.correctIndex, 'pick--trap': isTrap(q, at) }"
             >
-              <span class="pick__letter" :style="{ color: `var(${quizOption(at).color.cssVar})` }">
+              <span class="pick__letter" :style="{ '--tint': `var(${quizOption(at).color.cssVar})` }">
                 <!-- Tvrzení má dvě možnosti a jejich znění se ukládá,
                      takže se pozná podle délky pole; písmeno by u ANO
                      a NE nic neřeklo. -->
@@ -236,7 +236,20 @@ function isTrap(q: QuizReportQuestion, at: number): boolean {
   object-fit: contain;
 }
 .q__answer { margin-top: var(--sp-1); font-size: var(--fs-sm); color: var(--c-text-muted); }
-.q__letter { font-family: var(--font-display); font-weight: 900; margin-right: var(--sp-1); }
+/* Písmeno možnosti je štítek v její barvě s inkoustovým textem. Světlé
+   odstíny možností jako písmo na papíře nejdou přečíst. */
+.q__letter,
+.pick__letter {
+  justify-self: start;
+  padding: 0 var(--sp-1);
+  border: var(--border-w) solid var(--c-border);
+  border-radius: var(--r-xs);
+  background: var(--tint);
+  color: var(--c-text-ink);
+  font-family: var(--font-display);
+  font-weight: 900;
+}
+.q__letter { margin-right: var(--sp-1); }
 .q__time { margin-left: var(--sp-2); color: var(--c-text-faint); }
 .picks { display: grid; gap: var(--sp-1); margin-top: var(--sp-2); list-style: none; padding: 0; }
 .pick {
@@ -246,7 +259,7 @@ function isTrap(q: QuizReportQuestion, at: number): boolean {
   gap: var(--sp-2);
   font-size: var(--fs-xs);
 }
-.pick__letter { font-weight: 900; }
+
 .pick__bar {
   height: var(--sp-3);
   border: var(--border-w) solid var(--c-border);

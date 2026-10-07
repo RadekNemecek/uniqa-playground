@@ -463,6 +463,11 @@ onBeforeUnmount(() => {
   width: 100%;
   max-width: var(--quiz-stage-max);
   margin-inline: auto;
+  /* Místo pro tvrdý stín správné možnosti. Tělo plátna přetečení
+     ořezává, protože podle něj měří, a stín u pravého a dolního okraje
+     by se jinak usekl. */
+  padding: 0 var(--shadow-x-lg) var(--shadow-x-lg) 0;
+  box-sizing: border-box;
   /* Možnosti se čtou z druhého konce místnosti, takže jdou na doraz.
      Když se nevejdou, ubere fitToScreen(). */
   font-size: calc(var(--fs-answer) * var(--fit));
