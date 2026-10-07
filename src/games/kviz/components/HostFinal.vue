@@ -3,6 +3,7 @@ import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import PlayerAvatar from './PlayerAvatar.vue'
 import { confetti } from '@/lib/confetti'
+import { sfx } from '@/lib/sound'
 import { countTo, duration, prefersReducedMotion } from '@/lib/motion'
 import { formatScore, TEAM_COLORS } from '@/lib/teams'
 import { count } from '@/lib/format'
@@ -99,6 +100,7 @@ function scoreOf(s: QuizStanding): number {
 }
 
 function celebrate(): void {
+  sfx.fanfare()
   confetti(
     winners.value.length > 0 ? TEAM_COLORS.slice(0, 4).map((c) => c.hex) : [],
     fx.value ?? undefined,
@@ -122,6 +124,7 @@ function finish(): void {
 
 function land(standing: QuizStanding): void {
   const ms = duration('--dur-count', 900)
+  sfx.land()
   visible.value = [...visible.value, standing.uid]
   counted.value = { ...counted.value, [standing.uid]: 0 }
   stopCounts.push(

@@ -4,6 +4,7 @@ import TimerBar from '@/games/pojistuj/components/TimerBar.vue'
 import OptionChip from './OptionChip.vue'
 import { fitToScreen, refitOnFonts, refitOnResize } from '@/lib/fit'
 import { cachedImage, loadImage } from '@/stores/quizImages'
+import { sfx } from '@/lib/sound'
 import type { QuizPhase, QuizQuestion } from '../types'
 
 const props = defineProps<{
@@ -162,6 +163,22 @@ const footNote = computed(() => {
 
 // Nápovědu drží pás nad hrou, takže mu ji musíme poslat nahoru.
 watch(hint, (v) => emit('hint', v), { immediate: true })
+
+/* Zvuky plátna. Telefon je nemá, ten drží hráč v ruce. Odpočet ťukne
+   na každou vteřinu, každý hlas tiše plopne, aby místnost slyšela, že
+   se hlasuje, a odhalení se plácne jako nálepka. */
+watch(countdown, (n, before) => {
+  if (n > 0 && n !== before) sfx.count()
+})
+watch(
+  () => props.answered,
+  (now, before) => {
+    if (props.phase === 'question' && now > (before ?? 0)) sfx.pop()
+  },
+)
+watch(revealed, (on) => {
+  if (on) sfx.reveal()
+})
 
 // Otázka i možnosti se musí vejít na jednu obrazovku. Měří se, neodhaduje.
 // Fáze rozložení nemění, proto se při vyhodnocení znovu nepřepočítává:

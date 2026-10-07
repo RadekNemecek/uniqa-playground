@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { watch } from 'vue'
+import { onBeforeUnmount, watch } from 'vue'
 import UiModal from '@/components/ui/UiModal.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiSwitch from '@/components/ui/UiSwitch.vue'
+import UiSegmented from '@/components/ui/UiSegmented.vue'
+import type { Segment } from '@/components/ui/segmented'
 import { settings, SCALE_STEPS, scaleLabel } from '@/stores/settings'
-import { sfx } from '@/lib/sound'
+import { playSample, primeAudio, sfx, type SoundSet } from '@/lib/sound'
 
 defineProps<{ open: boolean }>()
 const emit = defineEmits<{ close: [] }>()
@@ -30,6 +32,24 @@ watch(
     if (on) sfx.correct()
   },
 )
+
+const SOUND_SETS: Segment<SoundSet>[] = [
+  { value: 'stul', label: 'Stůl' },
+  { value: 'hala', label: 'Hala' },
+]
+
+/** Ukázka celé sady: otevření, hlasy, odhalení, body, konec času,
+ *  stupně a vyhlášení. Nová ukázka zruší tu rozehranou. */
+let sample: number[] = []
+function listen(): void {
+  sample.forEach((t) => window.clearTimeout(t))
+  primeAudio()
+  sample = playSample()
+}
+watch(() => settings.soundSet, () => {
+  if (settings.sound) sfx.correct()
+})
+onBeforeUnmount(() => sample.forEach((t) => window.clearTimeout(t)))
 </script>
 
 <template>
@@ -62,8 +82,15 @@ watch(
         <UiSwitch
           v-model="settings.sound"
           label="Zvuková odezva"
-          hint="Krátké tóny při otevření otázky a připsání bodů."
+          hint="Krátké zvuky při otevření otázky, odhalení, připsání bodů a vyhlášení."
         />
+        <div v-if="settings.sound" class="sound-set">
+          <UiSegmented v-model="settings.soundSet" :options="SOUND_SETS" aria-label="Sada zvuků" />
+          <UiButton size="sm" icon="play" @click="listen">Poslechnout</UiButton>
+        </div>
+        <p v-if="settings.sound" class="note">
+          Stůl jsou suché údery dřeva a marimby. Hala jsou měkčí tóny s dozvukem.
+        </p>
       </section>
     </div>
 
@@ -74,6 +101,9 @@ watch(
 </template>
 
 <style scoped>
+.sound-set { display: flex; align-items: center; gap: var(--sp-3); margin-top: var(--sp-4); }
+.sound-set :deep(.seg) { flex: 1; }
+.sound-set + .note { margin-top: var(--sp-3); }
 .head { font-size: var(--fs-md); margin-bottom: var(--sp-1); }
 .note { font-size: var(--fs-sm); color: var(--c-text-faint); margin-bottom: var(--sp-3); }
 

@@ -2,7 +2,11 @@
  * Zvuková odezva generovaná Web Audio. Žádné soubory: hra funguje offline
  * a nic se nedonačítá. Vše jde vypnout v nastavení.
  *
- * Řeč zvuků je „drnknuto v místnosti", ne „zapípáno".
+ * Sady jsou dvě. Výchozí „Stůl" (dole) patří k papírovému vzhledu:
+ * suché údery, dřevo, marimba. „Hala" je původní řeč zvuků, popsaná
+ * hned tady, a dá se zvolit v nastavení.
+ *
+ * Řeč haly je „drnknuto v místnosti", ne „zapípáno".
  *
  * Tři věci to drží pohromadě:
  *
@@ -240,7 +244,11 @@ function air({ duration, from, to, gain = 0.05, q = 0.7, room = 0.25, delay = 0 
   src.stop(t0 + duration + 0.02)
 }
 
-export const sfx = {
+/**
+ * Sada „Hala": měkká drnknutí s dozvukem. Původní zvuky z doby tmavého
+ * tématu, nechávají se jako druhá volba v nastavení.
+ */
+const HALA = {
   /**
    * Otevření políčka. Nádech a pod ním tupý náraz, jako když se otočí
    * těžká deska. Žádná melodie, tady teprve začíná napětí.
@@ -311,4 +319,149 @@ export const sfx = {
     }
     air({ duration: 0.5, from: 600, to: 3000, gain: 0.028, q: 0.5, room: 0.8 })
   },
+
+  /** Místo na stupních. V hale jen tupé drnknutí bez melodie. */
+  land: () => {
+    pluck({ freq: A3, decay: 0.4, gain: 0.09, cutoff: 1400, room: 0.5 })
+  },
+
+  /** Někdo odpověděl. V hale skoro neslyšné ťuknutí. */
+  pop: () => {
+    pluck({ freq: A5, decay: 0.08, gain: 0.02, type: 'sine', cutoff: 5000, room: 0.2 })
+  },
+
+  /** Odpočet před otázkou. Stejné jako tik časomíry, jen hlasitější. */
+  count: () => {
+    pluck({ freq: E5, decay: 0.12, gain: 0.05, type: 'sine', cutoff: 4000, room: 0.3 })
+  },
+}
+
+/* ---------------------------------------------------------------------------
+   Sada „Stůl"
+
+   Vzhled je papír, inkoust a tvrdý stín: věci se plácají, cvakají
+   a zamáčkávají. Zvuky k tomu patří ze stolu, ne z haly. Skoro žádný
+   dozvuk, krátké údery, dřevo a marimba. Melodii nese nanejvýš pár
+   úderů za sebou, nic nedrží.
+--------------------------------------------------------------------------- */
+
+/** Svrchní tón marimby leží zhruba na 3,9násobku základního. Právě on
+ *  dělá z čisté sinusovky dřevěnou destičku. */
+const MARIMBA_PARTIAL = 3.93
+
+/**
+ * Úder paličkou do dřeva: základní tón, krátký svrchní tón a cvaknutí
+ * paličky. Dozvuk jen náznakem, aby to znělo z místnosti, ne z haly.
+ */
+function mallet({ freq, decay = 0.35, gain = 0.1, delay = 0 }: { freq: number; decay?: number; gain?: number; delay?: number }): void {
+  pluck({ freq, decay, gain, type: 'sine', cutoff: 6000, room: 0.06, delay })
+  pluck({ freq: freq * MARIMBA_PARTIAL, decay: decay * 0.22, gain: gain * 0.35, type: 'sine', cutoff: 8000, room: 0, delay })
+  air({ duration: 0.012, from: 4200, to: 2600, gain: gain * 0.5, q: 1.2, room: 0, delay })
+}
+
+/** Klapnutí dřeva: velmi krátký nízký úder a cvaknutí. */
+function knock({ freq = 180, gain = 0.12, delay = 0 }: { freq?: number; gain?: number; delay?: number } = {}): void {
+  pluck({ freq, glide: freq * 0.7, decay: 0.09, gain, type: 'sine', cutoff: 1800, room: 0.04, delay })
+  air({ duration: 0.02, from: 2400, to: 900, gain: gain * 0.6, q: 1.4, room: 0, delay })
+}
+
+/** Plop: tón, který rychle vyletí nahoru. Bublina, nálepka, plácnutí. */
+function plop({ from = 320, to = 760, gain = 0.09, delay = 0 }: { from?: number; to?: number; gain?: number; delay?: number } = {}): void {
+  pluck({ freq: from, glide: to, decay: 0.11, gain, type: 'sine', cutoff: 3000, room: 0.04, delay })
+}
+
+const STUL = {
+  /** Otevření políčka: dlaždice se zvedne ze stolu. Klapnutí a plop. */
+  open: () => {
+    knock({ freq: 150, gain: 0.13 })
+    plop({ from: 260, to: 520, gain: 0.05, delay: 0.05 })
+  },
+
+  /** Odhalení odpovědi: nálepka se plácne na papír. */
+  reveal: () => {
+    plop({ from: 300, to: 820, gain: 0.1 })
+    mallet({ freq: E5, decay: 0.3, gain: 0.05, delay: 0.06 })
+  },
+
+  /** Body připsány: dva rychlé údery na marimbu, druhý výš. */
+  correct: () => {
+    mallet({ freq: A5, decay: 0.32, gain: 0.1 })
+    mallet({ freq: E5 * 2, decay: 0.45, gain: 0.09, delay: 0.09 })
+  },
+
+  /** Špatně: tupé bonk, které sjede dolů. Bez smutné melodie. */
+  wrong: () => {
+    pluck({ freq: A3, glide: A3 / 2, decay: 0.22, gain: 0.13, type: 'sine', cutoff: 900, room: 0.04 })
+    knock({ freq: 110, gain: 0.08 })
+  },
+
+  /** Tik v poslední pětině času: suché cvaknutí, nic, co by zvonilo. */
+  tick: () => {
+    knock({ freq: 1400, gain: 0.03 })
+  },
+
+  /** Konec času: krátký bzučák ze stolu. Dva rozladěné hlasy pod sebou. */
+  timeout: () => {
+    pluck({ freq: 110, decay: 0.38, gain: 0.07, type: 'square', cutoff: 900, room: 0.05 })
+    pluck({ freq: 116, decay: 0.38, gain: 0.05, type: 'sawtooth', cutoff: 700, room: 0.05 })
+  },
+
+  /** Konec hry: rychlé arpeggio na marimbu a dva tlesky. */
+  fanfare: () => {
+    const notes = [A4, C4 * 2.5, E5, A5, E5 * 2]
+    notes.forEach((freq, i) => mallet({ freq, decay: i === notes.length - 1 ? 0.8 : 0.3, gain: 0.08, delay: i * 0.07 }))
+    for (const delay of [0.42, 0.56]) {
+      air({ duration: 0.05, from: 1800, to: 1200, gain: 0.07, q: 0.9, room: 0.05, delay })
+    }
+  },
+
+  /** Místo na stupních: hráč dosedne na bednu. Tupé klapnutí a plop. */
+  land: () => {
+    knock({ freq: 120, gain: 0.12 })
+    plop({ from: 360, to: 700, gain: 0.05, delay: 0.04 })
+  },
+
+  /** Někdo odpověděl: tichý plop, ať místnost slyší, že se hlasuje. */
+  pop: () => {
+    plop({ from: 500, to: 900, gain: 0.035 })
+  },
+
+  /** Odpočet před otázkou: úder na marimbu na každou vteřinu. */
+  count: () => {
+    mallet({ freq: A4, decay: 0.25, gain: 0.08 })
+  },
+}
+
+export type SoundSet = 'stul' | 'hala'
+type Sfx = typeof STUL
+
+const SETS: Record<SoundSet, Sfx> = { stul: STUL, hala: HALA }
+let current: SoundSet = 'stul'
+
+export function setSoundSet(next: SoundSet): void {
+  current = next
+}
+
+/** Zvuky aktuální sady. Volá se `sfx.correct()` jako dřív, sada se
+ *  přepíná v nastavení. */
+export const sfx: Sfx = {
+  open: () => SETS[current].open(),
+  reveal: () => SETS[current].reveal(),
+  correct: () => SETS[current].correct(),
+  wrong: () => SETS[current].wrong(),
+  tick: () => SETS[current].tick(),
+  timeout: () => SETS[current].timeout(),
+  fanfare: () => SETS[current].fanfare(),
+  land: () => SETS[current].land(),
+  pop: () => SETS[current].pop(),
+  count: () => SETS[current].count(),
+}
+
+/** Ukázka celé sady za sebou, pro poslech v nastavení. */
+export function playSample(): number[] {
+  const steps: Array<[keyof Sfx, number]> = [
+    ['open', 0], ['pop', 700], ['pop', 900], ['reveal', 1400], ['correct', 2200],
+    ['wrong', 3200], ['tick', 4000], ['tick', 4300], ['timeout', 4700], ['land', 5600], ['fanfare', 6300],
+  ]
+  return steps.map(([key, at]) => window.setTimeout(() => sfx[key](), at))
 }

@@ -1,5 +1,5 @@
 import { reactive, watch } from 'vue'
-import { setSoundEnabled } from '@/lib/sound'
+import { setSoundEnabled, setSoundSet, type SoundSet } from '@/lib/sound'
 
 const KEY = 'playground.settings.v1'
 
@@ -7,6 +7,8 @@ export interface Settings {
   /** Násobič velikosti písma pro projekci, 0.9 az 1.4. */
   scale: number
   sound: boolean
+  /** Řeč zvuků: „stul" k papírovému vzhledu, „hala" je ta původní. */
+  soundSet: SoundSet
 }
 
 function load(): Settings {
@@ -17,12 +19,13 @@ function load(): Settings {
       return {
         scale: typeof parsed.scale === 'number' ? parsed.scale : 1,
         sound: parsed.sound !== false,
+        soundSet: parsed.soundSet === 'hala' ? 'hala' : 'stul',
       }
     }
   } catch {
     /* poškozené nastavení nesmí shodit aplikaci */
   }
-  return { scale: 1, sound: true }
+  return { scale: 1, sound: true, soundSet: 'stul' }
 }
 
 export const settings = reactive<Settings>(load())
@@ -31,12 +34,16 @@ export function applySettings(): void {
   // Velikost písma se nastavuje až na herní ploše, viz `.game-surface`
   // v tokens.css. Rozhraní zůstává pevné.
   setSoundEnabled(settings.sound)
+  setSoundSet(settings.soundSet)
 }
 
 watch(
   settings,
   () => {
-    localStorage.setItem(KEY, JSON.stringify({ scale: settings.scale, sound: settings.sound }))
+    localStorage.setItem(
+      KEY,
+      JSON.stringify({ scale: settings.scale, sound: settings.sound, soundSet: settings.soundSet }),
+    )
     applySettings()
   },
   { deep: true, immediate: true },

@@ -109,6 +109,12 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
   tvrdý stín a zamáčknutí při stisku jsou jazyk celého rozhraní, i ve
   správě. Ozdoby navíc, tedy nálepky, natočení, poskakování a dlaždice
   v pozadí, patří jen hře a rozcestníku. Ve správě se pracuje.
+- **Zvuky jsou ze stolu, ne z haly.** Výchozí sada „Stůl" v
+  `src/lib/sound.ts` patří k papírovému vzhledu: suché údery dřeva
+  a marimby, plop, bzučák, skoro bez dozvuku. Původní měkká „Hala" zůstává
+  jako volba v nastavení. Pořád žádné soubory, všechno je Web Audio.
+  Zvuk má jen plátno, telefon hráče mlčí. Nový zvuk se přidává do obou
+  sad, aby přepnutí nic neztratilo.
 - **Každá hra má vlastní otázky.** Deska chce znění a odpověď, kvíz čtyři
   možnosti a nepovinnou poučku. Společná sada by znamenala, že každá otázka
   nese pole, která druhá hra nepoužije, a že se obě hry musí domlouvat na
