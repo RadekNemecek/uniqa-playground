@@ -88,8 +88,7 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
   velkém monitoru rostou s ním; v pevné velikosti tam zbyly drobné
   a úvod působil prázdně. Myší se mírně posouvají proti kurzoru, bližší
   víc (jen `pointer: fine`, při omezeném pohybu stojí). Pod nimi je
-  komiksový rastr: drobné tečky u okrajů, větší modré v rozích, ke
-  středu se ztratí, aby nápis stál na čistém papíře. Na telefonu
+  čistý papír: rastrové tečky tu byly a neosvědčily se. Na telefonu
   zůstanou jen dlaždice v rozích. Žádná fotka ani generovaná grafika. Zpod úvodu vykoukne
   nadpis výběru her (`--home-peek`), aby bylo vidět, že se roluje.
   Hry jsou až na druhé obrazovce: dvě barevné karty, mírně natočené

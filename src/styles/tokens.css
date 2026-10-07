@@ -48,10 +48,6 @@
   /* Inkoust jako plocha: QR kód, tmavý štítek, pruh hlasů. Nesmí se
      brát z rampy ploch, ta je světlá. */
   --c-ink:          #1B1B1B;
-  /* Rastrové tečky v pozadí rozcestníku: drobné světlé u okrajů a větší
-     modré jen v rozích. Jsou to plochy, ne text, kontrast se nepočítá. */
-  --c-dots:         #C5D0E4;
-  --c-dots-strong:  rgba(0, 92, 169, 0.28);
 
   /* --- Text -------------------------------------------------------------- */
   --c-text:         #1B1B1B;  /* 15,4:1 na --c-base, 12,7:1 i na --c-surface-3 */

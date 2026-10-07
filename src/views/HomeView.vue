@@ -161,10 +161,6 @@ async function discard(entry: GameEntry): Promise<void> {
            pod ním nálepka a dvě cesty dál. Zpod dolní hrany vykukují
            karty her, aby bylo vidět, že se roluje dál. -->
       <section ref="hero" class="hero" aria-labelledby="home-title">
-        <!-- Komiksový rastr. Husté tečky u okrajů, ke středu se ztratí do
-             čistého papíru, aby nápis stál na klidné ploše. -->
-        <div class="hero__dots" aria-hidden="true"></div>
-        <div class="hero__dots hero__dots--big" aria-hidden="true"></div>
         <div class="hero__tiles" aria-hidden="true">
           <span
             v-for="(tile, i) in TILES"
@@ -373,28 +369,6 @@ async function discard(entry: GameEntry): Promise<void> {
   justify-content: center;
   gap: var(--sp-4);
   animation: home-rise var(--dur-pop) var(--ease-out) var(--delay-mark-cta) both;
-}
-
-/* Rastr ve dvou vrstvách: drobné světlé tečky od okrajů do dvou třetin,
-   větší modré jen v rozích. Maska je elipsa kolem nápisu, uvnitř
-   průhledná, takže střed zůstane čistý papír. */
-.hero__dots {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background-image: radial-gradient(circle, var(--c-dots) var(--dot-r), transparent calc(var(--dot-r) + 0.5px));
-  background-size: var(--dot-step) var(--dot-step);
-  --dot-r: 3px;
-  --dot-step: 22px;
-  -webkit-mask-image: radial-gradient(ellipse 62% 58% at 50% 45%, transparent 38%, var(--c-ink) 88%);
-  mask-image: radial-gradient(ellipse 62% 58% at 50% 45%, transparent 38%, var(--c-ink) 88%);
-}
-.hero__dots--big {
-  --dot-r: 5px;
-  background-image: radial-gradient(circle, var(--c-dots-strong) var(--dot-r), transparent calc(var(--dot-r) + 0.5px));
-  background-position: calc(var(--dot-step) / 2) calc(var(--dot-step) / 2);
-  -webkit-mask-image: radial-gradient(ellipse 80% 78% at 50% 45%, transparent 62%, var(--c-ink) 100%);
-  mask-image: radial-gradient(ellipse 80% 78% at 50% 45%, transparent 62%, var(--c-ink) 100%);
 }
 
 /* Dlaždice v pozadí. Obal nese polohu, natočení, pohupování a posun za
