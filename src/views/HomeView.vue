@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { endGame, game, hasGame } from '@/stores/game'
 import { endQuiz, hasQuiz, quiz } from '@/stores/quizHost'
@@ -10,6 +10,7 @@ import { confirmAction, degraded } from '@/stores/ui'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import HeroMark from '@/components/HeroMark.vue'
+import AppMenu from '@/components/AppMenu.vue'
 
 const router = useRouter()
 
@@ -65,57 +66,33 @@ const cards = computed<GameCard[]>(() =>
  *
  * Poloha je v procentech plochy úvodu. Hrana je v procentech šířky okna,
  * takže dlaždice rostou s monitorem: na velkém plátně by v pevné
- * velikosti zůstaly drobné a uprostřed zela prázdná plocha. `depth`
- * říká, jak moc se dlaždice posune za myší; bližší se hýbou víc.
+ * velikosti zůstaly drobné a uprostřed zela prázdná plocha.
+ *
+ * Za myší se dlaždice nehýbou. Posun proti kurzoru tu byl a rušil:
+ * úvod se má číst, ne honit.
  */
 interface BackTile {
   x: number
   y: number
   size: number
   rot: number
-  depth: number
   tone: 'azur' | 'limeta' | 'levandule' | 'ruzova' | 'modra' | 'papir'
 }
 
 const TILES: BackTile[] = [
-  { x: 3.6, y: 21, size: 8.8, rot: -14, depth: 14, tone: 'azur' },
-  { x: 18.8, y: 11, size: 4.2, rot: 14, depth: 8, tone: 'modra' },
-  { x: 67.7, y: 8, size: 3.6, rot: -10, depth: 6, tone: 'papir' },
-  { x: 85.4, y: 11, size: 7.8, rot: 10, depth: 12, tone: 'limeta' },
-  { x: 89.6, y: 48, size: 5.2, rot: -8, depth: 9, tone: 'papir' },
-  { x: 4.7, y: 59, size: 6.2, rot: 8, depth: 10, tone: 'levandule' },
-  { x: 17.2, y: 80, size: 4.4, rot: 10, depth: 7, tone: 'papir' },
-  { x: 78.1, y: 76, size: 6.8, rot: -12, depth: 11, tone: 'ruzova' },
-  { x: 61.5, y: 86, size: 3.6, rot: 12, depth: 6, tone: 'modra' },
+  { x: 3.6, y: 21, size: 8.8, rot: -14, tone: 'azur' },
+  { x: 18.8, y: 11, size: 4.2, rot: 14, tone: 'modra' },
+  { x: 67.7, y: 8, size: 3.6, rot: -10, tone: 'papir' },
+  { x: 85.4, y: 11, size: 7.8, rot: 10, tone: 'limeta' },
+  { x: 89.6, y: 48, size: 5.2, rot: -8, tone: 'papir' },
+  { x: 4.7, y: 59, size: 6.2, rot: 8, tone: 'levandule' },
+  { x: 17.2, y: 80, size: 4.4, rot: 10, tone: 'papir' },
+  { x: 78.1, y: 76, size: 6.8, rot: -12, tone: 'ruzova' },
+  { x: 61.5, y: 86, size: 3.6, rot: 12, tone: 'modra' },
 ]
 
-/**
- * Posun za myší. Dlaždice se mírně posouvají proti kurzoru, bližší víc,
- * takže papír dostane hloubku. Jen pro myš a jen když pohyb nevadí: na
- * dotyku žádný kurzor není a při `prefers-reduced-motion` dlaždice stojí.
- * Zapisuje se do dvou proměnných na úvodu, jednou za snímek.
- */
 const hero = ref<HTMLElement | null>(null)
-const finePointer = window.matchMedia('(pointer: fine)')
 const stillness = window.matchMedia('(prefers-reduced-motion: reduce)')
-let frame = 0
-
-function follow(event: PointerEvent): void {
-  const el = hero.value
-  if (!el || stillness.matches || !finePointer.matches) return
-  cancelAnimationFrame(frame)
-  frame = requestAnimationFrame(() => {
-    const box = el.getBoundingClientRect()
-    el.style.setProperty('--mx', (((event.clientX - box.left) / box.width - 0.5) * -2).toFixed(3))
-    el.style.setProperty('--my', (((event.clientY - box.top) / box.height - 0.5) * -2).toFixed(3))
-  })
-}
-
-function settle(): void {
-  cancelAnimationFrame(frame)
-  hero.value?.style.setProperty('--mx', '0')
-  hero.value?.style.setProperty('--my', '0')
-}
 
 onMounted(() => {
   const start = (): void => {
@@ -123,13 +100,6 @@ onMounted(() => {
   }
   if (document.fonts) document.fonts.ready.then(start).catch(start)
   else start()
-  hero.value?.addEventListener('pointermove', follow)
-  hero.value?.addEventListener('pointerleave', settle)
-})
-onBeforeUnmount(() => {
-  cancelAnimationFrame(frame)
-  hero.value?.removeEventListener('pointermove', follow)
-  hero.value?.removeEventListener('pointerleave', settle)
 })
 
 /**
@@ -198,7 +168,6 @@ async function discard(entry: GameEntry): Promise<void> {
               '--y': `${tile.y}%`,
               '--s': tile.size,
               '--r': `${tile.rot}deg`,
-              '--d': tile.depth,
               '--hop-delay': hopDelay(tile),
               '--i': i,
             }"
@@ -206,6 +175,10 @@ async function discard(entry: GameEntry): Promise<void> {
         </div>
 
         <p class="hero__eyebrow">Hry na školení · pro tým UNIQA</p>
+
+        <!-- Nabídka v rohu. Hlavička tu není, a zpětná vazba po školení
+             kartu mezi hrami nemá, chodí se k ní odtud. -->
+        <div class="hero__menu"><AppMenu /></div>
 
         <div class="hero__copy">
           <h1 id="home-title" class="hero__title"><HeroMark /></h1>
@@ -333,8 +306,6 @@ async function discard(entry: GameEntry): Promise<void> {
 /* --- Úvod ---------------------------------------------------------------- */
 
 .hero {
-  --mx: 0;
-  --my: 0;
   position: relative;
   min-height: calc(100svh - var(--home-peek));
   display: grid;
@@ -351,6 +322,13 @@ async function discard(entry: GameEntry): Promise<void> {
   font-weight: 900;
   letter-spacing: var(--tracking-wide);
   text-transform: uppercase;
+}
+
+.hero__menu {
+  position: absolute;
+  top: var(--sp-4);
+  right: var(--sp-5);
+  z-index: var(--z-header);
 }
 
 .hero__copy {
@@ -389,8 +367,7 @@ async function discard(entry: GameEntry): Promise<void> {
   animation: home-rise var(--dur-pop) var(--ease-out) var(--delay-mark-cta) both;
 }
 
-/* Dlaždice v pozadí. Obal nese polohu, natočení, pohupování a posun za
-   myší, vnitřek vyskočí na místo a nadskočí, když dopadne M. Každá část
+/* Dlaždice v pozadí. Obal nese polohu, natočení a pohupování, vnitřek vyskočí na místo a nadskočí, když dopadne M. Každá část
    animuje jinou vlastnost, takže se navzájem nepřebíjejí. */
 .hero__tiles { position: absolute; inset: 0; pointer-events: none; }
 
@@ -405,8 +382,6 @@ async function discard(entry: GameEntry): Promise<void> {
   width: max(var(--sp-7), calc(var(--s) * 1vw));
   height: max(var(--sp-7), calc(var(--s) * 1vw));
   rotate: var(--r);
-  transform: translate(calc(var(--mx) * var(--d) * 1px), calc(var(--my) * var(--d) * 1px));
-  transition: transform var(--dur-slow) var(--ease-out);
   animation: home-float var(--dur-float) var(--ease-both) calc(var(--i) * -0.7s) infinite;
 }
 

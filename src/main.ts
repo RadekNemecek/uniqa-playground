@@ -8,6 +8,7 @@ import { router } from '@/router'
 import { applySettings } from '@/stores/settings'
 import { restoreGame } from '@/stores/game'
 import { restoreQuizHost } from '@/stores/quizHost'
+import { restoreVyslechHost } from '@/stores/vyslechHost'
 import { setDb } from '@/lib/db'
 import { vFitText } from '@/lib/fitText'
 import {
@@ -15,12 +16,18 @@ import {
   markSessionDbFailed,
   setSessionDbFactory,
 } from '@/lib/sessionDb'
+import {
+  markVyslechDbConnecting,
+  markVyslechDbFailed,
+  setVyslechDbFactory,
+} from '@/lib/vyslechDb'
 import { isFirebaseConfigured } from '@/lib/firebase.config'
 import { markLocalOnly, toast } from '@/stores/ui'
 
 applySettings()
 restoreGame()
 restoreQuizHost()
+restoreVyslechHost()
 
 /**
  * Jak dlouho se čeká na Firestore, než se hra pustí bez něj.
@@ -51,6 +58,7 @@ async function boot(): Promise<void> {
   // aplikace lokálně a nestahuje o 200 kB navíc.
   if (isFirebaseConfigured()) {
     markSessionDbConnecting()
+    markVyslechDbConnecting()
     const { createFirestoreDb } = await import('@/lib/firebase')
     const connection = createFirestoreDb()
 
@@ -65,6 +73,10 @@ async function boot(): Promise<void> {
           const { createQuizSessionDb } = await import('@/lib/firebaseSession')
           return createQuizSessionDb()
         })
+        setVyslechDbFactory(async () => {
+          const { createFirestoreVyslechDb } = await import('@/lib/firebaseVyslech')
+          return createFirestoreVyslechDb()
+        })
         // Přišlo až po stropu, tedy jsme mezitím ohlásili lokální režim.
         // Nechat to být by znamenalo, že moderátorka připraví kvíz bez
         // telefonů, přestože se mezitím připojily.
@@ -72,7 +84,10 @@ async function boot(): Promise<void> {
           toast('Spojení se nakonec navázalo. Telefony hráčů jdou zapnout, otázky se načtou po obnovení stránky.', 'ok', 8000)
         }
       },
-      () => markSessionDbFailed(),
+      () => {
+        markSessionDbFailed()
+        markVyslechDbFailed()
+      },
     )
 
     try {
@@ -82,6 +97,13 @@ async function boot(): Promise<void> {
       offline = true
       console.error('Firestore není dostupný, pokračuji v lokálním režimu.', e)
     }
+  } else {
+    // Bez sdílené databáze jede Výslech v prohlížeči, aby šel vyzkoušet.
+    // Příprava řekne, že se telefony v sále nepřipojí.
+    setVyslechDbFactory(async () => {
+      const { createLocalVyslechDb } = await import('@/lib/localVyslech')
+      return createLocalVyslechDb()
+    })
   }
 
   createApp(App).use(router).directive('fit-text', vFitText).mount('#app')

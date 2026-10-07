@@ -55,7 +55,8 @@ function isPlayerDevice(): boolean {
   const base = import.meta.env.BASE_URL || '/'
   const path = window.location.pathname
   const rest = (path.startsWith(base) ? path.slice(base.length) : path).replace(/^\/+/, '')
-  return rest === 'k' || rest.startsWith('k/')
+  // `k` je kvíz, `v` dotazník Výslechu. Obojí otevírá telefon z QR kódu.
+  return rest === 'k' || rest.startsWith('k/') || rest === 'v' || rest.startsWith('v/')
 }
 
 /**

@@ -6,6 +6,14 @@ import { db } from '@/lib/db'
 import { toast } from '@/stores/ui'
 import UiIcon from '@/components/ui/UiIcon.vue'
 
+withDefaults(
+  defineProps<{
+    /** Co se heslem otevírá. Výchozí je správa otázek. */
+    title?: string
+    lead?: string
+  }>(),
+  { title: 'Správa otázek', lead: 'Zadej heslo, kterým se otevírá úprava balíčků.' },
+)
 const emit = defineEmits<{ unlocked: [] }>()
 
 const mode = ref<'unknown' | 'create' | 'enter'>('unknown')
@@ -70,8 +78,8 @@ async function submit() {
       </template>
 
       <template v-else-if="mode === 'enter'">
-        <h1 class="gate__title">Správa otázek</h1>
-        <p class="gate__lead">Zadej heslo, kterým se otevírá úprava balíčků.</p>
+        <h1 class="gate__title">{{ title }}</h1>
+        <p class="gate__lead">{{ lead }}</p>
         <UiField label="Heslo">
           <input v-model="password" type="password" autocomplete="current-password" required />
         </UiField>

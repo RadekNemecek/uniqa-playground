@@ -1,14 +1,18 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
+import type { IconName } from '@/components/ui/icons'
 
 withDefaults(
   defineProps<{
     label: string
     /** Orámované spouštěcí tlačítko, třeba v pásu nad hrou. */
     variant?: 'plain' | 'ghost'
+    /** Ikona tlačítka. Tři tečky jsou akce u položky, nabídka aplikace
+     *  má vlastní, aby se vedle sebe nepletly. */
+    icon?: IconName
   }>(),
-  { variant: 'ghost' },
+  { variant: 'ghost', icon: 'dots' },
 )
 const open = ref(false)
 const root = ref<HTMLElement | null>(null)
@@ -25,7 +29,21 @@ function focusTrigger() {
   root.value?.querySelector<HTMLButtonElement>('.iconbtn')?.focus()
 }
 
+/**
+ * Stisk uvnitř nabídky. Safari tlačítku při kliknutí nedá zaměření,
+ * takže zaměření z položky odejde na `body`, `focusout` přijde bez cíle
+ * a nabídka by se zavřela dřív, než klik na položku vůbec dorazí.
+ * Zavření mimo nabídku hlídá `onDoc`, tady se jen nesmí plést.
+ */
+let pressing = false
+
+function onPointerDown() {
+  pressing = true
+  window.addEventListener('pointerup', () => window.setTimeout(() => { pressing = false }), { once: true })
+}
+
 function onFocusOut(e: FocusEvent) {
+  if (pressing) return
   if (!root.value?.contains(e.relatedTarget as Node | null)) close()
 }
 
@@ -78,9 +96,9 @@ defineExpose({ close })
 </script>
 
 <template>
-  <div ref="root" class="menu" @focusout="onFocusOut">
+  <div ref="root" class="menu" @focusout="onFocusOut" @pointerdown="onPointerDown">
     <UiIconButton
-      icon="dots"
+      :icon="icon"
       :variant="variant"
       :label="label"
       :aria-expanded="open"

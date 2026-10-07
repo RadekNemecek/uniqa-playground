@@ -44,9 +44,11 @@ Ověření: v seznamu poskytovatelů má být u *Anonymous* stav **Enabled**.
 
 Pravidla se občas změní spolu s aplikací. Když přibude něco, co hráč
 zapisuje, je potřeba je publikovat znovu, jinak server nový zápis odmítne.
-Naposledy se to stalo s **obrázky k otázkám kvízu**: přibyla kolekce
-`quizImages`, kterou čte kdokoli a zapisuje jen odemčená správa. Bez
-publikovaných pravidel se obrázek nenahraje a otázka zůstane bez něj.
+Naposledy se to stalo s **Výslechem**, zpětnou vazbou po školení:
+přibyly kolekce `vyslechForms`, `vyslech` (s podkolekcí `responses`)
+a `vyslechReports`. Bez publikovaných pravidel se sběr neotevře a příprava
+napíše, že je potřeba pravidla publikovat. Předtím to byly obrázky
+k otázkám kvízu v kolekci `quizImages`.
 
 Co pravidla dělají:
 
@@ -63,7 +65,13 @@ Co pravidla dělají:
 - běžící hru kvízu si přečte každý, kdo zná pětiznakový kód, ale není
   v ní znění otázky ani správná možnost, dokud ji moderátorka neodhalí,
 - hráč smí zapsat **jednu** odpověď na otázku a jen dokud otázka běží.
-  Pozdní odpověď odmítne server, ne prohlížeč moderátorky.
+  Pozdní odpověď odmítne server, ne prohlížeč moderátorky,
+- **Výslech** je celý za heslem: sady otázek i výsledky čte a zapisuje
+  jen odemčená správa a sběr se otevírá z ní. Běžící sběr si přečte
+  každý, kdo zná kód, protože telefon musí otázky zobrazit. Odpovědi
+  v něm nejsou. Každý telefon smí zapsat jen svůj dotazník a jen dokud
+  sběr běží; druhé odeslání přepíše první, takže se nikdo nezapočítá
+  dvakrát.
 
 Konzole u řádků s `get()` a `exists()` může hlásit varování o počtu čtení.
 Je to v pořádku, tyhle dotazy se dělají jen při zápisu.
@@ -144,8 +152,10 @@ politika**. Ve Firestore ji najdeš pod **Firestore Database → Time-to-live
 | `quiz` | `expiresAt` |
 | `players` | `expiresAt` |
 | `answers` | `expiresAt` |
+| `vyslech` | `expiresAt` |
+| `responses` | `expiresAt` |
 
-Nastav všechny tři. **Smazání dokumentu ve Firestore nemaže jeho
+Nastav všech pět. **Smazání dokumentu ve Firestore nemaže jeho
 podkolekce**, takže bez politiky nad `players` a `answers` by po hrách
 zůstávaly osiřelé dokumenty, které se v konzoli ani neukážou.
 
@@ -171,6 +181,10 @@ Dvě cesty, jak to dodržet:
 
 Kdo se ptá, co se s jeho přezdívkou stane, má dostat tuhle odpověď:
 zůstane ve vyhodnocení školení, nikam se neposílá a po roce se maže.
+
+Totéž platí pro **výsledky Výslechu** v kolekci `vyslechReports`. Jsou
+bez identit, ale volná odpověď může obsahovat jméno, třeba lektora nebo
+kolegy. Doba uchování je stejná, rok, a maže se na `/vyslech/vysledky`.
 
 Session platí osm hodin. Po vypršení ji smí uklidit kdokoli, takže
 zabraný kód se sám uvolní i tehdy, když se původní počítač už nikdy

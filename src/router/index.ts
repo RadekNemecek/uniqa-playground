@@ -61,6 +61,37 @@ export const router = createRouter({
       component: () => import('@/views/KvizJoinView.vue'),
       meta: { title: 'Na kolik to dáš?' },
     },
+    {
+      path: '/vyslech',
+      name: 'vyslech',
+      component: () => import('@/views/VyslechView.vue'),
+      meta: { title: 'Výslech' },
+    },
+    {
+      path: '/vyslech/sady',
+      name: 'vyslech-sady',
+      component: () => import('@/views/VyslechFormsView.vue'),
+      meta: { title: 'Sady otázek | Výslech' },
+    },
+    {
+      path: '/vyslech/vysledky',
+      name: 'vyslech-vysledky',
+      component: () => import('@/views/VyslechReportsView.vue'),
+      meta: { title: 'Výsledky | Výslech' },
+    },
+    // Dotazník pro účastníky. Krátká adresa ze stejného důvodu jako `/k`.
+    {
+      path: '/v/:code',
+      name: 'vyslech-dotaznik',
+      component: () => import('@/views/VyslechFillView.vue'),
+      meta: { title: 'Výslech' },
+    },
+    {
+      path: '/v',
+      name: 'vyslech-kod',
+      component: () => import('@/views/VyslechFillView.vue'),
+      meta: { title: 'Výslech' },
+    },
     // Hra se dřív jmenovala Riskuj. Záložky a zástupci PWA na starou
     // adresu musí dál fungovat.
     { path: '/riskuj', redirect: '/pojistuj' },

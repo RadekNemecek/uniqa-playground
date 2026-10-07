@@ -3,7 +3,8 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import AppSettings from '@/components/AppSettings.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
-import { GAMES } from '@/games/registry'
+import { GAMES, TOOLS } from '@/games/registry'
+import AppMenu from '@/components/AppMenu.vue'
 import { degraded } from '@/stores/ui'
 import BrandTile from '@/components/BrandTile.vue'
 
@@ -22,7 +23,10 @@ const props = withDefaults(
   { compact: false, prep: false, game: '', section: undefined },
 )
 
-const currentGame = computed(() => GAMES.find((entry) => entry.slug === props.game) ?? null)
+const currentGame = computed(() => [...GAMES, ...TOOLS].find((entry) => entry.slug === props.game) ?? null)
+/** Nástroj, ne hra. Název v hlavičce pak vede na jeho přípravu, ne na
+ *  výběr her, kde nástroj kartu nemá. */
+const isTool = computed(() => TOOLS.some((entry) => entry.slug === props.game))
 const settingsOpen = ref(false)
 const isFullscreen = ref(false)
 
@@ -63,7 +67,11 @@ onBeforeUnmount(() => document.removeEventListener('fullscreenchange', syncFulls
 
       <template v-if="currentGame">
         <span class="identity__slash" aria-hidden="true"></span>
-        <RouterLink to="/" class="identity__game" title="Vybrat jinou hru">
+        <RouterLink
+          :to="isTool ? currentGame.route : '/'"
+          class="identity__game"
+          :title="isTool ? undefined : 'Vybrat jinou hru'"
+        >
           {{ currentGame.title }}
         </RouterLink>
       </template>
@@ -84,7 +92,7 @@ onBeforeUnmount(() => document.removeEventListener('fullscreenchange', syncFulls
         :class="{ 'nav__item--active': section === 'questions' }"
         :aria-current="section === 'questions' ? 'page' : undefined"
       >
-        Balíčky
+        {{ currentGame.editLabel ?? 'Balíčky' }}
       </RouterLink>
       <!-- Výsledky mají vlastní záložku jen tam, kde vůbec vznikají. -->
       <RouterLink
@@ -106,14 +114,18 @@ onBeforeUnmount(() => document.removeEventListener('fullscreenchange', syncFulls
         <UiIcon name="warning" size="sm" />
         Jen tento počítač
       </span>
+      <!-- Celá obrazovka a písmo patří k hrám. Výslech se v hlavičce
+           jen chystá a čte, promítá se až z pásu nad sběrem. -->
       <UiIconButton
+        v-if="!isTool"
         :icon="isFullscreen ? 'fullscreen-exit' : 'fullscreen'"
         :label="isFullscreen ? 'Opustit celou obrazovku' : 'Celá obrazovka'"
         :pressed="isFullscreen"
         @click="toggleFullscreen"
       />
-      <UiIconButton icon="settings" label="Nastavení" @click="settingsOpen = true" />
+      <UiIconButton v-if="!isTool" icon="settings" label="Nastavení" @click="settingsOpen = true" />
       <slot name="tools" />
+      <AppMenu />
     </div>
   </header>
 

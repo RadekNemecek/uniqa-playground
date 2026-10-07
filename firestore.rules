@@ -228,6 +228,94 @@ service cloud.firestore {
       allow delete: if isUnlocked();
     }
 
+    /* --- Výslech, zpětná vazba po školení ------------------------------ */
+
+    // Sady otázek. Celý Výslech je za heslem, takže na rozdíl od balíčků
+    // her je nečte nikdo jiný než odemčená správa.
+    match /vyslechForms/{formId} {
+      allow read, write: if isUnlocked();
+    }
+
+    function vyslech(code) {
+      return get(/databases/$(database)/documents/vyslech/$(code)).data;
+    }
+
+    // Běžící sběr. Otázky v něm jsou veřejně schválně: telefon je musí
+    // zobrazit. Odpovědi v něm nejsou. Seznam běžících sběrů patří jen
+    // správě, jinak by šlo kódy projít hromadně.
+    match /vyslech/{code} {
+      allow get: if true;
+      allow list: if isUnlocked();
+
+      // Otevřít sběr smí jen odemčená správa.
+      allow create: if isUnlocked()
+                    && request.resource.data.hostUid == request.auth.uid
+                    && request.resource.data.code == code
+                    && request.resource.data.phase == 'open'
+                    && request.resource.data.schema == 1
+                    && request.resource.data.title is string
+                    && request.resource.data.title.size() <= 120
+                    && request.resource.data.questions is list
+                    && request.resource.data.questions.size() <= 20
+                    && request.resource.data.expiresAt is timestamp
+                    && request.resource.data.expiresAt > request.time;
+
+      // Měnit smí jen vlastník a nesmí si přepsat vlastnictví, kód
+      // ani dobu platnosti, podle které se ověřují odpovědi.
+      allow update: if request.auth != null
+                    && resource.data.hostUid == request.auth.uid
+                    && request.resource.data.hostUid == resource.data.hostUid
+                    && request.resource.data.code == resource.data.code
+                    && request.resource.data.expiresAt == resource.data.expiresAt;
+
+      // Uklidit smí vlastník, a po vypršení kdokoli.
+      allow delete: if (request.auth != null && resource.data.hostUid == request.auth.uid)
+                    || resource.data.expiresAt < request.time;
+    }
+
+    // Odeslaný dotazník. Jeden dokument na telefon, id je anonymní uid.
+    // Druhé odeslání téhož telefonu je update a přepíše první, takže se
+    // jeden člověk nezapočítá dvakrát.
+    match /vyslech/{code}/responses/{uid} {
+      allow get: if request.auth != null
+                 && (request.auth.uid == uid || vyslech(code).hostUid == request.auth.uid);
+      allow list: if request.auth != null && vyslech(code).hostUid == request.auth.uid;
+
+      // Jen vlastní dokument a jen dokud sběr běží. Po ukončení neprojde
+      // nic, ani když telefon ukončení ještě nezaznamenal.
+      allow create, update: if request.auth != null
+                            && request.auth.uid == uid
+                            && vyslech(code).phase == 'open'
+                            && vyslech(code).expiresAt > request.time
+                            && request.resource.data.keys().hasOnly(['answers', 'at', 'expiresAt'])
+                            && request.resource.data.answers is map
+                            && request.resource.data.answers.size() <= 20
+                            && request.resource.data.at == request.time
+                            && request.resource.data.expiresAt == vyslech(code).expiresAt;
+
+      allow delete: if request.auth != null && vyslech(code).hostUid == request.auth.uid;
+    }
+
+    // Vyhodnocení. Bez identit, ale s volnými odpověďmi, ve kterých se
+    // jména objevit můžou. Čte a zapisuje jen odemčená správa. Zapsané
+    // se nemění, aby se výsledky nedaly přepsat zpětně.
+    match /vyslechReports/{reportId} {
+      allow read: if isUnlocked();
+      allow create: if isUnlocked()
+                    && request.resource.data.hostUid == request.auth.uid
+                    && request.resource.data.schema == 1
+                    && request.resource.data.keys().hasAll(['id', 'title', 'formId',
+                         'questions', 'responses', 'startedAt', 'finishedAt'])
+                    && request.resource.data.title is string
+                    && request.resource.data.title.size() <= 120
+                    && request.resource.data.questions is list
+                    && request.resource.data.questions.size() <= 20
+                    && request.resource.data.responses is list
+                    && request.resource.data.responses.size() <= 1000;
+      allow update: if false;
+      allow delete: if isUnlocked();
+    }
+
     // Připraveno pro budoucí moderátorský druhý pohled. Zavřené záměrně:
     // dokud tudy nic nepíše, nemá být kam ukládat cizí data.
     match /games/{gameId} {

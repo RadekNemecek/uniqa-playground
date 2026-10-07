@@ -134,6 +134,35 @@ Síťová adresa je z pohledu prohlížeče jiné místo než `localhost`. Pro h
 to ničemu nevadí, připravené balíčky jsou dostupné bez hesla. Pokud chceš
 na síťové adrese otázky také upravovat, správu tam odemkni zvlášť.
 
+## Výslech: zpětná vazba po školení
+
+Výslech není hra, na rozcestníku proto nemá kartu. Otevírá se z nabídky
+(tlačítko se třemi čarami vpravo nahoře) a celý je za heslem do správy.
+
+1. **Sady otázek** připravíš jednou a používáš dokola. Výchozí sada
+   *Po školení* má sedm otázek: celkový dojem, využitelnost, tempo,
+   srozumitelnost, doporučení 0 až 10 a dvě volné odpovědi. Založí se
+   jedním tlačítkem a dá se upravit.
+2. **Příprava**: vybereš sadu, napíšeš název školení, případně skupinu
+   a lektora, a dáš *Vygenerovat QR kód*.
+3. Na plátně je QR kód a počítadlo. Lidé v sále načtou kód a na telefonu
+   vyplní **celý dotazník najednou**, pod sebou, a odešlou. Každý
+   odevzdaný dotazník přidá na plátně dlaždici. Výsledky se v sále
+   neukazují.
+4. **Mezerník** sběr ukončí (s potvrzením). Výsledky se uloží a odpovědi
+   se z běžícího sběru uklidí.
+5. **Výsledky** ukážou průměry s rozložením, NPS, volné odpovědi s filtrem
+   podle celkové známky („co psali nespokojení") a srovnání školení na
+   téže sadě. Dají se stáhnout jako tabulka a vytisknout.
+
+Odpovědi jsou anonymní. Telefon nikde nezadává jméno a ve výsledcích jsou
+dotazníky v náhodném pořadí.
+
+Bez sdílené databáze (`npm run dev:local`) jede Výslech v prohlížeči:
+dotazník se dá vyplnit z jiné karty téhož prohlížeče, každá karta
+odpovídá za jiného člověka. Telefony v sále se v tom režimu nepřipojí
+a příprava to řekne.
+
 ## Co zůstane po hře
 
 Obě hry si pamatují, co se odehrálo. V přípravě se dá vyplnit **skupina**
@@ -144,6 +173,7 @@ Obě hry si pamatují, co se odehrálo. V přípravě se dá vyplnit **skupina**
   na tom počítači, ze kterého se hrálo, posledních padesát her.
 - **Na kolik to dáš?** ukládá celé vyhodnocení do sdílené databáze,
   seznam je pod vlastní záložkou *Výsledky* na `/kviz/vysledky`.
+- **Výslech** ukládá výsledky každého sběru na `/vyslech/vysledky`.
 
 Jsou v tom přezdívky účastníků, takže k nim patří i doba uchování. Je
 popsaná v [`DEPLOY.md`](DEPLOY.md).
@@ -245,7 +275,8 @@ dodělat ve správě, místo aby soubor odmítl celý.
 src/
   games/pojistuj/   deska: komponenty a ukázkový balíček
   games/kviz/       kvíz: komponenty, losování, bodování, vyhodnocení
-  games/registry.ts seznam her na rozcestníku
+  games/registry.ts seznam her na rozcestníku a nástrojů v nabídce
+  vyslech/          zpětná vazba: otázky, statistiky, export, komponenty
   components/admin/ správa balíčků desky
   components/ui/    sdílené prvky rozhraní: tlačítka, okna, pole, ikony
   components/PresentationBar.vue  pás nad běžící hrou

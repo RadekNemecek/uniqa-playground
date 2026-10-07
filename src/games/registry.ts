@@ -8,6 +8,8 @@ export interface GameEntry {
   route: string
   /** Kde se pro hru chystají otázky. */
   editRoute: string
+  /** Popisek záložky s otázkami. Výchozí je „Balíčky". */
+  editLabel?: string
   /** Kde se čtou výsledky odehraných her. Chybí u her, které žádné
    *  neukládají do sdílené databáze. */
   reportsRoute?: string
@@ -39,6 +41,27 @@ export const GAMES: GameEntry[] = [
     route: '/kviz',
     editRoute: '/kviz/otazky',
     reportsRoute: '/kviz/vysledky',
+    needs: 'Plátno a telefony účastníků',
+    needsShared: true,
+  },
+]
+
+/**
+ * Nástroje, které nejsou hra. Na rozcestníku nemají kartu, chodí se
+ * k nim z nabídky, a celé jsou za heslem. Tvar mají stejný jako hry,
+ * aby hlavička uměla jejich záložky bez výjimek.
+ */
+export const TOOLS: GameEntry[] = [
+  {
+    slug: 'vyslech',
+    title: 'Výslech',
+    tagline: 'Zpětná vazba po školení',
+    description:
+      'Lidé v sále načtou QR kód a na telefonu vyplní krátký dotazník. Na plátně je vidět, jak odpovědi přibývají, výsledky čteš po školení.',
+    route: '/vyslech',
+    editRoute: '/vyslech/sady',
+    editLabel: 'Sady otázek',
+    reportsRoute: '/vyslech/vysledky',
     needs: 'Plátno a telefony účastníků',
     needsShared: true,
   },

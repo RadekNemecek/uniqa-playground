@@ -88,8 +88,8 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
   jsou v barvách možností A až D s inkoustovou hranou, leží u okrajů
   a pomalu se pohupují. Hranu mají v procentech šířky okna, takže na
   velkém monitoru rostou s ním; v pevné velikosti tam zbyly drobné
-  a úvod působil prázdně. Myší se mírně posouvají proti kurzoru, bližší
-  víc (jen `pointer: fine`, při omezeném pohybu stojí). Pod nimi je
+  a úvod působil prázdně. Za myší se nehýbou: posun proti kurzoru tu
+  byl a víc rušil, než přidal hloubku. Pod nimi je
   čistý papír: rastrové tečky tu byly a neosvědčily se. Na telefonu
   zůstanou jen dlaždice v rozích. Žádná fotka ani generovaná grafika. Zpod úvodu vykoukne
   nadpis výběru her (`--home-peek`), aby bylo vidět, že se roluje.
@@ -268,6 +268,36 @@ ukončení. Mezerník na položce nabídky patří položce, hru neposune.
 
 Stav celé obrazovky se čte z `fullscreenchange`, ne z vlastního
 přepínače: odchází se z ní i Escapem a F11.
+
+## Výslech, zpětná vazba po školení
+
+Nástroj, ne hra. Je v `TOOLS` v registru, ne v `GAMES`, takže na
+rozcestníku **nemá kartu**: chodí se k němu z nabídky aplikace
+(`AppMenu`, tři čáry v hlavičce a v rohu rozcestníku). Celý je za heslem
+do správy, i příprava, protože jsou v něm hodnocení lektorů.
+
+- **Telefon dostane celou sadu najednou** a odešle ji jedním tlačítkem.
+  Na plátně otázky neběží, každý vyplňuje svým tempem. Rozepsané odpovědi
+  drží telefon, odeslání čeká na potvrzení serverem.
+- **Plátno ukazuje jen QR kód a počet odevzdaných dotazníků.** Výsledky
+  se v sále neukazují: v malé skupině by šlo poznat, kdo co napsal,
+  a lektor by komentoval vlastní hodnocení před lidmi.
+- **Anonymita.** Telefon nezadává jméno, dokument odpovědí má za id jen
+  anonymní uid a do vyhodnocení jdou dotazníky bez uid a v náhodném
+  pořadí. Řádek drží pohromadě odpovědi jednoho člověka, aby šlo číst
+  „co napsali nespokojení".
+- **Otázky se při spuštění zamrazí** do session, srovnání školení se páruje
+  podle id otázky. Kopie sady dostane nová id, jinak by se tvářila jako
+  pokračování originálu. První škála sady je celková známka, podle ní se
+  ve výsledcích filtruje.
+- **Ukončení má pevné pořadí**: zavřít sběr, načíst odpovědi ze serveru,
+  uložit vyhodnocení, teprve pak uklidit session s podkolekcí. Bez
+  odpovědí se nic neukládá.
+- Úložiště má vlastní rozhraní `src/lib/vyslechDb.ts`. Na rozdíl od kvízu
+  má i lokální implementaci (`localVyslech.ts`), aby šel Výslech zkoušet
+  v `dev:local` z více karet. Příprava pak řekne, že se telefony v sále
+  nepřipojí. Adresa pro telefon je `/v/:code` a má paměťovou mezipaměť
+  stejně jako `/k`.
 
 ## Archiv odehraných her
 
