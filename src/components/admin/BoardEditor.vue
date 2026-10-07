@@ -551,7 +551,7 @@ async function onValueChange(index: number, event: Event) {
     background-color var(--dur-fast) var(--ease-out),
     color var(--dur-fast) var(--ease-out);
 }
-.cell:hover { border-color: var(--c-surface-3); color: var(--c-text-muted); background: var(--c-surface); }
+.cell:hover { color: var(--c-text); background: var(--c-surface); box-shadow: var(--shadow-sm); }
 
 .cell--ready {
   border-style: solid;
@@ -562,15 +562,17 @@ async function onValueChange(index: number, event: Event) {
   align-items: start;
   justify-items: start;
 }
-.cell--ready:hover { border-color: var(--c-surface-3); }
+.cell--ready:hover { box-shadow: var(--shadow-sm); }
 
 /* I na hover: .cell--ready:hover je specifičtější než .cell--on, takže
    bez vlastního hover pravidla by vybrané políčko pod myší ztratilo
    modrý obrys. Dřív to řešil !important. */
 .cell--on,
 .cell--on:hover {
-  border-color: var(--c-brand);
+  border-style: solid;
+  border-color: var(--c-line);
   background: var(--c-brand-wash);
+  box-shadow: var(--shadow-sm);
   color: var(--c-text);
 }
 

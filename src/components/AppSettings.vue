@@ -89,7 +89,7 @@ watch(
   color: var(--c-text-muted);
   transition: var(--tr-surface);
 }
-.step:hover { border-color: var(--c-bg-active); color: var(--c-text); }
+.step:hover { color: var(--c-text); box-shadow: var(--shadow-sm); }
 .step--on {
   border-color: var(--c-border);
   color: var(--c-text);

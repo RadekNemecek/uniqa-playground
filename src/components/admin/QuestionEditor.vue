@@ -216,7 +216,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
   color: var(--c-text-muted);
   transition: var(--tr-surface);
 }
-.qe__nav button:hover:not(:disabled) { color: var(--c-text); border-color: var(--c-surface-3); background: var(--c-surface-2); }
+.qe__nav button:hover:not(:disabled) { color: var(--c-text); background: var(--c-surface-2); box-shadow: var(--shadow-sm); }
 .qe__nav button:disabled { opacity: 0.3; cursor: not-allowed; }
 .qe__close { margin-left: var(--sp-2); }
 .qe__nav button.qe__close:hover { color: var(--c-text-ink); background: var(--c-bad-fill); }
@@ -249,7 +249,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
   overflow: hidden;
   transition: border-color var(--dur-fast) var(--ease-out);
 }
-.f textarea:hover { border-color: var(--c-surface-3); }
+.f textarea:hover { box-shadow: var(--shadow-sm); }
 /* Rámeček se obarví navíc, prstenec se neruší. Pravidlo ze `base.css` zní
    „zaměření je vidět vždy" a textové pole není výjimka. */
 .f textarea:focus { border-color: var(--c-brand); }
