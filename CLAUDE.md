@@ -167,11 +167,15 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
   Texty jsou bez rodu, za přezdívkou nevíme, jestli je on, nebo ona.
 - **Avatar nic nekóduje.** Zvíře hráče rozlišuje tvar a jméno, odstín pod
   ním je jen plocha. Proto avatar nepatří k běžící otázce vedle možností
-  A až D, kde barva význam má. Kresby jsou v repozitáři
-  (`src/games/kviz/avatars.ts`), ne stažená sada: žádná cizí licence
-  a stejný výtvarný jazyk jako zbytek aplikace. Zvíře se vybírá před
-  připojením; kartu hráče smí pak měnit jen moderátorka, takže je dané
-  na celou hru.
+  A až D, kde barva význam má. Kresby jsou vlastní SVG v repozitáři
+  (`src/assets/avatars/`, seznam v `src/games/kviz/avatars.ts`), ne
+  stažená sada: žádná cizí licence a stejný výtvarný jazyk jako zbytek
+  aplikace. Jen hlava zvířete, tlustý inkoustový obrys, ploché barvy
+  z palety, bez stínování a přechodů. Bez žluté a bez jiskry, liška i lev
+  jsou v písku. Avatar sedí v dlaždici, ne v kolečku. Dřív to byla
+  kreslená dětská sada se stínováním a v malém se slévala do skvrny.
+  Zvíře se vybírá před připojením; kartu hráče smí pak měnit jen
+  moderátorka, takže je dané na celou hru.
 - **Do živé session se nikdy nezapisuje odtikávající čas.** Pošle se
   `askedAt` a `limitMs` jednou a telefony odpočítávají samy. Firestore drží
   zhruba jeden zápis za sekundu na dokument a vzniklá latence by zkreslila

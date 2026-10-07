@@ -1,32 +1,35 @@
 import { TEAM_COLORS } from '@/lib/teams'
-import liskaUrl from '@/assets/avatars/liska.webp'
-import medvedUrl from '@/assets/avatars/medved.webp'
-import sovaUrl from '@/assets/avatars/sova.webp'
-import kockaUrl from '@/assets/avatars/kocka.webp'
-import zajicUrl from '@/assets/avatars/zajic.webp'
-import mysUrl from '@/assets/avatars/mys.webp'
-import zabaUrl from '@/assets/avatars/zaba.webp'
-import tucnakUrl from '@/assets/avatars/tucnak.webp'
-import levUrl from '@/assets/avatars/lev.webp'
-import praseUrl from '@/assets/avatars/prase.webp'
-import rybaUrl from '@/assets/avatars/ryba.webp'
-import slonUrl from '@/assets/avatars/slon.webp'
+import liskaUrl from '@/assets/avatars/liska.svg'
+import medvedUrl from '@/assets/avatars/medved.svg'
+import sovaUrl from '@/assets/avatars/sova.svg'
+import kockaUrl from '@/assets/avatars/kocka.svg'
+import zajicUrl from '@/assets/avatars/zajic.svg'
+import mysUrl from '@/assets/avatars/mys.svg'
+import zabaUrl from '@/assets/avatars/zaba.svg'
+import tucnakUrl from '@/assets/avatars/tucnak.svg'
+import levUrl from '@/assets/avatars/lev.svg'
+import praseUrl from '@/assets/avatars/prase.svg'
+import rybaUrl from '@/assets/avatars/ryba.svg'
+import slonUrl from '@/assets/avatars/slon.svg'
 
 /**
  * Zvířecí avataři hráčů.
  *
- * Obrázky jsou původní sada uložená přímo v repozitáři. Identifikátor,
- * kresba i napsané jméno společně rozlišují hráče; odstín kruhu je jen
- * podklad a nic nekóduje. Proto se avatar nikdy neukazuje u běžící otázky
+ * Kresby jsou vlastní SVG v `src/assets/avatars/`, ve stejném jazyce jako
+ * zbytek aplikace: jen hlava zvířete, tlustý inkoustový obrys, ploché
+ * barvy z palety, bez stínování. Žlutá ani jiskra v nich nejsou, liška
+ * a lev jsou v písku. Hlava se čte i ve 30 px, celá postavička by se tam
+ * slila do skvrny. Identifikátor, kresba i napsané jméno společně
+ * rozlišují hráče; odstín dlaždice je jen podklad a nic nekóduje. Proto se avatar nikdy neukazuje u běžící otázky
  * vedle možností A až D, kde barva význam má.
  */
 export interface Avatar {
   id: string
   /** Jméno zvířete se zobrazuje i textově a čte ho čtečka obrazovky. */
   label: string
-  /** Proměnná s odstínem kruhu pod kresbou. */
+  /** Proměnná s odstínem dlaždice pod kresbou. */
   cssVar: string
-  /** Verzovaná adresa obrázku s průhledným pozadím. */
+  /** Verzovaná adresa kresby s průhledným pozadím. */
   src: string
 }
 

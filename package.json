@@ -13,7 +13,6 @@
     "preview": "vite preview",
     "typecheck": "vue-tsc --noEmit",
     "icons": "node scripts/make-icons.mjs",
-    "avatars": "node scripts/make-avatars.mjs",
     "dev:local:alt": "VITE_LOCAL_ONLY=1 vite --port 5186 --strictPort"
   },
   "dependencies": {

@@ -33,16 +33,18 @@ const avatar = computed(() => avatarFor(props.id))
   place-items: center;
   width: var(--ava-size, 2.5rem);
   aspect-ratio: 1;
+  /* Dlaždice, ne kolečko: avatar je nálepka na herní dlaždici, stejně
+     jako všechno ostatní v aplikaci. */
   border: var(--border-w-strong) solid var(--c-border);
-  border-radius: var(--r-full);
-  background: color-mix(in oklab, var(--tint) 45%, var(--c-surface));
+  border-radius: 28%;
+  background: color-mix(in oklab, var(--tint) 40%, var(--c-surface));
   overflow: hidden;
 }
 .ava__art {
   display: block;
   width: 100%;
   height: 100%;
-  padding: var(--sp-1);
+  padding: 6%;
   object-fit: contain;
   user-select: none;
 }
