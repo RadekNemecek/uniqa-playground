@@ -442,7 +442,7 @@ function start() {
             </li>
           </ul>
 
-          <UiButton class="add-team" variant="ghost" size="sm" :disabled="teams.length >= 6" @click="addTeam">
+          <UiButton class="add-team" variant="ghost" size="sm" icon="plus" :disabled="teams.length >= 6" @click="addTeam">
             Přidat tým
           </UiButton>
         </section>
@@ -550,7 +550,7 @@ function start() {
 .lead { color: var(--c-text-muted); margin-top: var(--sp-3); font-size: var(--fs-md); }
 
 .setup__grid { display: grid; grid-template-columns: minmax(0, 1fr) var(--content-sidebar); gap: var(--sp-7); align-items: start; }
-.setup__form { display: grid; gap: var(--sp-6); min-width: 0; }
+.setup__form { display: grid; gap: var(--sp-8); min-width: 0; }
 .section { display: grid; gap: var(--sp-4); }
 .section__head { display: flex; flex-wrap: wrap; gap: var(--sp-3); justify-content: space-between; align-items: center; }
 .section__head h2 { display: flex; align-items: baseline; gap: var(--sp-3); font-size: var(--fs-xl); }
@@ -618,34 +618,37 @@ function start() {
 .teams { list-style: none; padding: 0; display: grid; gap: var(--sp-2); }
 /* Sekce je mřížka, takže by se tlačítko roztáhlo přes celou šířku. */
 .add-team { justify-self: start; }
-.team { display: flex; align-items: center; gap: var(--sp-2); }
-.team__color { position: relative; display: inline-flex; }
+/* Písmeno a jméno jsou jedno pole: dlaždice s písmenem tvoří jeho levý
+   okraj. Dva samostatné boxy vedle sebe nevypadaly, že k sobě patří. */
+.team { display: flex; align-items: stretch; }
+.team__color { position: relative; display: inline-flex; z-index: 1; }
 .team__dot {
   flex: none;
-  width: var(--control-md);
-  height: var(--control-md);
+  width: var(--control-lg);
   border: var(--border-w-strong) solid var(--c-border);
-  border-radius: var(--r-md);
-  box-shadow: var(--shadow-sm);
+  border-radius: var(--r-md) 0 0 var(--r-md);
   color: var(--c-text-ink);
   font-family: var(--font-display);
   font-weight: 900;
   font-size: var(--fs-md);
   transition: transform var(--dur-fast) var(--ease-back);
 }
-.team__dot:hover { transform: scale(1.08); }
+.team__dot:hover { transform: scale(1.06) rotate(-4deg); }
 .team__name {
   flex: 1;
   min-width: 0;
   padding: var(--sp-2) var(--sp-3);
+  margin-left: calc(var(--border-w-strong) * -1);
+  margin-right: var(--sp-2);
   border: var(--border-w-strong) solid var(--c-border);
-  border-radius: var(--r-md);
+  border-radius: 0 var(--r-md) var(--r-md) 0;
   background: var(--c-bg-field);
   color: var(--c-text);
   font-size: var(--fs-md);
   font-weight: 700;
 }
 .team__name:focus { box-shadow: var(--shadow-sm); }
+.team > :last-child { align-self: center; }
 
 .swatches {
   position: absolute;
@@ -689,6 +692,8 @@ function start() {
 .summary__total strong { font-size: var(--fs-work-number); font-weight: 900; line-height: var(--lh-tight); font-variant-numeric: tabular-nums; }
 .summary__total span { font-size: var(--fs-sm); margin-top: var(--sp-2); color: var(--c-text-muted); }
 .summary__preview { padding: var(--sp-3); border: var(--border-w-strong) solid var(--c-border); border-radius: var(--r-md); background: var(--c-base); }
+/* Náhled je malý, takže dlaždice nesou jen spodní hranu. Obrys kolem
+   každé z pětadvaceti by z něj udělal síť čar. */
 .summary__empty { font-size: var(--fs-xs); color: var(--c-text-faint); line-height: var(--lh-snug); }
 .summary dl { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--sp-3); margin-block: var(--sp-5); font-size: var(--fs-sm); color: var(--c-text-muted); }
 .summary dd { margin: 0; font-weight: 700; text-align: right; color: var(--c-text); }
@@ -719,9 +724,9 @@ function start() {
   display: block;
   aspect-ratio: 1.35 / 1;
   min-height: var(--sp-3);
-  border: var(--border-w) solid var(--c-tile-edge);
-  border-radius: var(--r-sm);
+  border-radius: var(--r-xs);
   background: var(--c-tile-top);
+  box-shadow: 0 var(--border-w) 0 var(--c-tile-edge);
 }
 
 @media (max-width: 960px) {
@@ -736,7 +741,7 @@ function start() {
 
 /* Dotyková pravidla jsou poslední, aby je pozdější breakpoint nepřebil. */
 @media (pointer: coarse) {
-  .team__dot { width: var(--control-touch); height: var(--control-touch); }
+  .team__dot { width: var(--control-touch); min-height: var(--control-touch); }
   .team__name { padding-block: var(--sp-3); font-size: var(--fs-md); }
   .swatches { gap: var(--sp-3); padding: var(--sp-4); }
   .swatch { width: var(--control-touch); height: var(--control-touch); }

@@ -79,7 +79,9 @@ function onKey(event: KeyboardEvent, index: number): void {
   background: var(--c-bg-raised);
   color: var(--c-text);
 }
-.seg__item--on { background: var(--c-team-3); color: var(--c-text-ink); box-shadow: inset 0 0 0 var(--border-w) var(--c-ink); }
+/* Vybraná volba je modrá, stejně jako vybraná kategorie a zapnutý
+   přepínač: jeden význam, jedna barva. */
+.seg__item--on { background: var(--c-brand); color: var(--c-on-accent); }
 .seg__item:disabled { opacity: 0.3; cursor: not-allowed; }
 
 @media (pointer: coarse) {

@@ -212,7 +212,7 @@ function start(): void {
 .setup__title { font-size: var(--fs-work-title); letter-spacing: -0.045em; margin-top: var(--sp-2); }
 .lead { color: var(--c-text-muted); margin-top: var(--sp-3); font-size: var(--fs-md); }
 .setup__grid { display: grid; grid-template-columns: minmax(0, 1fr) var(--content-sidebar); gap: var(--sp-7); align-items: start; }
-.setup__form { display: grid; gap: var(--sp-6); min-width: 0; }
+.setup__form { display: grid; gap: var(--sp-8); min-width: 0; }
 .section { display: grid; gap: var(--sp-4); }
 .section__head { display: flex; flex-wrap: wrap; gap: var(--sp-3); justify-content: space-between; align-items: center; }
 .section__head h2 { display: flex; align-items: baseline; gap: var(--sp-3); font-size: var(--fs-xl); }
