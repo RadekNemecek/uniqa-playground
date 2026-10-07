@@ -84,8 +84,13 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
   dlaždice v pozadí. Vtip s odebraným „M" se tím přečte sám, věta na
   nálepce ho jen dopoví, proto přijde až po dopadu. Dlaždice v pozadí
   jsou v barvách možností A až D s inkoustovou hranou, leží u okrajů
-  a pomalu se pohupují; na užší obrazovce se zmenší, aby nevlezly do
-  nápisu. Žádná fotka ani generovaná grafika. Zpod úvodu vykoukne
+  a pomalu se pohupují. Hranu mají v procentech šířky okna, takže na
+  velkém monitoru rostou s ním; v pevné velikosti tam zbyly drobné
+  a úvod působil prázdně. Myší se mírně posouvají proti kurzoru, bližší
+  víc (jen `pointer: fine`, při omezeném pohybu stojí). Pod nimi je
+  komiksový rastr: drobné tečky u okrajů, větší modré v rozích, ke
+  středu se ztratí, aby nápis stál na čistém papíře. Na telefonu
+  zůstanou jen dlaždice v rozích. Žádná fotka ani generovaná grafika. Zpod úvodu vykoukne
   nadpis výběru her (`--home-peek`), aby bylo vidět, že se roluje.
   Hry jsou až na druhé obrazovce: dvě barevné karty, mírně natočené
   každá na jinou stranu, s nálepkou a živým náhledem. Časování drží

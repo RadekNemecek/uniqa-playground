@@ -48,8 +48,10 @@
   /* Inkoust jako plocha: QR kód, tmavý štítek, pruh hlasů. Nesmí se
      brát z rampy ploch, ta je světlá. */
   --c-ink:          #1B1B1B;
-  /* Tečky v pozadí rozcestníku. */
+  /* Rastrové tečky v pozadí rozcestníku: drobné světlé u okrajů a větší
+     modré jen v rozích. Jsou to plochy, ne text, kontrast se nepočítá. */
   --c-dots:         #C5D0E4;
+  --c-dots-strong:  rgba(0, 92, 169, 0.28);
 
   /* --- Text -------------------------------------------------------------- */
   --c-text:         #1B1B1B;  /* 15,4:1 na --c-base, 12,7:1 i na --c-surface-3 */
@@ -209,7 +211,8 @@
   --fs-phone-word:   clamp(2rem, 1rem + 7vw, 3.5rem);
   --fs-home-hero: clamp(4rem, 2rem + 5.5vw, 8.5rem);
   /* Nápis Mučírna na rozcestníku. Jde přes většinu šířky. */
-  --fs-home-mark: clamp(4rem, 1rem + 11vw, 11.5rem);
+  --fs-home-mark: clamp(4rem, 1rem + 11vw, 16rem);
+  --fs-home-kicker: clamp(1.75rem, 1rem + 1.6vw, 3.5rem);
   --fs-home-title: clamp(2.25rem, 1.25rem + 3vw, 4rem);
 
   /* Násobič velikosti písma. Mimo herní plochu zůstává na jedné. */
