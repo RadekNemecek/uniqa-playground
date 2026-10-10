@@ -307,7 +307,7 @@ onBeforeUnmount(() => stop?.())
   min-height: 100dvh;
   display: grid;
   padding: var(--sp-4);
-  background: var(--c-base);
+  background: var(--bg-paper);
 }
 
 .card {
@@ -382,7 +382,7 @@ onBeforeUnmount(() => stop?.())
   margin-inline: calc(var(--sp-4) * -1);
   padding: var(--sp-3) var(--sp-4) var(--sp-4);
   border-top: var(--border-w-strong) solid var(--c-border);
-  background: var(--c-base);
+  background: var(--bg-paper);
 }
 .form__progress { font-size: var(--fs-sm); font-weight: 700; text-align: center; color: var(--c-text-muted); }
 </style>

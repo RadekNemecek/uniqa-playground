@@ -255,7 +255,7 @@ onBeforeUnmount(() => {
   z-index: var(--z-stage);
   display: grid;
   grid-template-rows: auto auto auto 1fr auto;
-  background: var(--c-base);
+  background: var(--bg-paper);
   will-change: transform, opacity;
 }
 

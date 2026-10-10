@@ -279,7 +279,7 @@ function isTrap(q: QuizReportQuestion, at: number): boolean {
 .grid { min-height: 0; overflow: auto; display: grid; gap: var(--sp-3); align-content: start; }
 .grid table { border-collapse: collapse; font-size: var(--fs-sm); }
 .grid th, .grid td { padding: var(--sp-2); border-bottom: var(--border-w) solid var(--c-line-soft); text-align: center; }
-.grid__who { text-align: left; white-space: nowrap; position: sticky; left: 0; background: var(--c-base); }
+.grid__who { text-align: left; white-space: nowrap; position: sticky; left: 0; background: var(--bg-paper); }
 .grid__num { font-variant-numeric: tabular-nums; text-align: right; }
 .grid__q { color: var(--c-text-muted); font-weight: 900; }
 /* Buňka nese znak, ne jen barvu: tabulka se tiskne i černobíle. */

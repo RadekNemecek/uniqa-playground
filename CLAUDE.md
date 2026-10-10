@@ -18,7 +18,8 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
 - **Kontrast textu nejméně 4,5:1, spočítaný.** Neodhaduj ho. Každá dvojice
   text/plocha v `tokens.css` má poměr uvedený v komentáři.
   Barvy týmů drží aspoň 7:1 vůči `--c-text-ink`, aby na nich mohl být tmavý
-  text.
+  text. Text na papíře se počítá i vůči zrnu `--bg-paper`, na nejtmavším
+  průměru přes plošku 2×2 px (tah písmene). Postup je v komentáři u zrna.
 - **Tým se nikdy nerozlišuje jen barvou.** Vždy je vedle ní i písmeno.
 - **Slovo se nikdy nedělí na konci řádku.** Ani podle slovníku.
   „ODPOVĚDNOSTNÍ" rozseknuté na dva řádky se z posledního stolu přečte
@@ -50,7 +51,11 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
   tvrdé, posunuté a bez rozmazání (`--shadow-sm/md/lg`). Hloubku nedělá
   světlo, lesk ani přechod, ale stín, do kterého se klikatelný prvek
   při stisku zamáčkne. Platí na všechno: hru, rozcestník, přípravu,
-  správu otázek i výsledky. Tmavě modré téma tu bylo dřív a působilo
+  správu otázek i výsledky. Papír má zrno (`--bg-paper`) pod každou
+  stránkou, i pod deskou na projektoru; karty zůstávají hladké bílé.
+  Zrno a obláčky, ne vlákna, skvrnky ani mřížka sešitu: všechno to bylo
+  v ukázkách a vyhrálo to nejtišší. Síla je vybraná pohledem, kontrast
+  se k ní dopočítal a kvůli ní je `--c-bad` o stupeň tmavší. Tmavě modré téma tu bylo dřív a působilo
   jako studentská práce: všechno mělo jeden odstín, takže oko nemělo
   co vést. Nevracet ho bez pádnějšího důvodu.
 - **Žádná zlatá ani žlutá.** UNIQA je nemá. Akcent je `--c-brand`, hodnoty
@@ -90,7 +95,7 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
   velkém monitoru rostou s ním; v pevné velikosti tam zbyly drobné
   a úvod působil prázdně. Za myší se nehýbou: posun proti kurzoru tu
   byl a víc rušil, než přidal hloubku. Pod nimi je
-  čistý papír: rastrové tečky tu byly a neosvědčily se. Na telefonu
+  papír se zrnem: rastrové tečky tu byly a neosvědčily se. Na telefonu
   zůstanou jen dlaždice v rozích. Žádná fotka ani generovaná grafika. Zpod úvodu vykoukne
   nadpis výběru her (`--home-peek`), aby bylo vidět, že se roluje.
   Hry jsou až na druhé obrazovce: dvě barevné karty, mírně natočené
@@ -107,6 +112,15 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
   v `em`, roste jako celek s `--fs-home-mark`. Barvy jdou přes
   `--mark-*`. Favicona a náhledová karta se kreslí z téže dlaždice
   (`scripts/make-icons.mjs`).
+- **Dlaždice s M je postavička, ne maskot se jménem.** `MascotTile.vue`
+  je tatáž kresba jako značka, bez obličeje, povahu nese jen pohyb:
+  dopadne, pak podle nálady vyskočí, přepadne přes hranu, nakloní hlavu,
+  nebo čeká. Patří tam, kde se čeká a nic důležitého se nečte: telefon
+  hráče (čekárna, odhalení, konec, hra neběží), čekárna kvízu a vyhlášení
+  na plátně. Ne k běžící otázce, ne do správy ani Výslechu a ne k desce
+  Pojišťuj!, kde týmy nesou dlaždice s písmenem a M by se četlo jako tým.
+  Samostatná postavička tu nebude: srazila by se se zvířaty hráčů
+  a táhla by k dětskosti, se kterou se tu už dvakrát bojovalo.
 - **Hravost patří do hry a na rozcestník, ne do správy otázek.** Obrys,
   tvrdý stín a zamáčknutí při stisku jsou jazyk celého rozhraní, i ve
   správě. Ozdoby navíc, tedy nálepky, natočení, poskakování a dlaždice

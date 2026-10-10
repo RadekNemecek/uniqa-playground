@@ -21,7 +21,7 @@ body {
   font-size: var(--fs-md);
   line-height: var(--lh-body);
   color: var(--c-text);
-  background-color: var(--c-base);
+  background: var(--bg-paper);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   overflow-x: clip;

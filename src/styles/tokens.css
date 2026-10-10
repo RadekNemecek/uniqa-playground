@@ -51,8 +51,8 @@
 
   /* --- Text -------------------------------------------------------------- */
   --c-text:         #1B1B1B;  /* 15,4:1 na --c-base, 12,7:1 i na --c-surface-3 */
-  --c-text-muted:   #454B59;  /* 7,8:1 na --c-base */
-  --c-text-faint:   #545B6B;  /* 5,0:1 i na nejtmavší ploše --c-surface-3 */
+  --c-text-muted:   #454B59;  /* 7,8:1 na --c-base, 6,5:1 na zrnu */
+  --c-text-faint:   #545B6B;  /* 5,0:1 i na nejtmavší ploše --c-surface-3, 5,1:1 na zrnu */
   --c-text-ink:     #1B1B1B;  /* text na barevné ploše, třeba na týmu */
   --c-on-accent:    #FFFFFF;  /* text na modré UNIQA: 6,8:1 */
   --c-on-ink:       #FFFFFF;  /* text na inkoustu */
@@ -68,10 +68,28 @@
   --c-bg-field:     var(--c-sunken);
   --c-bg-field-focus: var(--c-sunken-focus);
 
+  /* Papírové zrno. Plocha stránky není holá barva, ale papír: drobné zrno
+     do tmavší i světlejší strany a pod ním řídké měkké obláčky. Leží pod
+     každou stránkou, i pod deskou na projektoru a ve správě; bílé karty
+     zůstávají hladké, zrno je papír, ne povrch všeho. Tečky v rastru ani
+     písek ne, viz CLAUDE.md.
+
+     Síla je vybraná pohledem (ukázka „A, 2×") a kontrast se k ní dopočítal.
+     Stropy průhlednosti drží `feFuncA` přímo ve filtru, takže nejtmavší
+     místo je známé. Měří se z vykreslených pixelů jako nejtmavší průměr
+     přes plošku 2×2 px, tedy přes tah písmene: jednotlivý pixel zrna oko
+     pod tahem nevidí, zprůměruje ho. Nejtmavší samotný pixel je #CDD0D6.
+     Poměry „na zrnu" u barev textu jsou vůči tomuhle místu. Kdo zrno
+     zesílí, přeměří ho a přepočítá je. */
+  --tex-paper: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='480' height='480'%3E%3Cfilter id='m' x='0' y='0' width='100%' height='100%'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.006' numOctaves='2' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .106 0 0 0 0 .106 0 0 0 0 .106 3 0 0 0 -1.2'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='table' tableValues='0 .068'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Cfilter id='d' x='0' y='0' width='100%' height='100%'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' seed='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .106 0 0 0 0 .106 0 0 0 0 .106 4 0 0 0 -2.2'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='table' tableValues='0 .17'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Cfilter id='l' x='0' y='0' width='100%' height='100%'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' seed='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 -3 0 0 0 1.8'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='table' tableValues='0 .2'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%' height='100%' filter='url(%23m)'/%3E%3Crect width='100%' height='100%' filter='url(%23d)'/%3E%3Crect width='100%' height='100%' filter='url(%23l)'/%3E%3C/svg%3E");
+  --tex-paper-size: 480px;
+  --bg-paper: var(--tex-paper) 0 0 / var(--tex-paper-size) repeat, var(--c-base);
+
+
   /* --- Značka ------------------------------------------------------------ */
   /* Modrá UNIQA je na papíře sama akcentem, nemusí se zesvětlovat.
      Nese primární tlačítko, odkazy, focus a vybraný stav. */
-  --c-brand:        #005CA9;  /* 6,0:1 na --c-base, bílý text na ní 6,8:1 */
+  --c-brand:        #005CA9;  /* 6,0:1 na --c-base, 5,0:1 na zrnu, bílý text na ní 6,8:1 */
   --c-brand-deep:   #00498A;  /* 8,1:1 na --c-base */
   --c-brand-soft:   #7CC0F0;  /* jen plocha, tmavý text na ní 8,7:1 */
   --c-brand-wash:   #DCEAF8;  /* tlumená plocha pod modrou */
@@ -82,10 +100,12 @@
   --button-danger-text: var(--c-on-accent);
 
   /* --- Stavy ------------------------------------------------------------- */
-  --c-ok:           #026E46;  /* zelená UNIQA, 5,6:1 na --c-base */
+  --c-ok:           #026E46;  /* zelená UNIQA, 5,6:1 na --c-base, 4,7:1 na zrnu */
   --c-ok-deep:      #01573A;
   --c-ok-fill:      #3FCF8E;  /* plocha pod tmavým textem, 8,6:1 */
-  --c-bad:          #B4325A;  /* 5,3:1 na --c-base, chladnější než jiskra */
+  /* O stupeň tmavší než původní #B4325A: na papírovém zrnu ta měla
+     4,48:1. Okem rozdíl nepoznáš, není to barva změřená z uniqa.cz. */
+  --c-bad:          #B23159;  /* 5,4:1 na --c-base, 4,5:1 na zrnu, chladnější než jiskra */
   --c-bad-deep:     #8E1F42;  /* bílý text na ní 8,9:1 */
   --c-bad-fill:     #E89BAD;  /* plocha pod tmavým textem, 8,0:1 */
   --c-dead:         #D5DEEE;  /* políčko Nepojištěno (nikdo neuhodl) */
@@ -131,7 +151,7 @@
   --c-spark:      #FF8B70;  /* plocha, tmavý text na ní 7,5:1 */
   --c-spark-mid:  #EE7154;  /* tmavý text na ní 5,8:1 */
   --c-spark-deep: #D71C4F;  /* UNIQA */
-  --c-spark-ink:  #B4321F;  /* jiskra jako text na papíře, 5,5:1 */
+  --c-spark-ink:  #B4321F;  /* jiskra jako text na papíře, 5,5:1, na zrnu 4,6:1 */
   --c-spark-glow: rgba(255, 139, 112, 0.35);
 
   /* --- Dlaždice desky ---------------------------------------------------- */
@@ -274,6 +294,11 @@
   --dur-idle:    18s;     /* jeden cyklus šťouchanců nápisu */
   --dur-flip:    6s;      /* otočka políčka v náhledu desky */
   --dur-pick:    4s;      /* volba a časomíra v náhledu kvízu */
+  /* Dlaždice M jako postavička (`MascotTile.vue`): pád jede na
+     `--dur-drop`, pak reakce na náladu a nečinnost. Cyklus je kratší než
+     u nápisu, odhalení trvá jen tak dlouho, než moderátorka dočte poučku. */
+  --dur-mascot:      850ms;
+  --dur-mascot-idle: 7s;
   --stagger:     70ms;    /* rozestup písmen a karet v sekvenci */
   --delay-mark-land:  850ms;  /* kdy začne padat M */
   --delay-mark-hit:   1420ms; /* kdy M dopadne */
@@ -410,5 +435,7 @@
     --dur-shake: 1ms;
     --dur-hop: 1ms;
     --dur-press: 1ms;
+    --dur-mascot: 1ms;
+    --dur-mascot-idle: 1ms;
   }
 }

@@ -268,7 +268,7 @@ async function onRematch() {
   inset: 0;
   z-index: var(--z-results);
   overflow-y: auto;
-  background: var(--c-base);
+  background: var(--bg-paper);
 }
 
 .fade-enter-active, .fade-leave-active { transition: opacity var(--dur-slow) var(--ease-out); }

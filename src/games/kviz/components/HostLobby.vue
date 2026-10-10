@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import QrCode from './QrCode.vue'
 import PlayerAvatar from './PlayerAvatar.vue'
+import MascotTile from '@/components/MascotTile.vue'
 import { count } from '@/lib/format'
 import type { QuizPlayer } from '../types'
 
@@ -79,6 +80,8 @@ function commitRename(uid: string): void {
           <p class="eyebrow">Čekárna</p>
           <h2 class="room__title">Přihlášení hráči</h2>
         </div>
+        <!-- Dlaždice s M čeká s místností a poskočí s každým, kdo přijde. -->
+        <MascotTile class="room__mascot" mood="wait" :bump="players.length" />
         <p class="room__count">
           <strong>{{ players.length }}</strong>
           <span>{{ count(players.length, 'hráč připojen', 'hráči připojeni', 'hráčů připojeno') }}</span>
@@ -209,7 +212,8 @@ function commitRename(uid: string): void {
 
 /* Soupiska ---------------------------------------------------------------- */
 .lobby__room { display: grid; grid-template-rows: auto 1fr auto; gap: var(--sp-5); height: 100%; min-height: 0; padding: var(--sp-5); border: var(--border-w-heavy) solid var(--c-border); border-radius: var(--r-xl); background: var(--c-surface); box-shadow: var(--shadow-lg); }
-.room__head { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: var(--sp-4); }
+.room__head { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: start; gap: var(--sp-4); }
+.room__mascot { align-self: center; font-size: var(--quiz-lobby-ava); }
 .room__title { margin-top: var(--sp-1); font-size: var(--fs-2xl); font-weight: 900; }
 .room__count { display: grid; justify-items: end; line-height: var(--lh-tight); }
 .room__count strong { color: var(--c-brand); font-size: var(--fs-hero); font-weight: 900; font-variant-numeric: tabular-nums; }

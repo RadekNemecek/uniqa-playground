@@ -2,6 +2,7 @@
 import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import PlayerAvatar from './PlayerAvatar.vue'
+import MascotTile from '@/components/MascotTile.vue'
 import { confetti } from '@/lib/confetti'
 import { sfx } from '@/lib/sound'
 import { countTo, duration, prefersReducedMotion } from '@/lib/motion'
@@ -99,7 +100,12 @@ function scoreOf(s: QuizStanding): number {
   return counted.value[s.uid] ?? s.score
 }
 
+/** Dlaždice s M stojí na podlaze vedle bedny. Během vyhlášení čeká,
+ *  s vítězem vyskočí. */
+const cheering = ref(false)
+
 function celebrate(): void {
+  cheering.value = true
   sfx.fanfare()
   confetti(
     winners.value.length > 0 ? TEAM_COLORS.slice(0, 4).map((c) => c.hex) : [],
@@ -216,6 +222,9 @@ onUnmounted(() => {
           <span class="slot__place">{{ place(s) }}</span>
         </span>
       </li>
+      <li class="podium__mascot" aria-hidden="true">
+        <MascotTile :mood="cheering ? 'ok' : 'wait'" />
+      </li>
     </ol>
 
     <p v-if="standings.length === 0" class="final__empty">
@@ -243,6 +252,8 @@ onUnmounted(() => {
 
 <style scoped>
 .final {
+  --quiz-final-mascot: 4rem;
+
   position: relative;
   display: grid;
   grid-template-rows: auto 1fr auto auto;
@@ -290,6 +301,15 @@ onUnmounted(() => {
      a splývaly s tlačítky pod sebou. */
   border-bottom: var(--border-w-heavy) solid var(--c-border);
 }
+/* Dlaždice stojí na podlaze za bednou, mimo tok, aby stupně neposunula. */
+.podium { position: relative; }
+.podium__mascot {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  font-size: var(--quiz-final-mascot);
+}
+
 .slot {
   display: grid;
   grid-template-rows: auto auto auto 1fr;
@@ -394,6 +414,7 @@ onUnmounted(() => {
 
 @media (max-width: 720px) {
   .podium { flex-wrap: wrap; height: auto; }
+  .podium__mascot { display: none; }
   .slot { height: 12rem; }
 }
 </style>

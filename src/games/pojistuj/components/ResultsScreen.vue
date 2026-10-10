@@ -290,7 +290,7 @@ onUnmounted(() => {
   isolation: isolate;
   min-height: 100dvh;
   width: 100%;
-  background: var(--c-base);
+  background: var(--bg-paper);
 }
 .results__fx {
   position: absolute;
