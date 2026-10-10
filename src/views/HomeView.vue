@@ -234,7 +234,9 @@ async function discard(entry: GameEntry): Promise<void> {
                 <span class="mini-quiz__timer"><span></span></span>
                 <div class="mini-quiz__options">
                   <span class="mini-option mini-option--a">A</span>
-                  <span class="mini-option mini-option--b">B<UiIcon name="check" size="xs" /></span>
+                  <span class="mini-option mini-option--b">
+                    <span class="mini-option__face">B<UiIcon name="check" size="xs" /></span>
+                  </span>
                   <span class="mini-option mini-option--c">C</span>
                   <span class="mini-option mini-option--d">D</span>
                 </div>
@@ -356,7 +358,7 @@ async function discard(entry: GameEntry): Promise<void> {
   font-weight: 600;
   line-height: var(--lh-snug);
   rotate: -4deg;
-  animation: home-slap var(--dur-pop) var(--ease-out) var(--delay-mark-kick) both;
+  animation: home-slap var(--dur-spring) var(--ease-spring) var(--delay-mark-kick) both;
 }
 
 .hero__actions {
@@ -364,11 +366,14 @@ async function discard(entry: GameEntry): Promise<void> {
   flex-wrap: wrap;
   justify-content: center;
   gap: var(--sp-4);
-  animation: home-rise var(--dur-pop) var(--ease-out) var(--delay-mark-cta) both;
+  animation: home-rise var(--dur-spring) var(--ease-spring-soft) var(--delay-mark-cta) both;
 }
 
-/* Dlaždice v pozadí. Obal nese polohu, natočení a pohupování, vnitřek vyskočí na místo a nadskočí, když dopadne M. Každá část
-   animuje jinou vlastnost, takže se navzájem nepřebíjejí. */
+/* Dlaždice v pozadí. Obal nese polohu, natočení a pohupování, vnitřek
+   vyskočí na místo a nadskočí, když dopadne M. Vyskočení jede na `scale`
+   a `rotate`, poskok na `transform`: dvě animace téže vlastnosti na
+   jednom prvku prohlížeč nepustí do kompozitoru a obě by pak běžely na
+   hlavním vlákně, právě ve chvíli nárazu. */
 .hero__tiles { position: absolute; inset: 0; pointer-events: none; }
 
 /* Dokud nedorazí písmo, stojí celý úvod na prvním snímku, ne jen nápis. */
@@ -394,7 +399,7 @@ async function discard(entry: GameEntry): Promise<void> {
   background: var(--tone);
   box-shadow: var(--shadow-md);
   animation:
-    home-tile-in var(--dur-pop) var(--ease-out) calc(var(--i) * var(--stagger)) both,
+    home-tile-in var(--dur-spring) var(--ease-spring) calc(var(--i) * var(--stagger)) both,
     home-hop var(--dur-hop) linear calc(var(--delay-mark-hit) + var(--hop-delay));
 }
 
@@ -547,7 +552,8 @@ async function discard(entry: GameEntry): Promise<void> {
   gap: var(--sp-3);
 }
 
-.mini-option {
+.mini-option,
+.mini-option__face {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -559,7 +565,25 @@ async function discard(entry: GameEntry): Promise<void> {
   font-size: var(--fs-lg);
 }
 .mini-option--a { background: var(--c-team-1); }
-.mini-option--b { background: var(--c-surface); animation: home-pick var(--dur-pick) var(--ease-out) 1.6s infinite; }
+/* Vybraná možnost se zamáčkne do stínu. Stín je tu plocha pod ní, ne
+   `box-shadow`: ten se nedá animovat v kompozitoru a v nekonečné smyčce
+   by se překresloval pořád. Obal je inkoustový stín posunutý o jeho
+   délku, líc na něm stojí zpátky v mřížce a při volbě do něj sjede. */
+.mini-option--b {
+  position: relative;
+  border: 0;
+  background: var(--c-ink);
+  box-shadow: none;
+  translate: var(--shadow-x-sm) var(--shadow-x-sm);
+}
+.mini-option__face {
+  position: absolute;
+  inset: 0;
+  background: var(--c-surface);
+  box-shadow: none;
+  translate: calc(var(--shadow-x-sm) * -1) calc(var(--shadow-x-sm) * -1);
+  animation: home-pick var(--dur-pick) var(--ease-out) 1.6s infinite;
+}
 .mini-option--c { background: var(--c-team-4); }
 .mini-option--d { background: var(--c-team-5); }
 .mini-option :deep(svg) {
@@ -664,20 +688,19 @@ async function discard(entry: GameEntry): Promise<void> {
 
 /* --- Pohyb --------------------------------------------------------------- */
 
+/* Překmit nese pružina. Nálepka přilétá z 1,4×, ne z 2,4×: z té se
+   v prvním snímku zmenšila o polovinu a plácnutí se nedalo vidět. */
 @keyframes home-slap {
-  0% { transform: scale(2.4) rotate(14deg); opacity: 0; }
-  55% { transform: scale(0.9) rotate(-3deg); opacity: 1; }
-  100% { transform: none; opacity: 1; }
+  from { transform: scale(1.4) rotate(10deg); opacity: 0; }
+  to { transform: none; opacity: 1; }
 }
 @keyframes home-rise {
-  0% { transform: translateY(2.5rem); opacity: 0; }
-  70% { transform: translateY(-0.4rem); opacity: 1; }
-  100% { transform: none; opacity: 1; }
+  from { transform: translateY(2.5rem); opacity: 0; }
+  to { transform: none; opacity: 1; }
 }
 @keyframes home-tile-in {
-  0% { transform: scale(0) rotate(-40deg); }
-  70% { transform: scale(1.1); }
-  100% { transform: none; }
+  from { scale: 0; rotate: -40deg; }
+  to { scale: 1; rotate: 0deg; }
 }
 /* Poskok s fyzikou: nahoru zpomaluje, dolů zrychluje, dopad dlaždici
    smáčkne a ta se jednou odrazí. Každý úsek má vlastní průběh; jeden
@@ -702,8 +725,8 @@ async function discard(entry: GameEntry): Promise<void> {
   to { transform: scaleX(0); }
 }
 @keyframes home-pick {
-  0%, 20%, 100% { translate: 0 0; box-shadow: var(--shadow-sm); }
-  26%, 70% { translate: var(--shadow-x-sm) var(--shadow-x-sm); box-shadow: var(--shadow-none); }
+  0%, 20%, 100% { translate: calc(var(--shadow-x-sm) * -1) calc(var(--shadow-x-sm) * -1); }
+  26%, 70% { translate: 0 0; }
 }
 @keyframes home-check {
   0%, 26% { transform: scale(0); }
@@ -720,7 +743,7 @@ async function discard(entry: GameEntry): Promise<void> {
   .hero__tile i,
   .mini-board__cell--live,
   .mini-quiz__timer span,
-  .mini-option--b,
+  .mini-option__face,
   .mini-option :deep(svg) { animation: none; }
   .mini-option :deep(svg) { transform: none; }
 }

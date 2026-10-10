@@ -112,6 +112,18 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
   v `em`, roste jako celek s `--fs-home-mark`. Barvy jdou přes
   `--mark-*`. Favicona a náhledová karta se kreslí z téže dlaždice
   (`scripts/make-icons.mjs`).
+- **Pohyb se neláme na klíčových snímcích.** Křivka z `animation` platí
+  pro každý úsek mezi snímky zvlášť, takže `--ease-out` u animace se
+  třemi snímky na začátku každého úseku cukne a na konci stojí.
+  Vyskočení s překmitem je jeden přechod `from → to` na
+  `--ease-spring` nebo `--ease-spring-soft`. Kde snímky zůstanou
+  (pády, odskoky), jede animace `linear` a křivku nese každý snímek:
+  dolů `--ease-fall`, nahoru `--ease-rise`, smáčknutí až na zemi.
+  Rychle letící prvek nesmí poskočit o víc než asi 40 px za snímek,
+  jinak se místo pohybu zjeví. Dvě animace téže vlastnosti na jednom
+  prvku (dvakrát `transform`) prohlížeč nepustí do kompozitoru, druhá
+  jde na `scale`, `rotate` nebo `translate`. `box-shadow` se
+  neanimuje, zamáčknutí do stínu je posun přes plochu pod prvkem.
 - **Dlaždice s M je postavička, ne maskot se jménem.** `MascotTile.vue`
   je tatáž kresba jako značka, bez obličeje, povahu nese jen pohyb:
   dopadne, pak podle nálady vyskočí, přepadne přes hranu, nakloní hlavu,

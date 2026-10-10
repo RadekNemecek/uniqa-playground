@@ -76,7 +76,7 @@ onMounted(() => {
   position: relative;
   display: inline-block;
   animation:
-    mark-letter var(--dur-pop) var(--ease-out) calc(100ms + var(--i) * var(--stagger)) both,
+    mark-letter var(--dur-spring) var(--ease-spring) calc(100ms + var(--i) * var(--stagger)) both,
     mark-nudge var(--dur-idle) var(--ease-both) calc(var(--delay-mark-idle) + (var(--i) + 1) * var(--stagger) * 1.3) infinite;
 }
 
@@ -87,7 +87,7 @@ onMounted(() => {
   height: 0.93em;
   margin-right: 0.06em;
   rotate: -8deg;
-  animation: mark-drop var(--dur-drop) both var(--delay-mark-land);
+  animation: mark-drop var(--dur-drop) linear var(--delay-mark-land) both;
 }
 
 /* Dlaždice s M. Rozměry jsou zlomky velikosti písma, aby hrana i stín
@@ -117,27 +117,36 @@ onMounted(() => {
   background: var(--mark-spark);
   transform-origin: right center;
   animation:
-    mark-ray var(--dur-shake) var(--ease-back) var(--delay-mark-hit) both,
+    mark-ray var(--dur-spring) var(--ease-spring) var(--delay-mark-hit) both,
     mark-ray-flick var(--dur-idle) var(--ease-out) var(--delay-mark-idle) infinite;
 }
 .mark__ray--up { width: 0.3em; top: -0.06em; rotate: 35deg; }
 .mark__ray--mid { width: 0.34em; top: 0.44em; }
 .mark__ray--down { width: 0.3em; top: 0.88em; rotate: -35deg; }
 
+/* Překmit i dosednutí nese pružina, ne mezisnímky. */
 @keyframes mark-letter {
-  0% { transform: translateY(0.48em) scale(0.4); opacity: 0; }
-  60% { transform: translateY(-0.07em) scale(1.08); opacity: 1; }
-  80% { transform: translateY(0.02em) scale(0.97); }
-  100% { transform: none; opacity: 1; }
+  from { transform: translateY(0.48em) scale(0.4); opacity: 0; }
+  to { transform: none; opacity: 1; }
 }
 
-/* Pád zrychluje, dopad smáčkne dlaždici a ta jednou odskočí. */
+/* Pád zrychluje jako volný pád a dlaždice se dotkne země v polovině
+   trvání, protažená rychlostí. Smáčkne se až potom, za tři snímky, a
+   jednou odskočí. Spadne jen z výšky dvou dlaždic: z -4.4em byla většinu
+   pádu mimo obrazovku a vidět byly jen poslední snímky po 100 až 160 px,
+   takže se zjevila skokem. Takhle je nejrychlejší snímek kolem 35 px.
+   Dokud nepadá, je průhledná, jinak by visela nad slovem.
+
+   Posuny v okamžicích smáčknutí vyrovnávají měřítko, aby spodní hrana
+   zůstala na zemi: dlaždice je vysoká 0.93em a zmenšuje se kolem středu. */
 @keyframes mark-drop {
-  0% { transform: translateY(-4.4em) rotate(-42deg) scale(1, 1); animation-timing-function: var(--ease-in); }
-  62% { transform: translateY(0) rotate(0deg) scale(1.16, 0.8); animation-timing-function: var(--ease-out); }
-  78% { transform: translateY(-0.19em) rotate(-3deg) scale(0.95, 1.06); animation-timing-function: var(--ease-in); }
-  90% { transform: translateY(0) rotate(1deg) scale(1.04, 0.96); animation-timing-function: var(--ease-out); }
-  100% { transform: translateY(0) rotate(0deg) scale(1, 1); }
+  0% { transform: translateY(-2.2em) rotate(-28deg) scale(0.94, 1.08); opacity: 0; animation-timing-function: var(--ease-fall); }
+  6% { opacity: 1; }
+  50% { transform: translateY(-0.04em) rotate(0deg) scale(0.94, 1.08); animation-timing-function: var(--ease-rise); }
+  56% { transform: translateY(0.09em) rotate(0deg) scale(1.18, 0.8); animation-timing-function: var(--ease-rise); }
+  70% { transform: translateY(-0.17em) rotate(-3deg) scale(0.97, 1.04); animation-timing-function: var(--ease-fall); }
+  82% { transform: translateY(0.023em) rotate(1deg) scale(1.05, 0.95); animation-timing-function: var(--ease-rise); }
+  100% { transform: none; opacity: 1; }
 }
 
 /* Náraz do slova: jedno plynulé propružení, ne otřes. Rychlé cukání sem
@@ -150,25 +159,31 @@ onMounted(() => {
 }
 
 @keyframes mark-ray {
-  0% { transform: scaleX(0); }
-  60% { transform: scaleX(1.25); }
-  100% { transform: scaleX(1); }
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
 }
 
 /* Nečinnost. Tři události v jednom dlouhém cyklu: šťouchanec (kolem 3 %),
    výskok s vlnou písmen (kolem 35 %) a otočka (kolem 67 %). Písmena
    a dlaždice běží ve stejném cyklu, jen s posunem, takže na sebe
    navazují. Používají samostatné vlastnosti `translate`, `rotate`
-   a `scale`, aby se nepraly s úvodní animací na `transform`. */
+   a `scale`, aby se nepraly s úvodní animací na `transform`.
+
+   Mezi šťouchanci jede průběh `--ease-both`, výskok má křivku u každého
+   snímku: nahoru zpomaluje, dolů zrychluje a smáčkne se až na zemi.
+   S `--ease-both` i na cestě dolů dlaždice před zemí brzdila a místo
+   dopadu se snesla. Každý snímek výskoku nese i `rotate`, jinak se
+   natočení interpoluje přes celou pauzu a M se pět vteřin plíživě naklání. */
 @keyframes mark-tile-idle {
   0% { rotate: 0deg; translate: 0 0; scale: 1; }
   2% { rotate: -12deg; translate: -0.05em 0; }
   3.5% { rotate: 7deg; translate: 0.1em 0; }
   5.5% { rotate: 0deg; translate: 0 0; }
-  33% { translate: 0 0; scale: 1; }
-  34.5% { translate: 0 -0.18em; rotate: -6deg; scale: 1; }
-  36% { translate: 0 0; rotate: 0deg; scale: 1.1 0.88; }
-  37.5% { scale: 1; }
+  33% { translate: 0 0; rotate: 0deg; scale: 1; animation-timing-function: var(--ease-rise); }
+  34.5% { translate: 0 -0.18em; rotate: -6deg; scale: 1; animation-timing-function: var(--ease-fall); }
+  36% { translate: 0 0; rotate: 0deg; scale: 1; animation-timing-function: var(--ease-rise); }
+  36.3% { translate: 0 0.07em; scale: 1.1 0.88; }
+  37.8% { translate: 0 0; scale: 1; }
   66% { rotate: 0deg; }
   69%, 100% { rotate: 360deg; translate: 0 0; scale: 1; }
 }
@@ -178,9 +193,9 @@ onMounted(() => {
   4.5% { translate: 0.085em 0; rotate: 7deg; }
   6% { translate: -0.016em 0; rotate: -2deg; }
   7.5% { translate: 0 0; rotate: 0deg; }
-  35% { translate: 0 0; }
-  36.5% { translate: 0 -0.15em; }
-  38% { translate: 0 0.016em; }
+  35% { translate: 0 0; animation-timing-function: var(--ease-rise); }
+  36.5% { translate: 0 -0.15em; animation-timing-function: var(--ease-fall); }
+  38% { translate: 0 0.016em; animation-timing-function: var(--ease-rise); }
   39%, 100% { translate: 0 0; rotate: 0deg; }
 }
 

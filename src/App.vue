@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import UiToasts from '@/components/ui/UiToasts.vue'
 import UiConfirm from '@/components/ui/UiConfirm.vue'
 import { initPacks } from '@/stores/packs'
@@ -8,6 +9,20 @@ import { primeAudio } from '@/lib/sound'
 import { toast } from '@/stores/ui'
 
 setDbErrorHandler((message) => toast(message, 'bad', 6000))
+
+/**
+ * První stránka se objeví bez přechodu. Router se rozhodne až po
+ * připojení aplikace, takže by se úvodní obrazovka vykreslila jako
+ * příchod: zesvětlení a posun celé stránky by běžely přes úvod
+ * rozcestníku zároveň s jeho vlastní sekvencí. Přechod se zapne až po
+ * prvním vykreslení, pro každou další cestu.
+ */
+const pageMotion = ref(false)
+void useRouter().isReady().then(() => {
+  requestAnimationFrame(() => {
+    pageMotion.value = true
+  })
+})
 
 onMounted(async () => {
   try {
@@ -34,7 +49,7 @@ onMounted(async () => {
   <a class="skip" href="#obsah">Přeskočit na obsah</a>
 
   <RouterView v-slot="{ Component }">
-    <Transition name="page" mode="out-in">
+    <Transition name="page" mode="out-in" :css="pageMotion">
       <component :is="Component" />
     </Transition>
   </RouterView>
