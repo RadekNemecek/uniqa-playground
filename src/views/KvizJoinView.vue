@@ -12,6 +12,7 @@ import { CODE_LENGTH, isCodeShaped, normalizeCode } from '@/games/kviz/code'
 import { hasSessionDb, isSessionDbConnecting } from '@/lib/sessionDb'
 import { AVATARS, avatarFor } from '@/games/kviz/avatars'
 import { formatScore } from '@/lib/teams'
+import { holdPlayerScreen, releasePlayerScreen } from '@/lib/playerScreen'
 import { count } from '@/lib/format'
 import {
   answer,
@@ -169,6 +170,7 @@ watch(
 )
 
 onMounted(() => {
+  holdPlayerScreen()
   if (code.value) void watchGame(code.value)
 })
 
@@ -176,7 +178,10 @@ onMounted(() => {
 watch(code, (next) => {
   if (next) void watchGame(next)
 })
-onBeforeUnmount(leaveGame)
+onBeforeUnmount(() => {
+  leaveGame()
+  releasePlayerScreen()
+})
 </script>
 
 <template>
@@ -435,6 +440,9 @@ onBeforeUnmount(leaveGame)
   display: grid;
   padding: var(--sp-4);
   background: var(--bg-paper);
+  /* Posun prstem ano, přiblížení ne: dvojí ťuknutí do dlaždice ani dva
+     prsty obrazovku nezvětší. Zbytek obstará `holdPlayerScreen()`. */
+  touch-action: pan-x pan-y;
 }
 
 /* Karta ------------------------------------------------------------------- */

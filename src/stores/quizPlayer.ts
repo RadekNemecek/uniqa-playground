@@ -95,7 +95,18 @@ const STALE_MS = 4000
 /** Rozestup dalších pokusů, dokud se spojení nevrátí. */
 const RETRY_MS = 10000
 
+/**
+ * Jak dlouho po vypršení limitu se čeká na odhalení, než se spojení
+ * zkusí vzkřísit. Plátno odhaluje samo hned po limitu, tohle je rezerva
+ * na zápis a doručení.
+ */
+const REVEAL_GRACE_MS = 2500
+
+/** Jak často se po odpovědi ověřuje, jestli už odhalení není venku. */
+const REVEAL_RECHECK_MS = 5000
+
 let staleTimer = 0
+let revealTimer = 0
 let reviving = false
 let attempts = 0
 let wired = false
@@ -214,7 +225,9 @@ export function leaveGame(): void {
   window.clearTimeout(unlockTimer)
   window.clearTimeout(expiryTimer)
   window.clearTimeout(staleTimer)
+  window.clearTimeout(revealTimer)
   staleTimer = 0
+  revealTimer = 0
   attempts = 0
   state.stale = false
   state.session = null
@@ -338,6 +351,40 @@ function unwireWake(): void {
   window.removeEventListener('pageshow', onWake)
 }
 
+/**
+ * Telefon čeká na odhalení. Hráč odpověděl nebo mu doběhl čas a plátno
+ * mezitím mohlo otázku dávno odhalit.
+ */
+function awaitingReveal(qid: string, round: number): boolean {
+  const s = state.session
+  if (!s || s.qid !== qid || s.round !== round) return false
+  if (s.phase !== 'question' && s.phase !== 'locked') return false
+  return state.choice !== null || state.expired
+}
+
+/**
+ * Hlídač odhalení.
+ *
+ * Na testu se čtyřmi telefony na některých zůstala po odhalení viset
+ * zvolená odpověď a pomohlo až obnovení stránky, nebo další otázka.
+ * Spojení přitom žilo, jen snímek s odhalením nejspíš uvízl po cestě
+ * a protlačil ho až další zápis. Hlídač `stale` na to nestačí, ten se
+ * ozve jen na snímek z mezipaměti, a tady nedorazil žádný. Kdo čeká na odhalení déle, než
+ * je rozumné, ten si proto spojení obnoví sám a stav dorovná ze serveru.
+ */
+function watchForReveal(wait: number): void {
+  const s = state.session
+  if (!s) return
+  const { qid, round } = s
+  window.clearTimeout(revealTimer)
+  revealTimer = window.setTimeout(() => {
+    revealTimer = 0
+    if (!awaitingReveal(qid, round)) return
+    void revive()
+    watchForReveal(REVEAL_RECHECK_MS)
+  }, wait)
+}
+
 /* --- Průběh hry ------------------------------------------------------------ */
 
 function onSession(session: QuizSession | null): void {
@@ -347,6 +394,10 @@ function onSession(session: QuizSession | null): void {
 
   // Nová otázka: zahodit minulou volbu a naplánovat odemčení tlačítek.
   const changed = session.qid !== previous?.qid || session.round !== previous?.round
+  if (changed || (session.phase !== 'question' && session.phase !== 'locked')) {
+    window.clearTimeout(revealTimer)
+    revealTimer = 0
+  }
   if (changed) {
     // Po obnovení stránky je `previous` null, takže tudy projde i návrat
     // do rozehrané otázky. Uloženou odpověď na tutéž otázku proto vrátíme
@@ -394,10 +445,12 @@ function scheduleUnlock(session: QuizSession): void {
     const remaining = session.limitMs - elapsedOnArrival
     if (remaining <= 0) {
       state.expired = true
+      watchForReveal(REVEAL_GRACE_MS)
       return
     }
     expiryTimer = window.setTimeout(() => {
       state.expired = true
+      watchForReveal(REVEAL_GRACE_MS)
     }, remaining)
   }, wait)
 }
@@ -429,6 +482,7 @@ export async function answer(choice: number): Promise<void> {
       expiresAt: s.expiresAt,
     })
     state.send = 'sent'
+    watchForReveal(REVEAL_RECHECK_MS)
     // Až po potvrzení serverem. Uložit ji dřív by znamenalo pamatovat si
     // odpověď, kterou server odmítl.
     writeSaved({ answer: { round: s.round, qid: s.qid, choice } })

@@ -36,15 +36,23 @@ const podium = computed(() => {
   return top
 })
 
+/** Místo. Při shodě bodů stojí oba na tomtéž stupni, jako ve sportu. */
 function place(s: QuizStanding): number {
-  return topThree.value.findIndex((x) => x.uid === s.uid) + 1
+  return props.standings.filter((x) => x.score > s.score).length + 1
 }
 
-/** Výška stupně. Nese ji poměr k nejlepšímu výsledku, ne pořadí, aby
- *  těsný souboj vypadal jako těsný souboj. */
+/**
+ * Výška stupně podle místa, ne podle bodů.
+ *
+ * Dřív ji nesl poměr k nejlepšímu výsledku, aby těsný souboj vypadal
+ * těsně. Body ale za celou hru narostou do desítek tisíc a rozdíl pár set
+ * bodů dal tři skoro stejné sloupy: z místnosti nebylo poznat, kdo vyhrál.
+ * Bedna má říct pořadí na první pohled, body jsou napsané nad ní.
+ */
+const HEIGHT_BY_PLACE = [1, 0.68, 0.44]
+
 function height(s: QuizStanding): number {
-  const share = best.value > 0 ? s.score / best.value : 0
-  return 0.45 + share * 0.55
+  return HEIGHT_BY_PLACE[place(s) - 1] ?? HEIGHT_BY_PLACE[HEIGHT_BY_PLACE.length - 1]!
 }
 
 /** Barva stupně. Zlatá v systému není, tak se bere paleta možností,
@@ -253,6 +261,14 @@ onUnmounted(() => {
 <style scoped>
 .final {
   --quiz-final-mascot: 4rem;
+  --quiz-final-ava: 3.5rem;
+  --quiz-final-ava-champ: 5rem;
+  /* Místo nad nejvyšším stupněm: zvíře, jméno a body vítěze, tedy
+     nejvyšší hlavička na bedně. Sloupy se počítají z toho, co zbude,
+     a všem třem stejně. */
+  --quiz-final-head: calc(
+    var(--quiz-final-ava-champ) + (var(--fs-2xl) + var(--fs-xl)) * var(--lh-tight) + var(--sp-1) * 3
+  );
 
   position: relative;
   display: grid;
@@ -310,10 +326,14 @@ onUnmounted(() => {
   font-size: var(--quiz-final-mascot);
 }
 
+/* Hlavička sedí přímo na svém sloupu. Dřív byl sloup podílem toho, co
+   zbylo pod hlavičkou, a vítěz s větším zvířetem a jménem dostal ze
+   stejného podílu menší kus: první místo stálo nejníž. */
 .slot {
-  display: grid;
-  grid-template-rows: auto auto auto 1fr;
-  justify-items: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
   gap: var(--sp-1);
   flex: 1 1 0;
   max-width: 16rem;
@@ -334,14 +354,16 @@ onUnmounted(() => {
   animation: podiumPlace var(--dur-podium-place) var(--ease-back) backwards;
 }
 .slot__ava {
-  --ava-size: 3.5rem;
-  align-self: end;
+  --ava-size: var(--quiz-final-ava);
+  flex: none;
   transition: opacity var(--dur-fast) var(--ease-out);
 }
-.slot--champ .slot__ava { --ava-size: 5rem; }
+.slot--champ .slot__ava { --ava-size: var(--quiz-final-ava-champ); }
 .slot__nick {
+  max-width: 100%;
   font-size: calc(var(--fs-lg) * var(--fit-text, 1));
   font-weight: 900;
+  line-height: var(--lh-tight);
   transition: opacity var(--dur-fast) var(--ease-out);
 }
 .slot--champ .slot__nick { font-size: calc(var(--fs-2xl) * var(--fit-text, 1)); }
@@ -351,16 +373,17 @@ onUnmounted(() => {
   font-weight: 900;
   color: var(--c-brand);
   font-variant-numeric: tabular-nums;
+  line-height: var(--lh-tight);
   transition: opacity var(--dur-fast) var(--ease-out);
 }
 
-/* Sloup roste zdola nahoru, poměrem k nejlepšímu výsledku. */
+/* Sloup roste zdola nahoru, výškou podle místa. */
 .slot__riser {
   display: grid;
   place-items: start center;
-  align-self: end;
+  flex: none;
   width: 100%;
-  height: calc(var(--h) * 100%);
+  height: calc(var(--h) * (100% - var(--quiz-final-head)));
   padding-top: var(--sp-3);
   border: var(--border-w-heavy) solid var(--c-border);
   border-bottom: 0;
@@ -415,6 +438,6 @@ onUnmounted(() => {
 @media (max-width: 720px) {
   .podium { flex-wrap: wrap; height: auto; }
   .podium__mascot { display: none; }
-  .slot { height: 12rem; }
+  .slot { height: 18rem; }
 }
 </style>
