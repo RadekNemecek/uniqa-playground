@@ -181,7 +181,8 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
   dlaždice pod ním poskočí a měření je jednorázové. Rozměry se ukládají
   s obrázkem, aby měl box velikost dřív, než se obrázek dekóduje.
 - **Hotové balíčky kvízu se zakládají z nabídky ve správě.** Ukázka
-  z pojištění (`demoPack.ts`) a rodinný kvíz (`familyPack.ts`). Kresby
+  z pojištění (`demoPack.ts`), rodinný kvíz (`familyPack.ts`) a všeobecné
+  znalosti pro děti od jedenácti let (`generalPack.ts`). Kresby
   rodinného kvízu jsou vlastní SVG v `src/assets/quiz/rodina/`, žádné
   stažené postavy: otázku nese předmět, ne cizí kresba. Při založení se
   převedou na WebP (`rasterizeQuizImage()`), takže se chovají jako

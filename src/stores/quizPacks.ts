@@ -8,6 +8,7 @@ import { rasterizeQuizImage } from '@/games/kviz/image'
 import type { QuizItem, QuizPack } from '@/games/kviz/types'
 import { demoQuizPack } from '@/games/kviz/demoPack'
 import { familyQuizPack } from '@/games/kviz/familyPack'
+import { generalQuizPack } from '@/games/kviz/generalPack'
 
 interface QuizPacksState {
   packs: QuizPack[]
@@ -104,6 +105,12 @@ export async function createQuizPack(name?: string): Promise<QuizPack> {
 
 export async function createDemoQuizPack(): Promise<QuizPack> {
   const pack = demoQuizPack()
+  await db().saveQuizPack(pack)
+  return pack
+}
+
+export async function createGeneralQuizPack(): Promise<QuizPack> {
+  const pack = generalQuizPack()
   await db().saveQuizPack(pack)
   return pack
 }

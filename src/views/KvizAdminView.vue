@@ -11,6 +11,7 @@ import { downloadQuizPack, readQuizPackFile } from '@/games/kviz/packIo'
 import {
   createDemoQuizPack,
   createFamilyQuizPack,
+  createGeneralQuizPack,
   createQuizPack,
   deleteQuizPack,
   duplicateQuizPack,
@@ -87,6 +88,12 @@ async function onCreate(): Promise<void> {
 async function onCreateDemo(): Promise<void> {
   const pack = await createDemoQuizPack()
   toast('Ukázkový kvíz založen. Klidně ho přepiš vlastními otázkami.', 'ok')
+  openPack(pack.id)
+}
+
+async function onCreateGeneral(): Promise<void> {
+  const pack = await createGeneralQuizPack()
+  toast('Kvíz ze všeobecných znalostí založen.', 'ok')
   openPack(pack.id)
 }
 
@@ -233,6 +240,9 @@ function badge(id: string): { text: string; tone: 'ok' | 'warn' | 'muted' } {
                 <button type="button" role="menuitem" :disabled="creatingFamily" @click="onCreateFamily(); close()">
                   Rodinný kvíz
                 </button>
+                <button type="button" role="menuitem" @click="onCreateGeneral(); close()">
+                  Všeobecné znalosti
+                </button>
               </UiMenu>
             </div>
           </header>
@@ -264,6 +274,9 @@ function badge(id: string): { text: string; tone: 'ok' | 'warn' | 'muted' } {
             </UiButton>
             <UiButton size="sm" variant="ghost" :loading="creatingFamily" @click="onCreateFamily">
               Vytvořit rodinný kvíz
+            </UiButton>
+            <UiButton size="sm" variant="ghost" @click="onCreateGeneral">
+              Vytvořit všeobecný kvíz
             </UiButton>
           </UiEmpty>
 
