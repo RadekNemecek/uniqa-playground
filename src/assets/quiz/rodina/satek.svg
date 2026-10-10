@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="960" viewBox="170 105 860 645">
+  <rect x="170" y="105" width="860" height="645" fill="#FFFFFF"/>
+  <ellipse cx="600" cy="420" rx="410" ry="300" fill="#DCEAF8"/>
+  <defs>
+    <clipPath id="cloth"><path d="M320 270 Q600 330 880 270 L600 690 Z"/></clipPath>
+  </defs>
+  <g stroke="#1B1B1B" stroke-width="16" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M555 255 L400 150 Q380 200 420 260 Z" fill="#D71C4F"/>
+    <path d="M645 255 L800 150 Q820 200 780 260 Z" fill="#D71C4F"/>
+    <path d="M320 270 Q600 330 880 270 L600 690 Z" fill="#D71C4F"/>
+  </g>
+  <g clip-path="url(#cloth)" fill="#FFFFFF">
+    <circle cx="430" cy="340" r="24"/><circle cx="770" cy="340" r="24"/>
+    <circle cx="480" cy="430" r="24"/><circle cx="600" cy="420" r="24"/><circle cx="720" cy="430" r="24"/>
+    <circle cx="540" cy="520" r="24"/><circle cx="660" cy="520" r="24"/>
+    <circle cx="600" cy="610" r="24"/>
+  </g>
+  <g stroke="#1B1B1B" stroke-width="16" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M320 270 Q600 330 880 270 L600 690 Z" fill="none"/>
+    <path d="M545 215 Q600 195 655 215 Q680 260 655 305 Q600 325 545 305 Q520 260 545 215 Z" fill="#D71C4F"/>
+  </g>
+  <g fill="#FFFFFF"><circle cx="480" cy="215" r="16"/><circle cx="720" cy="215" r="16"/><circle cx="600" cy="262" r="16"/></g>
+</svg>

@@ -168,6 +168,14 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
   Na plátně si obrázek drží stejné místo i po odhalení; kdyby zmizel,
   dlaždice pod ním poskočí a měření je jednorázové. Rozměry se ukládají
   s obrázkem, aby měl box velikost dřív, než se obrázek dekóduje.
+- **Hotové balíčky kvízu se zakládají z nabídky ve správě.** Ukázka
+  z pojištění (`demoPack.ts`) a rodinný kvíz (`familyPack.ts`). Kresby
+  rodinného kvízu jsou vlastní SVG v `src/assets/quiz/rodina/`, žádné
+  stažené postavy: otázku nese předmět, ne cizí kresba. Při založení se
+  převedou na WebP (`rasterizeQuizImage()`), takže se chovají jako
+  nahraný obrázek a SVG se do úložiště nedostane. Kresba je ořízlá
+  těsně na 4:3, plátno obrázek zmenšuje spolu s textem a prázdný okraj
+  by ho zmenšil ještě víc. Žádná kresba neprozradí odpověď písmem.
 - **Po odhalení nese rozložení hlasů sama dlaždice.** Ne graf vedle ní:
   pět prvků na jednom plátně nikdo nepřečte. Dlaždici přeteče pruh
   z inkoustu podle počtu hlasů a číslo na kraji. Otázka se zároveň smrskne

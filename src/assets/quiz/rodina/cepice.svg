@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="960" viewBox="170 105 860 645">
+  <rect x="170" y="105" width="860" height="645" fill="#FFFFFF"/>
+  <ellipse cx="600" cy="430" rx="400" ry="300" fill="#DCEAF8"/>
+  <defs>
+    <clipPath id="hat"><path d="M330 540 L600 170 L870 540 Z"/></clipPath>
+  </defs>
+  <path d="M330 540 L600 170 L870 540 Z" fill="#F5F7FC"/>
+  <g clip-path="url(#hat)">
+    <rect x="300" y="250" width="600" height="46" fill="#1B1B1B"/>
+    <rect x="470" y="330" width="120" height="90" fill="#C5D0E4"/>
+    <g stroke="#C5D0E4" stroke-width="12" stroke-linecap="round">
+      <path d="M620 340 H760 M620 375 H780 M620 410 H800 M380 455 H585 M615 455 H820 M350 495 H585 M615 495 H850"/>
+    </g>
+  </g>
+  <g stroke="#1B1B1B" stroke-width="16" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M330 540 L600 170 L870 540 Z" fill="none"/>
+    <path d="M290 530 H910 V640 H290 Z" fill="#F5F7FC"/>
+    <path d="M290 530 L360 585 L290 640 Z" fill="#D5DEEE"/>
+    <path d="M910 530 L840 585 L910 640 Z" fill="#D5DEEE"/>
+  </g>
+  <g stroke="#C5D0E4" stroke-width="12" stroke-linecap="round">
+    <path d="M400 565 H560 M640 565 H800 M400 605 H520 M600 605 H800"/>
+  </g>
+</svg>

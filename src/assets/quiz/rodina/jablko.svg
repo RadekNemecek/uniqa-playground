@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="960" viewBox="170 105 860 645">
+  <rect x="170" y="105" width="860" height="645" fill="#FFFFFF"/>
+  <ellipse cx="600" cy="430" rx="400" ry="300" fill="#DCEAF8"/>
+  <defs>
+    <path id="apple" d="M600 250 C540 205 400 210 380 360 C360 520 460 680 560 680 C580 680 590 670 600 670 C610 670 620 680 640 680 C740 680 840 520 820 360 C800 210 660 205 600 250 Z"/>
+    <clipPath id="inside"><use href="#apple"/></clipPath>
+    <mask id="bite">
+      <rect x="170" y="105" width="860" height="645" fill="#FFFFFF"/>
+      <circle cx="845" cy="330" r="75" fill="#000000"/>
+      <circle cx="835" cy="450" r="80" fill="#000000"/>
+      <circle cx="812" cy="565" r="70" fill="#000000"/>
+    </mask>
+  </defs>
+  <g stroke="#1B1B1B" stroke-width="16" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M600 255 Q590 190 625 140" fill="none"/>
+    <path d="M615 200 C650 130 740 120 790 150 C750 220 670 230 615 200 Z" fill="#ABDD6B"/>
+  </g>
+  <use href="#apple" fill="#D71C4F" mask="url(#bite)"/>
+  <g clip-path="url(#inside)" mask="url(#bite)" fill="#FFF4E2">
+    <circle cx="845" cy="330" r="105"/>
+    <circle cx="835" cy="450" r="110"/>
+    <circle cx="812" cy="565" r="100"/>
+  </g>
+  <g clip-path="url(#inside)" mask="url(#bite)" fill="none" stroke="#1B1B1B" stroke-width="32">
+    <circle cx="845" cy="330" r="75"/>
+    <circle cx="835" cy="450" r="80"/>
+    <circle cx="812" cy="565" r="70"/>
+  </g>
+  <use href="#apple" fill="none" stroke="#1B1B1B" stroke-width="16" stroke-linejoin="round" mask="url(#bite)"/>
+  <path d="M460 360 Q470 300 520 285" fill="none" stroke="#FFFFFF" stroke-width="18" stroke-linecap="round" opacity="0.8"/>
+</svg>

@@ -10,6 +10,7 @@ import { db } from '@/lib/db'
 import { downloadQuizPack, readQuizPackFile } from '@/games/kviz/packIo'
 import {
   createDemoQuizPack,
+  createFamilyQuizPack,
   createQuizPack,
   deleteQuizPack,
   duplicateQuizPack,
@@ -30,6 +31,8 @@ const router = useRouter()
 
 const unlocked = ref(db().isUnlocked())
 const creating = ref(false)
+/** Rodinný kvíz se zakládá chvíli, kresby se převádějí na obrázky. */
+const creatingFamily = ref(false)
 const packEditor = ref<InstanceType<typeof QuizPackEditor> | null>(null)
 const fileInput = ref<HTMLInputElement | null>(null)
 
@@ -85,6 +88,20 @@ async function onCreateDemo(): Promise<void> {
   const pack = await createDemoQuizPack()
   toast('Ukázkový kvíz založen. Klidně ho přepiš vlastními otázkami.', 'ok')
   openPack(pack.id)
+}
+
+async function onCreateFamily(): Promise<void> {
+  if (creatingFamily.value) return
+  creatingFamily.value = true
+  try {
+    const pack = await createFamilyQuizPack()
+    toast('Rodinný kvíz založen, i s obrázky.', 'ok')
+    openPack(pack.id)
+  } catch {
+    toast('Rodinný kvíz se nepodařilo založit. Zkus to znovu.', 'bad')
+  } finally {
+    creatingFamily.value = false
+  }
 }
 
 async function onDuplicate(id?: string): Promise<void> {
@@ -209,6 +226,14 @@ function badge(id: string): { text: string; tone: 'ok' | 'warn' | 'muted' } {
             <div class="library__actions">
               <UiButton size="sm" variant="ghost" @click="triggerImport">Importovat</UiButton>
               <UiButton size="sm" variant="brand" :loading="creating" @click="onCreate">Nový balíček</UiButton>
+              <UiMenu label="Hotové balíčky" v-slot="{ close }">
+                <button type="button" role="menuitem" @click="onCreateDemo(); close()">
+                  Ukázkový kvíz
+                </button>
+                <button type="button" role="menuitem" :disabled="creatingFamily" @click="onCreateFamily(); close()">
+                  Rodinný kvíz
+                </button>
+              </UiMenu>
             </div>
           </header>
 
@@ -232,10 +257,13 @@ function badge(id: string): { text: string; tone: 'ok' | 'warn' | 'muted' } {
             v-else-if="quizPacks.packs.length === 0"
             icon="info"
             title="Zatím tu není žádný balíček"
-            text="Založ prázdný tlačítkem Nový balíček, naimportuj JSON, nebo si napřed prohlédni ukázku."
+            text="Založ prázdný tlačítkem Nový balíček, naimportuj JSON, nebo si napřed prohlédni některý hotový."
           >
             <UiButton size="sm" variant="ghost" @click="onCreateDemo">
               Vytvořit ukázkový kvíz
+            </UiButton>
+            <UiButton size="sm" variant="ghost" :loading="creatingFamily" @click="onCreateFamily">
+              Vytvořit rodinný kvíz
             </UiButton>
           </UiEmpty>
 

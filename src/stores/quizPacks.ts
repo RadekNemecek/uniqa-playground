@@ -3,9 +3,11 @@ import { db } from '@/lib/db'
 import { id } from '@/lib/id'
 import { clone } from '@/lib/clone'
 import { BOOLEAN_COUNT, OPTION_COUNT, kindOf } from '@/games/kviz/options'
-import { duplicateImage, removeImage } from '@/stores/quizImages'
+import { duplicateImage, putImage, removeImage } from '@/stores/quizImages'
+import { rasterizeQuizImage } from '@/games/kviz/image'
 import type { QuizItem, QuizPack } from '@/games/kviz/types'
 import { demoQuizPack } from '@/games/kviz/demoPack'
+import { familyQuizPack } from '@/games/kviz/familyPack'
 
 interface QuizPacksState {
   packs: QuizPack[]
@@ -103,6 +105,36 @@ export async function createQuizPack(name?: string): Promise<QuizPack> {
 export async function createDemoQuizPack(): Promise<QuizPack> {
   const pack = demoQuizPack()
   await db().saveQuizPack(pack)
+  return pack
+}
+
+/**
+ * Založí rodinný kvíz i s obrázky.
+ *
+ * Kresby se napřed všechny převedou a teprve pak ukládají: otázka „čí je
+ * tahle čepice" bez čepice nedává smysl, takže kdyby jedna kresba
+ * selhala, nezaloží se nic. Uložené obrázky se při chybě uklidí, jinak
+ * by v databázi zůstaly dokumenty, na které se nikdo neodkazuje.
+ */
+export async function createFamilyQuizPack(): Promise<QuizPack> {
+  const { pack, images } = familyQuizPack()
+  const prepared = await Promise.all(
+    [...images].map(async ([itemId, url]) => ({ itemId, image: await rasterizeQuizImage(url) })),
+  )
+
+  const saved: string[] = []
+  try {
+    for (const { itemId, image } of prepared) {
+      await putImage(image)
+      saved.push(image.id)
+      const item = pack.items.find((i) => i.id === itemId)
+      if (item) item.imageId = image.id
+    }
+    await db().saveQuizPack(pack)
+  } catch (e) {
+    for (const imageId of saved) await removeImage(imageId)
+    throw e
+  }
   return pack
 }
 

@@ -41,28 +41,33 @@ export const IMAGE_ACCEPT = READABLE.join(',')
 export async function prepareQuizImage(file: File): Promise<QuizImage> {
   const bitmap = await readBitmap(file)
   try {
-    for (const variant of VARIANTS) {
-      const blob = await encode(bitmap, variant.edge, variant.quality)
-      const data = await toDataUrl(blob)
-      if (data.length <= IMAGE_MAX_CHARS) {
-        const { w, h } = scaled(bitmap.width, bitmap.height, variant.edge)
-        return {
-          id: id('ki'),
-          mime: blob.type,
-          w,
-          h,
-          data,
-          bytes: blob.size,
-          createdAt: Date.now(),
-        }
-      }
-    }
+    return await fromSource(bitmap, bitmap.width, bitmap.height)
   } finally {
     bitmap.close()
   }
-  throw new Error(
-    'Obrázek je i po zmenšení moc velký. Zkus ho oříznout nebo použít prostší obrázek.',
-  )
+}
+
+/**
+ * Převede kresbu přibalenou k aplikaci na obrázek otázky.
+ *
+ * Slouží hotovým balíčkům: jejich obrázky jsou SVG v repozitáři, ale do
+ * `quizImages` jdou stejně jako nahraná fotka, tedy jako WebP. Plátno
+ * a správa tak nerozlišují, odkud obrázek přišel, a SVG se nedostane do
+ * úložiště, kam ho nahrávání schválně nepustí.
+ */
+export async function rasterizeQuizImage(url: string): Promise<QuizImage> {
+  const img = new Image()
+  img.src = url
+  try {
+    await img.decode()
+  } catch {
+    throw new Error('Obrázek balíčku se nepodařilo načíst.')
+  }
+  // SVG bez pevných rozměrů hlásí nulu; kresby balíčků je mají.
+  if (!img.naturalWidth || !img.naturalHeight) {
+    throw new Error('Obrázek balíčku nemá rozměry.')
+  }
+  return fromSource(img, img.naturalWidth, img.naturalHeight)
 }
 
 /** Kopie obrázku pod novým id. Balíčky si obrázky nesdílejí, viz `types.ts`. */
@@ -100,13 +105,41 @@ async function readBitmap(file: File): Promise<ImageBitmap> {
   }
 }
 
+async function fromSource(source: CanvasImageSource, width: number, height: number): Promise<QuizImage> {
+  for (const variant of VARIANTS) {
+    const blob = await encode(source, width, height, variant.edge, variant.quality)
+    const data = await toDataUrl(blob)
+    if (data.length <= IMAGE_MAX_CHARS) {
+      const { w, h } = scaled(width, height, variant.edge)
+      return {
+        id: id('ki'),
+        mime: blob.type,
+        w,
+        h,
+        data,
+        bytes: blob.size,
+        createdAt: Date.now(),
+      }
+    }
+  }
+  throw new Error(
+    'Obrázek je i po zmenšení moc velký. Zkus ho oříznout nebo použít prostší obrázek.',
+  )
+}
+
 function scaled(w: number, h: number, edge: number): { w: number; h: number } {
   const ratio = Math.min(1, edge / Math.max(w, h))
   return { w: Math.max(1, Math.round(w * ratio)), h: Math.max(1, Math.round(h * ratio)) }
 }
 
-async function encode(bitmap: ImageBitmap, edge: number, quality: number): Promise<Blob> {
-  const size = scaled(bitmap.width, bitmap.height, edge)
+async function encode(
+  source: CanvasImageSource,
+  width: number,
+  height: number,
+  edge: number,
+  quality: number,
+): Promise<Blob> {
+  const size = scaled(width, height, edge)
   const canvas = document.createElement('canvas')
   canvas.width = size.w
   canvas.height = size.h
@@ -118,7 +151,7 @@ async function encode(bitmap: ImageBitmap, edge: number, quality: number): Promi
   ctx.fillStyle = '#FFFFFF'
   ctx.fillRect(0, 0, size.w, size.h)
   ctx.imageSmoothingQuality = 'high'
-  ctx.drawImage(bitmap, 0, 0, size.w, size.h)
+  ctx.drawImage(source, 0, 0, size.w, size.h)
 
   const webp = await toBlob(canvas, 'image/webp', quality)
   // Prohlížeč, který WebP zakódovat neumí, vrátí PNG. To je u fotky

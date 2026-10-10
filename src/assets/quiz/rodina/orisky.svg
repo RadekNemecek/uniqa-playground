@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="960" viewBox="170 105 860 645">
+  <rect x="170" y="105" width="860" height="645" fill="#FFFFFF"/>
+  <ellipse cx="600" cy="430" rx="420" ry="300" fill="#DCEAF8"/>
+  <defs>
+    <g id="nut">
+      <path d="M0 -125 C45 -120 105 -45 105 25 C105 92 58 125 0 125 C-58 125 -105 92 -105 25 C-105 -45 -45 -120 0 -125 Z" fill="#C98A4B"/>
+      <path d="M-92 70 Q0 100 92 70 C78 108 42 125 0 125 C-42 125 -78 108 -92 70 Z" fill="#EFC08D"/>
+      <path d="M0 -125 L0 -150" fill="none"/>
+      <path d="M-45 -60 Q-60 0 -50 50 M40 -70 Q58 -10 52 45" fill="none" stroke="#8F5A2E" stroke-width="10"/>
+    </g>
+  </defs>
+  <g stroke="#1B1B1B" stroke-width="16" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M300 250 C380 150 520 150 600 210 C520 280 380 300 300 250 Z" fill="#3FCF8E"/>
+    <path d="M300 250 Q450 215 600 210" fill="none" stroke-width="10"/>
+    <path d="M900 250 C820 150 680 150 600 210 C680 280 820 300 900 250 Z" fill="#ABDD6B"/>
+    <path d="M900 250 Q750 215 600 210" fill="none" stroke-width="10"/>
+    <use href="#nut" transform="translate(440 470) rotate(-14)"/>
+    <use href="#nut" transform="translate(760 470) rotate(14)"/>
+    <use href="#nut" transform="translate(600 360)"/>
+  </g>
+</svg>
