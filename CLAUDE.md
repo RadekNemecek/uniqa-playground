@@ -53,8 +53,9 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
   při stisku zamáčkne. Platí na všechno: hru, rozcestník, přípravu,
   správu otázek i výsledky. Papír má zrno (`--bg-paper`) pod každou
   stránkou, i pod deskou na projektoru; karty zůstávají hladké bílé.
-  Zrno a obláčky, ne vlákna, skvrnky ani mřížka sešitu: všechno to bylo
-  v ukázkách a vyhrálo to nejtišší. Síla je vybraná pohledem, kontrast
+  Jen zrno, ne vlákna, skvrnky ani mřížka sešitu: všechno to bylo
+  v ukázkách a vyhrálo to nejtišší. Obláčky pod zrnem byly taky
+  a na ploše se četly jako tmavé fleky, nevracet je. Síla je vybraná pohledem, kontrast
   se k ní dopočítal a kvůli ní je `--c-bad` o stupeň tmavší. Tmavě modré téma tu bylo dřív a působilo
   jako studentská práce: všechno mělo jeden odstín, takže oko nemělo
   co vést. Nevracet ho bez pádnějšího důvodu.
