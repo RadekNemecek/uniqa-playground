@@ -178,7 +178,9 @@ async function invite() {
     : 'https://identitytoolkit.googleapis.com'
   const res = await fetch(`${auth}/v1/accounts:sendOobCode?key=${apiKey}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    // Bez jazyka pošle Firebase mail anglicky. Aplikace si o češtinu
+    // říká přes `auth.languageCode`, skript stejnou hlavičkou.
+    headers: { 'Content-Type': 'application/json', 'X-Firebase-Locale': 'cs' },
     body: JSON.stringify({
       requestType: 'EMAIL_SIGNIN',
       email: opt.admin.trim().toLowerCase(),
