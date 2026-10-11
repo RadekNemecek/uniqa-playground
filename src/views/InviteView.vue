@@ -5,7 +5,8 @@ import AuthCard from '@/components/AuthCard.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
-import { account, canUseSpace } from '@/stores/account'
+import { INVITE_DAYS, account, canUseSpace } from '@/stores/account'
+import { count } from '@/lib/format'
 
 /**
  * Přijetí pozvánky.
@@ -20,7 +21,14 @@ import { account, canUseSpace } from '@/stores/account'
  * pozvánka nepřeposílá. Po nastavení hesla se stránka načte znovu bez
  * odkazu, takže v historii prohlížeče nezůstane.
  */
-const state = ref<'checking' | 'form' | 'notLink'>('checking')
+/**
+ * `linkExpired`: odkaz z mailu propadl nebo už se použil. Firebase ho drží
+ * jen hodiny a délku nastavit nedovolí, pozvánka sama ale platí
+ * `INVITE_DAYS` dní. V té lhůtě si pozvaný pošle nový odkaz sám, nemusí
+ * shánět admina. Kdo by si takhle poslal odkaz bez pozvánky, přihlásí se,
+ * ale dovnitř ho pravidla nepustí.
+ */
+const state = ref<'checking' | 'form' | 'notLink' | 'linkExpired' | 'sent'>('checking')
 const email = ref(new URLSearchParams(window.location.search).get('email') ?? '')
 /** Jméno předvyplní lektora v přípravě a ukáže se v hlavičce a v Týmu.
  *  Bez něj by tam stála jen adresa. */
@@ -42,7 +50,8 @@ onMounted(async () => {
     return
   }
   const fb = await firebase()
-  state.value = fb.isInviteLink(window.location.href) ? 'form' : 'notLink'
+  if (!fb.isInviteLink(window.location.href)) state.value = 'notLink'
+  else state.value = (await fb.inviteLinkExpired(window.location.href)) ? 'linkExpired' : 'form'
 })
 
 async function accept(): Promise<void> {
@@ -70,13 +79,39 @@ async function accept(): Promise<void> {
     await fb.acceptInvite(email.value, password.value, window.location.href, name.value)
     // Načíst znovu bez odkazu v adrese. Jednorázový kód by jinak zůstal
     // v historii a Firestore se rozjede načisto s ověřeným členstvím.
-    window.location.replace('/')
+    // Propadlou pozvánku vysvětlí přihlášení, rozcestník by mlčel.
+    window.location.replace(account.status === 'member' ? '/' : '/prihlaseni')
   } catch (e) {
+    const code = (e as { code?: string }).code
+    if (code === 'auth/expired-action-code' || code === 'auth/invalid-action-code') {
+      error.value = ''
+      state.value = 'linkExpired'
+      busy.value = false
+      return
+    }
     // Adresu, která k odkazu nepatří, Firebase hlásí jako neplatnou.
     error.value =
       (e as { code?: string }).code === 'auth/invalid-email'
         ? 'Tahle adresa k pozvánce nepatří. Zadej tu, na kterou ti pozvánka přišla.'
         : fb.authErrorMessage(e)
+    busy.value = false
+  }
+}
+
+async function sendNewLink(): Promise<void> {
+  error.value = ''
+  if (!email.value.trim()) {
+    error.value = 'Vyplň e-mail, na který ti pozvánka přišla.'
+    return
+  }
+  busy.value = true
+  const fb = await firebase()
+  try {
+    await fb.sendInvite(email.value)
+    state.value = 'sent'
+  } catch (e) {
+    error.value = fb.authErrorMessage(e)
+  } finally {
     busy.value = false
   }
 }
@@ -104,6 +139,30 @@ async function accept(): Promise<void> {
           Přihlásit se
         </UiButton>
       </AuthCard>
+
+      <AuthCard
+        v-else-if="state === 'linkExpired'"
+        icon="mail"
+        title="Odkaz z mailu už neplatí"
+        :lead="`Odkaz v mailu vydrží jen pár hodin, pozvánka sama ${count(INVITE_DAYS, 'den', 'dny', 'dní')} od odeslání. Pošli si nový odkaz a otevři ho hned.`"
+        @submit="sendNewLink"
+      >
+        <UiField label="E-mail" hint="Ten, na který ti pozvánka přišla.">
+          <input v-model="email" type="email" autocomplete="username" inputmode="email" required />
+        </UiField>
+        <p v-if="error" class="auth__error" role="alert">{{ error }}</p>
+        <UiButton type="submit" variant="brand" size="lg" block :loading="busy">Poslat nový odkaz</UiButton>
+        <div class="auth__links">
+          <RouterLink to="/prihlaseni" class="auth__link">Heslo už mám, přihlásit se</RouterLink>
+        </div>
+      </AuthCard>
+
+      <AuthCard
+        v-else-if="state === 'sent'"
+        icon="mail"
+        title="Mrkni do pošty"
+        :lead="`Nový odkaz odešel na ${email.trim()}. Když ho nevidíš, podívej se i do nevyžádané pošty.`"
+      />
 
       <AuthCard
         v-else

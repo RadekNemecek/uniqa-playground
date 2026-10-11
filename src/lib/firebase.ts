@@ -1,5 +1,6 @@
 import { initializeApp } from 'firebase/app'
 import {
+  checkActionCode,
   connectAuthEmulator,
   getAuth,
   isSignInWithEmailLink,
@@ -46,6 +47,7 @@ import { reportDbError } from '@/lib/db'
 import {
   account,
   currentSpaceId,
+  inviteValidUntil,
   recallMembership,
   rememberMembership,
   setAccount,
@@ -354,8 +356,23 @@ async function lookUpMembership(email: string): Promise<void> {
     return
   }
 
+  // Nepřijatá pozvánka starší než lhůta dovnitř nepustí, pravidla to
+  // hlídají taky. Bez téhle kontroly by se aplikace tvářila jako člen
+  // a pak jí každé čtení selhalo.
+  const valid = docs.filter((d) => {
+    const data = d.data()
+    if (data.joinedAt) return true
+    const sent = millisOf(data.invitedAt) || millisOf(data.addedAt)
+    return !sent || Date.now() < inviteValidUntil(sent)
+  })
+  if (valid.length === 0) {
+    rememberMembership(null)
+    publish({ status: 'expired', email })
+    return
+  }
+
   const preferred = recallMembership(email)?.spaceId
-  const chosen = docs.find((d) => d.ref.parent.parent?.id === preferred) ?? docs[0]
+  const chosen = valid.find((d) => d.ref.parent.parent?.id === preferred) ?? valid[0]
   const spaceId = chosen.ref.parent.parent!.id
   const role: Role = chosen.data().role === 'admin' ? 'admin' : 'editor'
   const name = String(chosen.data().name ?? '')
@@ -423,6 +440,24 @@ export async function sendInvite(email: string): Promise<void> {
 
 export function isInviteLink(href: string): boolean {
   return conn ? isSignInWithEmailLink(conn.auth, href) : false
+}
+
+/**
+ * Platí ještě odkaz z mailu? Ověří se hned při otevření, ať člověk
+ * nevyplňuje jméno a heslo, aby se pak dozvěděl, že odkaz propadl.
+ * Kód se tím nespotřebuje. Když se ověřit nepodaří z jiného důvodu
+ * (síť), formulář se ukáže a rozhodne až odeslání.
+ */
+export async function inviteLinkExpired(href: string): Promise<boolean> {
+  const code = new URL(href).searchParams.get('oobCode')
+  if (!conn || !code) return false
+  try {
+    await checkActionCode(conn.auth, code)
+    return false
+  } catch (e) {
+    const failure = (e as { code?: string }).code
+    return failure === 'auth/expired-action-code' || failure === 'auth/invalid-action-code'
+  }
 }
 
 /**

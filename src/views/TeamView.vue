@@ -11,7 +11,7 @@ import UiSegmented from '@/components/ui/UiSegmented.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import type { Segment } from '@/components/ui/segmented'
 import type { TeamMember } from '@/lib/firebase'
-import { account, isSpaceAdmin, type Role } from '@/stores/account'
+import { account, inviteValidUntil, isSpaceAdmin, type Role } from '@/stores/account'
 import { confirmAction, toast } from '@/stores/ui'
 
 /**
@@ -56,9 +56,17 @@ const dateFormat = new Intl.DateTimeFormat('cs', { day: 'numeric', month: 'numer
  *  se čtou jako dvě věci. */
 const day = (ms: number) => (ms ? dateFormat.format(ms).replace(/ /g, '\u00a0') : '')
 
+/** Nepřijatá pozvánka po lhůtě nikoho nepustí (viz `INVITE_DAYS`).
+ *  Admin to musí vidět dřív, než mu kolegyně napíše, že nemůže dovnitř. */
+function expired(m: TeamMember): boolean {
+  return !m.joinedAt && m.invitedAt > 0 && Date.now() >= inviteValidUntil(m.invitedAt)
+}
+
 function status(m: TeamMember): string {
   if (m.joinedAt) return `V týmu od ${day(m.joinedAt)}`
-  return m.invitedAt ? `Pozvánka odeslaná ${day(m.invitedAt)}, zatím nepřijatá` : 'Pozvánka zatím nepřijatá'
+  if (!m.invitedAt) return 'Pozvánka zatím nepřijatá'
+  if (expired(m)) return `Pozvánka propadla ${day(inviteValidUntil(m.invitedAt))}${admin.value ? ', pošli ji znovu' : ''}`
+  return `Pozvánka odeslaná ${day(m.invitedAt)}, platí do ${day(inviteValidUntil(m.invitedAt))}`
 }
 
 onMounted(async () => {
@@ -286,7 +294,7 @@ async function remove(m: TeamMember): Promise<void> {
               <span class="row__badge" :class="{ 'row__badge--admin': m.role === 'admin' }">
                 {{ ROLE_LABEL[m.role] }}
               </span>
-              <span class="row__meta">
+              <span class="row__meta" :class="{ 'row__meta--bad': expired(m) }">
                 <template v-if="m.name">{{ m.email }} · </template>{{ status(m) }}
               </span>
             </div>
@@ -399,6 +407,7 @@ async function remove(m: TeamMember): Promise<void> {
 .row__main { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--sp-2) var(--sp-4); align-items: baseline; }
 .row__name { font-size: var(--fs-xl); font-weight: 900; overflow-wrap: anywhere; }
 .row__meta { grid-column: 1 / -1; font-size: var(--fs-sm); color: var(--c-text-muted); overflow-wrap: anywhere; }
+.row__meta--bad { color: var(--c-bad); font-weight: 700; }
 .row__badge { font-size: var(--fs-sm); font-weight: 700; color: var(--c-text-muted); }
 .row__badge--admin { color: var(--c-brand); }
 .row__self { margin-left: var(--sp-2); font-size: var(--fs-sm); font-weight: 400; color: var(--c-text-faint); white-space: nowrap; }

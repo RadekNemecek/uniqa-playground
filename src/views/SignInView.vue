@@ -6,7 +6,8 @@ import AuthCard from '@/components/AuthCard.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
-import { account, canUseSpace } from '@/stores/account'
+import { INVITE_DAYS, account, canUseSpace } from '@/stores/account'
+import { count } from '@/lib/format'
 
 /**
  * Přihlášení člena týmu.
@@ -142,6 +143,20 @@ function switchMode(to: 'signIn' | 'reset'): void {
         <UiButton variant="brand" size="lg" block :loading="busy" @click="retry">Zkusit znovu</UiButton>
         <div class="auth__links">
           <button type="button" class="auth__link" @click="signOut">Odhlásit a přihlásit jinak</button>
+        </div>
+      </AuthCard>
+
+      <!-- Pozvánka propadla dřív, než ji přijal. Poslat novou umí jen admin,
+           lhůta se počítá od posledního odeslání. -->
+      <AuthCard
+        v-else-if="account.status === 'expired'"
+        icon="mail"
+        title="Pozvánka propadla"
+        :lead="`Pozvánka pro ${account.email} platila ${count(INVITE_DAYS, 'den', 'dny', 'dní')} a nikdo ji mezitím nepřijal. Napiš správci, ať ti pošle novou.`"
+      >
+        <UiButton variant="brand" size="lg" block :loading="busy" @click="retry">Zkusit znovu</UiButton>
+        <div class="auth__links">
+          <button type="button" class="auth__link" @click="signOut">Odhlásit se</button>
         </div>
       </AuthCard>
 

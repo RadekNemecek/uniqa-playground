@@ -278,6 +278,31 @@ describe('prostor a členové', () => {
     await assertSucceeds(updateDoc(mine, { name: 'Jana N.' }))
   })
 
+  it('nepřijatá pozvánka po třech dnech nikoho nepustí, přijatá platí dál', async () => {
+    const daysAgo = (d) => Timestamp.fromMillis(Date.now() - d * 86_400_000)
+    const PENDING = 'cekajici@uniqa.cz'
+    const pending = () => verified('u-cekajici', PENDING)
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), `spaces/uniqa/members/${PENDING}`), {
+        ...member(PENDING, 'editor'),
+        addedAt: daysAgo(4),
+      })
+    })
+    await assertFails(getDoc(doc(pending(), 'spaces/uniqa/packs/p1')))
+    await assertFails(updateDoc(doc(pending(), `spaces/uniqa/members/${PENDING}`), { joinedAt: serverTimestamp() }))
+
+    // Znovu poslaná pozvánka lhůtu posune.
+    await assertSucceeds(updateDoc(doc(admin(), `spaces/uniqa/members/${PENDING}`), { invitedAt: serverTimestamp() }))
+    await assertSucceeds(getDoc(doc(pending(), 'spaces/uniqa/packs/p1')))
+    await assertSucceeds(updateDoc(doc(pending(), `spaces/uniqa/members/${PENDING}`), { joinedAt: serverTimestamp() }))
+
+    // Přijatou pozvánku stáří neomezuje.
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await updateDoc(doc(ctx.firestore(), `spaces/uniqa/members/${PENDING}`), { invitedAt: daysAgo(30) })
+    })
+    await assertSucceeds(getDoc(doc(pending(), 'spaces/uniqa/packs/p1')))
+  })
+
   it('editorka si roli nezvýší', async () => {
     await assertFails(updateDoc(doc(editor(), `spaces/uniqa/members/${EDITOR}`), { role: 'admin' }))
   })

@@ -32,8 +32,19 @@ service cloud.firestore {
       return /databases/$(database)/documents/spaces/$(space)/members/$(me());
     }
 
+    // Nepřijatá pozvánka platí tři dny od posledního odeslání. Pak už
+    // nikoho nepustí dovnitř, admin ji musí poslat znovu (to posune
+    // `invitedAt`). Kdo pozvánku jednou přijal, má `joinedAt` a lhůta
+    // se ho netýká. Stejnou lhůtu zná aplikace (`INVITE_DAYS`).
+    function inviteHolds(m) {
+      return 'joinedAt' in m
+        || request.time < m.get('invitedAt', m.addedAt) + duration.value(3, 'd');
+    }
+
     function isMember(space) {
-      return signedIn() && exists(memberPath(space));
+      return signedIn()
+        && exists(memberPath(space))
+        && inviteHolds(get(memberPath(space)).data);
     }
 
     function isAdmin(space) {

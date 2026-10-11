@@ -13,6 +13,8 @@ import { reactive } from 'vue'
  *   i pro výpadek Firestore před školením,
  * - `signedOut`: nikdo není přihlášený e-mailem,
  * - `noAccess`: přihlášený e-mail, který v žádném prostoru není,
+ * - `expired`: pozvánka existuje, ale propadla dřív, než ji přijal
+ *   (viz `INVITE_DAYS`),
  * - `unknown`: přihlášený, ale členství se nepodařilo ověřit (bez sítě
  *   a bez dřívějšího záznamu na tomhle počítači),
  * - `member`: člen prostoru `spaceId`.
@@ -22,6 +24,7 @@ export type AccountStatus =
   | 'local'
   | 'signedOut'
   | 'noAccess'
+  | 'expired'
   | 'unknown'
   | 'member'
 export type Role = 'admin' | 'editor'
@@ -67,6 +70,20 @@ export function shortName(): string {
   const first = state.name.trim().split(/\s+/)[0]
   if (first) return first
   return state.email.split('@')[0] ?? ''
+}
+
+/**
+ * Jak dlouho platí nepřijatá pozvánka, počítáno od posledního odeslání.
+ * Odkaz v mailu propadá dřív (Firebase ho drží jen hodiny a délku nastavit
+ * nedovolí), proto si pozvaný může v té lhůtě poslat nový sám. Stejnou
+ * lhůtu hlídají pravidla (`inviteHolds`), měnit se musí obojí naráz.
+ */
+export const INVITE_DAYS = 3
+const DAY_MS = 86_400_000
+
+/** Do kdy platí pozvánka odeslaná v `sentAt`. */
+export function inviteValidUntil(sentAt: number): number {
+  return sentAt + INVITE_DAYS * DAY_MS
 }
 
 /** Smí do přípravy, správy otázek, Výslechu a výsledků. */

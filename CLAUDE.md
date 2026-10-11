@@ -403,6 +403,14 @@ s adresou. Teď má každý vlastní účet a data týmu vidí jen člen.
   Registrace na přihlášení není a být nemá: členství je vázané na
   e-mail, a kdo by si mohl založit účet sám, založil by si ho i na
   cizí adresu. Pravidla proto chtějí ověřený e-mail.
+- **Pozvánka platí tři dny** od posledního odeslání (`INVITE_DAYS`
+  v `account.ts` a `inviteHolds` v pravidlech, mění se obojí naráz).
+  Nepřijatá starší nikoho nepustí, admin ji v `/tym` vidí červeně
+  a pošle znovu, což lhůtu posune. Přijatou (`joinedAt`) lhůta
+  neomezuje. Samotný odkaz z mailu drží Firebase jen hodiny a délku
+  nastavit nedovolí, proto `/pozvanka` propadlý odkaz pozná hned při
+  otevření (`checkActionCode`, kód se tím nespotřebuje) a pozvaný si
+  v rámci lhůty pošle nový sám.
 - **Odkazy z pošty stojí Blaze.** Na Sparku pošle Firebase pět
   přihlašovacích odkazů denně na celý projekt, proto projekt běží na
   Blaze. Zapomenuté heslo jde přes `sendPasswordResetEmail`.
