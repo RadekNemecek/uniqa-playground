@@ -11,3 +11,4 @@ questions/
 
 # Mezipaměť firebase deploy, co už bylo nahrané.
 .firebase/
+*-debug.log

@@ -482,7 +482,13 @@ až po prvním vykreslení, takže se po něm měří znovu (`refitOnFonts`).
 ```bash
 npm run typecheck
 npm run build
+npm run test:rules
 ```
+
+`test:rules` pouští testy pravidel Firestore v emulátoru (`tests/rules.test.mjs`)
+a potřebuje Javu. Homebrew ji nedává do `PATH`, takže buď
+`export PATH="/opt/homebrew/opt/openjdk/bin:$PATH"`, nebo symlink podle
+`brew info openjdk`. Každá změna pravidel přichází s testem, který ji hlídá.
 
 Vizuál se neověří jinak než pohledem. Projdi hru v prohlížeči, na šířkách
 1280 a 1920, s vypnutými animacemi a v režimu offline.

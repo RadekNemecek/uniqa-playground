@@ -13,7 +13,8 @@
     "preview": "vite preview",
     "typecheck": "vue-tsc --noEmit",
     "icons": "node scripts/make-icons.mjs",
-    "dev:local:alt": "VITE_LOCAL_ONLY=1 vite --port 5186 --strictPort"
+    "dev:local:alt": "VITE_LOCAL_ONLY=1 vite --port 5186 --strictPort",
+    "test:rules": "firebase emulators:exec --only firestore --project demo-mucirna 'node --test tests/rules.test.mjs'"
   },
   "dependencies": {
     "firebase": "^12.18.0",
@@ -22,6 +23,7 @@
     "vue-router": "^4.5.0"
   },
   "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.2",
     "@fontsource/caveat": "^5.3.0",
     "@types/node": "^26.5.0",
     "@vitejs/plugin-vue": "^5.2.1",

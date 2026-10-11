@@ -1,74 +1,162 @@
 rules_version = '2';
 
-// Pravidla pro Playground.
+// Pravidla pro Mučírnu.
 //
-// Hrát a promítat může kdokoli, kdo má odkaz. Upravovat otázky smí jen ten,
-// kdo zná heslo do správy. Heslo samo se v čitelné podobě nikdy nikam
-// nedostane: v databázi je jen jeho otisk a ten není pro klienty čitelný.
-// Pravidla ho ale přečíst umí, a to je celý trik.
+// Otázky, obrázky, sady Výslechu i výsledky patří prostoru (`spaces`) a čte
+// a mění je jen jeho člen. Členem je ověřený e-mail zapsaný v `members`,
+// přihlašuje se odkazem z pošty. Admin navíc spravuje členy, editor smí
+// všechno ostatní.
+//
+// Hráč s telefonem se nepřihlašuje, je anonymní. Do prostoru nevidí,
+// zná jen kód běžící hry a session je postavená tak, aby mu nic neprozradila.
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function adminHash() {
-      return get(/databases/$(database)/documents/config/admin).data.keyHash;
-    }
+    /* --- Kdo je kdo --------------------------------------------------- */
 
-    function isUnlocked() {
+    // Přihlášený e-mailem. Anonymní telefon hráče e-mail nemá a odkaz
+    // z pošty zároveň e-mail ověřuje, takže tohle cizí adresu nepustí.
+    function signedIn() {
       return request.auth != null
-        && exists(/databases/$(database)/documents/unlocks/$(request.auth.uid));
+        && 'email' in request.auth.token
+        && request.auth.token.email is string
+        && request.auth.token.email_verified == true;
     }
 
-    // Otisk hesla. Nikdo ho nepřečte ani nepřepíše, kromě prvního nastavení
-    // hned po nasazení a pozdější změny z odemčené správy.
-    match /config/admin {
-      allow read: if false;
-      allow create: if !exists(/databases/$(database)/documents/config/admin)
-                    && request.resource.data.keys().hasOnly(['keyHash']);
-      allow update: if isUnlocked() && request.resource.data.keys().hasOnly(['keyHash']);
-      allow delete: if false;
+    function me() {
+      return request.auth.token.email.lower();
     }
 
-    // Veřejný příznak, že heslo už někdo nastavil. Rozhoduje o tom, jestli
-    // správa nabídne „Nastav heslo", nebo „Zadej heslo".
-    match /config/public {
-      allow read: if true;
-      allow write: if !exists(/databases/$(database)/documents/config/admin) || isUnlocked();
+    function memberPath(space) {
+      return /databases/$(database)/documents/spaces/$(space)/members/$(me());
     }
 
-    // Doklad o znalosti hesla. Zapsat ho jde jen se správným otiskem,
-    // přečíst ho nesmí nikdo.
-    match /unlocks/{uid} {
-      allow read: if false;
-      allow create, update: if request.auth != null
-                            && request.auth.uid == uid
-                            && request.resource.data.keyHash == adminHash();
-      allow delete: if request.auth != null && request.auth.uid == uid;
+    function isMember(space) {
+      return signedIn() && exists(memberPath(space));
     }
 
-    // Balíčky otázek. Čte je každý, kdo hraje. Mění je jen odemčená správa.
-    match /packs/{packId} {
-      allow read: if true;
-      allow write: if isUnlocked();
+    function isAdmin(space) {
+      return isMember(space) && get(memberPath(space)).data.role == 'admin';
     }
 
-    // Připravené balíčky kvízu jsou dostupné při přípravě hry bez hesla.
-    // Heslo chrání jen jejich změny ve správě otázek.
-    match /quizPacks/{packId} {
-      allow read: if true;
-      allow write: if isUnlocked();
+    /* --- Prostor a jeho data ------------------------------------------ */
+
+    match /spaces/{space} {
+      allow get: if isMember(space);
+      allow list: if false;
+      // Prostor zakládá a ruší skript. Admin smí jen přejmenovat.
+      allow create, delete: if false;
+      allow update: if isAdmin(space)
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name'])
+                    && request.resource.data.name is string
+                    && request.resource.data.name.size() >= 1
+                    && request.resource.data.name.size() <= 80;
+
+      // Členové. Id je e-mail malými písmeny, protože správkyně přidává
+      // kolegyni dřív, než se ta poprvé přihlásí a dostane uid. Stejný
+      // e-mail nese i pole `email`, podle něj se hledá, kam kdo patří.
+      //
+      // Sám sebe nikdo neodebere ani nesesadí. Dokud jsou admini dva,
+      // nejde se omylem zamknout venku.
+      match /members/{email} {
+        allow read: if isMember(space);
+
+        allow create: if isAdmin(space)
+                      && email != me()
+                      && email == email.lower()
+                      && request.resource.data.keys().hasOnly(['email', 'role', 'name', 'addedBy', 'addedAt'])
+                      && request.resource.data.email == email
+                      && request.resource.data.role in ['admin', 'editor']
+                      && validName(request.resource.data)
+                      && request.resource.data.addedBy == me()
+                      && request.resource.data.addedAt == request.time;
+
+        allow update: if isAdmin(space)
+                      && email != me()
+                      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['role', 'name'])
+                      && request.resource.data.role in ['admin', 'editor']
+                      && validName(request.resource.data);
+
+        allow delete: if isAdmin(space) && email != me();
+      }
+
+      // Balíčky desky Pojišťuj! a kvízu, sady Výslechu.
+      match /packs/{id} {
+        allow read, write: if isMember(space);
+      }
+      match /quizPacks/{id} {
+        allow read, write: if isMember(space);
+      }
+      match /vyslechForms/{id} {
+        allow read, write: if isMember(space);
+      }
+
+      // Obrázky k otázkám kvízu, jeden dokument na obrázek. Strop hlídá
+      // i pravidlo: dokument Firestore unese 1 MiB a obrázek, který by se
+      // přes rozhraní nedostal, sem nemá projít ani jinudy.
+      match /quizImages/{imageId} {
+        allow read: if isMember(space);
+        allow write: if isMember(space)
+                     && (request.method == 'delete'
+                         || (request.resource.data.id == imageId
+                             && request.resource.data.data.size() < 900000));
+      }
+
+      // Vyhodnocení kvízu. Jsou v něm přezdívky účastníků. Zapsané se už
+      // nemění, aby se výsledky nedaly přepsat zpětně. `hostEmail` říká,
+      // kdo školení vedl.
+      match /quizReports/{reportId} {
+        allow read: if isMember(space);
+        allow create: if isMember(space)
+                      && request.resource.data.hostUid == request.auth.uid
+                      && request.resource.data.hostEmail == me()
+                      && request.resource.data.schema == 1
+                      && request.resource.data.keys().hasAll(['id', 'groupName', 'round',
+                           'packNames', 'startedAt', 'finishedAt', 'questions', 'players', 'matrix'])
+                      && request.resource.data.groupName is string
+                      && request.resource.data.groupName.size() <= 120
+                      && request.resource.data.questions is list
+                      && request.resource.data.questions.size() <= 200
+                      && request.resource.data.players is list
+                      && request.resource.data.players.size() <= 300
+                      && request.resource.data.matrix is list
+                      && request.resource.data.matrix.size() <= 200;
+        allow update: if false;
+        allow delete: if isMember(space);
+      }
+
+      // Vyhodnocení Výslechu. Bez identit, ale s volnými odpověďmi, ve
+      // kterých se jména objevit můžou. Kdo sběr spustil, se schválně
+      // neukládá: obvykle je to lektor, kterého se hodnocení týká.
+      match /vyslechReports/{reportId} {
+        allow read: if isMember(space);
+        allow create: if isMember(space)
+                      && request.resource.data.hostUid == request.auth.uid
+                      && request.resource.data.schema == 1
+                      && request.resource.data.keys().hasAll(['id', 'title', 'formId',
+                           'questions', 'responses', 'startedAt', 'finishedAt'])
+                      && request.resource.data.title is string
+                      && request.resource.data.title.size() <= 120
+                      && request.resource.data.questions is list
+                      && request.resource.data.questions.size() <= 20
+                      && request.resource.data.responses is list
+                      && request.resource.data.responses.size() <= 1000;
+        allow update: if false;
+        allow delete: if isMember(space);
+      }
     }
 
-    // Obrázky k otázkám kvízu, jeden dokument na obrázek. Čtou se stejně
-    // veřejně jako balíčky, jinak by se hra nedala spustit bez hesla.
-    // Strop hlídá i pravidlo: dokument Firestore unese 1 MiB a obrázek,
-    // který by se přes rozhraní nedostal, sem nemá projít ani jinudy.
-    match /quizImages/{imageId} {
-      allow read: if true;
-      allow write: if isUnlocked()
-                   && (request.method == 'delete'
-                       || (request.resource.data.id == imageId
-                           && request.resource.data.data.size() < 900000));
+    function validName(data) {
+      return !('name' in data)
+        || (data.name is string && data.name.size() <= 80);
+    }
+
+    // Kam patřím. Aplikace po přihlášení hledá svoje členství přes všechny
+    // prostory dotazem na pole `email`, a ten se dá ověřit jen proti poli,
+    // ne proti id dokumentu.
+    match /{path=**}/members/{email} {
+      allow read: if signedIn() && resource.data.email == me();
     }
 
     /* --- Živá hra kvízu -------------------------------------------------- */
@@ -87,17 +175,15 @@ service cloud.firestore {
 
     // Běžící hra. Čte ji každý, kdo zná kód, ale není v ní jediné písmeno
     // otázky ani stopa po správné možnosti. Kdo kód uhodne, dozví se
-    // nanejvýš, že někde běží sedmá otázka.
+    // nanejvýš, že někde běží sedmá otázka. Seznam běžících her nedostane
+    // nikdo, jinak by šlo projít kódy hromadně.
     match /quiz/{code} {
       allow get: if true;
-      // Seznam běžících her patří jen správě, jinak by šlo projít kódy
-      // hromadně a zjistit, kde se zrovna hraje.
-      allow list: if isUnlocked();
+      allow list: if false;
 
-      // Hru může otevřít kterýkoli anonymně přihlášený moderátor. Heslo
-      // chrání úpravu otázek, ne použití připraveného balíčku.
-      // Vlastnictví se zapisuje hned a už se nemění.
-      allow create: if request.auth != null
+      // Hru otevírá člen prostoru, ze kterého jsou otázky. Vlastnictví
+      // i prostor se zapisují hned a už se nemění.
+      allow create: if isMember(request.resource.data.spaceId)
                     && request.resource.data.hostUid == request.auth.uid
                     && request.resource.data.code == code
                     && request.resource.data.phase == 'lobby'
@@ -106,13 +192,14 @@ service cloud.firestore {
                     && request.resource.data.expiresAt is timestamp
                     && request.resource.data.expiresAt > request.time;
 
-      // Měnit smí jen vlastník a nesmí si přepsat ani vlastnictví, ani kód.
-      // Poslední podmínka je pojistka proti chybě v kódu hry: dokud otázka
-      // běží, nesmí se do session dostat nic o odhalení. Chyba tak skončí
-      // odmítnutým zápisem, ne vyzrazenou odpovědí.
+      // Měnit smí jen vlastník a nesmí si přepsat vlastnictví, prostor
+      // ani kód. Poslední podmínka je pojistka proti chybě v kódu hry:
+      // dokud otázka běží, nesmí se do session dostat nic o odhalení.
+      // Chyba tak skončí odmítnutým zápisem, ne vyzrazenou odpovědí.
       allow update: if request.auth != null
                     && resource.data.hostUid == request.auth.uid
                     && request.resource.data.hostUid == resource.data.hostUid
+                    && request.resource.data.spaceId == resource.data.spaceId
                     && request.resource.data.code == resource.data.code
                     && (request.resource.data.phase != 'question'
                         || !('reveal' in request.resource.data));
@@ -199,56 +286,21 @@ service cloud.firestore {
                             && session(code).hostUid == request.auth.uid;
     }
 
-    // Vyhodnocení po hře. Jsou v něm přezdívky účastníků, proto ho čte
-    // jen odemčená správa. Zapsané se už nemění, aby se výsledky nedaly
-    // přepsat zpětně. Maže se ručně, automaticky nevyprší.
-    match /quizReports/{reportId} {
-      allow get: if request.auth != null
-                 && (isUnlocked() || resource.data.hostUid == request.auth.uid);
-      allow list: if isUnlocked();
-      // Zápis je otevřený každému přihlášenému, protože kvíz smí vést
-      // i ten, kdo nezná heslo do správy. Proto aspoň hrubý tvar: bez
-      // něj je to kolekce, do které umí kdokoli sypat cokoli. Přečíst
-      // to stejně nikdo cizí nemůže, jde jen o to nedržet cizí data
-      // a neplatit za ně.
-      allow create: if request.auth != null
-                    && request.resource.data.hostUid == request.auth.uid
-                    && request.resource.data.schema == 1
-                    && request.resource.data.keys().hasAll(['id', 'groupName', 'round',
-                         'packNames', 'startedAt', 'finishedAt', 'questions', 'players', 'matrix'])
-                    && request.resource.data.groupName is string
-                    && request.resource.data.groupName.size() <= 120
-                    && request.resource.data.questions is list
-                    && request.resource.data.questions.size() <= 200
-                    && request.resource.data.players is list
-                    && request.resource.data.players.size() <= 300
-                    && request.resource.data.matrix is list
-                    && request.resource.data.matrix.size() <= 200;
-      allow update: if false;
-      allow delete: if isUnlocked();
-    }
-
-    /* --- Výslech, zpětná vazba po školení ------------------------------ */
-
-    // Sady otázek. Celý Výslech je za heslem, takže na rozdíl od balíčků
-    // her je nečte nikdo jiný než odemčená správa.
-    match /vyslechForms/{formId} {
-      allow read, write: if isUnlocked();
-    }
+    /* --- Výslech, sběr zpětné vazby ------------------------------------ */
 
     function vyslech(code) {
       return get(/databases/$(database)/documents/vyslech/$(code)).data;
     }
 
     // Běžící sběr. Otázky v něm jsou veřejně schválně: telefon je musí
-    // zobrazit. Odpovědi v něm nejsou. Seznam běžících sběrů patří jen
-    // správě, jinak by šlo kódy projít hromadně.
+    // zobrazit. Odpovědi v něm nejsou. Seznam běžících sběrů nedostane
+    // nikdo, jinak by šlo kódy projít hromadně.
     match /vyslech/{code} {
       allow get: if true;
-      allow list: if isUnlocked();
+      allow list: if false;
 
-      // Otevřít sběr smí jen odemčená správa.
-      allow create: if isUnlocked()
+      // Otevřít sběr smí jen člen prostoru, ze kterého je sada.
+      allow create: if isMember(request.resource.data.spaceId)
                     && request.resource.data.hostUid == request.auth.uid
                     && request.resource.data.code == code
                     && request.resource.data.phase == 'open'
@@ -260,11 +312,12 @@ service cloud.firestore {
                     && request.resource.data.expiresAt is timestamp
                     && request.resource.data.expiresAt > request.time;
 
-      // Měnit smí jen vlastník a nesmí si přepsat vlastnictví, kód
-      // ani dobu platnosti, podle které se ověřují odpovědi.
+      // Měnit smí jen vlastník a nesmí si přepsat vlastnictví, prostor,
+      // kód ani dobu platnosti, podle které se ověřují odpovědi.
       allow update: if request.auth != null
                     && resource.data.hostUid == request.auth.uid
                     && request.resource.data.hostUid == resource.data.hostUid
+                    && request.resource.data.spaceId == resource.data.spaceId
                     && request.resource.data.code == resource.data.code
                     && request.resource.data.expiresAt == resource.data.expiresAt;
 
@@ -296,32 +349,8 @@ service cloud.firestore {
       allow delete: if request.auth != null && vyslech(code).hostUid == request.auth.uid;
     }
 
-    // Vyhodnocení. Bez identit, ale s volnými odpověďmi, ve kterých se
-    // jména objevit můžou. Čte a zapisuje jen odemčená správa. Zapsané
-    // se nemění, aby se výsledky nedaly přepsat zpětně.
-    match /vyslechReports/{reportId} {
-      allow read: if isUnlocked();
-      allow create: if isUnlocked()
-                    && request.resource.data.hostUid == request.auth.uid
-                    && request.resource.data.schema == 1
-                    && request.resource.data.keys().hasAll(['id', 'title', 'formId',
-                         'questions', 'responses', 'startedAt', 'finishedAt'])
-                    && request.resource.data.title is string
-                    && request.resource.data.title.size() <= 120
-                    && request.resource.data.questions is list
-                    && request.resource.data.questions.size() <= 20
-                    && request.resource.data.responses is list
-                    && request.resource.data.responses.size() <= 1000;
-      allow update: if false;
-      allow delete: if isUnlocked();
-    }
-
-    // Připraveno pro budoucí moderátorský druhý pohled. Zavřené záměrně:
-    // dokud tudy nic nepíše, nemá být kam ukládat cizí data.
-    match /games/{gameId} {
-      allow read, write: if false;
-    }
-
+    // Všechno ostatní je zavřené, i původní kolekce z doby hesla do správy
+    // (`config`, `unlocks` a balíčky mimo prostor).
     match /{document=**} {
       allow read, write: if false;
     }
