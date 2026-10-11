@@ -1,0 +1,47 @@
+name: Rozlučka s GitHub Pages
+
+# Spouští se ručně jednou, až kamucirna.cz pojede. Na starou adresu nasadí
+# přesměrování a service workera, který starou aplikaci z prohlížečů
+# uklidí. GitHub Pages pak necháme zapnuté, aby staré odkazy dál vedly
+# na novou adresu.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Sestavení rozlučky
+        run: |
+          mkdir out
+          cp pages-farewell/index.html out/index.html
+          cp pages-farewell/index.html out/404.html
+          cp pages-farewell/sw.js out/sw.js
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: out
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,40 @@
+name: Náhled pull requestu
+
+# Každý PR dostane vlastní adresu na web.app, kterou akce vypíše do
+# komentáře. Náhled jede nad ostrou databází a ostrými pravidly: pravidla
+# z PR se nenasazují, ta jdou ven až s `main`.
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+jobs:
+  preview:
+    # PR z cizího forku nemá přístup k tajemstvím, nasazení by spadlo.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalace závislostí
+        run: npm ci
+
+      - name: Kontrola typů a sestavení
+        run: npm run build
+
+      - name: Nasazení náhledu
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_UNIQA_PLAYGROUND }}
+          projectId: uniqa-playground
+          expires: 7d

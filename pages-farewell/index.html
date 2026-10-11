@@ -1,0 +1,33 @@
+<!doctype html>
+<!--
+  Rozlučka se starou adresou na GitHub Pages. Aplikace se přestěhovala na
+  kamucirna.cz a tahle stránka pošle každého na stejnou cestu tam, i odkaz
+  z QR kódu nebo záložku na správu. Nasazuje ji ruční workflow
+  `pages-farewell.yml`, stejný soubor slouží i jako 404.html pro hluboké
+  adresy.
+-->
+<html lang="cs">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <link rel="canonical" href="https://kamucirna.cz/" />
+    <meta http-equiv="refresh" content="3; url=https://kamucirna.cz/" />
+    <title>Mučírna se přestěhovala</title>
+    <script>
+      ;(async () => {
+        // Projektová stránka žije pod /<repozitář>/, ten první díl se zahodí.
+        const rest = location.pathname.replace(/^\/[^/]+/, '') || '/'
+        const target = 'https://kamucirna.cz' + rest + location.search + location.hash
+        try {
+          const regs = (await navigator.serviceWorker?.getRegistrations()) ?? []
+          await Promise.all(regs.map((r) => r.unregister()))
+        } catch {}
+        location.replace(target)
+      })()
+    </script>
+  </head>
+  <body>
+    <p>Mučírna se přestěhovala na <a href="https://kamucirna.cz/">kamucirna.cz</a>.</p>
+  </body>
+</html>

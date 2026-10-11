@@ -1,4 +1,4 @@
-name: Nasazení na GitHub Pages
+name: Nasazení na Firebase
 
 on:
   push:
@@ -7,15 +7,13 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
-  group: pages
-  cancel-in-progress: true
+  group: firebase-live
+  cancel-in-progress: false
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -30,22 +28,24 @@ jobs:
 
       - name: Kontrola typů a sestavení
         run: npm run build
+
+      # Pravidla jdou napřed. Nová verze aplikace může zapisovat něco, co
+      # staré pravidlo odmítne, opačně to zatím nikdy nebylo. Ruční
+      # publikování v konzoli se dvakrát zapomnělo, proto je to tady.
+      - name: Nasazení pravidel Firestore
         env:
-          # Podadresář na Pages se jmenuje podle repozitáře.
-          VITE_BASE: /${{ github.event.repository.name }}/
+          SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_UNIQA_PLAYGROUND }}
+        run: |
+          printf '%s' "$SERVICE_ACCOUNT" > "$RUNNER_TEMP/sa.json"
+          GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json" \
+            npx --yes firebase-tools@15 deploy --only firestore:rules \
+            --project uniqa-playground --non-interactive
+          rm "$RUNNER_TEMP/sa.json"
 
-      - uses: actions/configure-pages@v5
-
-      - uses: actions/upload-pages-artifact@v3
+      - name: Nasazení aplikace
+        uses: FirebaseExtended/action-hosting-deploy@v0
         with:
-          path: dist
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_UNIQA_PLAYGROUND }}
+          projectId: uniqa-playground
+          channelId: live

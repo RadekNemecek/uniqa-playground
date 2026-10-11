@@ -4,10 +4,6 @@ import vue from '@vitejs/plugin-vue'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
-  // Na GitHub Pages žije aplikace v podadresáři podle názvu repozitáře.
-  // Lokálně nebo jinde se dá přepsat proměnnou VITE_BASE.
-  base: process.env.VITE_BASE ?? '/uniqa-playground/',
-
   plugins: [
     vue(),
     VitePWA({
@@ -19,7 +15,7 @@ export default defineConfig({
       includeManifestIcons: false,
       workbox: {
         // Aplikace se po prvním načtení uloží do prohlížeče. Když na
-        // školení vypadne síť nebo firemní firewall blokne github.io,
+        // školení vypadne síť nebo firemní firewall blokne adresu,
         // hra i tak naběhne.
         globPatterns: ['**/*.{js,css,html,svg,png,webp,woff2}'],
         // Co se předem stahovat nemá. Na školení se naráz připojuje celá

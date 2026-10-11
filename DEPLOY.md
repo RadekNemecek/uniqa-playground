@@ -1,8 +1,9 @@
 # Nasazení
 
-Dvě části, každá zabere pár minut: **Firebase** (kde žijí otázky) a
-**GitHub Pages** (kde běží aplikace). Jde je udělat v libovolném pořadí,
-aplikace funguje i bez Firebase, jen se otázky neukládají do cloudu.
+Všechno běží ve Firebase projektu `uniqa-playground`: **Firestore**, kde
+žijí otázky, a **Hosting**, odkud se aplikace načítá na adrese
+**https://kamucirna.cz/**. Aplikace funguje i bez Firestore, jen se otázky
+neukládají do cloudu.
 
 ---
 
@@ -42,13 +43,15 @@ Ověření: v seznamu poskytovatelů má být u *Anonymous* stav **Enabled**.
    [`firestore.rules`](firestore.rules) z tohohle repozitáře.
 3. **Publish**. Nahoře se musí objevit potvrzení, že jsou pravidla nasazená.
 
-Pravidla se občas změní spolu s aplikací. Když přibude něco, co hráč
-zapisuje, je potřeba je publikovat znovu, jinak server nový zápis odmítne.
-Naposledy se to stalo s **Výslechem**, zpětnou vazbou po školení:
+Pravidla se občas změní spolu s aplikací. Ručně se vkládají jen
+napoprvé, potom je nasazuje workflow při každém pushi do `main`, a to
+dřív než aplikaci (viz kapitola 2). Ruční publikování se totiž dvakrát
+zapomnělo a server pak nový zápis odmítal. Naposledy s **Výslechem**, zpětnou vazbou po školení:
 přibyly kolekce `vyslechForms`, `vyslech` (s podkolekcí `responses`)
 a `vyslechReports`. Bez publikovaných pravidel se sběr neotevře a příprava
 napíše, že je potřeba pravidla publikovat. Předtím to byly obrázky
-k otázkám kvízu v kolekci `quizImages`.
+k otázkám kvízu v kolekci `quizImages`. Kdyby workflow pravidla nasadit
+nemohl, vlož je ručně podle kroků výš.
 
 Co pravidla dělají:
 
@@ -82,7 +85,7 @@ Je to v pořádku, tyhle dotazy se dělají jen při zápisu.
 2. Záložka **General**, sjeď dolů na **Your apps**.
 3. Klikni na ikonu webu **`</>`**.
 4. **App nickname** třeba `playground`.
-   **Firebase Hosting nezaškrtávej**, hostuje GitHub Pages.
+   **Firebase Hosting** zaškrtávat nemusíš, nastavuje se v kapitole 2.
 5. **Register app**.
 6. Google ukáže kus kódu s objektem `firebaseConfig`. Vypadá takhle:
 
@@ -115,7 +118,7 @@ které by šlo zneužít.
 npm run dev
 ```
 
-1. Otevři `http://localhost:5173/uniqa-playground/` (port ti Vite vypíše).
+1. Otevři `http://localhost:5173/` (port ti Vite vypíše).
 2. Jdi na **Otázky**. Musí se nabídnout **Nastav heslo**, ne přihlašovací
    pole. To znamená, že se aplikace k databázi dostala a ví, že heslo
    ještě nikdo nenastavil.
@@ -232,35 +235,96 @@ Aplikace je schválně stavěná tak, že když se k Firebase nedostane,
 spadne do lokálního režimu a **hraje se dál**. Deset minut před školením
 je to lepší než chybová hláška.
 
-## 2. GitHub Pages
+## 2. Firebase Hosting a doména
 
-1. Založ repozitář, například `uniqa-playground`, a nahraj do něj projekt:
+Nasazuje GitHub Actions. Push do `main` spustí
+[`deploy.yml`](.github/workflows/deploy.yml): sestaví aplikaci, nasadí
+pravidla Firestore a teprve potom aplikaci. Každý pull request dostane
+náhled z [`preview.yml`](.github/workflows/preview.yml) na vlastní adrese
+na `web.app`, odkaz akce napíše do komentáře v PR. Náhled platí týden
+a **jede nad ostrou databází a ostrými pravidly**: co v něm uložíš,
+uvidí i kolegyně, a pravidla z PR se nenasazují, dokud se nesloučí.
+
+### 2.1 Účet pro nasazování
+
+Dělá se jednou. GitHub potřebuje klíč, kterým se u Firebase prokáže.
+
+1. V adresáři projektu spusť:
 
 ```bash
-git add -A
-git commit -m "Mučírna: hra Pojišťuj!"
-git branch -M main
-git remote add origin https://github.com/<ucet>/uniqa-playground.git
-git push -u origin main
+firebase init hosting:github
 ```
 
-2. V repozitáři **Settings → Pages → Build and deployment → Source**
-   přepni na **GitHub Actions**.
-3. Workflow [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)
-   se pustí sám při každém pushi do `main`. Podadresář si dopočítá z názvu
-   repozitáře, takže na tom není co nastavovat.
-4. Adresa bude `https://<ucet>.github.io/<nazev-repozitare>/`.
+2. Repozitář je `RadekNemecek/uniqa-playground`. Na sestavení před
+   nasazením i na nasazení po sloučení PR odpověz **ne**, obojí už dělají
+   workflow v repozitáři. Kdyby se ptal na veřejnou složku, je to `dist`,
+   a `index.html` **nepřepisuj**.
+3. Příkaz založí service account a jeho klíč uloží do GitHubu jako
+   tajemství `FIREBASE_SERVICE_ACCOUNT_UNIQA_PLAYGROUND`. Workflow, které
+   při tom vygeneruje (`.github/workflows/firebase-hosting-*.yml`), smaž,
+   dělaly by totéž podruhé.
+4. Service account smí nasazovat aplikaci, ale ne pravidla. V Google Cloud
+   konzoli otevři **IAM**, najdi účet `github-action-…@uniqa-playground.iam.gserviceaccount.com`
+   a přidej mu roli **Firebase Rules Admin**. Když krok s pravidly v CI
+   přesto spadne na oprávnění, v logu je napsané, které chybí.
 
-Když se repozitář jmenuje jinak než `uniqa-playground`, není potřeba nic
-měnit: sestavení na CI si název dosadí samo. Lokální `npm run build` používá
-výchozí `/uniqa-playground/`, případně `VITE_BASE=/jiny-nazev/ npm run build`.
+### 2.2 Doména
+
+1. Ve Firebase konzoli **Hosting → Add custom domain**, zadej
+   `kamucirna.cz`. Pak ještě jednou `www.kamucirna.cz` a nastav ji jako
+   přesměrování na `kamucirna.cz`.
+2. Konzole vypíše DNS záznamy. Zapiš je u registrátora. Ověření
+   a certifikát trvají od minut po několik hodin, konzole ukazuje stav.
+3. **Authentication → Settings → Authorized domains**, přidej
+   `kamucirna.cz`. Anonymní přihlášení to nepotřebuje, přihlašování
+   e-mailem ano.
+
+### 2.3 Mezipaměť a přímé adresy
+
+[`firebase.json`](firebase.json) posílá každou adresu, pro kterou
+neexistuje soubor, na `index.html`. Přímé otevření `/admin` nebo `/k/KOD`
+z QR kódu tak vrátí aplikaci se stavem 200.
+
+Soubory v `assets/` mají v názvu otisk obsahu, takže se v prohlížeči
+drží rok a nemění se. Všechno ostatní má `no-cache`: prohlížeč se pokaždé
+zeptá, jestli se soubor nezměnil. Hlavně `sw.js` se nesmí držet
+v mezipaměti, jinak by telefony a notebooky zůstaly na staré verzi.
+
+Lokálně se hosting dá vyzkoušet takhle:
+
+```bash
+npm run build
+firebase emulators:start --only hosting
+```
+
+Emulátor ale posílá rozbitou kompresi brotli, takže se v něm nezaregistruje
+service worker. Je to chyba emulátoru, ostrý hosting komprimuje sám.
+
+### 2.4 Stará adresa na GitHub Pages
+
+Aplikace dřív běžela na `radeknemecek.github.io/uniqa-playground/`. Až
+pojede `kamucirna.cz`, spusť v GitHubu **Actions → Rozlučka s GitHub
+Pages → Run workflow** ([`pages-farewell.yml`](.github/workflows/pages-farewell.yml)).
+Na starou adresu nasadí přesměrování na stejnou cestu na nové doméně
+a service workera, který starou aplikaci z prohlížečů smaže. Bez něj by
+se každý, kdo ji měl otevřenou, dál díval na starou verzi z mezipaměti
+a o přesměrování by se nedozvěděl.
+
+GitHub Pages pak **nech zapnuté**, aby staré odkazy a záložky dál vedly
+na novou adresu.
+
+Co se nepřenese: všechno, co je uložené v prohlížeči, patří k adrese.
+Na nové doméně proto bude prázdný archiv odehraných her desky Pojišťuj!,
+správa bude chtít heslo znovu a nastavení písma a zvuku bude výchozí.
+Balíčky, obrázky a výsledky kvízu i Výslechu jsou ve Firestore
+a zůstanou.
 
 ---
 
 ## 3. Kontrola po nasazení
 
 - [ ] Hra se otevře a deska se vejde na obrazovku.
-- [ ] Přímé otevření `/<repozitar>/admin` funguje i po tvrdém obnovení.
+- [ ] Přímé otevření `https://kamucirna.cz/admin` funguje i po tvrdém obnovení.
 - [ ] Heslo do správy je nastavené.
 - [ ] Nový balíček se objeví i v jiném prohlížeči, tedy Firestore opravdu jede.
 - [ ] Aplikace jde v prohlížeči nainstalovat a po vypnutí sítě naběhne.

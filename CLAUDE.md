@@ -1,6 +1,6 @@
 # Mučírna: konvence projektu
 
-Vue 3 + Vite + TypeScript, statická aplikace na GitHub Pages, data ve
+Vue 3 + Vite + TypeScript, statická aplikace na Firebase Hostingu, data ve
 Firestore. Hry jsou moduly: Pojišťuj! je deska pro týmy, Na kolik to dáš? je kvíz,
 do kterého se účastníci připojují telefonem. Další mají přibývat stejně.
 

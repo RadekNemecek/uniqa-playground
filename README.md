@@ -1,7 +1,7 @@
 # Mučírna
 
-Interaktivní hry pro školení týmů. Běží jako statická webová aplikace,
-hostovaná na GitHub Pages.
+Interaktivní hry pro školení týmů. Běží jako statická webová aplikace
+na Firebase Hostingu, adresa je https://kamucirna.cz/.
 
 Jakmile hra začne, rozhraní aplikace z plátna zmizí a zůstane jen
 moderátorský pás, který se po chvíli sám schová. Na projektoru je tedy
@@ -126,7 +126,7 @@ npm run dev:lan
 ```
 
 Vite vypíše vedle místní adresy i **Network**, například
-`http://192.168.2.136:5173/uniqa-playground/`. Otevři Mučírnu na ní a QR
+`http://192.168.2.136:5173/`. Otevři Mučírnu na ní a QR
 kód se opraví sám. Kdyby ses přesto ocitla na `localhost`, čekárna to
 vypíše červeně, takže na to nepřijdeš až před plnou místností.
 
