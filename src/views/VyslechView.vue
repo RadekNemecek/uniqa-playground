@@ -2,17 +2,14 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import AppHeader from '@/components/AppHeader.vue'
-import AdminGate from '@/components/admin/AdminGate.vue'
 import PresentationBar from '@/components/PresentationBar.vue'
-import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiEmpty from '@/components/ui/UiEmpty.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import VyslechSetup from '@/vyslech/components/VyslechSetup.vue'
 import VyslechStage from '@/vyslech/components/VyslechStage.vue'
-import { db } from '@/lib/db'
 import { vyslechDbWhenReady } from '@/lib/vyslechDb'
 import { downloadVyslechCsv } from '@/vyslech/csv'
-import { initVyslechForms, reloadVyslechForms, vyslechForms } from '@/stores/vyslechForms'
+import { initVyslechForms, vyslechForms } from '@/stores/vyslechForms'
 import {
   attachRun,
   closeRun,
@@ -32,25 +29,14 @@ import type { VyslechForm, VyslechRunMeta } from '@/vyslech/types'
 /**
  * Výslech: příprava a plátno.
  *
- * Celé je za heslem. Sady otázek i výsledky čte jen správa a sběr se
- * otevírá z téže relace, takže heslo chrání všechno najednou.
+ * Jen pro členy týmu: v sadách a výsledcích jsou hodnocení školení
+ * a lektorů. Sběr otevírá člen a telefony dostanou jen jeho kód.
  */
 const router = useRouter()
-const unlocked = ref(db().isUnlocked())
 const starting = ref(false)
 /** Dostanou se ke sběru telefony v sále? Bez sdílené databáze ne. */
 const shared = ref(true)
 const ready = ref(false)
-
-async function onUnlocked(): Promise<void> {
-  unlocked.value = true
-  await reloadVyslechForms()
-}
-
-function lock(): void {
-  db().lock()
-  unlocked.value = false
-}
 
 async function onStart(form: VyslechForm, meta: VyslechRunMeta): Promise<void> {
   if (starting.value) return
@@ -137,7 +123,7 @@ onMounted(async () => {
   shared.value = conn?.shared ?? false
   ready.value = true
   if (!conn) return
-  if (unlocked.value) void initVyslechForms()
+  void initVyslechForms()
   // Po obnovení stránky se listener odpovědí musí nasadit znovu.
   void attachRun()
 })
@@ -149,22 +135,8 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="vyslech" :class="{ 'vyslech--live': hasRun }">
-    <template v-if="!unlocked">
+    <template v-if="!hasRun || !run">
       <AppHeader game="vyslech" section="play" prep />
-      <AdminGate
-        title="Výslech"
-        lead="Zpětná vazba je za heslem do správy. Jsou v ní hodnocení školení a lektorů."
-        @unlocked="onUnlocked"
-      />
-    </template>
-
-    <template v-else-if="!hasRun || !run">
-      <AppHeader game="vyslech" section="play" prep>
-        <template #tools>
-          <!-- Jediná akce účtu, proto rovnou tlačítko, ne nabídka s jednou položkou. -->
-          <UiIconButton icon="lock" label="Zamknout Výslech" @click="lock" />
-        </template>
-      </AppHeader>
 
       <main v-if="!ready" id="obsah" class="page wait"><UiSkeleton :lines="5" /></main>
       <main v-else-if="vyslechForms.unavailable" id="obsah" class="page wait">

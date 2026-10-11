@@ -266,8 +266,8 @@ export interface QuizAnswer {
  * Co kvíz ukázal. Vzniká po poslední otázce a odpovídá na jedinou otázku,
  * kvůli které se hraje: co tým neumí.
  *
- * Je to jeden dokument. Přečte ho jeho moderátor a odemčená správa,
- * protože jsou v něm přezdívky účastníků. Zapsané se už nemění, aby se
+ * Je to jeden dokument. Čte ho jen tým, protože jsou v něm přezdívky
+ * účastníků. Zapsané se už nemění, aby se
  * výsledky nedaly přepsat zpětně.
  */
 export interface QuizReport {

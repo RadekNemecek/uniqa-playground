@@ -12,9 +12,7 @@ import type {
  * Úložiště Výslechu.
  *
  * Vlastní rozhraní, ne metody navíc v `MucirnaDb` ani v `QuizSessionDb`.
- * Sady otázek, běžící sběr i vyhodnocení patří k sobě a nikam jinam,
- * a celé je chrání heslo do správy, takže nemají co dělat vedle balíčků,
- * které čte kdokoli.
+ * Sady otázek, běžící sběr i vyhodnocení patří k sobě a nikam jinam.
  *
  * Implementace jsou dvě. Firestore je ta skutečná. Lokální drží všechno
  * v tomhle prohlížeči a slouží ke zkoušení (`npm run dev:local`): sběr
@@ -30,7 +28,7 @@ export interface VyslechDb {
 
   /* --- Sady otázek ------------------------------------------------------- */
 
-  /** `onDenied` se ozve, když čtení odmítne server, typicky před odemčením. */
+  /** `onDenied` se ozve, když čtení odmítne server, typicky odebrané členství. */
   watchForms(onChange: (forms: VyslechForm[]) => void, onDenied?: () => void): () => void
   saveForm(form: VyslechForm): Promise<void>
   deleteForm(formId: string): Promise<void>

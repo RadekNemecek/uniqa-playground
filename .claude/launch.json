@@ -57,6 +57,15 @@
         "--strictPort"
       ],
       "port": 5187
+    },
+    {
+      "name": "playground-emu",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev:emu"
+      ],
+      "port": 5188
     }
   ]
 }

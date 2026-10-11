@@ -1,12 +1,10 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import AppHeader from '@/components/AppHeader.vue'
-import AdminGate from '@/components/admin/AdminGate.vue'
 import HostReport from '@/games/kviz/components/HostReport.vue'
 import UiEmpty from '@/components/ui/UiEmpty.vue'
 import UiMenu from '@/components/ui/UiMenu.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
-import { db } from '@/lib/db'
 import { sessionDb } from '@/lib/sessionDb'
 import { confirmAction, toast } from '@/stores/ui'
 import { count } from '@/lib/format'
@@ -21,11 +19,8 @@ import type { QuizReport, QuizReportSummary } from '@/games/kviz/types'
  * a než jich pár přibylo, musela se k nim školitelka prorolovat celou
  * knihovnou balíčků.
  *
- * Heslo tu chrání totéž co ve správě: jsou v nich přezdívky účastníků
- * a seznam vyhodnocení pravidla Firestore odemčené relaci tak jako tak
- * nevydají.
+ * Jsou v nich přezdívky účastníků, proto je čte jen člen týmu.
  */
-const unlocked = ref(db().isUnlocked())
 const loaded = ref(false)
 const reports = ref<QuizReportSummary[]>([])
 const openReport = ref<QuizReport | null>(null)
@@ -75,94 +70,68 @@ function reportDate(at: number): string {
   return new Intl.DateTimeFormat('cs-CZ', { dateStyle: 'medium', timeStyle: 'short' }).format(at)
 }
 
-/** Po odemčení se seznam natáhne znovu: dotaz, který Firestore před
- *  chvílí zamítl, sám nic nepošle. */
-async function onUnlocked(): Promise<void> {
-  unlocked.value = true
-  await loadReports()
-}
-
-function lock(): void {
-  db().lock()
-  unlocked.value = false
-  openReport.value = null
-}
-
 onMounted(() => {
-  if (unlocked.value) void loadReports()
+  void loadReports()
 })
 </script>
 
 <template>
   <div class="page-wrap">
-    <template v-if="!unlocked">
-      <AppHeader game="kviz" section="reports" prep />
-      <AdminGate @unlocked="onUnlocked" />
-    </template>
+    <AppHeader game="kviz" section="reports" prep />
 
-    <template v-else>
-      <AppHeader game="kviz" section="reports" prep>
-        <template #tools>
-          <UiMenu label="Účet správy" v-slot="{ close }">
-            <button type="button" role="menuitem" @click="lock(); close()">Zamknout</button>
-          </UiMenu>
-        </template>
-      </AppHeader>
+    <main id="obsah" class="body page">
+      <!-- Otevřené vyhodnocení -------------------------------------------- -->
+      <div v-if="openReport" class="viewer">
+        <HostReport
+          :report="openReport"
+          @close="openReport = null"
+          @download="downloadReport(openReport)"
+        />
+      </div>
 
-      <main id="obsah" class="body page">
-        <!-- Otevřené vyhodnocení -------------------------------------------- -->
-        <div v-if="openReport" class="viewer">
-          <HostReport
-            :report="openReport"
-            @close="openReport = null"
-            @download="downloadReport(openReport)"
-          />
-        </div>
+      <!-- Seznam ----------------------------------------------------------- -->
+      <section v-else class="list">
+        <header class="list__head">
+          <p class="eyebrow">Na kolik to dáš?</p>
+          <h1 class="list__title">Odehrané kvízy.</h1>
+          <p class="list__lead">
+            Co která skupina uměla a kde se sekla. Jsou v nich přezdívky
+            účastníků, smaž je, až je nebudeš potřebovat.
+          </p>
+        </header>
 
-        <!-- Seznam ----------------------------------------------------------- -->
-        <section v-else class="list">
-          <header class="list__head">
-            <p class="eyebrow">Na kolik to dáš?</p>
-            <h1 class="list__title">Odehrané kvízy.</h1>
-            <p class="list__lead">
-              Co která skupina uměla a kde se sekla. Jsou v nich přezdívky
-              účastníků, smaž je, až je nebudeš potřebovat.
-            </p>
-          </header>
+        <!-- Dokud data nedorazila, není pravda, že tu nic není. -->
+        <UiSkeleton v-if="!loaded" :lines="4" />
 
-          <!-- Dokud data nedorazila, není pravda, že tu nic není. -->
-          <UiSkeleton v-if="!loaded" :lines="4" />
+        <UiEmpty
+          v-else-if="reports.length === 0"
+          icon="info"
+          title="Zatím tu nic není"
+          text="Vyhodnocení vznikne po dohraném kvízu s telefony. Bez sdílené databáze se neukládá."
+        />
 
-          <UiEmpty
-            v-else-if="reports.length === 0"
-            icon="info"
-            title="Zatím tu nic není"
-            text="Vyhodnocení vznikne po dohraném kvízu s telefony. Bez sdílené databáze se neukládá."
-          />
+        <ul v-else class="items">
+          <li v-for="(r, i) in reports" :key="r.id" class="card">
+            <span class="card__index" aria-hidden="true">{{ String(i + 1).padStart(2, '0') }}</span>
+            <button type="button" class="card__main" @click="showReport(r.id)">
+              <span class="card__name">{{ r.groupName || 'Bez názvu skupiny' }}</span>
+              <span class="card__when">{{ reportDate(r.finishedAt) }}</span>
+              <span class="card__meta">
+                {{ count(r.questionCount, 'otázka', 'otázky', 'otázek') }} ·
+                {{ count(r.playerCount, 'hráč', 'hráči', 'hráčů') }} ·
+                {{ r.packNames.join(', ') }}
+              </span>
+            </button>
 
-          <ul v-else class="items">
-            <li v-for="(r, i) in reports" :key="r.id" class="card">
-              <span class="card__index" aria-hidden="true">{{ String(i + 1).padStart(2, '0') }}</span>
-              <button type="button" class="card__main" @click="showReport(r.id)">
-                <span class="card__name">{{ r.groupName || 'Bez názvu skupiny' }}</span>
-                <span class="card__when">{{ reportDate(r.finishedAt) }}</span>
-                <span class="card__meta">
-                  {{ count(r.questionCount, 'otázka', 'otázky', 'otázek') }} ·
-                  {{ count(r.playerCount, 'hráč', 'hráči', 'hráčů') }} ·
-                  {{ r.packNames.join(', ') }}
-                </span>
-              </button>
-
-              <UiMenu :label="`Akce vyhodnocení ${r.groupName || reportDate(r.finishedAt)}`" v-slot="{ close }">
-                <button type="button" role="menuitem" @click="void showReport(r.id); close()">Otevřít</button>
-                <hr />
-                <button type="button" role="menuitem" @click="void removeReport(r); close()">Smazat</button>
-              </UiMenu>
-            </li>
-          </ul>
-        </section>
-      </main>
-    </template>
+            <UiMenu :label="`Akce vyhodnocení ${r.groupName || reportDate(r.finishedAt)}`" v-slot="{ close }">
+              <button type="button" role="menuitem" @click="void showReport(r.id); close()">Otevřít</button>
+              <hr />
+              <button type="button" role="menuitem" @click="void removeReport(r); close()">Smazat</button>
+            </UiMenu>
+          </li>
+        </ul>
+      </section>
+    </main>
   </div>
 </template>
 

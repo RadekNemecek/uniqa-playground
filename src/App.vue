@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { leaveIfLocked } from '@/router'
+import { account, canUseSpace } from '@/stores/account'
 import UiToasts from '@/components/ui/UiToasts.vue'
 import UiConfirm from '@/components/ui/UiConfirm.vue'
 import { initPacks } from '@/stores/packs'
@@ -24,12 +26,18 @@ void useRouter().isReady().then(() => {
   })
 })
 
+watch(() => account.status, leaveIfLocked)
+
 onMounted(async () => {
-  try {
-    await initPacks()
-  } catch (e) {
-    toast('Nepodařilo se načíst balíčky otázek.', 'bad')
-    console.error(e)
+  // Balíčky desky patří týmu. Bez členství se nenačítají, rozcestník
+  // a telefon hráče je nepotřebují.
+  if (canUseSpace()) {
+    try {
+      await initPacks()
+    } catch (e) {
+      toast('Nepodařilo se načíst balíčky otázek.', 'bad')
+      console.error(e)
+    }
   }
   // Prohlížeč pustí zvuk až po první interakci uživatele.
   const prime = () => {

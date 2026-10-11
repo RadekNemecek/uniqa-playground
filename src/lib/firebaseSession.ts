@@ -25,7 +25,8 @@ import type {
   QuizSession,
 } from '@/games/kviz/types'
 import type { AnswerDraft, QuizSessionDb, SessionInit, SessionPatch } from '@/lib/sessionDb'
-import { firebaseHandle } from '@/lib/firebase'
+import { ensureFirebaseHandle } from '@/lib/firebase'
+import { account, currentSpaceId } from '@/stores/account'
 import { randomCode } from '@/games/kviz/code'
 
 /** Jak dlouho session žije, než ji uklidí TTL. Osm hodin pokryje i školení,
@@ -127,6 +128,8 @@ class FirestoreSessionDb implements QuizSessionDb {
         schema: 1,
         code,
         hostUid: this.uid,
+        // Hru smí otevřít jen člen prostoru, ze kterého jsou otázky.
+        spaceId: currentSpaceId(),
         createdAt: serverTimestamp(),
         expiresAt,
         acceptsPlayers: true,
@@ -231,9 +234,15 @@ class FirestoreSessionDb implements QuizSessionDb {
 
   /* --- Vyhodnocení ------------------------------------------------------- */
 
+  private report(reportId: string) {
+    return doc(this.db, 'spaces', currentSpaceId(), 'quizReports', reportId)
+  }
+
   async saveReport(report: QuizReport): Promise<void> {
     await withTimeout(
-      setDoc(doc(this.db, 'quizReports', report.id), encodeReport(report)),
+      // Kdo školení vedl. Vyhodnocení čte celý tým a bez toho by nebylo
+      // poznat, čí skupina to byla.
+      setDoc(this.report(report.id), { ...encodeReport(report), hostEmail: account.email }),
       12000,
       'Uložení vyhodnocení',
     )
@@ -244,7 +253,7 @@ class FirestoreSessionDb implements QuizSessionDb {
    * není k ničemu, takže se stahuje až při otevření.
    */
   async listReports(): Promise<QuizReportSummary[]> {
-    const snap = await getDocs(collection(this.db, 'quizReports'))
+    const snap = await getDocs(collection(this.db, 'spaces', currentSpaceId(), 'quizReports'))
     return snap.docs
       .map((d) => {
         const data = d.data()
@@ -263,12 +272,12 @@ class FirestoreSessionDb implements QuizSessionDb {
   }
 
   async loadReport(reportId: string): Promise<QuizReport | null> {
-    const snap = await getDoc(doc(this.db, 'quizReports', reportId))
+    const snap = await getDoc(this.report(reportId))
     return snap.exists() ? decodeReport(snap.data()) : null
   }
 
   async deleteReport(reportId: string): Promise<void> {
-    await deleteDoc(doc(this.db, 'quizReports', reportId))
+    await deleteDoc(this.report(reportId))
   }
 
   /* --- Telefon ----------------------------------------------------------- */
@@ -362,7 +371,7 @@ class FirestoreSessionDb implements QuizSessionDb {
   }
 }
 
-export function createQuizSessionDb(): QuizSessionDb | null {
-  const handle = firebaseHandle()
+export async function createQuizSessionDb(): Promise<QuizSessionDb | null> {
+  const handle = await ensureFirebaseHandle()
   return handle ? new FirestoreSessionDb(handle.db, handle.uid) : null
 }

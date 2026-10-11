@@ -24,17 +24,30 @@ a pak se k nim nevracíš.
    Vlastní pravidla vložíme v kroku 1.3.
 5. **Create**. Chvíli to zřizuje, pak se objeví prázdná záložka *Data*.
 
-### 1.2 Zapnout anonymní přihlášení
+### 1.2 Zapnout přihlašování
 
-Bez tohohle kroku aplikace nic nepřečte ani nezapíše. Klient se přihlašuje
-anonymně, uživatelka o tom neví, ale pravidla podle toho poznají relaci.
+Dva způsoby, oba jsou potřeba. Telefon hráče se přihlašuje **anonymně**,
+hráč o tom neví, ale pravidla podle toho poznají jeho kartu ve hře.
+Člen týmu se přihlašuje **e-mailem a heslem**, účet mu vznikne
+z pozvánky, tedy z přihlašovacího odkazu v mailu.
 
 1. V levém menu **Build → Authentication → Get started**.
-2. Záložka **Sign-in method**.
-3. V seznamu **Native providers** klikni na **Anonymous**.
-4. Přepnout na **Enable** a **Save**.
+2. Záložka **Sign-in method**, v seznamu **Native providers**:
+   - **Anonymous**: **Enable** a **Save**,
+   - **Email/Password**: zapnout **Email/Password** i **Email link
+     (passwordless sign-in)** a **Save**.
+3. **Authentication → Settings → Authorized domains**: musí tam být
+   `kamucirna.cz`. Bez toho se pozvánka ani obnova hesla neodešle.
+4. **Project settings → General → Public-facing name**: `Mučírna`. Tohle
+   jméno je v mailech s pozvánkou a obnovou hesla místo `uniqa-playground`.
 
-Ověření: v seznamu poskytovatelů má být u *Anonymous* stav **Enabled**.
+Projekt musí být na tarifu **Blaze**. Na bezplatném Sparku pošle Firebase
+jen pět přihlašovacích odkazů denně na celý projekt, a pozvánka je
+přihlašovací odkaz. Bezplatné kvóty Firestore i Hostingu na Blaze platí
+dál, při tomhle provozu vychází účet na nulu. Nastav upozornění na
+rozpočet (**Google Cloud → Billing → Budgets & alerts**), třeba na 50 Kč.
+
+Ověření: u *Anonymous* i *Email/Password* je stav **Enabled**.
 
 ### 1.3 Vložit pravidla
 
@@ -55,26 +68,33 @@ nasadí `firebase deploy --only firestore:rules`.
 
 Co pravidla dělají:
 
-- balíčky desky Pojišťuj! smí **číst kdokoli**, kdo má odkaz na hru,
-- **zapisovat** smí jen ten, kdo prokázal znalost hesla do správy,
-- otisk hesla v `config/admin` **nesmí přečíst nikdo**, ani přihlášený
-  klient. Pravidla si ho přečíst umí, a na tom je celá ochrana postavená,
-- připravené balíčky kvízu Na kolik to dáš? smí **číst kdokoli**, aby šla
-  hra připravit a spustit bez hesla. Vytvářet, upravovat a mazat je smí
-  jen odemčená správa,
-- **obrázky k otázkám** v kolekci `quizImages` platí totéž. Každý obrázek
-  je vlastní dokument s daty v base64, pravidlo navíc hlídá strop, aby se
-  do databáze nedostalo nic, co by se přes rozhraní nevešlo,
+- všechno, co tým připravil, leží pod **`spaces/{prostor}`**: balíčky
+  desky Pojišťuj! (`packs`) i kvízu (`quizPacks`), obrázky k otázkám
+  (`quizImages`), sady Výslechu (`vyslechForms`) a výsledky obou
+  (`quizReports`, `vyslechReports`). Čte a mění je **jen člen týmu**
+  přihlášený e-mailem, který je ověřený,
+- **členové** jsou v `spaces/{prostor}/members/{e-mail}` s rolí `admin`,
+  nebo `editor`. Zvát, měnit role a odebírat smí jen admin, sám sebe ale
+  neodebere ani nesesadí. Člen si sám zapíše jen to, že pozvánku přijal,
+- **obrázek** je vlastní dokument s daty v base64, pravidlo navíc hlídá
+  strop, aby se do databáze nedostalo nic, co by se přes rozhraní nevešlo,
+- **výsledky** se po zapsání nedají změnit, jen smazat,
 - běžící hru kvízu si přečte každý, kdo zná pětiznakový kód, ale není
-  v ní znění otázky ani správná možnost, dokud ji moderátorka neodhalí,
+  v ní znění otázky ani správná možnost, dokud ji moderátorka neodhalí.
+  Založit ji smí jen člen prostoru, ze kterého jsou otázky,
 - hráč smí zapsat **jednu** odpověď na otázku a jen dokud otázka běží.
   Pozdní odpověď odmítne server, ne prohlížeč moderátorky,
-- **Výslech** je celý za heslem: sady otázek i výsledky čte a zapisuje
-  jen odemčená správa a sběr se otevírá z ní. Běžící sběr si přečte
-  každý, kdo zná kód, protože telefon musí otázky zobrazit. Odpovědi
-  v něm nejsou. Každý telefon smí zapsat jen svůj dotazník a jen dokud
-  sběr běží; druhé odeslání přepíše první, takže se nikdo nezapočítá
-  dvakrát.
+- běžící sběr **Výslechu** si přečte každý, kdo zná kód, protože telefon
+  musí otázky zobrazit. Odpovědi v něm nejsou. Otevřít ho smí jen člen.
+  Každý telefon smí zapsat jen svůj dotazník a jen dokud sběr běží;
+  druhé odeslání přepíše první, takže se nikdo nezapočítá dvakrát,
+- všechno ostatní je zavřené, i staré kolekce z doby hesla do správy.
+
+Pravidla mají testy, které běží v emulátoru:
+
+```bash
+npm run test:rules
+```
 
 Konzole u řádků s `get()` a `exists()` může hlásit varování o počtu čtení.
 Je to v pořádku, tyhle dotazy se dělají jen při zápisu.
@@ -112,33 +132,35 @@ navržený: klíč jen říká, ke kterému projektu se klient hlásí. Kdo smí
 číst a zapisovat, rozhodují pravidla na straně Google. Není to tajemství,
 které by šlo zneužít.
 
-### 1.5 Vyzkoušet, že to opravdu jede
+### 1.5 Založit tým a prvního admina
+
+Prostor týmu a první admin se zakládají skriptem, v aplikaci to nejde:
+admina musí někdo pozvat a na začátku není kdo. Skript pracuje s tvým
+přihlášením v `gcloud` (`gcloud auth login`). Bez `--apply` jen vypíše,
+co by udělal.
 
 ```bash
-npm run dev
+npm run migrate -- --admin tvuj@email.cz --apply
+npm run migrate -- --admin tvuj@email.cz --invite
 ```
 
-1. Otevři `http://localhost:5173/` (port ti Vite vypíše).
-2. Jdi na **Otázky**. Musí se nabídnout **Nastav heslo**, ne přihlašovací
-   pole. To znamená, že se aplikace k databázi dostala a ví, že heslo
-   ještě nikdo nenastavil.
-3. Nastav heslo. **Zapiš si ho**, obnovit ho jde jedině smazáním dokumentu
-   `config/admin` ve Firebase konzoli.
-4. Klikni na **Vytvořit ukázkový balíček**.
-5. Vrať se do konzole, **Firestore Database → Data**. Musíš tam vidět:
+První příkaz založí prostor `spaces/uniqa` a zapíše tě jako admina.
+Druhý ti pošle pozvánku: otevři odkaz z mailu, nastav si heslo a jsi
+uvnitř. Další členy už zveš z aplikace, **nabídka → Tým → Pozvat**.
 
-| kolekce | dokument | co v něm je |
-|---|---|---|
-| `config` | `admin` | `keyHash`, otisk hesla |
-| `config` | `public` | `initialized: true` |
-| `unlocks` | dlouhé id | `keyHash`, doklad o odemčení tvé relace |
-| `packs` | `p_...` | balíček otázek pro desku Pojišťuj! |
-| `quizPacks` | `kp_...` | balíček otázek pro kvíz Na kolik to dáš? |
-| `quizReports` | `r_...` | vyhodnocení odehraného kvízu |
+Ověření v konzoli, **Firestore Database → Data**:
 
-6. Poslední zkouška: otevři stejnou adresu v jiném prohlížeči nebo
-   v anonymním okně. Balíček se musí objevit, aniž bys tam cokoli dělal.
-   Tím je ověřené, že data opravdu žijí v cloudu a kolegové je uvidí.
+| kolekce | co v ní je |
+|---|---|
+| `spaces/uniqa` | název týmu |
+| `spaces/uniqa/members` | jeden dokument na člena, id je e-mail |
+| `spaces/uniqa/packs`, `quizPacks`, `quizImages` | otázky a obrázky |
+| `spaces/uniqa/quizReports`, `vyslechForms`, `vyslechReports` | výsledky a sady Výslechu |
+| `quiz`, `vyslech` | běžící hry a sběry, mizí po ukončení |
+
+Poslední zkouška: přihlas se v jiném prohlížeči. Balíčky se musí objevit,
+aniž bys tam cokoli dělal. Tím je ověřené, že data žijí v cloudu a kolegové
+je uvidí.
 
 ### 1.6 Úklid po kvízu a Výslechu
 
@@ -147,11 +169,10 @@ podkolekce `players` a `answers`. Tlačítko **Ukončit a uklidit** na konci
 hry je všechny smaže. Výslech totéž: sběr založí dokument v `vyslech`
 s podkolekcí `responses` a ukončení sběru je po uložení výsledků smaže.
 
-> **Stav projektu:** TTL politiky **nejsou nastavené a nastavit nejdou.**
-> TTL ve Firestore vyžaduje projekt s aktivním účtováním, tedy tarif
-> **Blaze**. Projekt `uniqa-playground` běží na bezplatném tarifu Spark
-> a Google nastavení odmítne s hláškou *billing disabled*. Rozhodnuto
-> je zůstat na Sparku a běžet bez pojistky.
+> **Stav projektu:** TTL politiky **zatím nejsou nastavené.** TTL ve
+> Firestore vyžaduje tarif **Blaze**, a na ten projekt přechází kvůli
+> pozvánkám (krok 1.2). Pak jdou nastavit pěti příkazy níž. Do té doby
+> platí ruční úklid.
 >
 > Co to znamená v praxi: úklid obstará ukončení hry nebo sběru. Zůstanou
 > jen data z her a sběrů, které nikdo neukončil (zavřený notebook, spadlý
@@ -221,13 +242,18 @@ nepřipojí.
 
 | co vidíš | co s tím |
 |---|---|
-| `auth/configuration-not-found` | Není zapnuté anonymní přihlášení, krok 1.2. |
-| `Missing or insufficient permissions` při čtení | Nejsou publikovaná pravidla, krok 1.3. |
-| Uložení otázky se nepovede | Nejsi odemčený, nebo pravidla nejsou publikovaná. |
-| Správa nabízí „Zadej heslo", i když jsi žádné nenastavil | Heslo už kdysi nastavené bylo. Smaž dokument `config/admin` i `config/public` v konzoli a načti stránku znovu. |
+| `auth/configuration-not-found` | Není zapnuté přihlašování, krok 1.2. |
+| „Přihlašování e-mailem není ve Firebase zapnuté" | Chybí **Email/Password** nebo **Email link**, krok 1.2. |
+| „Tahle adresa aplikace není ve Firebase povolená" | Doména chybí v **Authorized domains**, krok 1.2. |
+| „Firebase dnes už další maily nepošle" | Projekt je na Sparku a vyčerpal pět odkazů denně. Přepni na Blaze, krok 1.2. |
+| Pozvánka nepřišla | Podívej se do nevyžádané pošty. Pak v **Tým** u člena **Poslat pozvánku znovu**. |
+| „Pozvánka už neplatí" | Odkaz propadl nebo už byl použitý. Pošli ji znovu z **Tým**. |
+| „Sem zatím nemáš přístup" | Přihlášený e-mail v týmu není. Admin ho pozve, nebo se člověk přihlásí adresou, na kterou pozvánka přišla. |
+| `Missing or insufficient permissions` při čtení | Nejsou nasazená pravidla, nebo přihlášený nemá členství. |
+| Uložení otázky se nepovede | Odebrané členství, nebo nejsou nasazená pravidla. |
 | Aplikace jede, ale data se nesdílí | Konfigurace není vyplněná, běží lokální režim. Zkontroluj `projectId` v `src/lib/firebase.config.ts`. |
 | V kvízu chybí volba „Telefony hráčů" | Sdílená databáze není dostupná. Kvíz půjde promítat, telefony se nepřipojí. |
-| Kvíz hlásí, že balíčky nejdou načíst | Nejsou publikovaná aktuální pravidla pro veřejné čtení `quizPacks`, krok 1.3. |
+| Kvíz hlásí, že balíčky nejdou načíst | Nejsou nasazená aktuální pravidla, krok 1.3, nebo bylo odebrané členství. |
 | Hráči se nepřipojí, ale kód na plátně je | Nejsou publikovaná pravidla pro `quiz`, krok 1.3. |
 | Všichni hráči mají v čekárně stejné zvíře | Pravidla jsou starší než aplikace a pole `avatar` odmítají, telefon se proto připojí bez něj. Publikuj pravidla znovu, krok 1.3. |
 
@@ -318,7 +344,7 @@ Pages** stránky vypni a smaž `pages-farewell.yml` i složku
 
 Co se nepřenese: všechno, co je uložené v prohlížeči, patří k adrese.
 Na nové doméně proto bude prázdný archiv odehraných her desky Pojišťuj!,
-správa bude chtít heslo znovu a nastavení písma a zvuku bude výchozí.
+je potřeba se znovu přihlásit a nastavení písma a zvuku bude výchozí.
 Balíčky, obrázky a výsledky kvízu i Výslechu jsou ve Firestore
 a zůstanou.
 
@@ -328,7 +354,9 @@ a zůstanou.
 
 - [ ] Hra se otevře a deska se vejde na obrazovku.
 - [ ] Přímé otevření `https://kamucirna.cz/admin` funguje i po tvrdém obnovení.
-- [ ] Heslo do správy je nastavené.
+- [ ] Admin se přihlásí a v **Tým** vidí sám sebe.
+- [ ] Pozvánka kolegyni dorazí a ona si nastaví heslo.
+- [ ] V anonymním okně vede **Otázky** na přihlášení, ne k balíčkům.
 - [ ] Nový balíček se objeví i v jiném prohlížeči, tedy Firestore opravdu jede.
 - [ ] Aplikace jde v prohlížeči nainstalovat a po vypnutí sítě naběhne.
 
@@ -339,3 +367,38 @@ a zůstanou.
   funguje i bez sítě.
 - V nastavení zvětši písmo podle velikosti místnosti.
 - Zkontroluj zvuk, nebo ho vypni.
+
+## 5. Přechod z hesla na přihlášení
+
+Jednorázově, říjen 2026. Do té doby otevíralo správu jedno heslo
+a balíčky ležely v kolekcích nahoře v databázi. Na pořadí záleží:
+nová pravidla zavřou staré kolekce, takže data musí být v prostoru dřív,
+než se pravidla nasadí, a pozvánka může odejít až potom, co je venku
+stránka `/pozvanka`.
+
+1. Projekt na **Blaze** a nastavení přihlašování, krok 1.2.
+2. Kopie dat do prostoru. Nanečisto, pak doopravdy. Stará aplikace mezitím
+   jede dál nad starými kolekcemi, kopie jí nevadí.
+   ```bash
+   npm run migrate -- --admin tvuj@email.cz
+   npm run migrate -- --admin tvuj@email.cz --apply
+   ```
+3. Pravidla i aplikace najednou, z `main`:
+   ```bash
+   firebase deploy
+   ```
+   Od téhle chvíle se do dat dostane jen člen. Kdo má otevřenou starou
+   verzi, uvidí po obnovení stránky přihlášení.
+4. Pozvánka adminovi. Otevři odkaz z mailu a nastav si heslo.
+   ```bash
+   npm run migrate -- --admin tvuj@email.cz --invite
+   ```
+5. Projdi kontrolu z kapitoly 3: balíčky obou her, výsledky, Výslech
+   a kvíz s telefonem.
+6. Úklid starých kolekcí. Skript odmítne mazat, dokud v prostoru něco
+   chybí.
+   ```bash
+   npm run migrate -- --cleanup
+   npm run migrate -- --cleanup --apply
+   ```
+7. Pozvi kolegyně z **nabídka → Tým → Pozvat**.

@@ -48,7 +48,7 @@ export const GAMES: GameEntry[] = [
 
 /**
  * Nástroje, které nejsou hra. Na rozcestníku nemají kartu, chodí se
- * k nim z nabídky, a celé jsou za heslem. Tvar mají stejný jako hry,
+ * k nim z nabídky, a jsou jen pro členy týmu. Tvar mají stejný jako hry,
  * aby hlavička uměla jejich záložky bez výjimek.
  */
 export const TOOLS: GameEntry[] = [

@@ -85,6 +85,19 @@ const RAW = {
   clock: { body: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>' },
   warning: { body: '<path d="M12 3 22 20H2zM12 10v4M12 17.5v.5"/>' },
   info: { body: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.5"/>' },
+
+  /* --- Účet -------------------------------------------------------------- */
+  /** Dvě hlavy. Tým, ne jeden člověk. */
+  team: {
+    body:
+      '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/>' +
+      '<path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.2a6.5 6.5 0 0 1 3.5 5.8"/>',
+  },
+  /** Dveře a šipka ven. */
+  'sign-out': { body: '<path d="M10 4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h5M15 8l4 4-4 4M19 12H9"/>' },
+  /** Šipka dovnitř dveří. */
+  'sign-in': { body: '<path d="M14 4h5a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-5M9 8l4 4-4 4M13 12H3"/>' },
+  mail: { body: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 6.5 8.5 7 8.5-7"/>' },
 } satisfies Record<string, IconDef>
 
 export type IconName = keyof typeof RAW

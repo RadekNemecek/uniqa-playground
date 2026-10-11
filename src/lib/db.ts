@@ -1,6 +1,5 @@
 import type { Pack } from '@/types'
 import type { QuizImage, QuizPack } from '@/games/kviz/types'
-import { hashSecret } from '@/lib/hash'
 
 /**
  * Datová vrstva Mučírny.
@@ -11,7 +10,7 @@ import { hashSecret } from '@/lib/hash'
  */
 export interface MucirnaDb {
   readonly kind: 'local' | 'firestore'
-  /** Připraví spojení. U Firestore i anonymní přihlášení. */
+  /** Připraví spojení. U Firestore i přihlášení a ověření členství. */
   ready(): Promise<void>
 
   /** Sleduje seznam balíčků. Vrací funkci pro odhlášení. */
@@ -24,8 +23,8 @@ export interface MucirnaDb {
    * Balíčky kvízu. Vlastní sada, oddělená od desky: každá hra spravuje
    * své otázky sama, protože se ptají na jiný tvar odpovědi.
    *
-   * `onDenied` se ozve při chybně publikovaných pravidlech Firestore.
-   * Čtení připravených balíčků je veřejné, heslo chrání jen zápisy.
+   * `onDenied` se ozve, když čtení odmítne server: odebrané členství,
+   * nebo pravidla starší než aplikace.
    */
   watchQuizPacks(onChange: (packs: QuizPack[]) => void, onDenied?: () => void): () => void
   saveQuizPack(pack: QuizPack): Promise<void>
@@ -43,16 +42,6 @@ export interface MucirnaDb {
   saveQuizImage(image: QuizImage): Promise<void>
   loadQuizImage(imageId: string): Promise<QuizImage | null>
   deleteQuizImage(imageId: string): Promise<void>
-
-  /** Je už heslo do administrace vůbec nastavené? */
-  hasPassword(): Promise<boolean>
-  /** Nastaví heslo. Pokud už existuje, vyžaduje znalost toho starého. */
-  setPassword(next: string, current?: string): Promise<void>
-  /** Ověří heslo a odemkne zápis. Vrací úspěch. */
-  unlock(password: string): Promise<boolean>
-  /** Je aktuální relace odemčená? */
-  isUnlocked(): boolean
-  lock(): void
 }
 
 /* ------------------------------------------------------------------------ */
@@ -62,8 +51,6 @@ export interface MucirnaDb {
 const KEY_PACKS = 'playground.packs.v1'
 const KEY_QUIZ_PACKS = 'playground.kviz.packs.v1'
 const KEY_QUIZ_IMAGE = 'playground.kviz.img.v1.'
-const KEY_SECRET = 'playground.secret.v1'
-const KEY_UNLOCK = 'playground.unlocked.v1'
 
 function readPacks(): Pack[] {
   try {
@@ -99,10 +86,7 @@ class LocalDb implements MucirnaDb {
   readonly kind = 'local' as const
   private listeners = new Set<(packs: Pack[]) => void>()
   private quizListeners = new Set<(packs: QuizPack[]) => void>()
-  private unlocked = false
-
   async ready(): Promise<void> {
-    this.unlocked = sessionStorage.getItem(KEY_UNLOCK) === '1'
     // Změna z jiné záložky se musí propsat i sem.
     window.addEventListener('storage', (e) => {
       if (e.key === KEY_PACKS) this.emit()
@@ -194,42 +178,6 @@ class LocalDb implements MucirnaDb {
 
   async deleteQuizImage(imageId: string): Promise<void> {
     localStorage.removeItem(`${KEY_QUIZ_IMAGE}${imageId}`)
-  }
-
-  async hasPassword(): Promise<boolean> {
-    return localStorage.getItem(KEY_SECRET) !== null
-  }
-
-  async setPassword(next: string, current?: string): Promise<void> {
-    const stored = localStorage.getItem(KEY_SECRET)
-    if (stored !== null) {
-      if (current === undefined || (await hashSecret(current)) !== stored) {
-        throw new Error('Stávající heslo nesouhlasí.')
-      }
-    }
-    localStorage.setItem(KEY_SECRET, await hashSecret(next))
-    this.unlocked = true
-    sessionStorage.setItem(KEY_UNLOCK, '1')
-  }
-
-  async unlock(password: string): Promise<boolean> {
-    const stored = localStorage.getItem(KEY_SECRET)
-    if (stored === null) return false
-    const ok = (await hashSecret(password)) === stored
-    if (ok) {
-      this.unlocked = true
-      sessionStorage.setItem(KEY_UNLOCK, '1')
-    }
-    return ok
-  }
-
-  isUnlocked(): boolean {
-    return this.unlocked
-  }
-
-  lock(): void {
-    this.unlocked = false
-    sessionStorage.removeItem(KEY_UNLOCK)
   }
 }
 

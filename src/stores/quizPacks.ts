@@ -53,7 +53,7 @@ export async function initQuizPacks(): Promise<void> {
 
 /**
  * Nasadí sledování znovu. Firestore listener po chybě umře a sám se
- * nezotaví, proto jej správa po odemčení obnoví.
+ * nezotaví, proto ho obnoví tlačítko Zkusit znovu.
  */
 export async function reloadQuizPacks(): Promise<void> {
   stop?.()

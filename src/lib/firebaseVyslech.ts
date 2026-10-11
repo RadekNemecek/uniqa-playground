@@ -25,7 +25,8 @@ import type {
   VyslechSession,
 } from '@/vyslech/types'
 import type { VyslechDb } from '@/lib/vyslechDb'
-import { firebaseHandle } from '@/lib/firebase'
+import { ensureFirebaseHandle } from '@/lib/firebase'
+import { currentSpaceId } from '@/stores/account'
 import { randomCode } from '@/games/kviz/code'
 
 /** Jak dlouho sběr žije. Stejně jako kvíz: pokryje protažené školení
@@ -86,13 +87,19 @@ class FirestoreVyslechDb implements VyslechDb {
 
   /* --- Sady otázek ------------------------------------------------------- */
 
+  /** Sady a výsledky patří prostoru týmu, běžící sběr ne: telefon ho
+   *  hledá podle kódu a o prostoru nic neví. */
+  private inSpace(name: string, id: string) {
+    return doc(this.db, 'spaces', currentSpaceId(), name, id)
+  }
+
   watchForms(onChange: (forms: VyslechForm[]) => void, onDenied?: () => void): () => void {
     return onSnapshot(
-      collection(this.db, 'vyslechForms'),
+      collection(this.db, 'spaces', currentSpaceId(), 'vyslechForms'),
       (snap) => onChange(snap.docs.map((d) => d.data() as VyslechForm)),
       (err) => {
-        // Sady čte jen odemčená správa. Listener po zamítnutí umře
-        // a po odemčení se musí nasadit znovu.
+        // Sady čte jen člen týmu. Listener po zamítnutí umře a sám se
+        // nezotaví, nasazuje se znovu tlačítkem.
         if (err.code === 'permission-denied') onDenied?.()
         else console.error('Čtení sad Výslechu selhalo:', err)
       },
@@ -100,11 +107,11 @@ class FirestoreVyslechDb implements VyslechDb {
   }
 
   async saveForm(form: VyslechForm): Promise<void> {
-    await withTimeout(setDoc(doc(this.db, 'vyslechForms', form.id), form), 12000, 'Uložení sady')
+    await withTimeout(setDoc(this.inSpace('vyslechForms', form.id), form), 12000, 'Uložení sady')
   }
 
   async deleteForm(formId: string): Promise<void> {
-    await withTimeout(deleteDoc(doc(this.db, 'vyslechForms', formId)), 12000, 'Smazání sady')
+    await withTimeout(deleteDoc(this.inSpace('vyslechForms', formId)), 12000, 'Smazání sady')
   }
 
   /* --- Moderátorka ------------------------------------------------------- */
@@ -123,6 +130,7 @@ class FirestoreVyslechDb implements VyslechDb {
         schema: 1,
         code,
         hostUid: this.uid,
+        spaceId: currentSpaceId(),
         title: init.title,
         questions: init.questions,
         phase: 'open' as const,
@@ -178,18 +186,18 @@ class FirestoreVyslechDb implements VyslechDb {
   /* --- Vyhodnocení ------------------------------------------------------- */
 
   async saveReport(report: VyslechReport): Promise<void> {
-    await withTimeout(setDoc(doc(this.db, 'vyslechReports', report.id), report), 15000, 'Uložení vyhodnocení')
+    await withTimeout(setDoc(this.inSpace('vyslechReports', report.id), report), 15000, 'Uložení vyhodnocení')
   }
 
   async listReports(): Promise<VyslechReport[]> {
-    const snap = await getDocs(collection(this.db, 'vyslechReports'))
+    const snap = await getDocs(collection(this.db, 'spaces', currentSpaceId(), 'vyslechReports'))
     return snap.docs
       .map((d) => d.data() as VyslechReport)
       .sort((a, b) => b.finishedAt - a.finishedAt)
   }
 
   async deleteReport(reportId: string): Promise<void> {
-    await withTimeout(deleteDoc(doc(this.db, 'vyslechReports', reportId)), 12000, 'Smazání vyhodnocení')
+    await withTimeout(deleteDoc(this.inSpace('vyslechReports', reportId)), 12000, 'Smazání vyhodnocení')
   }
 
   /* --- Telefon ----------------------------------------------------------- */
@@ -222,7 +230,7 @@ class FirestoreVyslechDb implements VyslechDb {
   }
 }
 
-export function createFirestoreVyslechDb(): VyslechDb | null {
-  const handle = firebaseHandle()
+export async function createFirestoreVyslechDb(): Promise<VyslechDb | null> {
+  const handle = await ensureFirebaseHandle()
   return handle ? new FirestoreVyslechDb(handle.db, handle.uid) : null
 }

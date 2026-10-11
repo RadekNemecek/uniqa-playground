@@ -23,6 +23,7 @@ import {
 } from '@/lib/vyslechDb'
 import { isFirebaseConfigured } from '@/lib/firebase.config'
 import { markLocalOnly, toast } from '@/stores/ui'
+import { setAccount } from '@/stores/account'
 
 applySettings()
 restoreGame()
@@ -79,9 +80,11 @@ async function boot(): Promise<void> {
         })
         // Přišlo až po stropu, tedy jsme mezitím ohlásili lokální režim.
         // Nechat to být by znamenalo, že moderátorka připraví kvíz bez
-        // telefonů, přestože se mezitím připojily.
+        // telefonů, přestože se mezitím připojily. Hru s telefony smí
+        // založit jen ověřený člen týmu, a účet se v lokálním režimu
+        // neověřoval, takže to spraví až obnovení stránky.
         if (offline) {
-          toast('Spojení se nakonec navázalo. Telefony hráčů jdou zapnout, otázky se načtou po obnovení stránky.', 'ok', 8000)
+          toast('Spojení se nakonec navázalo. Načti stránku znovu, otázky týmu se načtou a půjdou zapnout telefony hráčů.', 'ok', 8000)
         }
       },
       () => {
@@ -94,10 +97,16 @@ async function boot(): Promise<void> {
       setDb(await Promise.race([connection, timeout(BOOT_TIMEOUT)]))
     } catch (e) {
       // Radši lokální režim než rozbitá hra deset minut před školením.
+      // Data jsou pak jen z tohohle počítače, takže není co chránit
+      // přihlášením. Příznak jde napřed, aby pozdě dorazivší spojení
+      // nepřepsalo účet a nevyhodilo moderátorku na přihlášení.
       offline = true
+      markLocalOnly()
+      setAccount({ status: 'local' })
       console.error('Firestore není dostupný, pokračuji v lokálním režimu.', e)
     }
   } else {
+    setAccount({ status: 'local' })
     // Bez sdílené databáze jede Výslech v prohlížeči, aby šel vyzkoušet.
     // Příprava řekne, že se telefony v sále nepřipojí.
     setVyslechDbFactory(async () => {
@@ -112,7 +121,6 @@ async function boot(): Promise<void> {
   // Mlčky přepnout do lokálního režimu nejde: uživatelce by beze slova
   // zmizely balíčky kolegů a nevěděla by proč.
   if (offline) {
-    markLocalOnly()
     toast('Sdílená databáze není dostupná. Hrát jde dál, otázky se ale berou jen z tohoto počítače.', 'bad', 8000)
   }
 }

@@ -40,8 +40,8 @@ export async function initPacks(): Promise<void> {
   })
 
   // Ukázkový balíček zakládáme jen v lokálním režimu. Ve sdílené databázi
-  // je zápis vyhrazený tomu, kdo zná heslo, a hlavně: nechceme, aby se
-  // v cloudu množily kopie ukázky při každém spuštění.
+  // nechceme, aby se v knihovně týmu množily kopie ukázky při každém
+  // spuštění.
   if (state.packs.length === 0 && db().kind === 'local') {
     await db().savePack(demoPack())
   }

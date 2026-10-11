@@ -1,8 +1,15 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { account, canUseSpace } from '@/stores/account'
 
 declare module 'vue-router' {
   interface RouteMeta {
     title?: string
+    /**
+     * Kdo smí dovnitř. Bez údaje kdokoli: rozcestník, přihlášení
+     * a telefon hráče. `member` je všechno, kde jsou otázky, sady,
+     * výsledky nebo členové týmu.
+     */
+    access?: 'member'
   }
 }
 
@@ -19,31 +26,31 @@ export const router = createRouter({
       path: '/pojistuj',
       name: 'pojistuj',
       component: () => import('@/views/PojistujView.vue'),
-      meta: { title: 'Pojišťuj!' },
+      meta: { title: 'Pojišťuj!', access: 'member' },
     },
     {
       path: '/kviz',
       name: 'kviz',
       component: () => import('@/views/KvizView.vue'),
-      meta: { title: 'Na kolik to dáš?' },
+      meta: { title: 'Na kolik to dáš?', access: 'member' },
     },
     {
       path: '/kviz/otazky',
       name: 'kviz-otazky',
       component: () => import('@/views/KvizAdminView.vue'),
-      meta: { title: 'Balíčky | Na kolik to dáš?' },
+      meta: { title: 'Balíčky | Na kolik to dáš?', access: 'member' },
     },
     {
       path: '/kviz/vysledky',
       name: 'kviz-vysledky',
       component: () => import('@/views/KvizReportsView.vue'),
-      meta: { title: 'Výsledky | Na kolik to dáš?' },
+      meta: { title: 'Výsledky | Na kolik to dáš?', access: 'member' },
     },
     {
       path: '/admin',
       name: 'admin',
       component: () => import('@/views/AdminView.vue'),
-      meta: { title: 'Balíčky | Pojišťuj!' },
+      meta: { title: 'Balíčky | Pojišťuj!', access: 'member' },
     },
     // Adresa pro hráče. Je krátká schválně: nese ji QR kód na plátně
     // a čím kratší adresa, tím řidší kód a tím dál se dá načíst.
@@ -65,19 +72,19 @@ export const router = createRouter({
       path: '/vyslech',
       name: 'vyslech',
       component: () => import('@/views/VyslechView.vue'),
-      meta: { title: 'Výslech' },
+      meta: { title: 'Výslech', access: 'member' },
     },
     {
       path: '/vyslech/sady',
       name: 'vyslech-sady',
       component: () => import('@/views/VyslechFormsView.vue'),
-      meta: { title: 'Sady otázek | Výslech' },
+      meta: { title: 'Sady otázek | Výslech', access: 'member' },
     },
     {
       path: '/vyslech/vysledky',
       name: 'vyslech-vysledky',
       component: () => import('@/views/VyslechReportsView.vue'),
-      meta: { title: 'Výsledky | Výslech' },
+      meta: { title: 'Výsledky | Výslech', access: 'member' },
     },
     // Dotazník pro účastníky. Krátká adresa ze stejného důvodu jako `/k`.
     {
@@ -92,6 +99,25 @@ export const router = createRouter({
       component: () => import('@/views/VyslechFillView.vue'),
       meta: { title: 'Výslech' },
     },
+    {
+      path: '/prihlaseni',
+      name: 'prihlaseni',
+      component: () => import('@/views/SignInView.vue'),
+      meta: { title: 'Přihlášení' },
+    },
+    // Sem vede odkaz z pozvánky. Nastavuje se tu heslo.
+    {
+      path: '/pozvanka',
+      name: 'pozvanka',
+      component: () => import('@/views/InviteView.vue'),
+      meta: { title: 'Pozvánka' },
+    },
+    {
+      path: '/tym',
+      name: 'tym',
+      component: () => import('@/views/TeamView.vue'),
+      meta: { title: 'Tým', access: 'member' },
+    },
     // Hra se dřív jmenovala Riskuj. Záložky a zástupci PWA na starou
     // adresu musí dál fungovat.
     { path: '/riskuj', redirect: '/pojistuj' },
@@ -99,6 +125,25 @@ export const router = createRouter({
   ],
   scrollBehavior: () => ({ top: 0 }),
 })
+
+/**
+ * Bez členství se na otázky, sady ani výsledky nechodí. Data stejně hlídají
+ * pravidla na serveru, tohle jen pošle člověka tam, kde se dá něco dělat,
+ * místo prázdné obrazovky s chybou. Kam chtěl, si přihlášení zapamatuje.
+ */
+router.beforeEach((to) => {
+  if (!to.meta.access || canUseSpace()) return true
+  return { name: 'prihlaseni', query: { dal: to.fullPath } }
+})
+
+// Členství ověřené na pozadí může přístup vzít, třeba když admin člena
+// odebral. Obrazovka s daty týmu pak odejde na přihlášení sama.
+export function leaveIfLocked(): void {
+  const current = router.currentRoute.value
+  if (current.meta.access && !canUseSpace() && account.status !== 'loading') {
+    void router.replace({ name: 'prihlaseni', query: { dal: current.fullPath } })
+  }
+}
 
 router.afterEach((to) => {
   const title = to.meta.title ?? 'Mučírna'

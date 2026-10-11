@@ -231,9 +231,12 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
   vrstvy: telefon si zamkne tlačítka sám, moderátorský počítač přepne fázi
   a server odmítne pozdní zápis. Poslední slovo má server, protože platí
   i tehdy, když moderátorce vypadne síť.
-- **Připravené balíčky kvízu jsou veřejně čitelné.** Příprava a spuštění hry
-  nesmí vyžadovat heslo do správy. Heslo chrání vytváření, úpravy a mazání
-  balíčků. Balíčky desky zůstávají také veřejně čitelné.
+- **Data týmu vidí jen člen týmu.** Balíčky obou her, obrázky, sady
+  Výslechu i výsledky leží pod `spaces/{prostor}` a čte je i mění jen
+  přihlášený člen s ověřeným e-mailem. Telefon hráče se nepřihlašuje,
+  zná jen kód hry a do prostoru nevidí. Admin navíc spravuje členy,
+  editor smí všechno ostatní. Účet vzniká jen z pozvánky, registrace
+  není. Podrobně v kapitole Přihlášení a tým.
 - **Polí Riziko! je nejvýš jedno na kategorii a nejvýš čtyři.** Dvě pole
   v jednom sloupci by se potkala a víc než čtyři sázky za půlhodinu je
   zdržení. Strop se počítá z počtu vybraných kategorií, ne z počtu
@@ -309,8 +312,10 @@ přepínače: odchází se z ní i Escapem a F11.
 
 Nástroj, ne hra. Je v `TOOLS` v registru, ne v `GAMES`, takže na
 rozcestníku **nemá kartu**: chodí se k němu z nabídky aplikace
-(`AppMenu`, tři čáry v hlavičce a v rohu rozcestníku). Celý je za heslem
-do správy, i příprava, protože jsou v něm hodnocení lektorů.
+(`AppMenu`, tři čáry v hlavičce a v rohu rozcestníku). Celý je jen pro
+členy týmu, i příprava, protože jsou v něm hodnocení lektorů. Kdo sběr
+spustil, se ve výsledcích schválně neukládá: obvykle je to lektor,
+kterého se hodnocení týká.
 
 - **Telefon dostane celou sadu najednou** a odešle ji jedním tlačítkem.
   Na plátně otázky neběží, každý vyplňuje svým tempem. Rozepsané odpovědi
@@ -359,8 +364,54 @@ Výsledky kvízu mají **vlastní záložku** vedle Přípravy a Balíčků
 (`src/views/KvizReportsView.vue`, cesta z `reportsRoute` v registru her).
 Jsou to dvě různé práce: otázky se chystají před školením, výsledky se
 čtou po něm, a jako oddíl pod knihovnou balíčků se k nim muselo
-prorolovat. Záložku dostane jen hra, která `reportsRoute` má. Heslo
-chrání totéž co správu, jsou v nich přezdívky.
+prorolovat. Záložku dostane jen hra, která `reportsRoute` má. Čte je jen
+tým, jsou v nich přezdívky. Každé vyhodnocení nese `hostEmail`, tedy
+kdo školení vedl.
+
+## Přihlášení a tým
+
+Dřív otevíralo správu jedno sdílené heslo a balíčky četl kdokoli
+s adresou. Teď má každý vlastní účet a data týmu vidí jen člen.
+
+- **Účet vzniká jen z pozvánky.** Admin v `/tym` zapíše e-mail a roli,
+  aplikace pošle přihlašovací odkaz Firebase (`sendSignInLinkToEmail`).
+  Kliknutím člověk prokáže, že adresa je jeho, na `/pozvanka` si nastaví
+  heslo a dál se přihlašuje e-mailem a heslem na `/prihlaseni`.
+  Registrace na přihlášení není a být nemá: členství je vázané na
+  e-mail, a kdo by si mohl založit účet sám, založil by si ho i na
+  cizí adresu. Pravidla proto chtějí ověřený e-mail.
+- **Odkazy z pošty stojí Blaze.** Na Sparku pošle Firebase pět
+  přihlašovacích odkazů denně na celý projekt, proto projekt běží na
+  Blaze. Zapomenuté heslo jde přes `sendPasswordResetEmail`.
+- **Člen má za id e-mail** malými písmeny (`spaces/{prostor}/members/{email}`),
+  protože admin zve dřív, než má kolegyně uid. Po přihlášení se členství
+  hledá dotazem přes všechny prostory (`collectionGroup('members')`
+  podle pole `email`). První přihlášení zapíše `joinedAt`, podle toho
+  `/tym` pozná nepřijatou pozvánku.
+- **Stav účtu** je v `src/stores/account.ts`, plní ho `firebase.ts` při
+  startu. Router pouští na obrazovky s `meta.access: 'member'` jen člena,
+  ostatní posílá na přihlášení s `?dal=` cestou, kam mířili. Po přihlášení
+  i odhlášení se stránka načte znovu, ať se Firestore rozjede načisto.
+  Odhlášení maže i mezipaměť Firestore v prohlížeči, notebook bývá sdílený.
+- **Bez sítě se hra spustí.** Poslední ověřené členství si počítač
+  pamatuje a pustí člena dovnitř hned, ověření ze serveru doběhne na
+  pozadí. Rozhodují stejně pravidla na serveru.
+- **Lokální režim nemá přihlášení.** Bez Firestore, v `dev:local` i při
+  výpadku před školením, jsou data jen z tohoto počítače a není co
+  chránit. Pozdě dorazivší spojení účet nepřepíše, jinak by uprostřed
+  hry vyhodilo moderátorku na přihlášení.
+- **Běžící hra a sběr zůstávají nahoře** (`quiz/{kód}`, `vyslech/{kód}`),
+  telefon je hledá podle kódu. Nesou `spaceId` a založit je smí jen člen
+  toho prostoru.
+- **Prostor je zatím jeden** (`uniqa`) a zakládá ho skript. Pro více
+  týmů stačí povolit zakládání prostoru a zapsat zakladatele jako admina,
+  model s tím počítá.
+
+Pravidla mají testy v emulátoru (`npm run test:rules`). Celý průběh
+s pozvánkami jde vyzkoušet na emulátorech bez sahání na ostrá data:
+`npm run emulators` a vedle `npm run dev:emu`. Odkazy, které by odešly
+mailem, vypisuje emulátor na
+`http://127.0.0.1:9099/emulator/v1/projects/uniqa-playground/oobCodes`.
 
 ## Data
 

@@ -2,13 +2,9 @@
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppHeader from '@/components/AppHeader.vue'
-import AdminGate from '@/components/admin/AdminGate.vue'
 import PackEditor from '@/components/admin/PackEditor.vue'
 import UiButton from '@/components/ui/UiButton.vue'
-import UiField from '@/components/ui/UiField.vue'
 import UiMenu from '@/components/ui/UiMenu.vue'
-import UiModal from '@/components/ui/UiModal.vue'
-import { db } from '@/lib/db'
 import { downloadPack, readPackFile } from '@/lib/packIo'
 import {
   createDemoPack,
@@ -30,15 +26,7 @@ import RunHistory from '@/games/pojistuj/components/RunHistory.vue'
 const route = useRoute()
 const router = useRouter()
 
-const unlocked = ref(db().isUnlocked())
 const fileInput = ref<HTMLInputElement | null>(null)
-
-const passwordOpen = ref(false)
-const currentPassword = ref('')
-const nextPassword = ref('')
-const nextRepeat = ref('')
-const passwordError = ref('')
-const passwordBusy = ref(false)
 
 const currentId = computed(() => {
   const raw = route.query.pack
@@ -127,42 +115,6 @@ async function onImportFile(event: Event) {
   }
 }
 
-function lock() {
-  db().lock()
-  unlocked.value = false
-  closePack()
-}
-
-function openPassword() {
-  currentPassword.value = ''
-  nextPassword.value = ''
-  nextRepeat.value = ''
-  passwordError.value = ''
-  passwordOpen.value = true
-}
-
-async function changePassword() {
-  passwordError.value = ''
-  if (nextPassword.value.trim().length < 4) {
-    passwordError.value = 'Nové heslo musí mít aspoň čtyři znaky.'
-    return
-  }
-  if (nextPassword.value !== nextRepeat.value) {
-    passwordError.value = 'Nová hesla se neshodují.'
-    return
-  }
-  passwordBusy.value = true
-  try {
-    await db().setPassword(nextPassword.value, currentPassword.value)
-    passwordOpen.value = false
-    toast('Heslo změněno. Zapiš si ho, obnovit ho nejde.', 'ok', 6000)
-  } catch (e) {
-    passwordError.value = e instanceof Error ? e.message : 'Heslo se nepodařilo změnit.'
-  } finally {
-    passwordBusy.value = false
-  }
-}
-
 function readinessLabel(id: string): { text: string; tone: 'ok' | 'warn' | 'muted' } {
   const pack = packs.packs.find((p) => p.id === id)
   if (!pack) return { text: '', tone: 'muted' }
@@ -182,127 +134,92 @@ function readinessLabel(id: string): { text: string; tone: 'ok' | 'warn' | 'mute
 
 <template>
   <div class="admin">
-    <template v-if="!unlocked">
-      <AppHeader game="pojistuj" section="questions" prep />
-      <AdminGate @unlocked="unlocked = true" />
-    </template>
+    <AppHeader game="pojistuj" section="questions" prep />
 
-    <template v-else>
-      <AppHeader game="pojistuj" section="questions" prep>
-        <template #tools>
-          <UiMenu label="Účet správy" v-slot="{ close }">
-            <button type="button" role="menuitem" @click="openPassword(); close()">Změnit heslo</button>
-            <button type="button" role="menuitem" @click="lock(); close()">Zamknout</button>
-          </UiMenu>
-        </template>
-      </AppHeader>
+    <main id="obsah" class="admin__body page">
+      <!-- Knihovna -------------------------------------------------------- -->
+      <section v-if="!current" class="library">
+        <header class="library__head">
+          <div>
+            <p class="eyebrow">Tvoje knihovna</p>
+            <h1 class="library__title">Otázky na desku.</h1>
+            <p class="library__lead">
+              Balíčky pro hru Pojišťuj! Hratelná je jen kategorie, která má
+              vyplněné všechny otázky.
+            </p>
+          </div>
+          <div class="library__actions">
+            <UiButton size="sm" variant="ghost" @click="triggerImport">Importovat</UiButton>
+            <UiButton size="sm" variant="brand" @click="onCreate">Nový balíček</UiButton>
+          </div>
+        </header>
 
-      <main id="obsah" class="admin__body page">
-        <!-- Knihovna -------------------------------------------------------- -->
-        <section v-if="!current" class="library">
-          <header class="library__head">
-            <div>
-              <p class="eyebrow">Tvoje knihovna</p>
-              <h1 class="library__title">Otázky na desku.</h1>
-              <p class="library__lead">
-                Balíčky pro hru Pojišťuj! Hratelná je jen kategorie, která má
-                vyplněné všechny otázky.
-              </p>
-            </div>
-            <div class="library__actions">
-              <UiButton size="sm" variant="ghost" @click="triggerImport">Importovat</UiButton>
-              <UiButton size="sm" variant="brand" @click="onCreate">Nový balíček</UiButton>
-            </div>
-          </header>
-
-          <input
-            ref="fileInput"
-            type="file"
-            accept="application/json,.json"
-            class="library__file"
-            @change="onImportFile"
-          />
-
-          <!-- Dokud data nedorazila, není pravda, že tu nic není. Na pomalé
-               síti se tady dřív ukázalo „Zatím tu není žádný balíček"
-               i s tlačítkem na založení ukázky, a dalo se na něj kliknout
-               dřív, než dorazily skutečné balíčky. -->
-          <UiSkeleton v-if="!packs.loaded" :lines="4" />
-
-          <UiEmpty
-            v-else-if="packs.packs.length === 0"
-            icon="info"
-            title="Zatím tu není žádný balíček"
-            text="Založ prázdný tlačítkem Nový balíček, naimportuj JSON, nebo si napřed prohlédni ukázku."
-          >
-            <UiButton size="sm" variant="ghost" @click="onCreateDemo">
-              Vytvořit ukázkový balíček
-            </UiButton>
-          </UiEmpty>
-
-          <ul v-else class="library__items">
-            <li v-for="(p, i) in packs.packs" :key="p.id" class="card">
-              <span class="card__index" aria-hidden="true">{{ String(i + 1).padStart(2, '0') }}</span>
-              <button type="button" class="card__main" @click="openPack(p.id)">
-                <span class="card__name">{{ p.name }}</span>
-                <span class="card__badge" :class="`card__badge--${readinessLabel(p.id).tone}`">
-                  {{ readinessLabel(p.id).text }}
-                </span>
-                <span class="card__meta">
-                  {{ packProgress(p).done }} z {{ packProgress(p).total }} otázek hotových
-                </span>
-                <span v-if="packProgress(p).done < packProgress(p).total" class="card__remaining">
-                  Zbývá doplnit {{ count(packProgress(p).total - packProgress(p).done, 'otázku', 'otázky', 'otázek') }}
-                </span>
-              </button>
-
-              <UiMenu :label="`Akce balíčku ${p.name}`" v-slot="{ close }">
-                <button type="button" role="menuitem" @click="openPack(p.id); close()">Otevřít</button>
-                <button type="button" role="menuitem" @click="onDuplicate(p.id); close()">Duplikovat</button>
-                <button type="button" role="menuitem" @click="onExport(p.id); close()">Exportovat JSON</button>
-                <hr />
-                <button type="button" role="menuitem" class="danger" @click="onRemove(p.id); close()">Smazat</button>
-              </UiMenu>
-            </li>
-          </ul>
-
-          <!-- Co z odehraných her zůstalo. Z desky se dosud neukládalo nic,
-               takže po školení nebylo co ukázat dál. -->
-          <RunHistory />
-        </section>
-
-        <!-- Editor ---------------------------------------------------------- -->
-        <PackEditor
-          v-else
-          :key="current.id"
-          :pack="current"
-          @duplicate="onDuplicate()"
-          @remove="onRemove()"
-          @back="closePack"
+        <input
+          ref="fileInput"
+          type="file"
+          accept="application/json,.json"
+          class="library__file"
+          @change="onImportFile"
         />
-      </main>
-    </template>
 
-    <UiModal :open="passwordOpen" title="Změnit heslo" size="sm" @close="passwordOpen = false">
-      <form class="pw" @submit.prevent="changePassword">
-        <UiField label="Současné heslo">
-          <input v-model="currentPassword" type="password" autocomplete="current-password" required />
-        </UiField>
-        <UiField label="Nové heslo">
-          <input v-model="nextPassword" type="password" autocomplete="new-password" required />
-        </UiField>
-        <UiField label="Nové heslo znovu">
-          <input v-model="nextRepeat" type="password" autocomplete="new-password" required />
-        </UiField>
-        <p v-if="passwordError" class="pw__error" role="alert">{{ passwordError }}</p>
-      </form>
-      <template #footer>
-        <UiButton size="sm" variant="ghost" @click="passwordOpen = false">Zrušit</UiButton>
-        <UiButton size="sm" variant="brand" :disabled="passwordBusy" @click="changePassword">
-          Uložit heslo
-        </UiButton>
-      </template>
-    </UiModal>
+        <!-- Dokud data nedorazila, není pravda, že tu nic není. Na pomalé
+             síti se tady dřív ukázalo „Zatím tu není žádný balíček"
+             i s tlačítkem na založení ukázky, a dalo se na něj kliknout
+             dřív, než dorazily skutečné balíčky. -->
+        <UiSkeleton v-if="!packs.loaded" :lines="4" />
+
+        <UiEmpty
+          v-else-if="packs.packs.length === 0"
+          icon="info"
+          title="Zatím tu není žádný balíček"
+          text="Založ prázdný tlačítkem Nový balíček, naimportuj JSON, nebo si napřed prohlédni ukázku."
+        >
+          <UiButton size="sm" variant="ghost" @click="onCreateDemo">
+            Vytvořit ukázkový balíček
+          </UiButton>
+        </UiEmpty>
+
+        <ul v-else class="library__items">
+          <li v-for="(p, i) in packs.packs" :key="p.id" class="card">
+            <span class="card__index" aria-hidden="true">{{ String(i + 1).padStart(2, '0') }}</span>
+            <button type="button" class="card__main" @click="openPack(p.id)">
+              <span class="card__name">{{ p.name }}</span>
+              <span class="card__badge" :class="`card__badge--${readinessLabel(p.id).tone}`">
+                {{ readinessLabel(p.id).text }}
+              </span>
+              <span class="card__meta">
+                {{ packProgress(p).done }} z {{ packProgress(p).total }} otázek hotových
+              </span>
+              <span v-if="packProgress(p).done < packProgress(p).total" class="card__remaining">
+                Zbývá doplnit {{ count(packProgress(p).total - packProgress(p).done, 'otázku', 'otázky', 'otázek') }}
+              </span>
+            </button>
+
+            <UiMenu :label="`Akce balíčku ${p.name}`" v-slot="{ close }">
+              <button type="button" role="menuitem" @click="openPack(p.id); close()">Otevřít</button>
+              <button type="button" role="menuitem" @click="onDuplicate(p.id); close()">Duplikovat</button>
+              <button type="button" role="menuitem" @click="onExport(p.id); close()">Exportovat JSON</button>
+              <hr />
+              <button type="button" role="menuitem" class="danger" @click="onRemove(p.id); close()">Smazat</button>
+            </UiMenu>
+          </li>
+        </ul>
+
+        <!-- Co z odehraných her zůstalo. Z desky se dosud neukládalo nic,
+             takže po školení nebylo co ukázat dál. -->
+        <RunHistory />
+      </section>
+
+      <!-- Editor ---------------------------------------------------------- -->
+      <PackEditor
+        v-else
+        :key="current.id"
+        :pack="current"
+        @duplicate="onDuplicate()"
+        @remove="onRemove()"
+        @back="closePack"
+      />
+    </main>
   </div>
 </template>
 
@@ -331,8 +248,6 @@ function readinessLabel(id: string): { text: string; tone: 'ok' | 'warn' | 'mute
 .card__badge { align-self: center; font-size: var(--fs-sm); font-weight: 700; color: var(--c-text-muted); }
 .card__badge--ok { color: var(--c-ok); }
 
-.pw { display: grid; gap: var(--sp-4); }
-.pw__error { color: var(--c-bad); font-size: var(--fs-sm); font-weight: 700; }
 
 @media (max-width: 720px) {
   .card { gap: var(--sp-3); }

@@ -9,7 +9,7 @@ import type { VyslechForm } from '@/vyslech/types'
 interface FormsState {
   forms: VyslechForm[]
   loaded: boolean
-  /** Čtení odmítla databáze: zamčená správa nebo stará pravidla. */
+  /** Čtení odmítla databáze: odebrané členství nebo stará pravidla. */
   denied: boolean
   /** Bez úložiště Výslech nejede vůbec. */
   unavailable: boolean
@@ -54,7 +54,7 @@ export async function initVyslechForms(): Promise<void> {
   })
 }
 
-/** Po odemčení se sledování nasadí znovu: zamítnutý listener je mrtvý. */
+/** Nasadí sledování znovu: zamítnutý listener je mrtvý. */
 export async function reloadVyslechForms(): Promise<void> {
   stop?.()
   stop = null

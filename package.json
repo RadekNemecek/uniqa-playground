@@ -14,7 +14,10 @@
     "typecheck": "vue-tsc --noEmit",
     "icons": "node scripts/make-icons.mjs",
     "dev:local:alt": "VITE_LOCAL_ONLY=1 vite --port 5186 --strictPort",
-    "test:rules": "firebase emulators:exec --only firestore --project demo-mucirna 'node --test tests/rules.test.mjs'"
+    "test:rules": "firebase emulators:exec --only firestore --project demo-mucirna 'node --test tests/rules.test.mjs'",
+    "dev:emu": "VITE_EMULATORS=1 vite --port 5188 --strictPort",
+    "emulators": "firebase emulators:start --only auth,firestore --project uniqa-playground",
+    "migrate": "node scripts/migrate-to-space.mjs"
   },
   "dependencies": {
     "firebase": "^12.18.0",

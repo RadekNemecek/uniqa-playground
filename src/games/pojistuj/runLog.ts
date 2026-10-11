@@ -9,8 +9,7 @@ import type { GameState } from '@/types'
  * ale co z toho vyšlo a která kategorie týmu nesedla.
  *
  * Ukládá se lokálně, do prohlížeče. Deska se vede z jednoho notebooku
- * a nikam se neposílá, takže tu není co sdílet; sdílený archiv by navíc
- * znamenal zápis do Firestore bez hesla, a to je dnes vyhrazené správě.
+ * a nikam se neposílá, takže tu není co sdílet.
  */
 
 const KEY = 'playground.runs.pojistuj.v1'

@@ -130,14 +130,13 @@ Vite vypíše vedle místní adresy i **Network**, například
 kód se opraví sám. Kdyby ses přesto ocitla na `localhost`, čekárna to
 vypíše červeně, takže na to nepřijdeš až před plnou místností.
 
-Síťová adresa je z pohledu prohlížeče jiné místo než `localhost`. Pro hraní
-to ničemu nevadí, připravené balíčky jsou dostupné bez hesla. Pokud chceš
-na síťové adrese otázky také upravovat, správu tam odemkni zvlášť.
+Síťová adresa je z pohledu prohlížeče jiné místo než `localhost`, takže
+se na ní přihlas zvlášť.
 
 ## Výslech: zpětná vazba po školení
 
 Výslech není hra, na rozcestníku proto nemá kartu. Otevírá se z nabídky
-(tlačítko se třemi čarami vpravo nahoře) a celý je za heslem do správy.
+(tlačítko se třemi čarami vpravo nahoře) a je jen pro členy týmu.
 
 1. **Sady otázek** připravíš jednou a používáš dokola. Výchozí sada
    *Po školení* má sedm otázek: celkový dojem, využitelnost, tempo,

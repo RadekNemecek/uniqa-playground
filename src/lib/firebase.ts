@@ -1,27 +1,56 @@
 import { initializeApp } from 'firebase/app'
-import { getAuth, signInAnonymously, type Auth } from 'firebase/auth'
 import {
+  connectAuthEmulator,
+  getAuth,
+  isSignInWithEmailLink,
+  sendPasswordResetEmail,
+  sendSignInLinkToEmail,
+  signInAnonymously,
+  signInWithEmailAndPassword,
+  signInWithEmailLink,
+  signOut,
+  updatePassword,
+  type ActionCodeSettings,
+  type Auth,
+  type User,
+} from 'firebase/auth'
+import {
+  clearIndexedDbPersistence,
   collection,
+  connectFirestoreEmulator,
+  collectionGroup,
   deleteDoc,
   doc,
   getDoc,
+  getDocs,
   initializeFirestore,
   memoryLocalCache,
   onSnapshot,
   persistentLocalCache,
   persistentMultipleTabManager,
+  query,
+  serverTimestamp,
   setDoc,
+  terminate,
+  Timestamp,
+  updateDoc,
+  where,
   type Firestore,
 } from 'firebase/firestore'
 import type { Pack } from '@/types'
 import type { QuizImage, QuizPack } from '@/games/kviz/types'
 import type { MucirnaDb } from '@/lib/db'
 import { FIREBASE_CONFIG } from '@/lib/firebase.config'
-import { hashSecret } from '@/lib/hash'
 import { reportDbError } from '@/lib/db'
-
-const KEY_LOCAL_HASH = 'playground.keyhash.v1'
-const KEY_UNLOCK = 'playground.unlocked.v1'
+import {
+  account,
+  currentSpaceId,
+  recallMembership,
+  rememberMembership,
+  setAccount,
+  type Role,
+} from '@/stores/account'
+import { degraded } from '@/stores/ui'
 
 const delay = (ms: number): Promise<void> => new Promise((r) => window.setTimeout(r, ms))
 
@@ -59,29 +88,23 @@ function isPlayerDevice(): boolean {
   return rest === 'k' || rest.startsWith('k/') || rest === 'v' || rest.startsWith('v/')
 }
 
+/** Přihlášený e-mailem, ne anonymní telefon. Malými písmeny, jak je
+ *  zapsaný v členech i porovnávaný v pravidlech. */
+function emailOf(user: User | null): string {
+  return user && !user.isAnonymous && user.email ? user.email.toLowerCase() : ''
+}
+
 /**
- * Firestore jako úložiště balíčků.
+ * Firestore jako úložiště otázek.
  *
- * Ochrana správy je jednoduchá, ale vynucená na straně Google, ne jen
- * schovaná v rozhraní:
- *
- * 1. Klient se přihlásí anonymně, uživatelka o tom neví.
- * 2. Při odemčení pošle otisk hesla do `unlocks/{uid}`.
- * 3. Pravidlo ten zápis povolí jen tehdy, když se otisk shoduje s tím
- *    v `config/admin`, který nikdo přečíst nesmí.
- * 4. Zápis do balíčků smí jen ten, kdo `unlocks/{uid}` má. Čtení je
- *    veřejné, aby šla připravená hra spustit bez hesla do editoru.
- *
- * Po prvním úspěšném odemčení si otisk necháme i lokálně, aby se dalo
- * odemknout i bez sítě. Skutečné oprávnění stejně rozhodují pravidla.
+ * Všechno, co tým připravil, leží pod `spaces/{prostor}` a čte a mění to
+ * jen člen s ověřeným e-mailem. Hlídají to pravidla na straně Google,
+ * aplikace jen neukazuje, kam člověk nesmí.
  */
 class FirestoreDb implements MucirnaDb {
   readonly kind = 'firestore' as const
 
   private db!: Firestore
-  private auth!: Auth
-  private uid = ''
-  private unlocked = false
   private booted: Promise<void> | null = null
 
   /** Volá se z více míst, proto musí být idempotentní. */
@@ -104,54 +127,88 @@ class FirestoreDb implements MucirnaDb {
       // přepne na dlouhý polling, který proleze i tudy.
       experimentalAutoDetectLongPolling: true,
     })
-    this.auth = getAuth(app)
-    const credential = await signInAnonymously(this.auth)
-    this.uid = credential.user.uid
-    this.unlocked = sessionStorage.getItem(KEY_UNLOCK) === '1'
-    handle = { db: this.db, uid: this.uid }
+    const auth = getAuth(app)
+    auth.languageCode = 'cs'
+
+    // `npm run dev:emu`: přihlášení i databáze běží v emulátorech na tomhle
+    // počítači. Na zkoušení pozvánek a pravidel, bez sahání na ostrá data.
+    if (import.meta.env.VITE_EMULATORS === '1') {
+      connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true })
+      connectFirestoreEmulator(this.db, '127.0.0.1', 8080)
+    }
+
+    // Přihlášení si prohlížeč pamatuje, i bez sítě. Na něj se čeká, jinak
+    // by se člen na okamžik tvářil jako odhlášený.
+    await auth.authStateReady()
+    let user = auth.currentUser
+
+    // Telefon hráče potřebuje identitu hned, je to jeho karta ve hře.
+    // Po obnovení stránky se vrátí tatáž anonymní identita.
+    if (!user && isPlayerDevice()) user = (await signInAnonymously(auth)).user
+
+    conn = { db: this.db, auth, uid: user?.uid ?? '' }
+    await resolveAccount(user)
+  }
+
+  /* --- Cesty do prostoru ------------------------------------------------- */
+
+  private col(name: string) {
+    return collection(this.db, 'spaces', currentSpaceId(), name)
+  }
+
+  private ref(name: string, id: string) {
+    return doc(this.db, 'spaces', currentSpaceId(), name, id)
+  }
+
+  /** Bez prostoru se nesleduje nic. Na obrazovky s otázkami se bez
+   *  členství nedá dostat, tohle jen nedovolí sledování na prázdno. */
+  private watch<T>(
+    name: string,
+    onChange: (items: T[]) => void,
+    onError: (err: { code?: string }) => void,
+  ): () => void {
+    if (!account.spaceId) {
+      onChange([])
+      return () => undefined
+    }
+    return onSnapshot(
+      this.col(name),
+      (snap) => onChange(snap.docs.map((d) => d.data() as T)),
+      onError,
+    )
   }
 
   watchPacks(onChange: (packs: Pack[]) => void): () => void {
-    return onSnapshot(
-      collection(this.db, 'packs'),
-      (snap) => onChange(snap.docs.map((d) => d.data() as Pack)),
-      (err) => console.error('Čtení balíčků selhalo:', err),
-    )
+    return this.watch<Pack>('packs', onChange, (err) => console.error('Čtení balíčků selhalo:', err))
   }
 
   async savePack(pack: Pack): Promise<void> {
-    await this.write(setDoc(doc(this.db, 'packs', pack.id), pack), 'Uložení balíčku')
+    await this.write(setDoc(this.ref('packs', pack.id), pack), 'Uložení balíčku')
   }
 
   async deletePack(packId: string): Promise<void> {
-    await this.write(deleteDoc(doc(this.db, 'packs', packId)), 'Smazání balíčku')
+    await this.write(deleteDoc(this.ref('packs', packId)), 'Smazání balíčku')
   }
 
-  /** Balíčky kvízu čte příprava hry veřejně. Zápisy dál hlídají pravidla. */
   watchQuizPacks(onChange: (packs: QuizPack[]) => void, onDenied?: () => void): () => void {
-    return onSnapshot(
-      collection(this.db, 'quizPacks'),
-      (snap) => onChange(snap.docs.map((d) => d.data() as QuizPack)),
-      (err) => {
-        // Zamítnuté čtení znamená stará nebo chybně publikovaná pravidla.
-        // Listener po zamítnutí umře a sám se nezotaví.
-        if (err.code === 'permission-denied') onDenied?.()
-        else console.error('Čtení balíčků kvízu selhalo:', err)
-      },
-    )
+    return this.watch<QuizPack>('quizPacks', onChange, (err) => {
+      // Zamítnuté čtení znamená odebrané členství nebo stará pravidla.
+      // Listener po zamítnutí umře a sám se nezotaví.
+      if (err.code === 'permission-denied') onDenied?.()
+      else console.error('Čtení balíčků kvízu selhalo:', err)
+    })
   }
 
   async saveQuizPack(pack: QuizPack): Promise<void> {
-    await this.write(setDoc(doc(this.db, 'quizPacks', pack.id), pack), 'Uložení balíčku kvízu')
+    await this.write(setDoc(this.ref('quizPacks', pack.id), pack), 'Uložení balíčku kvízu')
   }
 
   async deleteQuizPack(packId: string): Promise<void> {
-    await this.write(deleteDoc(doc(this.db, 'quizPacks', packId)), 'Smazání balíčku kvízu')
+    await this.write(deleteDoc(this.ref('quizPacks', packId)), 'Smazání balíčku kvízu')
   }
 
   /**
-   * Obrázky k otázkám. Jeden dokument na obrázek, čtení veřejné jako
-   * u balíčků: hra se musí dát spustit bez hesla do správy.
+   * Obrázky k otázkám. Jeden dokument na obrázek.
    *
    * Zápis se tu na rozdíl od balíčku čeká celý. Balíček se ukládá sám
    * během psaní, takže tam krátká lhůta stačí, ale obrázek nahrává
@@ -160,7 +217,7 @@ class FirestoreDb implements MucirnaDb {
    */
   async saveQuizImage(image: QuizImage): Promise<void> {
     try {
-      await withTimeout(setDoc(doc(this.db, 'quizImages', image.id), image), 20000)
+      await withTimeout(setDoc(this.ref('quizImages', image.id), image), 20000)
     } catch (e) {
       console.error('Uložení obrázku selhalo:', e)
       throw new Error('Obrázek se nepodařilo uložit. Zkontroluj připojení a oprávnění.')
@@ -168,12 +225,12 @@ class FirestoreDb implements MucirnaDb {
   }
 
   async loadQuizImage(imageId: string): Promise<QuizImage | null> {
-    const snap = await withTimeout(getDoc(doc(this.db, 'quizImages', imageId)), 20000)
+    const snap = await withTimeout(getDoc(this.ref('quizImages', imageId)), 20000)
     return snap.exists() ? (snap.data() as QuizImage) : null
   }
 
   async deleteQuizImage(imageId: string): Promise<void> {
-    await this.write(deleteDoc(doc(this.db, 'quizImages', imageId)), 'Smazání obrázku')
+    await this.write(deleteDoc(this.ref('quizImages', imageId)), 'Smazání obrázku')
   }
 
   /**
@@ -188,103 +245,354 @@ class FirestoreDb implements MucirnaDb {
     })
     await Promise.race([op.catch(() => undefined), delay(1500)])
   }
-
-  async hasPassword(): Promise<boolean> {
-    try {
-      const snap = await withTimeout(getDoc(doc(this.db, 'config', 'public')))
-      return snap.exists() && snap.data()?.initialized === true
-    } catch {
-      // Bez odpovědi se opřeme o otisk z dřívějšího odemčení na tomhle
-      // zařízení. Rozhoduje jen o tom, co správa nabídne za obrazovku.
-      return localStorage.getItem(KEY_LOCAL_HASH) !== null
-    }
-  }
-
-  async setPassword(next: string, current?: string): Promise<void> {
-    const alreadySet = await this.hasPassword()
-    if (alreadySet) {
-      if (current === undefined || !(await this.unlock(current))) {
-        throw new Error('Stávající heslo nesouhlasí.')
-      }
-    }
-    const keyHash = await hashSecret(next)
-
-    // Na pořadí záleží, pravidla se dívají na stav databáze v ten okamžik:
-    // 1. otisk hesla, ten smí vzniknout jen dokud neexistuje,
-    // 2. doklad o odemčení, ten projde právě proto, že otisky sedí,
-    // 3. veřejný příznak, ten už vyžaduje odemčenou relaci.
-    try {
-      await withTimeout(setDoc(doc(this.db, 'config', 'admin'), { keyHash }), 12000)
-      await withTimeout(setDoc(doc(this.db, 'unlocks', this.uid), { keyHash, at: Date.now() }), 12000)
-      await withTimeout(setDoc(doc(this.db, 'config', 'public'), { initialized: true }), 12000)
-    } catch (e) {
-      console.error('Nastavení hesla selhalo:', e)
-      throw new Error(
-        'Heslo se nepodařilo uložit. Zkontroluj připojení a publikovaná pravidla ve Firebase.',
-      )
-    }
-    this.markUnlocked(keyHash)
-  }
-
-  async unlock(password: string): Promise<boolean> {
-    const keyHash = await hashSecret(password)
-
-    // Bez sítě se opřeme o otisk, který tu zůstal po dřívějším odemčení.
-    const known = localStorage.getItem(KEY_LOCAL_HASH)
-    if (!navigator.onLine && known) {
-      if (known !== keyHash) return false
-      this.setUnlockedFlag()
-      return true
-    }
-
-    try {
-      // Zápis se čeká na potvrzení serverem, protože právě to potvrzení
-      // je ověřením hesla. Časový strop brání tomu, aby tlačítko viselo,
-      // když je síť mrtvá, ale prohlížeč o tom ještě neví.
-      await withTimeout(setDoc(doc(this.db, 'unlocks', this.uid), { keyHash, at: Date.now() }), 12000)
-      this.markUnlocked(keyHash)
-      return true
-    } catch {
-      // Pravidlo zápis odmítlo, tedy heslo nesouhlasí.
-      return false
-    }
-  }
-
-  private markUnlocked(keyHash: string): void {
-    localStorage.setItem(KEY_LOCAL_HASH, keyHash)
-    this.setUnlockedFlag()
-  }
-
-  private setUnlockedFlag(): void {
-    this.unlocked = true
-    sessionStorage.setItem(KEY_UNLOCK, '1')
-  }
-
-  isUnlocked(): boolean {
-    return this.unlocked
-  }
-
-  lock(): void {
-    this.unlocked = false
-    sessionStorage.removeItem(KEY_UNLOCK)
-  }
 }
 
-/** Živé spojení pro ostatní části aplikace, hlavně pro session kvízu.
- *  Null, dokud se Firestore nerozjede. */
+/* ------------------------------------------------------------------------ */
+/* Spojení pro ostatní části aplikace                                       */
+/* ------------------------------------------------------------------------ */
+
+interface Connection {
+  db: Firestore
+  auth: Auth
+  uid: string
+}
+
+let conn: Connection | null = null
+
+/** Živé spojení pro session kvízu a Výslechu. Null, dokud se Firestore
+ *  nerozjede. */
 export interface FirebaseHandle {
   db: Firestore
   uid: string
 }
 
-let handle: FirebaseHandle | null = null
-
 export function firebaseHandle(): FirebaseHandle | null {
-  return handle
+  return conn ? { db: conn.db, uid: conn.uid } : null
+}
+
+/**
+ * Identita pro hru, kdyby ji ještě neměl.
+ *
+ * Telefon ji dostane při startu podle adresy. Kdo se ale ke kódu dostal
+ * z jiné stránky bez přihlášení, třeba přepsal adresu v otevřené kartě,
+ * přihlásí se anonymně až teď, jinak by se nemohl připojit.
+ */
+export async function ensureFirebaseHandle(): Promise<FirebaseHandle | null> {
+  if (!conn) return null
+  if (!conn.auth.currentUser) {
+    const credential = await signInAnonymously(conn.auth)
+    conn.uid = credential.user.uid
+  }
+  return firebaseHandle()
 }
 
 export async function createFirestoreDb(): Promise<MucirnaDb> {
   const impl = new FirestoreDb()
   await impl.ready()
   return impl
+}
+
+/* ------------------------------------------------------------------------ */
+/* Účet a členství                                                          */
+/* ------------------------------------------------------------------------ */
+
+/**
+ * Stav účtu se zapisuje, jen dokud aplikace jede na Firestore. Když start
+ * spadl do lokálního režimu a spojení dorazilo pozdě, rozhoduje lokální
+ * režim: hra už běží nad daty z tohohle počítače a přihlašovací obrazovka
+ * uprostřed by ji přerušila.
+ */
+function publish(next: Parameters<typeof setAccount>[0]): void {
+  if (degraded.local) return
+  setAccount(next)
+}
+
+async function resolveAccount(user: User | null): Promise<void> {
+  const email = emailOf(user)
+  if (!user || !email) {
+    publish({ status: 'signedOut', email: '' })
+    return
+  }
+  // Účet z pozvánky má adresu ověřenou kliknutím na odkaz. Neověřený
+  // vznikl jinudy a pravidla by ho stejně nepustila.
+  if (!user.emailVerified) {
+    publish({ status: 'noAccess', email })
+    return
+  }
+
+  // Známé členství z minula pustí dovnitř hned, i bez sítě. Ověření ze
+  // serveru doběhne na pozadí a případně ho opraví.
+  const known = recallMembership(email)
+  if (known) {
+    publish({ status: 'member', ...known })
+    void lookUpMembership(email).catch((e) => console.error('Ověření členství selhalo:', e))
+    return
+  }
+
+  try {
+    await withTimeout(lookUpMembership(email), 8000)
+  } catch (e) {
+    console.error('Ověření členství selhalo:', e)
+    publish({ status: 'unknown', email })
+  }
+}
+
+/**
+ * Kam patřím. Dotaz přes členy všech prostorů, pravidla pustí jen ten
+ * s vlastním e-mailem. Teď je prostor jeden; až jich bude víc, vybere se
+ * naposledy použitý.
+ */
+async function lookUpMembership(email: string): Promise<void> {
+  if (!conn) return
+  const snap = await getDocs(query(collectionGroup(conn.db, 'members'), where('email', '==', email)))
+  const docs = snap.docs.filter((d) => d.ref.parent.parent !== null)
+  if (docs.length === 0) {
+    rememberMembership(null)
+    publish({ status: 'noAccess', email })
+    return
+  }
+
+  const preferred = recallMembership(email)?.spaceId
+  const chosen = docs.find((d) => d.ref.parent.parent?.id === preferred) ?? docs[0]
+  const spaceId = chosen.ref.parent.parent!.id
+  const role: Role = chosen.data().role === 'admin' ? 'admin' : 'editor'
+  let spaceName = ''
+  try {
+    const space = await getDoc(doc(conn.db, 'spaces', spaceId))
+    spaceName = String(space.data()?.name ?? '')
+  } catch {
+    // Název je jen popisek, bez něj se dá pracovat.
+  }
+
+  const membership = { email, spaceId, spaceName, role }
+  rememberMembership(membership)
+  publish({ status: 'member', ...membership })
+
+  // První příchod. Podle toho správa pozná, kdo pozvánku přijal.
+  if (!chosen.data().joinedAt) {
+    void updateDoc(chosen.ref, { joinedAt: serverTimestamp() }).catch((e) =>
+      console.error('Zápis přijetí pozvánky selhal:', e),
+    )
+  }
+}
+
+/** Znovu ověřit členství, třeba když ho admin právě přidal. */
+export async function refreshAccount(): Promise<void> {
+  if (!conn) return
+  const user = conn.auth.currentUser
+  if (user && !user.isAnonymous) await user.reload()
+  await resolveAccount(conn.auth.currentUser)
+}
+
+/* --- Pozvánka a heslo ---------------------------------------------------
+ *
+ * Účet vzniká jen z pozvánky. Admin zapíše kolegyni do týmu a pošle jí
+ * přihlašovací odkaz. Kliknutím na něj potvrdí, že adresa je její, na
+ * stránce `/pozvanka` si nastaví heslo a dál se přihlašuje heslem.
+ * Registrace na přihlašovací stránce není: kdo pozvaný není, nemá kde začít.
+ */
+
+/** Kam vedou odkazy z mailů od Firebase. Bez povolené domény ve Firebase
+ *  by se mail neodeslal vůbec, proto se při odmítnutí ozve srozumitelně. */
+function linkTo(path: string, inApp: boolean): ActionCodeSettings {
+  return { url: `${window.location.origin}${path}`, handleCodeInApp: inApp }
+}
+
+function requireAuth(): Auth {
+  if (!conn) throw new Error('Spojení s Firebase se nenavázalo. Zkontroluj připojení a načti stránku znovu.')
+  return conn.auth
+}
+
+export async function signInWithPassword(email: string, password: string): Promise<void> {
+  await signInWithEmailAndPassword(requireAuth(), email.trim(), password)
+}
+
+/** Pošle pozvánku. Volá admin po zápisu do týmu, nebo znovu, když
+ *  pozvánka propadla. Nikoho tím nepřihlašuje. */
+export async function sendInvite(email: string): Promise<void> {
+  await sendSignInLinkToEmail(requireAuth(), email.trim().toLowerCase(), linkTo('/pozvanka', true))
+}
+
+export function isInviteLink(href: string): boolean {
+  return conn ? isSignInWithEmailLink(conn.auth, href) : false
+}
+
+/**
+ * Přijetí pozvánky: přihlásit odkazem a hned nastavit heslo.
+ *
+ * Když už je přihlášená stejná adresa (heslo napoprvé neprošlo a zkouší
+ * to znovu), odkaz se nepoužije podruhé, nastaví se jen heslo.
+ */
+export async function acceptInvite(email: string, password: string, href: string): Promise<void> {
+  const auth = requireAuth()
+  const clean = email.trim().toLowerCase()
+  let user = auth.currentUser
+  if (!user || emailOf(user) !== clean) {
+    user = (await signInWithEmailLink(auth, clean, href)).user
+  }
+  await updatePassword(user, password)
+  rememberMembership(null)
+}
+
+export async function sendPasswordReset(email: string): Promise<void> {
+  const auth = requireAuth()
+  try {
+    await sendPasswordResetEmail(auth, email.trim(), linkTo('/prihlaseni', false))
+  } catch (e) {
+    // Neexistující účet Firebase schválně neprozradí, ať se adresy nedají
+    // zkoušet. Kdyby ano, odpověď musí vypadat stejně jako úspěch.
+    if ((e as { code?: string }).code !== 'auth/user-not-found') throw e
+  }
+}
+
+/**
+ * Odhlášení. Notebook bývá sdílený, takže se s účtem zahodí i mezipaměť
+ * otázek a výsledků v prohlížeči. Po odhlášení se stránka načte znovu
+ * a Firestore se rozjede načisto.
+ */
+export async function signOutHere(): Promise<void> {
+  const auth = requireAuth()
+  rememberMembership(null)
+  await signOut(auth)
+  if (conn) {
+    try {
+      await terminate(conn.db)
+      await clearIndexedDbPersistence(conn.db)
+    } catch (e) {
+      // Druhá otevřená karta drží mezipaměť. Odhlášení platí i tak,
+      // data v ní pravidla stejně nikomu dalšímu neukážou.
+      console.error('Mezipaměť se nepodařilo smazat:', e)
+    }
+  }
+}
+
+/** Srozumitelná věta k chybě přihlášení. Kódy jsou z Firebase Auth. */
+export function authErrorMessage(e: unknown): string {
+  const code = (e as { code?: string }).code ?? ''
+  switch (code) {
+    case 'auth/invalid-email':
+      return 'Tohle nevypadá jako e-mailová adresa.'
+    case 'auth/invalid-credential':
+    case 'auth/wrong-password':
+    case 'auth/user-not-found':
+      return 'E-mail nebo heslo nesedí. Účet vzniká z pozvánky od správce, jinak se založit nedá.'
+    case 'auth/invalid-action-code':
+    case 'auth/expired-action-code':
+      return 'Pozvánka už neplatí. Požádej správce, ať ti pošle novou.'
+    case 'auth/missing-email':
+      return 'Vyplň e-mail.'
+    case 'auth/unauthorized-continue-uri':
+    case 'auth/unauthorized-domain':
+      return 'Tahle adresa aplikace není ve Firebase povolená. Napiš správci.'
+    case 'auth/quota-exceeded':
+      return 'Firebase dnes už další maily nepošle. Zkus to zítra, nebo napiš správci.'
+    case 'auth/requires-recent-login':
+      return 'Pozvánka se nepoužila celá. Otevři odkaz z mailu znovu.'
+    case 'auth/weak-password':
+    case 'auth/password-does-not-meet-requirements':
+      return 'Heslo je moc slabé. Musí mít aspoň osm znaků.'
+    case 'auth/too-many-requests':
+      return 'Příliš mnoho pokusů. Počkej pár minut a zkus to znovu.'
+    case 'auth/network-request-failed':
+      return 'Nepodařilo se spojit se serverem. Zkontroluj připojení.'
+    case 'auth/operation-not-allowed':
+      return 'Přihlašování e-mailem není ve Firebase zapnuté. Napiš správci.'
+    case 'auth/user-disabled':
+      return 'Tenhle účet je zablokovaný. Napiš správci.'
+    default:
+      return e instanceof Error && e.message && !code ? e.message : 'Něco se nepovedlo. Zkus to znovu.'
+  }
+}
+
+/* ------------------------------------------------------------------------ */
+/* Tým: členové prostoru                                                    */
+/* ------------------------------------------------------------------------ */
+
+export interface TeamMember {
+  email: string
+  role: Role
+  name: string
+  addedBy: string
+  addedAt: number
+  /** Poslední pozvánka. Při prvním zápisu je to `addedAt`. */
+  invitedAt: number
+  /** Kdy se poprvé přihlásila. 0 = pozvánku ještě nepřijala. */
+  joinedAt: number
+}
+
+function millisOf(value: unknown): number {
+  return value instanceof Timestamp ? value.toMillis() : 0
+}
+
+function requireDb(): Firestore {
+  if (!conn) throw new Error('Spojení s Firebase se nenavázalo.')
+  return conn.db
+}
+
+function memberRef(email: string) {
+  return doc(requireDb(), 'spaces', currentSpaceId(), 'members', email)
+}
+
+export function watchMembers(
+  onChange: (members: TeamMember[]) => void,
+  onError: (message: string) => void,
+): () => void {
+  return onSnapshot(
+    collection(requireDb(), 'spaces', currentSpaceId(), 'members'),
+    (snap) =>
+      onChange(
+        snap.docs.map((d) => {
+          const data = d.data()
+          const addedAt = millisOf(data.addedAt)
+          return {
+            email: d.id,
+            role: data.role === 'admin' ? 'admin' : 'editor',
+            name: String(data.name ?? ''),
+            addedBy: String(data.addedBy ?? ''),
+            addedAt,
+            invitedAt: millisOf(data.invitedAt) || addedAt,
+            joinedAt: millisOf(data.joinedAt),
+          } satisfies TeamMember
+        }),
+      ),
+    (err) => {
+      console.error('Čtení členů selhalo:', err)
+      onError('Seznam členů se nepodařilo načíst.')
+    },
+  )
+}
+
+/**
+ * Pozvat do týmu: zapsat a poslat odkaz. Zápis jde první, jinak by
+ * kolegyně mohla kliknout dřív, než má kam přijít.
+ *
+ * Zápisy členů se čekají na server celé: admin musí vědět, jestli
+ * kolegyně opravdu dostala přístup.
+ */
+export async function inviteMember(email: string, name: string, role: Role): Promise<void> {
+  const clean = email.trim().toLowerCase()
+  await withTimeout(
+    setDoc(memberRef(clean), {
+      email: clean,
+      role,
+      ...(name.trim() ? { name: name.trim() } : {}),
+      addedBy: account.email,
+      addedAt: serverTimestamp(),
+    }),
+    12000,
+  )
+  await sendInvite(clean)
+}
+
+export async function resendInvite(email: string): Promise<void> {
+  await sendInvite(email)
+  await withTimeout(updateDoc(memberRef(email), { invitedAt: serverTimestamp() }), 12000)
+}
+
+export async function updateMember(email: string, patch: { role?: Role; name?: string }): Promise<void> {
+  await withTimeout(updateDoc(memberRef(email), patch), 12000)
+}
+
+export async function removeMember(email: string): Promise<void> {
+  await withTimeout(deleteDoc(memberRef(email)), 12000)
 }

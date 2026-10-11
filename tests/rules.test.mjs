@@ -232,6 +232,26 @@ describe('prostor a členové', () => {
     await assertSucceeds(deleteDoc(doc(admin(), `spaces/uniqa/members/${EDITOR}`)))
   })
 
+  it('admin znovu pošle pozvánku, razítko dává server', async () => {
+    await assertSucceeds(updateDoc(doc(admin(), `spaces/uniqa/members/${EDITOR}`), { invitedAt: serverTimestamp() }))
+    await assertFails(
+      updateDoc(doc(admin(), `spaces/uniqa/members/${EDITOR}`), { invitedAt: Timestamp.fromMillis(1) }),
+    )
+    await assertFails(updateDoc(doc(editor(), `spaces/uniqa/members/${ADMIN}`), { invitedAt: serverTimestamp() }))
+  })
+
+  it('člen si jednou zapíše přijetí pozvánky, za jiného ne', async () => {
+    await assertFails(updateDoc(doc(editor(), `spaces/uniqa/members/${ADMIN}`), { joinedAt: serverTimestamp() }))
+    await assertFails(
+      updateDoc(doc(editor(), `spaces/uniqa/members/${EDITOR}`), { joinedAt: Timestamp.fromMillis(1) }),
+    )
+    await assertFails(
+      updateDoc(doc(editor(), `spaces/uniqa/members/${EDITOR}`), { joinedAt: serverTimestamp(), role: 'admin' }),
+    )
+    await assertSucceeds(updateDoc(doc(editor(), `spaces/uniqa/members/${EDITOR}`), { joinedAt: serverTimestamp() }))
+    await assertFails(updateDoc(doc(editor(), `spaces/uniqa/members/${EDITOR}`), { joinedAt: serverTimestamp() }))
+  })
+
   it('editorka si roli nezvýší', async () => {
     await assertFails(updateDoc(doc(editor(), `spaces/uniqa/members/${EDITOR}`), { role: 'admin' }))
   })

@@ -2,14 +2,11 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppHeader from '@/components/AppHeader.vue'
-import AdminGate from '@/components/admin/AdminGate.vue'
 import FormEditor from '@/vyslech/components/FormEditor.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiEmpty from '@/components/ui/UiEmpty.vue'
 import UiMenu from '@/components/ui/UiMenu.vue'
-import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
-import { db } from '@/lib/db'
 import { count } from '@/lib/format'
 import {
   createDefaultForm,
@@ -29,17 +26,11 @@ import { confirmAction, toast } from '@/stores/ui'
  */
 const route = useRoute()
 const router = useRouter()
-const unlocked = ref(db().isUnlocked())
 const creating = ref(false)
 const editor = ref<InstanceType<typeof FormEditor> | null>(null)
 
-async function onUnlocked(): Promise<void> {
-  unlocked.value = true
-  await reloadVyslechForms()
-}
-
 onMounted(() => {
-  if (unlocked.value) void initVyslechForms()
+  void initVyslechForms()
 })
 
 const currentId = computed(() => (typeof route.query.sada === 'string' ? route.query.sada : ''))
@@ -107,85 +98,67 @@ async function onRemove(id?: string): Promise<void> {
   if (currentId.value === target.id) closeForm()
 }
 
-async function lock(): Promise<void> {
-  if (editor.value && !(await editor.value.flush())) return
-  db().lock()
-  unlocked.value = false
-  closeForm()
-}
 </script>
 
 <template>
   <div class="page-wrap">
-    <template v-if="!unlocked">
-      <AppHeader game="vyslech" section="questions" prep />
-      <AdminGate title="Výslech" lead="Sady otázek upravuje jen ten, kdo zná heslo do správy." @unlocked="onUnlocked" />
-    </template>
+    <AppHeader game="vyslech" section="questions" prep />
 
-    <template v-else>
-      <AppHeader game="vyslech" section="questions" prep>
-        <template #tools>
-          <!-- Jediná akce účtu, proto rovnou tlačítko, ne nabídka s jednou položkou. -->
-          <UiIconButton icon="lock" label="Zamknout Výslech" @click="lock" />
-        </template>
-      </AppHeader>
+    <main id="obsah" class="body page">
+      <section v-if="!current" class="list">
+        <header class="list__head">
+          <div>
+            <p class="eyebrow">Výslech</p>
+            <h1 class="list__title">Sady otázek.</h1>
+            <p class="list__lead">Na co se sál po školení ptá. Obvykle stačí jedna sada pořád dokola, výsledky se pak dají srovnávat.</p>
+          </div>
+          <UiButton size="sm" variant="brand" :loading="creating" @click="onCreate">Nová sada</UiButton>
+        </header>
 
-      <main id="obsah" class="body page">
-        <section v-if="!current" class="list">
-          <header class="list__head">
-            <div>
-              <p class="eyebrow">Výslech</p>
-              <h1 class="list__title">Sady otázek.</h1>
-              <p class="list__lead">Na co se sál po školení ptá. Obvykle stačí jedna sada pořád dokola, výsledky se pak dají srovnávat.</p>
-            </div>
-            <UiButton size="sm" variant="brand" :loading="creating" @click="onCreate">Nová sada</UiButton>
-          </header>
+        <UiSkeleton v-if="!vyslechForms.loaded" :lines="4" />
+        <UiEmpty v-else-if="vyslechForms.unavailable" icon="warning" title="Sady teď nejdou načíst" text="Nepodařilo se spojit se sdílenou databází." />
+        <UiEmpty v-else-if="vyslechForms.denied" title="Sady se nepodařilo načíst" text="Zkontroluj připojení a zkus to znovu.">
+          <UiButton variant="brand" @click="reloadVyslechForms">Zkusit znovu</UiButton>
+        </UiEmpty>
+        <UiEmpty
+          v-else-if="vyslechForms.forms.length === 0"
+          icon="chat"
+          title="Zatím tu není žádná sada"
+          text="Založ si připravenou sadu Po školení, nebo začni od prázdné."
+        >
+          <UiButton size="sm" variant="ghost" @click="onCreateDefault">Založit sadu Po školení</UiButton>
+        </UiEmpty>
 
-          <UiSkeleton v-if="!vyslechForms.loaded" :lines="4" />
-          <UiEmpty v-else-if="vyslechForms.unavailable" icon="warning" title="Sady teď nejdou načíst" text="Nepodařilo se spojit se sdílenou databází." />
-          <UiEmpty v-else-if="vyslechForms.denied" title="Sady se nepodařilo načíst" text="Zkontroluj připojení a zkus to znovu.">
-            <UiButton variant="brand" @click="reloadVyslechForms">Zkusit znovu</UiButton>
-          </UiEmpty>
-          <UiEmpty
-            v-else-if="vyslechForms.forms.length === 0"
-            icon="chat"
-            title="Zatím tu není žádná sada"
-            text="Založ si připravenou sadu Po školení, nebo začni od prázdné."
-          >
-            <UiButton size="sm" variant="ghost" @click="onCreateDefault">Založit sadu Po školení</UiButton>
-          </UiEmpty>
+        <ul v-else class="items">
+          <li v-for="(f, i) in vyslechForms.forms" :key="f.id" class="card">
+            <span class="card__index" aria-hidden="true">{{ String(i + 1).padStart(2, '0') }}</span>
+            <button type="button" class="card__main" @click="openForm(f.id)">
+              <span class="card__name">{{ f.name }}</span>
+              <span class="card__meta">
+                {{ count(readyCount(f), 'hotová otázka', 'hotové otázky', 'hotových otázek') }}
+                <template v-if="readyCount(f) < f.questions.length"> · {{ f.questions.length - readyCount(f) }} rozepsané</template>
+              </span>
+            </button>
+            <UiMenu :label="`Akce sady ${f.name}`" v-slot="{ close }">
+              <button type="button" role="menuitem" @click="openForm(f.id); close()">Otevřít</button>
+              <button type="button" role="menuitem" @click="void onDuplicate(f.id); close()">Duplikovat</button>
+              <hr />
+              <button type="button" role="menuitem" class="danger" @click="void onRemove(f.id); close()">Smazat</button>
+            </UiMenu>
+          </li>
+        </ul>
+      </section>
 
-          <ul v-else class="items">
-            <li v-for="(f, i) in vyslechForms.forms" :key="f.id" class="card">
-              <span class="card__index" aria-hidden="true">{{ String(i + 1).padStart(2, '0') }}</span>
-              <button type="button" class="card__main" @click="openForm(f.id)">
-                <span class="card__name">{{ f.name }}</span>
-                <span class="card__meta">
-                  {{ count(readyCount(f), 'hotová otázka', 'hotové otázky', 'hotových otázek') }}
-                  <template v-if="readyCount(f) < f.questions.length"> · {{ f.questions.length - readyCount(f) }} rozepsané</template>
-                </span>
-              </button>
-              <UiMenu :label="`Akce sady ${f.name}`" v-slot="{ close }">
-                <button type="button" role="menuitem" @click="openForm(f.id); close()">Otevřít</button>
-                <button type="button" role="menuitem" @click="void onDuplicate(f.id); close()">Duplikovat</button>
-                <hr />
-                <button type="button" role="menuitem" class="danger" @click="void onRemove(f.id); close()">Smazat</button>
-              </UiMenu>
-            </li>
-          </ul>
-        </section>
-
-        <FormEditor
-          v-else
-          ref="editor"
-          :key="current.id"
-          :form="current"
-          @back="closeForm"
-          @duplicate="onDuplicate()"
-          @remove="onRemove()"
-        />
-      </main>
-    </template>
+      <FormEditor
+        v-else
+        ref="editor"
+        :key="current.id"
+        :form="current"
+        @back="closeForm"
+        @duplicate="onDuplicate()"
+        @remove="onRemove()"
+      />
+    </main>
   </div>
 </template>
 

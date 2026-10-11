@@ -72,11 +72,23 @@ service cloud.firestore {
                       && request.resource.data.addedBy == me()
                       && request.resource.data.addedAt == request.time;
 
-        allow update: if isAdmin(space)
-                      && email != me()
-                      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['role', 'name'])
-                      && request.resource.data.role in ['admin', 'editor']
-                      && validName(request.resource.data);
+        // Admin mění roli a jméno a znovu posílá pozvánku. Člen si sám
+        // zapíše jen to, že pozvánku přijal, a jen jednou: podle toho
+        // správa pozná, komu pozvánka propadla.
+        allow update: if (isAdmin(space)
+                          && email != me()
+                          && request.resource.data.diff(resource.data).affectedKeys()
+                               .hasOnly(['role', 'name', 'invitedAt'])
+                          && request.resource.data.role in ['admin', 'editor']
+                          && validName(request.resource.data)
+                          && (!('invitedAt' in request.resource.data)
+                              || request.resource.data.invitedAt == resource.data.get('invitedAt', null)
+                              || request.resource.data.invitedAt == request.time))
+                      || (isMember(space)
+                          && email == me()
+                          && !('joinedAt' in resource.data)
+                          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['joinedAt'])
+                          && request.resource.data.joinedAt == request.time);
 
         allow delete: if isAdmin(space) && email != me();
       }

@@ -2,11 +2,9 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppHeader from '@/components/AppHeader.vue'
-import AdminGate from '@/components/admin/AdminGate.vue'
 import QuizPackEditor from '@/games/kviz/components/QuizPackEditor.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiMenu from '@/components/ui/UiMenu.vue'
-import { db } from '@/lib/db'
 import { downloadQuizPack, readQuizPackFile } from '@/games/kviz/packIo'
 import {
   createDemoQuizPack,
@@ -30,19 +28,11 @@ import UiEmpty from '@/components/ui/UiEmpty.vue'
 const route = useRoute()
 const router = useRouter()
 
-const unlocked = ref(db().isUnlocked())
 const creating = ref(false)
 /** Rodinný kvíz se zakládá chvíli, kresby se převádějí na obrázky. */
 const creatingFamily = ref(false)
 const packEditor = ref<InstanceType<typeof QuizPackEditor> | null>(null)
 const fileInput = ref<HTMLInputElement | null>(null)
-
-/** Po odemčení se musí sledování nasadit znovu: listener, který
- *  Firestore zamítl, už nic nepošle. */
-async function onUnlocked(): Promise<void> {
-  unlocked.value = true
-  await reloadQuizPacks()
-}
 
 onMounted(() => {
   void initQuizPacks()
@@ -186,13 +176,6 @@ async function onImportFile(event: Event): Promise<void> {
   }
 }
 
-async function lock(): Promise<void> {
-  if (packEditor.value && !await packEditor.value.flush()) return
-  db().lock()
-  unlocked.value = false
-  closePack()
-}
-
 function badge(id: string): { text: string; tone: 'ok' | 'warn' | 'muted' } {
   const pack = quizPacks.packs.find((p) => p.id === id)
   if (!pack) return { text: '', tone: 'muted' }
@@ -205,120 +188,107 @@ function badge(id: string): { text: string; tone: 'ok' | 'warn' | 'muted' } {
 
 <template>
   <div class="admin">
-    <template v-if="!unlocked">
-      <AppHeader game="kviz" section="questions" prep />
-      <AdminGate @unlocked="onUnlocked" />
-    </template>
+    <AppHeader game="kviz" section="questions" prep />
 
-    <template v-else>
-      <AppHeader game="kviz" section="questions" prep>
-        <template #tools>
-          <UiMenu label="Účet správy" v-slot="{ close }">
-            <button type="button" role="menuitem" @click="lock(); close()">Zamknout</button>
-          </UiMenu>
-        </template>
-      </AppHeader>
-
-      <main id="obsah" class="admin__body page">
-        <!-- Knihovna -------------------------------------------------------- -->
-        <section v-if="!current" class="library">
-          <header class="library__head">
-            <div>
-              <p class="eyebrow">Tvoje knihovna</p>
-              <h1 class="library__title">Otázky do hry.</h1>
-              <p class="library__lead">
-                Balíčky pro kvíz Na kolik to dáš? Vyber balíček a uprav jeho otázky.
-              </p>
-            </div>
-            <div class="library__actions">
-              <UiButton size="sm" variant="ghost" @click="triggerImport">Importovat</UiButton>
-              <UiButton size="sm" variant="brand" :loading="creating" @click="onCreate">Nový balíček</UiButton>
-              <UiMenu label="Hotové balíčky" v-slot="{ close }">
-                <button type="button" role="menuitem" @click="onCreateDemo(); close()">
-                  Ukázkový kvíz
-                </button>
-                <button type="button" role="menuitem" :disabled="creatingFamily" @click="onCreateFamily(); close()">
-                  Rodinný kvíz
-                </button>
-                <button type="button" role="menuitem" @click="onCreateGeneral(); close()">
-                  Všeobecné znalosti
-                </button>
-              </UiMenu>
-            </div>
-          </header>
-
-          <input
-            ref="fileInput"
-            type="file"
-            accept="application/json,.json"
-            multiple
-            class="library__file"
-            @change="onImportFile"
-          />
-
-          <!-- Dokud data nedorazila, není pravda, že tu nic není. -->
-          <UiSkeleton v-if="!quizPacks.loaded" :lines="4" />
-
-          <UiEmpty v-else-if="quizPacks.denied" title="Balíčky se nepodařilo načíst" text="Zkontroluj připojení a zkus to znovu.">
-            <UiButton variant="brand" @click="reloadQuizPacks">Zkusit znovu</UiButton>
-          </UiEmpty>
-
-          <UiEmpty
-            v-else-if="quizPacks.packs.length === 0"
-            icon="info"
-            title="Zatím tu není žádný balíček"
-            text="Založ prázdný tlačítkem Nový balíček, naimportuj JSON, nebo si napřed prohlédni některý hotový."
-          >
-            <UiButton size="sm" variant="ghost" @click="onCreateDemo">
-              Vytvořit ukázkový kvíz
-            </UiButton>
-            <UiButton size="sm" variant="ghost" :loading="creatingFamily" @click="onCreateFamily">
-              Vytvořit rodinný kvíz
-            </UiButton>
-            <UiButton size="sm" variant="ghost" @click="onCreateGeneral">
-              Vytvořit všeobecný kvíz
-            </UiButton>
-          </UiEmpty>
-
-          <ul v-else class="library__items">
-            <li v-for="(p, i) in quizPacks.packs" :key="p.id" class="card">
-              <span class="card__index" aria-hidden="true">{{ String(i + 1).padStart(2, '0') }}</span>
-              <button type="button" class="card__main" @click="openPack(p.id)">
-                <span class="card__name">{{ p.name }}</span>
-                <span class="card__badge" :class="`card__badge--${badge(p.id).tone}`">
-                  {{ badge(p.id).text }}
-                </span>
-                <span class="card__meta">
-                  {{ quizPackProgress(p).done }} z {{ quizPackProgress(p).total }} otázek hotových
-                </span>
-                <span v-if="quizPackProgress(p).done < quizPackProgress(p).total" class="card__remaining">
-                  Zbývá doplnit {{ count(quizPackProgress(p).total - quizPackProgress(p).done, 'otázku', 'otázky', 'otázek') }}
-                </span>
+    <main id="obsah" class="admin__body page">
+      <!-- Knihovna -------------------------------------------------------- -->
+      <section v-if="!current" class="library">
+        <header class="library__head">
+          <div>
+            <p class="eyebrow">Tvoje knihovna</p>
+            <h1 class="library__title">Otázky do hry.</h1>
+            <p class="library__lead">
+              Balíčky pro kvíz Na kolik to dáš? Vyber balíček a uprav jeho otázky.
+            </p>
+          </div>
+          <div class="library__actions">
+            <UiButton size="sm" variant="ghost" @click="triggerImport">Importovat</UiButton>
+            <UiButton size="sm" variant="brand" :loading="creating" @click="onCreate">Nový balíček</UiButton>
+            <UiMenu label="Hotové balíčky" v-slot="{ close }">
+              <button type="button" role="menuitem" @click="onCreateDemo(); close()">
+                Ukázkový kvíz
               </button>
+              <button type="button" role="menuitem" :disabled="creatingFamily" @click="onCreateFamily(); close()">
+                Rodinný kvíz
+              </button>
+              <button type="button" role="menuitem" @click="onCreateGeneral(); close()">
+                Všeobecné znalosti
+              </button>
+            </UiMenu>
+          </div>
+        </header>
 
-              <UiMenu :label="`Akce balíčku ${p.name}`" v-slot="{ close }">
-                <button type="button" role="menuitem" @click="openPack(p.id); close()">Otevřít</button>
-                <button type="button" role="menuitem" @click="onDuplicate(p.id); close()">Duplikovat</button>
-                <button type="button" role="menuitem" @click="void onExport(p.id); close()">Exportovat JSON</button>
-                <hr />
-                <button type="button" role="menuitem" class="danger" @click="onRemove(p.id); close()">Smazat</button>
-              </UiMenu>
-            </li>
-          </ul>
-        </section>
-
-        <!-- Editor ---------------------------------------------------------- -->
-        <QuizPackEditor
-          ref="packEditor"
-          v-else-if="current"
-          :key="current.id"
-          :pack="current"
-          @back="closePack"
-          @duplicate="onDuplicate()"
-          @remove="onRemove()"
+        <input
+          ref="fileInput"
+          type="file"
+          accept="application/json,.json"
+          multiple
+          class="library__file"
+          @change="onImportFile"
         />
-      </main>
-    </template>
+
+        <!-- Dokud data nedorazila, není pravda, že tu nic není. -->
+        <UiSkeleton v-if="!quizPacks.loaded" :lines="4" />
+
+        <UiEmpty v-else-if="quizPacks.denied" title="Balíčky se nepodařilo načíst" text="Zkontroluj připojení a zkus to znovu.">
+          <UiButton variant="brand" @click="reloadQuizPacks">Zkusit znovu</UiButton>
+        </UiEmpty>
+
+        <UiEmpty
+          v-else-if="quizPacks.packs.length === 0"
+          icon="info"
+          title="Zatím tu není žádný balíček"
+          text="Založ prázdný tlačítkem Nový balíček, naimportuj JSON, nebo si napřed prohlédni některý hotový."
+        >
+          <UiButton size="sm" variant="ghost" @click="onCreateDemo">
+            Vytvořit ukázkový kvíz
+          </UiButton>
+          <UiButton size="sm" variant="ghost" :loading="creatingFamily" @click="onCreateFamily">
+            Vytvořit rodinný kvíz
+          </UiButton>
+          <UiButton size="sm" variant="ghost" @click="onCreateGeneral">
+            Vytvořit všeobecný kvíz
+          </UiButton>
+        </UiEmpty>
+
+        <ul v-else class="library__items">
+          <li v-for="(p, i) in quizPacks.packs" :key="p.id" class="card">
+            <span class="card__index" aria-hidden="true">{{ String(i + 1).padStart(2, '0') }}</span>
+            <button type="button" class="card__main" @click="openPack(p.id)">
+              <span class="card__name">{{ p.name }}</span>
+              <span class="card__badge" :class="`card__badge--${badge(p.id).tone}`">
+                {{ badge(p.id).text }}
+              </span>
+              <span class="card__meta">
+                {{ quizPackProgress(p).done }} z {{ quizPackProgress(p).total }} otázek hotových
+              </span>
+              <span v-if="quizPackProgress(p).done < quizPackProgress(p).total" class="card__remaining">
+                Zbývá doplnit {{ count(quizPackProgress(p).total - quizPackProgress(p).done, 'otázku', 'otázky', 'otázek') }}
+              </span>
+            </button>
+
+            <UiMenu :label="`Akce balíčku ${p.name}`" v-slot="{ close }">
+              <button type="button" role="menuitem" @click="openPack(p.id); close()">Otevřít</button>
+              <button type="button" role="menuitem" @click="onDuplicate(p.id); close()">Duplikovat</button>
+              <button type="button" role="menuitem" @click="void onExport(p.id); close()">Exportovat JSON</button>
+              <hr />
+              <button type="button" role="menuitem" class="danger" @click="onRemove(p.id); close()">Smazat</button>
+            </UiMenu>
+          </li>
+        </ul>
+      </section>
+
+      <!-- Editor ---------------------------------------------------------- -->
+      <QuizPackEditor
+        ref="packEditor"
+        v-else-if="current"
+        :key="current.id"
+        :pack="current"
+        @back="closePack"
+        @duplicate="onDuplicate()"
+        @remove="onRemove()"
+      />
+    </main>
   </div>
 </template>
 
