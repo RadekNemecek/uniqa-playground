@@ -142,7 +142,7 @@ class FirestoreVyslechDb implements VyslechDb {
       } catch (e) {
         // Odmítnutí kvůli právům se opakováním nespraví.
         if ((e as { code?: string }).code === 'permission-denied') {
-          throw new Error('Sběr se nepodařilo otevřít. Zkontroluj, že jsou ve Firebase publikovaná nová pravidla.')
+          throw new Error('Sběr se nepodařilo otevřít. Zkus to znovu, a když to nepomůže, napiš správci.')
         }
         continue
       }

@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppHeader from '@/components/AppHeader.vue'
 import PackEditor from '@/components/admin/PackEditor.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiMenu from '@/components/ui/UiMenu.vue'
-import { downloadPack, readPackFile } from '@/lib/packIo'
 import {
   createDemoPack,
   createPack,
@@ -15,18 +14,14 @@ import {
   packReadiness,
   packs,
   playableCategories,
-  savePack,
 } from '@/stores/packs'
 import { confirmAction, toast } from '@/stores/ui'
 import { count } from '@/lib/format'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import UiEmpty from '@/components/ui/UiEmpty.vue'
-import RunHistory from '@/games/pojistuj/components/RunHistory.vue'
 
 const route = useRoute()
 const router = useRouter()
-
-const fileInput = ref<HTMLInputElement | null>(null)
 
 const currentId = computed(() => {
   const raw = route.query.pack
@@ -89,32 +84,6 @@ async function onCreateDemo() {
   openPack(pack.id)
 }
 
-function onExport(id: string) {
-  const pack = packs.packs.find((p) => p.id === id)
-  if (!pack) return
-  downloadPack(pack)
-  toast('Balíček je stažený. Do jiné Mučírny ho nahraješ přes Importovat.', 'ok')
-}
-
-function triggerImport() {
-  fileInput.value?.click()
-}
-
-async function onImportFile(event: Event) {
-  const input = event.target as HTMLInputElement
-  const file = input.files?.[0]
-  input.value = ''
-  if (!file) return
-  try {
-    const pack = await readPackFile(file)
-    await savePack(pack)
-    toast(`Balíček „${pack.name}" importován.`, 'ok')
-    openPack(pack.id)
-  } catch (e) {
-    toast(e instanceof Error ? e.message : 'Import se nepovedl.', 'bad')
-  }
-}
-
 function readinessLabel(id: string): { text: string; tone: 'ok' | 'warn' | 'muted' } {
   const pack = packs.packs.find((p) => p.id === id)
   if (!pack) return { text: '', tone: 'muted' }
@@ -149,18 +118,9 @@ function readinessLabel(id: string): { text: string; tone: 'ok' | 'warn' | 'mute
             </p>
           </div>
           <div class="library__actions">
-            <UiButton size="sm" variant="ghost" @click="triggerImport">Importovat</UiButton>
             <UiButton size="sm" variant="brand" @click="onCreate">Nový balíček</UiButton>
           </div>
         </header>
-
-        <input
-          ref="fileInput"
-          type="file"
-          accept="application/json,.json"
-          class="library__file"
-          @change="onImportFile"
-        />
 
         <!-- Dokud data nedorazila, není pravda, že tu nic není. Na pomalé
              síti se tady dřív ukázalo „Zatím tu není žádný balíček"
@@ -172,7 +132,7 @@ function readinessLabel(id: string): { text: string; tone: 'ok' | 'warn' | 'mute
           v-else-if="packs.packs.length === 0"
           icon="info"
           title="Zatím tu není žádný balíček"
-          text="Založ prázdný tlačítkem Nový balíček, nahraj stažený balíček přes Importovat, nebo si napřed prohlédni ukázku."
+          text="Založ prázdný tlačítkem Nový balíček, nebo si napřed prohlédni ukázku."
         >
           <UiButton size="sm" variant="ghost" @click="onCreateDemo">
             Vytvořit ukázkový balíček
@@ -198,16 +158,11 @@ function readinessLabel(id: string): { text: string; tone: 'ok' | 'warn' | 'mute
             <UiMenu :label="`Akce balíčku ${p.name}`" v-slot="{ close }">
               <button type="button" role="menuitem" @click="openPack(p.id); close()">Otevřít</button>
               <button type="button" role="menuitem" @click="onDuplicate(p.id); close()">Duplikovat</button>
-              <button type="button" role="menuitem" @click="onExport(p.id); close()">Stáhnout balíček</button>
               <hr />
               <button type="button" role="menuitem" class="danger" @click="onRemove(p.id); close()">Smazat</button>
             </UiMenu>
           </li>
         </ul>
-
-        <!-- Co z odehraných her zůstalo. Z desky se dosud neukládalo nic,
-             takže po školení nebylo co ukázat dál. -->
-        <RunHistory />
       </section>
 
       <!-- Editor ---------------------------------------------------------- -->
@@ -235,7 +190,6 @@ function readinessLabel(id: string): { text: string; tone: 'ok' | 'warn' | 'mute
 .library__title { font-size: var(--fs-work-title); margin-top: var(--sp-2); }
 .library__lead { margin-top: var(--sp-3); max-width: var(--content-narrow); color: var(--c-text-muted); font-size: var(--fs-sm); line-height: var(--lh-body); }
 .library__actions { display: flex; gap: var(--sp-3); flex-wrap: wrap; }
-.library__file { display: none; }
 
 .library__items { list-style: none; padding: 0; border-top: var(--border-w-strong) solid var(--c-text); }
 .card { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--sp-5); align-items: center; padding-block: var(--sp-5); border-bottom: var(--border-w) solid var(--c-border-soft); }

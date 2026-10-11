@@ -26,7 +26,8 @@ const SETUP_KEY = 'playground.setup.v1'
  * Kolik kategorií unese deska na plátně.
  *
  * Musí sedět s `PLAYABLE_CATEGORIES` v editoru balíčků, jinak jde napsat
- * kategorii, která se do hry nikdy nedostane.
+ * kategorii, která se do hry nikdy nedostane. Nápověda nad kategoriemi
+ * ho píše slovem, při změně ji uprav taky.
  */
 const MAX_CATEGORIES = 6
 
@@ -342,7 +343,7 @@ function start() {
                  na seznam balíčků. -->
             <RouterLink v-if="packId" :to="editLink" class="edit-link">Upravit balíček</RouterLink>
           </div>
-          <p class="hint">Vyber jeden balíček. Deska se skládá z jednoho, ne z několika.</p>
+          <p class="hint">Vyber jeden balíček, deska se skládá vždy jen z jednoho.</p>
 
           <!-- Až po prvním snímku. Prázdný seznam před doručením dat není
                prázdná knihovna, jen ještě nedoručená. -->
@@ -378,7 +379,7 @@ function start() {
           <template v-if="pack && usable.length">
             <h3 class="sub">Kategorie do hry</h3>
             <p class="hint">
-              Jednu až {{ MAX_CATEGORIES }}. Každá kategorie je jeden sloupec desky.
+              Jednu až šest. Každá kategorie je jeden sloupec desky.
               <template v-if="selected.size >= MAX_CATEGORIES"> Vybráno maximum.</template>
             </p>
             <div class="chips">
@@ -412,7 +413,7 @@ function start() {
 
           <ul class="teams">
             <li v-for="(t, i) in teams" :key="i" class="team">
-              <span class="team__color">
+              <span class="team__color" :class="{ 'team__color--open': picker === i }">
                 <button
                   type="button"
                   class="team__dot"
@@ -475,14 +476,14 @@ function start() {
             <div class="rule">
               <p class="rule__label">Časomíra</p>
               <UiSegmented v-model="rules.timerSeconds" aria-label="Časomíra" :options="TIMER_OPTIONS" />
-              <p class="hint">Kolik času má tým na odpověď. Bez znamená bez měření.</p>
+              <p class="hint">Kolik času má tým na odpověď. Bez časomíry se čas neměří.</p>
             </div>
             <div class="rule">
               <p class="rule__label">Pole Riziko!</p>
               <UiSegmented v-model="wagerCells" aria-label="Počet polí Riziko!" :options="wagerOptions" />
               <p class="hint">
-                Tým na nich před otázkou vsadí část bodů. Na desce poznat nejsou,
-                rozsvítí se až při otevření. Nejvýš jedno na kategorii.
+                Tým na ně před otázkou vsadí část svých bodů. Na desce nejsou
+                poznat, ukážou se až po otevření. Nejvýš jedno v každé kategorii.
               </p>
             </div>
           </div>
@@ -503,7 +504,7 @@ function start() {
             v-if="showFloorZero"
             v-model="rules.floorZero"
             label="Skóre nejméně nula"
-            hint="Při odečtu bodů tým nesmí klesnout pod nulu."
+            hint="Ani po odečtu bodů tým neklesne pod nulu."
           />
         </section>
 
@@ -513,7 +514,7 @@ function start() {
             <h2 id="setup-audience"><span class="section__num" aria-hidden="true">04</span> Pro koho</h2>
           </div>
           <AudienceFields v-model:group="groupName" v-model:trainer="trainer" />
-          <p class="hint">Skupinu i lektora najdeš v přehledu odehraných her.</p>
+          <p class="hint">Podle skupiny hru najdeš ve výsledcích.</p>
         </section>
       </div>
 
@@ -649,6 +650,9 @@ function start() {
    okraj. Dva samostatné boxy vedle sebe nevypadaly, že k sobě patří. */
 .team { display: flex; align-items: stretch; }
 .team__color { position: relative; display: inline-flex; z-index: 1; }
+/* Každý řádek týmu má vlastní vrstvu, takže písmeno dalšího týmu by
+   leželo přes nabídku barev toho předchozího. Otevřená jde nahoru. */
+.team__color--open { z-index: 2; }
 .team__dot {
   flex: none;
   width: var(--control-lg);

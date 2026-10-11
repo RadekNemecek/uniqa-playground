@@ -11,7 +11,6 @@ import { emptyCategory, emptyQuestion, isQuestionReady, playableCategories } fro
 import { confirmAction, toast } from '@/stores/ui'
 import { formatScore } from '@/lib/teams'
 import { count, plural } from '@/lib/format'
-import { downloadPack } from '@/lib/packIo'
 import { useMediaQuery, WIDE } from '@/lib/media'
 import UiIcon from '@/components/ui/UiIcon.vue'
 
@@ -259,11 +258,6 @@ function editRow(index: number, raw: string) {
 function removePack() {
   emit('remove')
 }
-
-function onExport() {
-  downloadPack(draft.value)
-  toast('Balíček stažen jako JSON.', 'ok')
-}
 </script>
 
 <template>
@@ -285,7 +279,7 @@ function onExport() {
     </header>
 
     <div class="ed__ident">
-      <!-- Duplikovat, exportovat a smazat se týká tohohle balíčku, tak
+      <!-- Duplikovat a smazat se týká tohohle balíčku, tak
            stojí u jeho názvu. V horní liště visely nad ním vedle tlačítka
            Zpět, kde vypadaly jako ovládání celé stránky. -->
       <div class="ed__ident-row">
@@ -306,7 +300,6 @@ function onExport() {
             @click="close"
           >Vyzkoušet v hře</RouterLink>
           <button type="button" role="menuitem" @click="emit('duplicate'); close()">Duplikovat</button>
-          <button type="button" role="menuitem" @click="onExport(); close()">Exportovat JSON</button>
           <hr />
           <button type="button" role="menuitem" class="danger" @click="removePack(); close()">Smazat</button>
         </UiMenu>
@@ -355,7 +348,7 @@ function onExport() {
              jako zásobu, ale autorka to musí vědět tady, kde kategorie
              vznikají, ne až v přípravě hry. -->
         <p v-if="draft.categories.length > PLAYABLE_CATEGORIES" class="ed__overflow">
-          Do jedné hry jde nejvýš {{ PLAYABLE_CATEGORIES }} kategorií. Zbytek zůstane
+          Do jedné hry jde nejvýš šest kategorií. Zbytek zůstane
           v balíčku jako zásoba a vybereš si v přípravě.
         </p>
 

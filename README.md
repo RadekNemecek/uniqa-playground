@@ -251,10 +251,6 @@ se dají přeskládat šipkami. Ukládá se samo.
 Do kvízu jde jen otázka, která má znění a u čtveřice i všechny čtyři
 možnosti. Nedodělané se prostě nelosují.
 
-Oba druhy balíčků se dají stáhnout jako JSON, poslat kolegyni a zase
-naimportovat. Import je shovívavý: co chybí, dopíše prázdné, aby se dalo
-dodělat ve správě, místo aby soubor odmítl celý.
-
 ## Skripty
 
 | příkaz | co dělá |

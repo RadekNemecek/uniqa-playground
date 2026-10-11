@@ -47,6 +47,12 @@ export const router = createRouter({
       meta: { title: 'Výsledky | Na kolik to dáš?', access: 'member' },
     },
     {
+      path: '/pojistuj/vysledky',
+      name: 'pojistuj-vysledky',
+      component: () => import('@/views/PojistujReportsView.vue'),
+      meta: { title: 'Výsledky | Pojišťuj!', access: 'member' },
+    },
+    {
       path: '/admin',
       name: 'admin',
       component: () => import('@/views/AdminView.vue'),

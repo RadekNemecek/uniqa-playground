@@ -141,7 +141,7 @@ async function discard(entry: GameEntry): Promise<void> {
     title: 'Zahodit rozehranou hru',
     text:
       entry.slug === 'kviz'
-        ? 'Session se ukončí, telefony se odpojí a výsledky se ztratí.'
+        ? 'Kvíz se ukončí, telefony se odpojí a výsledky se ztratí.'
         : 'Skóre i stav desky se ztratí a příště se začne od přípravy.',
     confirmLabel: 'Zahodit',
     danger: true,

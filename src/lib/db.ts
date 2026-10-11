@@ -1,5 +1,11 @@
 import type { Pack } from '@/types'
 import type { QuizImage, QuizPack } from '@/games/kviz/types'
+import {
+  deleteLocalRun,
+  readLocalRuns,
+  saveLocalRun,
+  type PojistujRun,
+} from '@/games/pojistuj/runLog'
 
 /**
  * Datová vrstva Mučírny.
@@ -42,6 +48,14 @@ export interface MucirnaDb {
   saveQuizImage(image: QuizImage): Promise<void>
   loadQuizImage(imageId: string): Promise<QuizImage | null>
   deleteQuizImage(imageId: string): Promise<void>
+
+  /**
+   * Odehrané hry desky. Klíčem je id hry, opakovaný zápis záznam přepíše.
+   * Seznam se načítá jednou, ne listenerem: čte se po školení, ne během něj.
+   */
+  saveRun(run: PojistujRun): Promise<void>
+  listRuns(): Promise<PojistujRun[]>
+  deleteRun(runId: string): Promise<void>
 }
 
 /* ------------------------------------------------------------------------ */
@@ -178,6 +192,18 @@ class LocalDb implements MucirnaDb {
 
   async deleteQuizImage(imageId: string): Promise<void> {
     localStorage.removeItem(`${KEY_QUIZ_IMAGE}${imageId}`)
+  }
+
+  async saveRun(run: PojistujRun): Promise<void> {
+    saveLocalRun(run)
+  }
+
+  async listRuns(): Promise<PojistujRun[]> {
+    return readLocalRuns().sort((a, b) => b.finishedAt - a.finishedAt)
+  }
+
+  async deleteRun(runId: string): Promise<void> {
+    deleteLocalRun(runId)
   }
 }
 

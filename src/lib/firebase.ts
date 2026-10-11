@@ -42,6 +42,7 @@ import {
 import type { Pack } from '@/types'
 import type { QuizImage, QuizPack } from '@/games/kviz/types'
 import type { MucirnaDb } from '@/lib/db'
+import { clearLocalRuns, readLocalRuns, type PojistujRun } from '@/games/pojistuj/runLog'
 import { FIREBASE_CONFIG } from '@/lib/firebase.config'
 import { reportDbError } from '@/lib/db'
 import {
@@ -235,6 +236,47 @@ class FirestoreDb implements MucirnaDb {
 
   async deleteQuizImage(imageId: string): Promise<void> {
     await this.write(deleteDoc(this.ref('quizImages', imageId)), 'Smazání obrázku')
+  }
+
+  /**
+   * Odehrané hry desky. `hostEmail` říká, kdo hru vedl, a jen ten smí
+   * záznam přepsat, když se z výsledků vrátí na desku a dohraje.
+   */
+  async saveRun(run: PojistujRun): Promise<void> {
+    if (!account.spaceId) return
+    await this.write(
+      setDoc(this.ref('pojistujRuns', run.id), { ...run, hostEmail: account.email }),
+      'Uložení odehrané hry',
+    )
+  }
+
+  async listRuns(): Promise<PojistujRun[]> {
+    if (!account.spaceId) return []
+    await this.moveLocalRuns()
+    const snap = await withTimeout(getDocs(this.col('pojistujRuns')))
+    return snap.docs.map((d) => d.data() as PojistujRun).sort((a, b) => b.finishedAt - a.finishedAt)
+  }
+
+  async deleteRun(runId: string): Promise<void> {
+    await withTimeout(deleteDoc(this.ref('pojistujRuns', runId)))
+  }
+
+  /**
+   * Hry odehrané v době, kdy archiv ležel jen v prohlížeči, nebo při
+   * výpadku spojení. Přestěhují se nahoru, jakmile je kam, a z počítače
+   * zmizí, až je server přijme. Co se nepovede, zůstane na příště.
+   */
+  private async moveLocalRuns(): Promise<void> {
+    const local = readLocalRuns()
+    if (local.length === 0) return
+    const results = await Promise.allSettled(
+      local.map((run) =>
+        withTimeout(setDoc(this.ref('pojistujRuns', run.id), { ...run, hostEmail: account.email })),
+      ),
+    )
+    const moved = local.filter((_, i) => results[i]?.status === 'fulfilled').map((run) => run.id)
+    if (moved.length < local.length) console.error('Část odehraných her se nepodařilo přestěhovat.')
+    clearLocalRuns(moved)
   }
 
   /**

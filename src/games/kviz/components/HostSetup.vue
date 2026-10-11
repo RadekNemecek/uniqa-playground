@@ -179,9 +179,9 @@ function start(): void {
             </div>
           </div>
           <p class="hint">
-            <template v-if="wantCount === 0">Zahrají se všechny otázky z balíčků vybraných níž. Pořadí otázek i možností se zamíchá.</template>
-            <template v-else-if="perPack > 0">Vylosuje se {{ count(willPlay, 'otázka', 'otázky', 'otázek') }}, z každého balíčku zhruba {{ perPack }}. Pořadí se zamíchá.</template>
-            <template v-else>Vylosuje se {{ count(willPlay, 'otázka', 'otázky', 'otázek') }}. Pořadí se zamíchá.</template>
+            <template v-if="wantCount === 0">Ve hře budou všechny otázky z balíčků, které zaškrtneš níž, v náhodném pořadí.</template>
+            <template v-else-if="perPack > 0">Vybere se náhodně {{ count(willPlay, 'otázka', 'otázky', 'otázek') }}, z každého balíčku zhruba {{ perPack }}.</template>
+            <template v-else>Vybere se náhodně {{ count(willPlay, 'otázka', 'otázky', 'otázek') }}.</template>
           </p>
           <UiSwitch v-if="canUsePhones" v-model="withPhones" label="Hráči odpovídají z telefonů" hint="Připojí se přes QR kód. Bez telefonů se kvíz jen promítá a body se nepočítají." />
           <p v-else class="notice">Telefony se teď nepřipojí. Kvíz můžeš promítat bez nich, body si počítáš sama.</p>
@@ -190,7 +190,7 @@ function start(): void {
         <section class="section" aria-labelledby="setup-audience">
           <div class="section__head"><h2 id="setup-audience"><span class="section__num" aria-hidden="true">02</span> Pro koho</h2></div>
           <AudienceFields v-model:group="groupName" v-model:trainer="trainer" />
-          <p class="hint">Skupinu i lektora najdeš ve výsledcích a ve stažené tabulce.</p>
+          <p class="hint">Podle skupiny kvíz najdeš ve výsledcích i ve stažené tabulce.</p>
         </section>
 
         <section class="section" aria-labelledby="setup-packs">
@@ -223,7 +223,6 @@ function start(): void {
           <dt>Vybrané balíčky</dt><dd>{{ chosen.size }}</dd>
           <dt>Na odpověď</dt><dd>{{ limitSeconds }} s</dd>
           <dt>Odpovídání</dt><dd>{{ setup.withPhones ? 'Z telefonů' : 'Jen promítání' }}</dd>
-          <dt>Lektor/ka</dt><dd>{{ trainer.trim() || 'Neuvedeno' }}</dd>
         </dl>
         <UiButton variant="brand" block :disabled="!canStart" :loading="busy" @click="start">{{ setup.withPhones ? 'Otevřít čekárnu' : 'Spustit promítání' }}</UiButton>
         <p class="summary__next">{{ !canStart ? 'Vyber alespoň jeden balíček.' : setup.withPhones ? 'Hru spustíš, až se hráči připojí.' : 'Bez telefonů se body nepočítají.' }}</p>

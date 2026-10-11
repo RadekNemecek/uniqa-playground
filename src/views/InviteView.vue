@@ -174,7 +174,7 @@ async function sendNewLink(): Promise<void> {
         <UiField label="E-mail" hint="Ten, na který ti pozvánka přišla.">
           <input v-model="email" type="email" autocomplete="username" inputmode="email" required />
         </UiField>
-        <UiField label="Jméno a příjmení" hint="Uvidí ho tým a předvyplní se, když povedeš školení.">
+        <UiField label="Jméno a příjmení" hint="Uvidí ho tým a u her, které povedeš, se zapíše jako lektor.">
           <input v-model="name" type="text" autocomplete="name" maxlength="80" required />
         </UiField>
         <UiField label="Heslo" :hint="`Aspoň ${MIN_PASSWORD} znaků.`">

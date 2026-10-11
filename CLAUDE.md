@@ -181,8 +181,8 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
   dokument a editor ho přepisuje po každé pauze v psaní. Obrázky mají
   vlastní kolekci `quizImages`, jeden dokument na obrázek, uvnitř data
   URL po zmenšení na 1600 px a převodu do WebP (`src/games/kviz/image.ts`).
-  Platí jeden obrázek, jeden vlastník: duplikace balíčku i import
-  zakládají vlastní kopie a mazání otázky i balíčku obrázek uklidí,
+  Platí jeden obrázek, jeden vlastník: duplikace balíčku zakládá
+  vlastní kopie a mazání otázky i balíčku obrázek uklidí,
   jinak zůstanou ve Firestore dokumenty, které nejsou nikde vidět.
   Telefon obrázek nedostane, do session nesmí o otázce nic.
   Na plátně si obrázek drží stejné místo i po odhalení; kdyby zmizel,
@@ -352,19 +352,23 @@ Výslech nikdy nedostane.
 ## Archiv odehraných her
 
 Po hře musí něco zůstat, jinak se půlhodina školení ztratí. Deska zapisuje
-do `src/games/pojistuj/runLog.ts` (localStorage, posledních 50 her), kvíz
-do `quizReports`. Obojí nese **název skupiny** a **lektora**, jinak je
-archiv jen seznam dat.
+do `pojistujRuns`, kvíz do `quizReports`, obojí ve sdílené databázi týmu.
+Deska dřív ukládala jen do prohlížeče notebooku a kolegyně archiv
+neviděla. V lokálním režimu jde záznam do localStorage (posledních 50
+her, `runLog.ts`) a po připojení se jednou přestěhuje nahoru. Záznam desky
+se smí přepsat: z výsledků se jde zpátky na desku a dohrát. Obojí nese
+**název skupiny** a **lektora**, jinak je archiv jen seznam dat.
 
-**Pro koho** je ve všech třech přípravách táž dvojice polí
-(`AudienceFields.vue`): skupina a lektor. Skupina se z minula
-**nepředvyplňuje**, stará hodnota v poli se přehlédla a zanášela archiv
-chybou. Naposledy použité skupiny se jen nabízejí v `datalist`
-(`src/lib/recent.ts`, společné pro hry i Výslech). Lektor se předvyplní
-jménem přihlášeného, protože hru obvykle spouští ten, kdo školí,
-a nabídnou se jména z týmu pro případ, že ji spouští někdo za něj.
-Odhlášení obojí z počítače smaže. Starší vyhodnocení kvízu lektora
-nemají, seznam pak ukáže `hostEmail`.
+**Pro koho** je ve všech třech přípravách týž blok (`AudienceFields.vue`).
+Skupina se z minula **nepředvyplňuje**, stará hodnota v poli se
+přehlédla a zanášela archiv chybou. Naposledy použité skupiny se jen
+nabízejí v `datalist` (`src/lib/recent.ts`, společné pro hry i Výslech).
+Lektor se ve hrách **nezobrazuje**, bere se ze jména přihlášeného: hru
+spouští ten, kdo školí, a lektorky pole navíc jen zdržovalo. Výslech
+pole ukazuje (`show-trainer`), protože hodnotí konkrétního lektora a sběr
+za něj někdy spouští kolegyně. Odhlášení naposledy použité skupiny
+z počítače smaže. Starší vyhodnocení kvízu lektora nemají, seznam pak
+ukáže `hostEmail`.
 
 U kvízu se ukládají přezdívky účastníků. Patří k nim doba uchování, viz
 `DEPLOY.md`.
@@ -380,11 +384,12 @@ sloupci a vpravo lepivé shrnutí s jediným hlavním tlačítkem a řádkou
 průběh a Pro koho, balíčky až za nimi. Obráceně se nastavení při
 desítce balíčků ztratilo pod okrajem a kdo zaškrtl horní balíček a šel
 rovnou na tlačítko, o čase ani skupině nevěděl. Shrnutí vedle tlačítka
-ukazuje všechno nastavené, i lektora. Hlavičku přepíná `prep`, který z pilulek udělá řádku
+ukazuje všechno nastavené. Hlavičku přepíná `prep`, který z pilulek udělá řádku
 záložek a z „Hrát" „Přípravu".
 
-Výsledky kvízu mají **vlastní záložku** vedle Přípravy a Balíčků
-(`src/views/KvizReportsView.vue`, cesta z `reportsRoute` v registru her).
+Výsledky obou her mají **vlastní záložku** vedle Přípravy a Balíčků
+(`KvizReportsView.vue`, `PojistujReportsView.vue`, cesta z `reportsRoute`
+v registru her).
 Jsou to dvě různé práce: otázky se chystají před školením, výsledky se
 čtou po něm, a jako oddíl pod knihovnou balíčků se k nim muselo
 prorolovat. Záložku dostane jen hra, která `reportsRoute` má. Čte je jen
@@ -422,7 +427,7 @@ s adresou. Teď má každý vlastní účet a data týmu vidí jen člen.
 - **Člen má jméno.** Zadává ho při přijetí pozvánky (povinné) a pak si
   ho mění sám v `/tym`, cizí jméno smí měnit jen admin. Pravidla členovi
   u vlastního záznamu dovolí jen `name` a jednou `joinedAt`. Ze jména se
-  předvyplňuje lektor a v hlavičce se z něj ukazuje **jen křestní**:
+  bere lektor her a v hlavičce se z něj ukazuje **jen křestní**:
   příprava často běží na promítnutém plátně, celé jméno ani adresa tam
   nepatří. Nabídka aplikace má pak pro člena místo tří čar štítek
   s iniciálou a křestním jménem, na telefonu jen iniciálu. Kdo jméno

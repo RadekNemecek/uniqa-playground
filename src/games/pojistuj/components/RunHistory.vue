@@ -1,33 +1,21 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
-import UiEmpty from '@/components/ui/UiEmpty.vue'
-import { listRuns, deleteRun, weakest, type PojistujRun } from '@/games/pojistuj/runLog'
+import { weakest, type PojistujRun } from '@/games/pojistuj/runLog'
 import { teamBadge, teamColor, formatScore } from '@/lib/teams'
 import { whenAgo } from '@/lib/format'
-import { confirmAction } from '@/stores/ui'
 
 /**
- * Přehled odehraných her.
+ * Seznam odehraných her desky.
  *
  * Co si z toho odnese školitelka: kdy se hrálo, s kým, jak to dopadlo
  * a kterou kategorii tým nejvíc protrpěl. To poslední je důvod, proč
- * archiv vůbec existuje.
+ * archiv vůbec existuje. Načítání a mazání obstará obrazovka výsledků.
  */
-const runs = ref<PojistujRun[]>(listRuns())
-const open = ref<string | null>(null)
+defineProps<{ runs: PojistujRun[] }>()
+const emit = defineEmits<{ remove: [run: PojistujRun] }>()
 
-async function remove(run: PojistujRun): Promise<void> {
-  const ok = await confirmAction({
-    title: 'Smazat záznam',
-    text: `Hra ${run.groupName || run.packName} z ${new Date(run.finishedAt).toLocaleDateString('cs-CZ')} zmizí z přehledu.`,
-    confirmLabel: 'Smazat',
-    danger: true,
-  })
-  if (!ok) return
-  deleteRun(run.id)
-  runs.value = listRuns()
-}
+const open = ref<string | null>(null)
 
 function rate(run: PojistujRun): number {
   const won = run.categories.reduce((n, c) => n + c.won, 0)
@@ -37,87 +25,67 @@ function rate(run: PojistujRun): number {
 </script>
 
 <template>
-  <section class="hist">
-    <header class="hist__head">
-      <h2 class="hist__title">Odehrané hry</h2>
-      <p class="hist__lead">Ukládá se na tomhle počítači, posledních padesát her.</p>
-    </header>
+  <ul class="runs">
+    <li v-for="(run, i) in runs" :key="run.id" class="run">
+      <span class="run__index" aria-hidden="true">{{ String(i + 1).padStart(2, '0') }}</span>
+      <button
+        type="button"
+        class="run__main"
+        :aria-expanded="open === run.id"
+        @click="open = open === run.id ? null : run.id"
+      >
+        <span class="run__when">{{ whenAgo(run.finishedAt) }}</span>
+        <span v-fit-text class="run__name">{{ run.groupName || 'Bez názvu skupiny' }}</span>
+        <span v-fit-text class="run__pack">{{ run.trainer ? `${run.packName} · ${run.trainer}` : run.packName }}</span>
+        <span class="run__rate">{{ rate(run) }} % uhodnuto</span>
+      </button>
 
-    <UiEmpty
-      v-if="runs.length === 0"
-      icon="clock"
-      title="Zatím žádná odehraná hra"
-      text="Po dohrané desce se sem zapíše skóre týmů a kategorie, které dělaly potíže."
-    />
+      <UiIconButton
+        icon="trash"
+        size="sm"
+        variant="danger"
+        :label="`Smazat záznam ${run.groupName || run.packName}`"
+        @click="emit('remove', run)"
+      />
 
-    <ul v-else class="runs">
-      <li v-for="(run, i) in runs" :key="run.id" class="run">
-        <span class="run__index" aria-hidden="true">{{ String(i + 1).padStart(2, '0') }}</span>
-        <button
-          type="button"
-          class="run__main"
-          :aria-expanded="open === run.id"
-          @click="open = open === run.id ? null : run.id"
-        >
-          <span class="run__when">{{ whenAgo(run.finishedAt) }}</span>
-          <span v-fit-text class="run__name">{{ run.groupName || 'Bez názvu skupiny' }}</span>
-          <span v-fit-text class="run__pack">{{ run.trainer ? `${run.packName} · ${run.trainer}` : run.packName }}</span>
-          <span class="run__rate">{{ rate(run) }} % uhodnuto</span>
-        </button>
+      <div v-if="open === run.id" class="detail">
+        <ol class="detail__teams">
+          <li
+            v-for="(t, i) in run.teams"
+            :key="t.name + i"
+            class="detail__team"
+            :style="{ '--team': `var(${teamColor(t.color).cssVar})` }"
+          >
+            <span class="detail__badge">{{ teamBadge(i) }}</span>
+            <span v-fit-text class="detail__teamName">{{ t.name }}</span>
+            <span class="detail__score">{{ formatScore(t.score) }}</span>
+          </li>
+        </ol>
 
-        <UiIconButton
-          icon="trash"
-          size="sm"
-          variant="danger"
-          :label="`Smazat záznam ${run.groupName || run.packName}`"
-          @click="remove(run)"
-        />
-
-        <div v-if="open === run.id" class="detail">
-          <ol class="detail__teams">
-            <li
-              v-for="(t, i) in run.teams"
-              :key="t.name + i"
-              class="detail__team"
-              :style="{ '--team': `var(${teamColor(t.color).cssVar})` }"
-            >
-              <span class="detail__badge">{{ teamBadge(i) }}</span>
-              <span v-fit-text class="detail__teamName">{{ t.name }}</span>
-              <span class="detail__score">{{ formatScore(t.score) }}</span>
+        <div class="detail__cats">
+          <p v-if="weakest(run)" class="detail__weak">
+            Nejhůř dopadla kategorie <strong>{{ weakest(run)!.name }}</strong>.
+          </p>
+          <ul class="cats">
+            <li v-for="c in run.categories" :key="c.name" class="cat">
+              <span v-fit-text class="cat__name">{{ c.name }}</span>
+              <span class="cat__bar" aria-hidden="true">
+                <span
+                  class="cat__fill"
+                  :style="{ width: `${c.won + c.lost ? (c.won / (c.won + c.lost)) * 100 : 0}%` }"
+                ></span>
+              </span>
+              <span class="cat__n">{{ c.won }} / {{ c.won + c.lost }}</span>
             </li>
-          </ol>
-
-          <div class="detail__cats">
-            <p v-if="weakest(run)" class="detail__weak">
-              Nejhůř dopadla kategorie <strong>{{ weakest(run)!.name }}</strong>.
-            </p>
-            <ul class="cats">
-              <li v-for="c in run.categories" :key="c.name" class="cat">
-                <span v-fit-text class="cat__name">{{ c.name }}</span>
-                <span class="cat__bar" aria-hidden="true">
-                  <span
-                    class="cat__fill"
-                    :style="{ width: `${c.won + c.lost ? (c.won / (c.won + c.lost)) * 100 : 0}%` }"
-                  ></span>
-                </span>
-                <span class="cat__n">{{ c.won }} / {{ c.won + c.lost }}</span>
-              </li>
-            </ul>
-          </div>
+          </ul>
         </div>
-      </li>
-    </ul>
-  </section>
+      </div>
+    </li>
+  </ul>
 </template>
 
 <style scoped>
-.hist { display: grid; gap: var(--sp-4); margin-top: var(--sp-8); }
-.hist__head { margin-bottom: var(--sp-1); }
-.hist__head { display: grid; gap: var(--sp-1); }
-.hist__title { font-size: var(--fs-xl); }
-.hist__lead { font-size: var(--fs-sm); color: var(--c-text-muted); }
-
-/* Řádky, ne karty: stejný klíč jako knihovna balíčků o kus výš. */
+/* Řádky, ne karty: stejný klíč jako knihovna balíčků. */
 .runs { list-style: none; padding: 0; border-top: var(--border-w-strong) solid var(--c-text); }
 .run {
   display: grid;

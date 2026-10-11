@@ -54,24 +54,6 @@ const openPoints = computed(() => {
 
 const openIsWager = computed(() => game.value?.wager !== null)
 
-/**
- * Co udělá další stisk mezerníku.
- *
- * Na plátně to musí být vidět v každé fázi, aby se nedalo omylem
- * přeskočit odhalení. Dřív tuhle informaci nesla patička otázky nejmenším
- * a nejsvětlejším písmem a na desce nebyla vůbec.
- */
-const nextStepHint = computed(() => {
-  const g = game.value
-  if (!g) return ''
-  // Nad otevřenou otázkou nese nápovědu patička scény, která je vidět
-  // pořád. Pás ji neopakuje: pás se po chvíli schová a dvě věty o téže
-  // věci na plátně jen ubírají místo.
-  if (pendingWager.value) return ''
-  if (g.phase !== 'board') return ''
-  return 'Vyber políčko na desce, šipkami nebo myší'
-})
-
 function onStart(pack: Pack, setup: Setup) {
   startGame(pack, setup)
 }
@@ -171,7 +153,6 @@ async function onRematch() {
       <PlayBar
         :can-undo="canUndo"
         :steal="game.rules.steal"
-        :hint="nextStepHint"
         @undo="onUndo"
         @results="showResults"
         @end="onEnd"

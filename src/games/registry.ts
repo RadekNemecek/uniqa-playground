@@ -11,7 +11,7 @@ export interface GameEntry {
   /** Popisek záložky s otázkami. Výchozí je „Balíčky". */
   editLabel?: string
   /** Kde se čtou výsledky odehraných her. Chybí u her, které žádné
-   *  neukládají do sdílené databáze. */
+   *  neukládají. */
   reportsRoute?: string
   /** Co hra potřebuje, aby šla vést. Ukáže se na dlaždici. */
   needs: string
@@ -29,6 +29,7 @@ export const GAMES: GameEntry[] = [
       'Klasická deska kategorií a bodových hodnot. Týmy si volí políčko, ty odkrýváš otázky a rozdáváš body. Až šest týmů, časomíra a pole Riziko!, kde tým před otázkou vsadí část svých bodů.',
     route: '/pojistuj',
     editRoute: '/admin',
+    reportsRoute: '/pojistuj/vysledky',
     needs: 'Notebook a plátno',
     needsShared: false,
   },

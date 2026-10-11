@@ -5,7 +5,6 @@ import AppHeader from '@/components/AppHeader.vue'
 import QuizPackEditor from '@/games/kviz/components/QuizPackEditor.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiMenu from '@/components/ui/UiMenu.vue'
-import { downloadQuizPack, readQuizPackFile } from '@/games/kviz/packIo'
 import {
   createDemoQuizPack,
   createFamilyQuizPack,
@@ -18,7 +17,6 @@ import {
   reloadQuizPacks,
   quizPackReadiness,
   quizPacks,
-  saveQuizPack,
 } from '@/stores/quizPacks'
 import { confirmAction, toast } from '@/stores/ui'
 import { count } from '@/lib/format'
@@ -32,7 +30,6 @@ const creating = ref(false)
 /** Rodinný kvíz se zakládá chvíli, kresby se převádějí na obrázky. */
 const creatingFamily = ref(false)
 const packEditor = ref<InstanceType<typeof QuizPackEditor> | null>(null)
-const fileInput = ref<HTMLInputElement | null>(null)
 
 onMounted(() => {
   void initQuizPacks()
@@ -125,57 +122,6 @@ async function onRemove(id?: string): Promise<void> {
   if (currentId.value === target.id) closePack()
 }
 
-async function onExport(id: string): Promise<void> {
-  const pack = quizPacks.packs.find((p) => p.id === id)
-  if (!pack) return
-  await downloadQuizPack(pack)
-  toast('Balíček je stažený. Do jiné Mučírny ho nahraješ přes Importovat.', 'ok')
-}
-
-function triggerImport(): void {
-  fileInput.value?.click()
-}
-
-/**
- * Balíčky se dovážejí po dávkách, typicky celá převedená sada naráz.
- * Do editoru se otevře jen jediný importovaný balíček: po dávce se jde
- * zpátky do knihovny, kde je vidět, co všechno dorazilo.
- */
-async function onImportFile(event: Event): Promise<void> {
-  const input = event.target as HTMLInputElement
-  const files = Array.from(input.files ?? [])
-  input.value = ''
-  if (files.length === 0) return
-
-  const added: string[] = []
-  const failed: string[] = []
-  for (const file of files) {
-    try {
-      const pack = await readQuizPackFile(file)
-      await saveQuizPack(pack)
-      added.push(pack.id)
-    } catch (e) {
-      failed.push(e instanceof Error ? e.message : file.name)
-    }
-  }
-
-  if (added.length === 1 && failed.length === 0) {
-    const pack = quizPacks.packs.find((p) => p.id === added[0])
-    toast(`Balíček „${pack?.name ?? ''}" importován.`, 'ok')
-    openPack(added[0]!)
-    return
-  }
-  if (added.length > 0) toast(`Importováno ${count(added.length, 'balíček', 'balíčky', 'balíčků')}.`, 'ok')
-  if (failed.length > 0) {
-    toast(
-      failed.length === 1
-        ? failed[0]!
-        : `${count(failed.length, 'balíček', 'balíčky', 'balíčků')} se nepovedlo načíst.`,
-      'bad',
-    )
-  }
-}
-
 function badge(id: string): { text: string; tone: 'ok' | 'warn' | 'muted' } {
   const pack = quizPacks.packs.find((p) => p.id === id)
   if (!pack) return { text: '', tone: 'muted' }
@@ -202,7 +148,6 @@ function badge(id: string): { text: string; tone: 'ok' | 'warn' | 'muted' } {
             </p>
           </div>
           <div class="library__actions">
-            <UiButton size="sm" variant="ghost" @click="triggerImport">Importovat</UiButton>
             <UiButton size="sm" variant="brand" :loading="creating" @click="onCreate">Nový balíček</UiButton>
             <UiMenu label="Hotové balíčky" v-slot="{ close }">
               <button type="button" role="menuitem" @click="onCreateDemo(); close()">
@@ -218,15 +163,6 @@ function badge(id: string): { text: string; tone: 'ok' | 'warn' | 'muted' } {
           </div>
         </header>
 
-        <input
-          ref="fileInput"
-          type="file"
-          accept="application/json,.json"
-          multiple
-          class="library__file"
-          @change="onImportFile"
-        />
-
         <!-- Dokud data nedorazila, není pravda, že tu nic není. -->
         <UiSkeleton v-if="!quizPacks.loaded" :lines="4" />
 
@@ -238,7 +174,7 @@ function badge(id: string): { text: string; tone: 'ok' | 'warn' | 'muted' } {
           v-else-if="quizPacks.packs.length === 0"
           icon="info"
           title="Zatím tu není žádný balíček"
-          text="Založ prázdný tlačítkem Nový balíček, nahraj stažený balíček přes Importovat, nebo si napřed prohlédni některý hotový."
+          text="Založ prázdný tlačítkem Nový balíček, nebo si napřed prohlédni některý hotový."
         >
           <UiButton size="sm" variant="ghost" @click="onCreateDemo">
             Vytvořit ukázkový kvíz
@@ -270,7 +206,6 @@ function badge(id: string): { text: string; tone: 'ok' | 'warn' | 'muted' } {
             <UiMenu :label="`Akce balíčku ${p.name}`" v-slot="{ close }">
               <button type="button" role="menuitem" @click="openPack(p.id); close()">Otevřít</button>
               <button type="button" role="menuitem" @click="onDuplicate(p.id); close()">Duplikovat</button>
-              <button type="button" role="menuitem" @click="void onExport(p.id); close()">Stáhnout balíček</button>
               <hr />
               <button type="button" role="menuitem" class="danger" @click="onRemove(p.id); close()">Smazat</button>
             </UiMenu>
@@ -300,7 +235,6 @@ function badge(id: string): { text: string; tone: 'ok' | 'warn' | 'muted' } {
 .library__title { font-size: var(--fs-work-title); margin-top: var(--sp-2); }
 .library__lead { margin-top: var(--sp-3); color: var(--c-text-muted); font-size: var(--fs-sm); }
 .library__actions { display: flex; gap: var(--sp-3); flex-wrap: wrap; }
-.library__file { display: none; }
 .library__items { list-style: none; padding: 0; border-top: var(--border-w-strong) solid var(--c-text); }
 .card { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--sp-5); align-items: center; padding-block: var(--sp-5); border-bottom: var(--border-w) solid var(--c-border-soft); }
 .card__index { color: var(--c-brand); font-size: var(--fs-sm); font-weight: 900; font-variant-numeric: tabular-nums; }

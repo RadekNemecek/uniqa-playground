@@ -63,6 +63,19 @@ const report = (hostUid, hostEmail) => ({
   matrix: [],
 })
 
+const run = (id, hostEmail) => ({
+  schema: 1,
+  id,
+  hostEmail,
+  groupName: 'Nováčci',
+  trainer: 'Jana Nováková',
+  packName: 'Ukázka',
+  startedAt: 1,
+  finishedAt: 2,
+  teams: [{ name: 'Azuroví', color: 0, score: 400 }],
+  categories: [{ name: 'Povinné ručení', won: 4, lost: 1 }],
+})
+
 const quizSession = (hostUid, spaceId) => ({
   schema: 1,
   code: 'ABCDE',
@@ -103,6 +116,7 @@ beforeEach(async () => {
     await setDoc(doc(db, 'spaces/uniqa/quizImages/i1'), { id: 'i1', data: 'x' })
     await setDoc(doc(db, 'spaces/uniqa/quizReports/r1'), report('u-admin', ADMIN))
     await setDoc(doc(db, 'spaces/uniqa/vyslechReports/v1'), { title: 'Výslech' })
+    await setDoc(doc(db, 'spaces/uniqa/pojistujRuns/g1'), run('g1', ADMIN))
     await setDoc(doc(db, 'spaces/jiny'), { name: 'Jiný tým' })
     await setDoc(doc(db, `spaces/jiny/members/${OTHER}`), member(OTHER, 'admin'))
     await setDoc(doc(db, 'spaces/jiny/quizPacks/kp9'), { name: 'Cizí' })
@@ -121,6 +135,7 @@ describe('data prostoru', () => {
       await assertSucceeds(getDoc(doc(db, 'spaces/uniqa/quizImages/i1')))
       await assertSucceeds(getDocs(collection(db, 'spaces/uniqa/quizReports')))
       await assertSucceeds(getDocs(collection(db, 'spaces/uniqa/vyslechReports')))
+      await assertSucceeds(getDocs(collection(db, 'spaces/uniqa/pojistujRuns')))
     }
   })
 
@@ -163,6 +178,21 @@ describe('data prostoru', () => {
     )
     await assertFails(updateDoc(doc(admin(), 'spaces/uniqa/quizReports/r1'), { groupName: 'Jiná' }))
     await assertSucceeds(deleteDoc(doc(editor(), 'spaces/uniqa/quizReports/r1')))
+  })
+
+  it('odehranou hru desky zapíše a přepíše jen ten, kdo ji vedl', async () => {
+    await assertSucceeds(setDoc(doc(editor(), 'spaces/uniqa/pojistujRuns/g2'), run('g2', EDITOR)))
+    // Návrat z výsledků na desku a nový zápis téže hry.
+    await assertSucceeds(setDoc(doc(editor(), 'spaces/uniqa/pojistujRuns/g2'), { ...run('g2', EDITOR), finishedAt: 3 }))
+    await assertFails(setDoc(doc(editor(), 'spaces/uniqa/pojistujRuns/g1'), run('g1', EDITOR)))
+    await assertFails(setDoc(doc(editor(), 'spaces/uniqa/pojistujRuns/g3'), run('g3', ADMIN)))
+    await assertFails(setDoc(doc(editor(), 'spaces/uniqa/pojistujRuns/g4'), run('jine', EDITOR)))
+    await assertFails(
+      setDoc(doc(editor(), 'spaces/uniqa/pojistujRuns/g5'), { ...run('g5', EDITOR), trainer: 'x'.repeat(81) }),
+    )
+    await assertFails(setDoc(doc(outsider(), 'spaces/uniqa/pojistujRuns/g6'), run('g6', OUTSIDER)))
+    await assertFails(getDocs(collection(outsider(), 'spaces/uniqa/pojistujRuns')))
+    await assertSucceeds(deleteDoc(doc(editor(), 'spaces/uniqa/pojistujRuns/g1')))
   })
 
   it('staré kolekce z doby hesla jsou zavřené', async () => {

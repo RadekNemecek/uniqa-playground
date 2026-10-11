@@ -8,7 +8,8 @@ import { sfx } from '@/lib/sound'
 import { settings } from '@/stores/settings'
 import { count } from '@/lib/format'
 import { duration, prefersReducedMotion } from '@/lib/motion'
-import { buildRun, saveRun } from '@/games/pojistuj/runLog'
+import { buildRun } from '@/games/pojistuj/runLog'
+import { db } from '@/lib/db'
 
 const props = defineProps<{ game: GameState; canUndo?: boolean }>()
 const emit = defineEmits<{ again: []; rematch: []; board: []; undo: [] }>()
@@ -148,7 +149,8 @@ function fireCelebration(): void {
 onMounted(async () => {
   // Zápis do archivu. Dřív hra skončila a nezůstalo po ní nic, přestože
   // právě výsledek je to, co se ukazuje dál.
-  saveRun(buildRun(props.game, props.game.groupName))
+  // Archiv je bonus, ne podmínka hry: selhání ohlásí úložiště samo.
+  void db().saveRun(buildRun(props.game, props.game.groupName)).catch(() => undefined)
 
   await nextTick()
 

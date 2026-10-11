@@ -14,7 +14,6 @@ import { clone } from '@/lib/clone'
 import { emptyQuizItem, isItemReady, quizPackProgress } from '@/stores/quizPacks'
 import { removeImage } from '@/stores/quizImages'
 import { confirmAction, toast } from '@/stores/ui'
-import { downloadQuizPack } from '../packIo'
 import { BOOLEAN_LABELS, kindOf } from '../options'
 import type { QuizPack } from '../types'
 
@@ -146,10 +145,6 @@ function correctText(id: string): string {
   return item.options[item.correctIndex]?.trim() ?? ''
 }
 
-async function exportPack(): Promise<void> {
-  await downloadQuizPack(clone(toRaw(draft.value)))
-  toast('Balíček stažen jako JSON.', 'ok')
-}
 async function removePack(): Promise<void> {
   if (await flush()) emit('remove')
 }
@@ -167,7 +162,6 @@ async function duplicate(): Promise<void> {
       </div>
       <UiButton v-if="saveState === 'error'" size="sm" variant="brand" @click="flush">Zkusit uložit znovu</UiButton>
       <UiMenu label="Akce otevřeného balíčku" v-slot="{ close }">
-        <button type="button" role="menuitem" @click="void exportPack(); close()">Stáhnout jako JSON</button>
         <button type="button" role="menuitem" @click="void duplicate(); close()">Duplikovat</button>
         <button type="button" role="menuitem" class="danger" @click="void removePack(); close()">Smazat balíček</button>
       </UiMenu>

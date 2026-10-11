@@ -122,7 +122,7 @@ async function saveName(): Promise<void> {
   if (!m) return
   const next = renameValue.value.trim()
   if (m.email === account.email && !next) {
-    renameError.value = 'Bez jména se lektor v přípravě nepředvyplní. Vyplň aspoň křestní.'
+    renameError.value = 'Bez jména se u tvých her lektor nezapíše. Vyplň aspoň křestní.'
     return
   }
   renameBusy.value = true
@@ -372,7 +372,7 @@ async function remove(m: TeamMember): Promise<void> {
           label="Jméno a příjmení"
           :error="renameError"
           :hint="renaming?.email === account.email
-            ? 'Předvyplní se jako lektor, když povedeš školení. V hlavičce se ukáže jen křestní.'
+            ? 'U her, které povedeš, se zapíše jako lektor. V hlavičce se ukáže jen křestní.'
             : renaming?.email"
         >
           <template #default="{ describedBy }">

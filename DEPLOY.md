@@ -59,19 +59,19 @@ Ověření: u *Anonymous* i *Email/Password* je stav **Enabled**.
 Pravidla se občas změní spolu s aplikací. Ručně se vkládají jen
 napoprvé, potom je nasadí `firebase deploy` spolu s aplikací (viz
 kapitola 2). Ruční publikování se totiž dvakrát zapomnělo a server pak
-nový zápis odmítal. Naposledy s **Výslechem**, zpětnou vazbou po školení:
-přibyly kolekce `vyslechForms`, `vyslech` (s podkolekcí `responses`)
-a `vyslechReports`. Bez publikovaných pravidel se sběr neotevře a příprava
-napíše, že je potřeba pravidla publikovat. Předtím to byly obrázky
-k otázkám kvízu v kolekci `quizImages`. Samotná pravidla bez aplikace
+nový zápis odmítal. Naposledy s **výsledky desky Pojišťuj!** v kolekci
+`pojistujRuns`: bez nových pravidel se odehraná hra neuloží a záložka
+Výsledky ji nenačte. Předtím to byl **Výslech** (`vyslechForms`, `vyslech`
+s podkolekcí `responses` a `vyslechReports`), bez jehož pravidel se sběr
+neotevřel, a ještě dřív obrázky k otázkám kvízu v kolekci `quizImages`. Samotná pravidla bez aplikace
 nasadí `firebase deploy --only firestore:rules`.
 
 Co pravidla dělají:
 
 - všechno, co tým připravil, leží pod **`spaces/{prostor}`**: balíčky
   desky Pojišťuj! (`packs`) i kvízu (`quizPacks`), obrázky k otázkám
-  (`quizImages`), sady Výslechu (`vyslechForms`) a výsledky obou
-  (`quizReports`, `vyslechReports`). Čte a mění je **jen člen týmu**
+  (`quizImages`), sady Výslechu (`vyslechForms`) a výsledky
+  (`pojistujRuns`, `quizReports`, `vyslechReports`). Čte a mění je **jen člen týmu**
   přihlášený e-mailem, který je ověřený,
 - **členové** jsou v `spaces/{prostor}/members/{e-mail}` s rolí `admin`,
   nebo `editor`. Zvát, měnit role a odebírat smí jen admin, sám sebe ale
@@ -155,7 +155,7 @@ Ověření v konzoli, **Firestore Database → Data**:
 | `spaces/uniqa` | název týmu |
 | `spaces/uniqa/members` | jeden dokument na člena, id je e-mail |
 | `spaces/uniqa/packs`, `quizPacks`, `quizImages` | otázky a obrázky |
-| `spaces/uniqa/quizReports`, `vyslechForms`, `vyslechReports` | výsledky a sady Výslechu |
+| `spaces/uniqa/pojistujRuns`, `quizReports`, `vyslechForms`, `vyslechReports` | výsledky a sady Výslechu |
 | `quiz`, `vyslech` | běžící hry a sběry, mizí po ukončení |
 
 Poslední zkouška: přihlas se v jiném prohlížeči. Balíčky se musí objevit,

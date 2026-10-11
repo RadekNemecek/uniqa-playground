@@ -8,12 +8,16 @@ import type { GameState } from '@/types'
  * Přitom právě tohle je to, co se ukazuje managementu, ne že se hrálo,
  * ale co z toho vyšlo a která kategorie týmu nesedla.
  *
- * Ukládá se lokálně, do prohlížeče. Deska se vede z jednoho notebooku
- * a nikam se neposílá, takže tu není co sdílet.
+ * Ukládá se jako vyhodnocení kvízu do sdílené databáze týmu, přes
+ * `db().saveRun()`. Dřív ležel archiv jen v prohlížeči notebooku, ze
+ * kterého se hrálo, takže kolegyně ho neviděla a s jiným počítačem
+ * zmizel. Tady jsou jen tvar záznamu a lokální úložiště pro režim bez
+ * Firestore; odtud se po připojení záznamy jednou přestěhují nahoru.
  */
 
 const KEY = 'playground.runs.pojistuj.v1'
-/** Kolik her si pamatujeme. Starší se odsouvají, ať localStorage neroste. */
+/** Kolik her si pamatuje lokální režim. Starší se odsouvají, ať
+ *  localStorage neroste. */
 const KEEP = 50
 
 export interface CategoryScore {
@@ -44,7 +48,7 @@ export interface PojistujRun {
   categories: CategoryScore[]
 }
 
-function read(): PojistujRun[] {
+export function readLocalRuns(): PojistujRun[] {
   try {
     const raw = localStorage.getItem(KEY)
     if (!raw) return []
@@ -55,13 +59,21 @@ function read(): PojistujRun[] {
   }
 }
 
-export function listRuns(): PojistujRun[] {
-  return read().sort((a, b) => b.finishedAt - a.finishedAt)
+export function deleteLocalRun(id: string): void {
+  try {
+    localStorage.setItem(KEY, JSON.stringify(readLocalRuns().filter((r) => r.id !== id)))
+  } catch {
+    /* soukromé okno */
+  }
 }
 
-export function deleteRun(id: string): void {
+/** Po přestěhování do sdílené databáze. */
+export function clearLocalRuns(ids: string[]): void {
+  const gone = new Set(ids)
   try {
-    localStorage.setItem(KEY, JSON.stringify(read().filter((r) => r.id !== id)))
+    const rest = readLocalRuns().filter((r) => !gone.has(r.id))
+    if (rest.length) localStorage.setItem(KEY, JSON.stringify(rest))
+    else localStorage.removeItem(KEY)
   } catch {
     /* soukromé okno */
   }
@@ -98,15 +110,15 @@ export function buildRun(game: GameState, groupName: string): PojistujRun {
 }
 
 /**
- * Zapíše odehranou hru.
+ * Zapíše odehranou hru do prohlížeče.
  *
  * Klíčem je id hry, takže opakovaný zápis (obnovení stránky na
  * výsledcích, návrat na desku a zpět) záznam přepíše místo aby ho
  * zdvojil.
  */
-export function saveRun(run: PojistujRun): void {
+export function saveLocalRun(run: PojistujRun): void {
   try {
-    const runs = read().filter((r) => r.id !== run.id)
+    const runs = readLocalRuns().filter((r) => r.id !== run.id)
     runs.push(run)
     runs.sort((a, b) => b.finishedAt - a.finishedAt)
     localStorage.setItem(KEY, JSON.stringify(runs.slice(0, KEEP)))

@@ -238,7 +238,7 @@ onBeforeUnmount(() => stop?.())
 
     <section v-else-if="view === 'closed'" class="card">
       <h1 class="card__title">Sběr skončil</h1>
-      <p class="card__lead">Odpovědi se už nepřijímají. Díky, že ses chtěl/a ozvat.</p>
+      <p class="card__lead">Odpovědi se už nepřijímají. I tak díky.</p>
     </section>
 
     <!-- Díky ---------------------------------------------------------------- -->

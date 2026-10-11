@@ -102,7 +102,7 @@ export function isSpaceAdmin(): boolean {
  * který by se měl tiše přejít.
  */
 export function currentSpaceId(): string {
-  if (!state.spaceId) throw new Error('Nejsi přihlášený do žádného týmu.')
+  if (!state.spaceId) throw new Error('Tenhle účet nepatří do žádného týmu.')
   return state.spaceId
 }
 

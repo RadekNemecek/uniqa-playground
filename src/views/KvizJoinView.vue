@@ -13,7 +13,7 @@ import { hasSessionDb, isSessionDbConnecting } from '@/lib/sessionDb'
 import { AVATARS, avatarFor } from '@/games/kviz/avatars'
 import { formatScore } from '@/lib/teams'
 import { holdPlayerScreen, releasePlayerScreen } from '@/lib/playerScreen'
-import { count } from '@/lib/format'
+import { count, plural } from '@/lib/format'
 import {
   answer,
   checking,
@@ -244,7 +244,7 @@ onBeforeUnmount(() => {
          a pak stránku obnovit ručně. Pás stojí mimo tok, aby obrazovku
          pod sebou neposunul. -->
     <p v-if="player.stale" class="drop" role="status">
-      <span>Spojení vypadlo, obnovuju…</span>
+      <span>Spojení vypadlo, obnovuji…</span>
       <button type="button" @click="retryConnect">Zkusit hned</button>
     </p>
 
@@ -364,7 +364,7 @@ onBeforeUnmount(() => {
           {{ player.stale ? 'Spojení vypadlo' : 'Spojení běží' }}
         </p>
         <p v-if="playerCount > 0" class="card__hint">
-          {{ count(playerCount, 'hráč je', 'hráči jsou', 'hráčů je') }} připojeno
+          Ve hře {{ plural(playerCount, 'je', 'jsou', 'je') }} {{ count(playerCount, 'hráč', 'hráči', 'hráčů') }}
         </p>
         <!-- Bodování nebylo vysvětlené nikde. Hra je rychlostní a nikdo
              o tom nevěděl, takže nikdo nespěchal. -->

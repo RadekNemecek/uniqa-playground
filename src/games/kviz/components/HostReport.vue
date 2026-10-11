@@ -83,7 +83,7 @@ function isTrap(q: QuizReportQuestion, at: number): boolean {
         Otázky
       </button>
       <button type="button" role="tab" :aria-selected="tab === 'lide'" :class="{ 'tabs--on': tab === 'lide' }" @click="tab = 'lide'">
-        Kdo co škrtl
+        Kdo co odpověděl
       </button>
     </div>
 

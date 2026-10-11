@@ -154,6 +154,32 @@ service cloud.firestore {
         allow delete: if isMember(space);
       }
 
+      // Odehrané hry desky Pojišťuj!: skóre týmů a úspěšnost kategorií,
+      // bez jmen účastníků. Na rozdíl od vyhodnocení kvízu se přepsat
+      // smí: moderátorka se z výsledků může vrátit na desku a dohrát,
+      // a pak se tentýž záznam zapíše znovu. Jen ten, kdo hru vedl.
+      match /pojistujRuns/{runId} {
+        allow read, delete: if isMember(space);
+        allow create, update: if isMember(space)
+                      && request.resource.data.hostEmail == me()
+                      && (request.method == 'create' || resource.data.hostEmail == me())
+                      && request.resource.data.schema == 1
+                      && request.resource.data.id == runId
+                      && request.resource.data.keys().hasAll(['id', 'groupName', 'packName',
+                           'startedAt', 'finishedAt', 'teams', 'categories'])
+                      && request.resource.data.groupName is string
+                      && request.resource.data.groupName.size() <= 120
+                      && request.resource.data.packName is string
+                      && request.resource.data.packName.size() <= 120
+                      && (!('trainer' in request.resource.data)
+                          || (request.resource.data.trainer is string
+                              && request.resource.data.trainer.size() <= 80))
+                      && request.resource.data.teams is list
+                      && request.resource.data.teams.size() <= 6
+                      && request.resource.data.categories is list
+                      && request.resource.data.categories.size() <= 6;
+      }
+
       // Vyhodnocení Výslechu. Bez identit, ale s volnými odpověďmi, ve
       // kterých se jména objevit můžou. Kdo sběr spustil, se schválně
       // neukládá: obvykle je to lektor, kterého se hodnocení týká.

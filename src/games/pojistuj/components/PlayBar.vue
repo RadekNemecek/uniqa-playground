@@ -7,8 +7,6 @@ import KeysHelp from './KeysHelp.vue'
 defineProps<{
   canUndo: boolean
   steal: boolean
-  /** Co udělá další stisk. Nese ho pás nad hrou. */
-  hint?: string
 }>()
 
 const emit = defineEmits<{ undo: []; results: []; end: [] }>()
@@ -33,7 +31,10 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <PresentationBar title="Pojišťuj!" :hint="hint" end-label="Ukončit hru" @end="emit('end')">
+  <!-- Uprostřed pásu nic: na desce mezerník nic nedělá a věta o výběru
+       políčka jen opakovala, co je vidět. Nad otázkou nese nápovědu
+       patička scény. -->
+  <PresentationBar title="Pojišťuj!" end-label="Ukončit hru" @end="emit('end')">
     <template #menu="{ close }">
       <button type="button" role="menuitem" :disabled="!canUndo" @click="close(); emit('undo')">
         <UiIcon name="undo" size="sm" />

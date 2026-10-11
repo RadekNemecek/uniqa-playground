@@ -126,7 +126,7 @@ function start(): void {
           <UiField label="Název školení" required :error="titleError" hint="Uvidí ho lidé nahoře v dotazníku a najdeš podle něj výsledky.">
             <input v-model="title" type="text" maxlength="80" placeholder="Např. Pojištění odpovědnosti pro začínající" />
           </UiField>
-          <AudienceFields v-model:group="group" v-model:trainer="trainer" />
+          <AudienceFields v-model:group="group" v-model:trainer="trainer" show-trainer />
           <p class="hint">Skupina a lektor se v dotazníku neukážou. Slouží k porovnání ve výsledcích.</p>
         </section>
         <button type="submit" class="vh" tabindex="-1">Vygenerovat QR kód</button>

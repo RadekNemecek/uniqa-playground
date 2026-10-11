@@ -5,15 +5,21 @@ import { account } from '@/stores/account'
 import { recentGroups } from '@/lib/recent'
 
 /**
- * Pro koho se školí: skupina a lektor. Stejná dvojice polí ve všech
+ * Pro koho se školí: skupina a lektor. Táž dvojice údajů ve všech
  * přípravách, kvízu, desce i Výslechu, aby archiv šel číst napříč.
  *
  * Skupina se z minula nepředvyplňuje, jen nabízí: stará hodnota v poli
- * se přehlédne a zanese archiv chybou. Lektor se předvyplní jménem
- * přihlášeného, protože hru obvykle spouští ten, kdo školí. Když ji
- * spouští někdo za něj, nabídnou se jména z týmu.
+ * se přehlédne a zanese archiv chybou.
+ *
+ * Lektor se bere ze jména přihlášeného. Ve hrách pole vidět není: hru
+ * spouští ten, kdo školí, a lektorky pole vedle skupiny jen zdržovalo.
+ * Výslech ho ukazuje (`showTrainer`), protože hodnotí konkrétního lektora
+ * a sběr za něj někdy spouští kolegyně; tam se nabídnou jména z týmu.
  */
-withDefaults(defineProps<{ groupHint?: string }>(), { groupHint: '' })
+const props = withDefaults(defineProps<{ groupHint?: string; showTrainer?: boolean }>(), {
+  groupHint: '',
+  showTrainer: false,
+})
 const group = defineModel<string>('group', { required: true })
 const trainer = defineModel<string>('trainer', { required: true })
 
@@ -34,7 +40,7 @@ watch(
 
 let stop: (() => void) | null = null
 onMounted(async () => {
-  if (account.status !== 'member') return
+  if (!props.showTrainer || account.status !== 'member') return
   try {
     const fb = await import('@/lib/firebase')
     stop = fb.watchMembers(
@@ -56,7 +62,7 @@ onBeforeUnmount(() => stop?.())
 </script>
 
 <template>
-  <div class="audience">
+  <div class="audience" :class="{ 'audience--single': !showTrainer }">
     <UiField label="Skupina (nepovinné)" :hint="groupHint">
       <input
         v-model="group"
@@ -67,7 +73,7 @@ onBeforeUnmount(() => stop?.())
         :list="groups.length ? `${ids}-groups` : undefined"
       />
     </UiField>
-    <UiField label="Lektor/ka (nepovinné)">
+    <UiField v-if="showTrainer" label="Lektor/ka (nepovinné)">
       <input
         v-model="trainer"
         type="text"
@@ -81,7 +87,7 @@ onBeforeUnmount(() => stop?.())
     <datalist v-if="groups.length" :id="`${ids}-groups`">
       <option v-for="g in groups" :key="g" :value="g" />
     </datalist>
-    <datalist v-if="teamNames.length" :id="`${ids}-team`">
+    <datalist v-if="showTrainer && teamNames.length" :id="`${ids}-team`">
       <option v-for="n in teamNames" :key="n" :value="n" />
     </datalist>
   </div>
@@ -89,5 +95,6 @@ onBeforeUnmount(() => stop?.())
 
 <style scoped>
 .audience { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--sp-4); align-items: start; }
+.audience--single { grid-template-columns: minmax(0, 1fr); }
 @media (max-width: 960px) { .audience { grid-template-columns: minmax(0, 1fr); } }
 </style>
