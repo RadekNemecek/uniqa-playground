@@ -134,6 +134,9 @@ export interface QuizSetup {
    * školily tři skupiny.
    */
   groupName: string
+  /** Kdo školí. Předvyplní se jménem přihlášeného, jde přepsat.
+   *  Starší uložené hry ho nemají. */
+  trainer?: string
 }
 
 export interface QuizHostState {
@@ -276,6 +279,8 @@ export interface QuizReport {
   hostUid: string
   /** Koho se to týkalo. Prázdné u her spuštěných bez názvu skupiny. */
   groupName: string
+  /** Kdo školil, jak to stálo v přípravě. Starší vyhodnocení ho nemají. */
+  trainer?: string
   /** Kód hry. Null, když se hrálo bez telefonů. */
   code: string | null
   round: number
@@ -335,6 +340,8 @@ export interface QuizReportCell {
 export interface QuizReportSummary {
   id: string
   groupName: string
+  /** Lektor z přípravy, u starších vyhodnocení adresa toho, kdo hru vedl. */
+  trainer: string
   finishedAt: number
   round: number
   packNames: string[]

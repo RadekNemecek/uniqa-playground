@@ -27,6 +27,14 @@ const next = computed(() => {
   return typeof raw === 'string' && raw.startsWith('/') && !raw.startsWith('//') ? raw : '/'
 })
 
+/** Kam se po přihlášení pokračuje, lidsky. Kdo klikl na kartu hry
+ *  a ocitl se na formuláři, má vidět, že cesta nekončí tady. */
+const nextTitle = computed(() => {
+  if (next.value === '/') return ''
+  const title = router.resolve(next.value).meta.title
+  return title ? title.replace(/ \| /g, ' · ') : ''
+})
+
 const mode = ref<'signIn' | 'reset' | 'resetSent'>('signIn')
 const email = ref('')
 const password = ref('')
@@ -182,6 +190,7 @@ function switchMode(to: 'signIn' | 'reset'): void {
         lead="Otázky, Výslech a výsledky jsou jen pro tým. Účet dostaneš pozvánkou od správce."
         @submit="signIn"
       >
+        <p v-if="nextTitle" class="auth__note">Potom pokračuješ do: <strong>{{ nextTitle }}</strong></p>
         <UiField label="E-mail">
           <input v-model="email" type="email" autocomplete="username" inputmode="email" required />
         </UiField>

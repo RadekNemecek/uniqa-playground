@@ -73,6 +73,57 @@ function retryConnect(): void {
   }
   void watchGame(code.value)
 }
+/* --- Kód dotazníku ---------------------------------------------------------
+   Tlačítko na rozcestníku vede sem a účastník neví, jestli na plátně
+   běží kvíz, nebo Výslech: kód vypadá stejně. Když kvíz s tímhle kódem
+   neběží, zkusí se otevřený dotazník a telefon se přesměruje tam, místo
+   aby hlásil, že hra neběží. */
+const lookingElsewhere = ref(false)
+const checkedElsewhere = new Set<string>()
+
+async function openVyslechIfRunning(forCode: string): Promise<void> {
+  if (checkedElsewhere.has(forCode)) return
+  checkedElsewhere.add(forCode)
+  lookingElsewhere.value = true
+  try {
+    const { vyslechDbWhenReady } = await import('@/lib/vyslechDb')
+    const db = await vyslechDbWhenReady()
+    if (!db) return
+    const open = await new Promise<boolean>((resolve) => {
+      let stop: (() => void) | null = null
+      let settled = false
+      const finish = (value: boolean): void => {
+        if (settled) return
+        settled = true
+        window.clearTimeout(timer)
+        // Snímek může přijít dřív, než se vrátí funkce na odhlášení.
+        queueMicrotask(() => stop?.())
+        resolve(value)
+      }
+      const timer = window.setTimeout(() => finish(false), 6000)
+      stop = db.watchSession(forCode, (session, fromCache) => {
+        // Prázdný snímek z mezipaměti nic neříká, rozhoduje server.
+        if (fromCache && !session) return
+        finish(session !== null && session.phase === 'open')
+      })
+    })
+    if (open && code.value === forCode) {
+      await router.replace({ name: 'vyslech-dotaznik', params: { code: forCode } })
+    }
+  } catch (e) {
+    console.error('Hledání dotazníku podle kódu selhalo:', e)
+  } finally {
+    lookingElsewhere.value = false
+  }
+}
+
+watch(
+  () => player.missing,
+  (missing) => {
+    if (missing && code.value) void openVyslechIfRunning(code.value)
+  },
+)
+
 /** Nabídka zvířat. Zavřená, dokud hráči přidělené nevadí. */
 const zooOpen = ref(false)
 
@@ -84,6 +135,7 @@ const session = computed(() => player.session)
 const view = computed(() => {
   if (player.noConnection) return 'offline'
   if (!code.value) return 'code'
+  if (player.missing && lookingElsewhere.value) return 'loading'
   if (player.missing) return 'missing'
   if (!session.value || checking.value) return 'loading'
   if (!joined.value) return 'join'
@@ -202,9 +254,9 @@ onBeforeUnmount(() => {
          Tahle obrazovka je konec té slepé uličky. -->
     <form v-if="view === 'code'" class="card" @submit.prevent="goToCode">
       <p class="brand"><BrandTile class="brand__mark" /> Mučírna</p>
-      <h1 class="card__title">Zadej kód hry</h1>
-      <p class="card__lead">Je na plátně, velkými písmeny.</p>
-      <CodeField v-model="typedCode" label="Kód hry" />
+      <h1 class="card__title">Zadej kód z plátna</h1>
+      <p class="card__lead">Je pod QR kódem, velkými písmeny. Platí pro kvíz i pro dotazník po školení.</p>
+      <CodeField v-model="typedCode" label="Kód z plátna" />
       <p v-if="codeError" class="card__error">{{ codeError }}</p>
       <UiButton type="submit" variant="brand" size="lg" block>Připojit se</UiButton>
     </form>
@@ -231,7 +283,7 @@ onBeforeUnmount(() => {
         <MascotTile class="perch__mascot" mood="none" />
       </div>
       <p class="card__lead">
-        Zkontroluj kód na plátně. Pokud sedí, hra ještě nezačala, nebo už skončila.
+        Zkontroluj kód na plátně. Pokud sedí, hra ani dotazník ještě nezačaly, nebo už skončily.
       </p>
       <p class="card__code">{{ code }}</p>
       <UiButton variant="ghost" @click="enterAnotherCode">Zadat jiný kód</UiButton>

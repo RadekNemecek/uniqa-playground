@@ -84,9 +84,16 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
   sama karta a tlačítko uvnitř zastavuje probublání. K balíčkům se
   odtud nechodí, ta cesta vede z hlavičky hry.
 - **Rozcestník je titulní strana s dopadem.** Nahoře jen nápis,
-  nálepka s větou a jediné tlačítko Vybrat hru, které k výběru plynule
-  odroluje. Připojení telefonem patří jen kvízu a hráči na něj míří
-  z QR kódu na plátně, na rozcestník nepatří.
+  nálepka s větou a dvě tlačítka: Vybrat hru, které k výběru plynule
+  odroluje, a vedle něj tiché Připojit se kódem. To je pro účastníka
+  s telefonem, který QR nenačte (odlesk projektoru, zadní řada) a na
+  adresu Mučírny se dostal sám: vede na `/k`, kde opíše kód z plátna.
+  Kód kvízu i Výslechu vypadá stejně, takže `/k` po kódu, pod kterým
+  kvíz neběží, zkusí otevřený dotazník a přesměruje na `/v/:code`.
+  V horní řádce je vlevo nadhoz, vpravo nabídka a nepřihlášenému
+  i tlačítko Přihlásit se (na telefonu jen v nabídce, tam je skoro
+  vždycky účastník). Karta hry nepřihlášenému řekne, že je pro členy
+  týmu, dřív než klikne a ocitne se na formuláři.
   Sekvence: vyskočí písmena „učírna", shora spadne dlaždice s M,
   dopadne, smáčkne se, slovo se otřese a kolem nadskočí barevné
   dlaždice v pozadí. Vtip s odebraným „M" se tím přečte sám, věta na
@@ -315,7 +322,9 @@ rozcestníku **nemá kartu**: chodí se k němu z nabídky aplikace
 (`AppMenu`, tři čáry v hlavičce a v rohu rozcestníku). Celý je jen pro
 členy týmu, i příprava, protože jsou v něm hodnocení lektorů. Kdo sběr
 spustil, se ve výsledcích schválně neukládá: obvykle je to lektor,
-kterého se hodnocení týká.
+kterého se hodnocení týká. Pole Lektor/ka se sice předvyplní jménem
+přihlášeného, ale je vidět a dá se smazat; `hostEmail` jako kvíz
+Výslech nikdy nedostane.
 
 - **Telefon dostane celou sadu najednou** a odešle ji jedním tlačítkem.
   Na plátně otázky neběží, každý vyplňuje svým tempem. Rozepsané odpovědi
@@ -344,8 +353,18 @@ kterého se hodnocení týká.
 
 Po hře musí něco zůstat, jinak se půlhodina školení ztratí. Deska zapisuje
 do `src/games/pojistuj/runLog.ts` (localStorage, posledních 50 her), kvíz
-do `quizReports`. Obojí nese **název skupiny**, jinak je archiv jen seznam
-dat.
+do `quizReports`. Obojí nese **název skupiny** a **lektora**, jinak je
+archiv jen seznam dat.
+
+**Pro koho** je ve všech třech přípravách táž dvojice polí
+(`AudienceFields.vue`): skupina a lektor. Skupina se z minula
+**nepředvyplňuje**, stará hodnota v poli se přehlédla a zanášela archiv
+chybou. Naposledy použité skupiny se jen nabízejí v `datalist`
+(`src/lib/recent.ts`, společné pro hry i Výslech). Lektor se předvyplní
+jménem přihlášeného, protože hru obvykle spouští ten, kdo školí,
+a nabídnou se jména z týmu pro případ, že ji spouští někdo za něj.
+Odhlášení obojí z počítače smaže. Starší vyhodnocení kvízu lektora
+nemají, seznam pak ukáže `hostEmail`.
 
 U kvízu se ukládají přezdívky účastníků. Patří k nim doba uchování, viz
 `DEPLOY.md`.
@@ -388,6 +407,15 @@ s adresou. Teď má každý vlastní účet a data týmu vidí jen člen.
   hledá dotazem přes všechny prostory (`collectionGroup('members')`
   podle pole `email`). První přihlášení zapíše `joinedAt`, podle toho
   `/tym` pozná nepřijatou pozvánku.
+- **Člen má jméno.** Zadává ho při přijetí pozvánky (povinné) a pak si
+  ho mění sám v `/tym`, cizí jméno smí měnit jen admin. Pravidla členovi
+  u vlastního záznamu dovolí jen `name` a jednou `joinedAt`. Ze jména se
+  předvyplňuje lektor a v hlavičce se z něj ukazuje **jen křestní**:
+  příprava často běží na promítnutém plátně, celé jméno ani adresa tam
+  nepatří. Nabídka aplikace má pak pro člena místo tří čar štítek
+  s iniciálou a křestním jménem, na telefonu jen iniciálu. Kdo jméno
+  nemá, uvidí v nabídce Doplnit jméno. Heslo se mění odkazem do pošty
+  z vlastního řádku v `/tym`.
 - **Stav účtu** je v `src/stores/account.ts`, plní ho `firebase.ts` při
   startu. Router pouští na obrazovky s `meta.access: 'member'` jen člena,
   ostatní posílá na přihlášení s `?dal=` cestou, kam mířili. Po přihlášení

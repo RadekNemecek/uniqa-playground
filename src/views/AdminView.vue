@@ -93,7 +93,7 @@ function onExport(id: string) {
   const pack = packs.packs.find((p) => p.id === id)
   if (!pack) return
   downloadPack(pack)
-  toast('Balíček stažen jako JSON.', 'ok')
+  toast('Balíček je stažený. Do jiné Mučírny ho nahraješ přes Importovat.', 'ok')
 }
 
 function triggerImport() {
@@ -141,7 +141,7 @@ function readinessLabel(id: string): { text: string; tone: 'ok' | 'warn' | 'mute
       <section v-if="!current" class="library">
         <header class="library__head">
           <div>
-            <p class="eyebrow">Tvoje knihovna</p>
+            <p class="eyebrow">Knihovna týmu</p>
             <h1 class="library__title">Otázky na desku.</h1>
             <p class="library__lead">
               Balíčky pro hru Pojišťuj! Hratelná je jen kategorie, která má
@@ -172,7 +172,7 @@ function readinessLabel(id: string): { text: string; tone: 'ok' | 'warn' | 'mute
           v-else-if="packs.packs.length === 0"
           icon="info"
           title="Zatím tu není žádný balíček"
-          text="Založ prázdný tlačítkem Nový balíček, naimportuj JSON, nebo si napřed prohlédni ukázku."
+          text="Založ prázdný tlačítkem Nový balíček, nahraj stažený balíček přes Importovat, nebo si napřed prohlédni ukázku."
         >
           <UiButton size="sm" variant="ghost" @click="onCreateDemo">
             Vytvořit ukázkový balíček
@@ -198,7 +198,7 @@ function readinessLabel(id: string): { text: string; tone: 'ok' | 'warn' | 'mute
             <UiMenu :label="`Akce balíčku ${p.name}`" v-slot="{ close }">
               <button type="button" role="menuitem" @click="openPack(p.id); close()">Otevřít</button>
               <button type="button" role="menuitem" @click="onDuplicate(p.id); close()">Duplikovat</button>
-              <button type="button" role="menuitem" @click="onExport(p.id); close()">Exportovat JSON</button>
+              <button type="button" role="menuitem" @click="onExport(p.id); close()">Stáhnout balíček</button>
               <hr />
               <button type="button" role="menuitem" class="danger" @click="onRemove(p.id); close()">Smazat</button>
             </UiMenu>

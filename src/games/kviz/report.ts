@@ -84,6 +84,7 @@ export function buildReport(state: QuizHostState, answers: QuizAnswer[], hostUid
     id: id('r'),
     hostUid,
     groupName: state.setup.groupName ?? '',
+    trainer: state.setup.trainer ?? '',
     code: state.code,
     round: state.round,
     packNames: [...new Set(state.questions.map((q) => q.packName))],
@@ -121,6 +122,7 @@ export function reportToCsv(report: QuizReport): string {
   const when = new Date(report.finishedAt).toLocaleString('cs-CZ')
   lines.push([`Na kolik to dáš? ${report.groupName || 'bez názvu skupiny'}`].map(csvCell).join(';'))
   lines.push([`Hráno ${when}`].map(csvCell).join(';'))
+  if (report.trainer) lines.push([`Lektor/ka: ${report.trainer}`].map(csvCell).join(';'))
   lines.push([`Balíčky: ${report.packNames.join(', ')}`].map(csvCell).join(';'))
   if (report.code) lines.push([`Kód hry: ${report.code}`].map(csvCell).join(';'))
   lines.push('')

@@ -26,7 +26,7 @@ function close() {
 }
 
 function focusTrigger() {
-  root.value?.querySelector<HTMLButtonElement>('.iconbtn')?.focus()
+  root.value?.querySelector<HTMLButtonElement>('[aria-haspopup="menu"]')?.focus()
 }
 
 /**
@@ -97,15 +97,24 @@ defineExpose({ close })
 
 <template>
   <div ref="root" class="menu" @focusout="onFocusOut" @pointerdown="onPointerDown">
-    <UiIconButton
-      :icon="icon"
-      :variant="variant"
-      :label="label"
-      :aria-expanded="open"
-      aria-haspopup="menu"
-      @click="toggle"
-      @keydown.down.prevent="open = true"
-    />
+    <!-- Vlastní spouštěč, třeba štítek se jménem přihlášeného. Dostane
+         všechno, co potřebuje tlačítko nabídky, a rozprostře si to samo. -->
+    <slot
+      name="trigger"
+      :open="open"
+      :toggle="toggle"
+      :on-key-down="() => (open = true)"
+    >
+      <UiIconButton
+        :icon="icon"
+        :variant="variant"
+        :label="label"
+        :aria-expanded="open"
+        aria-haspopup="menu"
+        @click="toggle"
+        @keydown.down.prevent="open = true"
+      />
+    </slot>
 
     <div v-if="open" class="menu__panel" role="menu" :aria-label="label">
       <slot :close="close" />

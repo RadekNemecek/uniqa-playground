@@ -2,8 +2,8 @@
 import { computed, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import UiButton from '@/components/ui/UiButton.vue'
-import { quizPacks, quizPackProgress, reloadQuizPacks } from '@/stores/quizPacks'
-import { count } from '@/lib/format'
+import { createDemoQuizPack, quizPacks, quizPackProgress, reloadQuizPacks } from '@/stores/quizPacks'
+import { toast } from '@/stores/ui'
 import { availableCount } from '../questions'
 import { hasSessionDb } from '@/lib/sessionDb'
 import type { QuizPack, QuizSetup } from '../types'
@@ -13,7 +13,9 @@ import UiSegmented from '@/components/ui/UiSegmented.vue'
 import UiSwitch from '@/components/ui/UiSwitch.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import UiEmpty from '@/components/ui/UiEmpty.vue'
-import UiField from '@/components/ui/UiField.vue'
+import AudienceFields from '@/components/AudienceFields.vue'
+import { rememberGroup } from '@/lib/recent'
+import { count, plural } from '@/lib/format'
 
 withDefaults(defineProps<{ busy?: boolean }>(), { busy: false })
 const emit = defineEmits<{ start: [packs: QuizPack[], setup: QuizSetup] }>()
@@ -41,19 +43,13 @@ const canUsePhones = computed(() => hasSessionDb())
 const withPhones = ref(true)
 
 /**
- * Koho školíme. Nepovinné, ale rozhoduje o tom, jestli je archiv
- * k něčemu: „kvíz z 12. 3." je bez názvu skupiny nedohledatelný, když se
- * ten den školily tři party.
+ * Koho školíme a kdo školí. Nepovinné, ale rozhoduje o tom, jestli je
+ * archiv k něčemu: „kvíz z 12. 3." je bez názvu skupiny nedohledatelný,
+ * když se ten den školily tři party. Z minula se nic nepředvyplňuje,
+ * viz `AudienceFields`.
  */
-const GROUP_KEY = 'playground.kviz.group.v1'
-const groupName = ref(localStorage.getItem(GROUP_KEY) ?? '')
-watch(groupName, (v) => {
-  try {
-    localStorage.setItem(GROUP_KEY, v)
-  } catch {
-    /* soukromé okno */
-  }
-})
+const groupName = ref('')
+const trainer = ref('')
 
 /** Balíčky, ve kterých je aspoň jedna hotová otázka. */
 const usable = computed(() => quizPacks.packs.filter((p) => quizPackProgress(p).done > 0))
@@ -64,6 +60,7 @@ const setup = computed<QuizSetup>(() => ({
   limitSeconds: limitSeconds.value,
   withPhones: withPhones.value && canUsePhones.value,
   groupName: groupName.value.trim(),
+  trainer: trainer.value.trim(),
 }))
 
 const pool = computed(() => availableCount(usable.value, setup.value))
@@ -120,8 +117,24 @@ watch(
   { immediate: true },
 )
 
+/** Prázdná příprava nabídne ukázku rovnou, stejně jako Výslech nabízí
+ *  hotovou sadu. Odbočka do správy a zpátky by byla zbytečná. */
+const creatingDemo = ref(false)
+async function onCreateDemo(): Promise<void> {
+  if (creatingDemo.value) return
+  creatingDemo.value = true
+  try {
+    await createDemoQuizPack()
+  } catch {
+    toast('Ukázkový kvíz se nepodařilo založit. Zkus to znovu.', 'bad')
+  } finally {
+    creatingDemo.value = false
+  }
+}
+
 function start(): void {
   if (!canStart.value) return
+  rememberGroup(groupName.value)
   emit('start', usable.value, setup.value)
 }
 </script>
@@ -138,8 +151,13 @@ function start(): void {
     <UiEmpty v-else-if="quizPacks.denied" title="Balíčky se nepodařilo načíst" text="Zkontroluj připojení a zkus to znovu.">
       <UiButton variant="brand" @click="reloadQuizPacks">Zkusit znovu</UiButton>
     </UiEmpty>
-    <UiEmpty v-else-if="!usable.length" title="Připrav první otázky" text="Ke spuštění stačí jedna hotová otázka nebo jedno tvrzení.">
-      <RouterLink to="/kviz/otazky">Přejít k otázkám</RouterLink>
+    <UiEmpty
+      v-else-if="!usable.length"
+      title="Zatím tu nejsou žádné otázky"
+      text="Ukázkový kvíz má 25 otázek z pojištění a dá se hrát hned. Vlastní otázky připravíš v Balíčcích."
+    >
+      <UiButton variant="brand" :loading="creatingDemo" @click="onCreateDemo">Založit ukázkový kvíz</UiButton>
+      <UiButton variant="ghost" @click="$router.push('/kviz/otazky')">Přejít k balíčkům</UiButton>
     </UiEmpty>
 
     <div v-else class="setup__grid">
@@ -182,18 +200,21 @@ function start(): void {
             <template v-else-if="perPack > 0">Vylosuje se {{ count(willPlay, 'otázka', 'otázky', 'otázek') }}, z každého balíčku zhruba {{ perPack }}. Pořadí se zamíchá.</template>
             <template v-else>Vylosuje se {{ count(willPlay, 'otázka', 'otázky', 'otázek') }}. Pořadí se zamíchá.</template>
           </p>
-          <UiField label="Skupina (nepovinné)" hint="Název najdeš ve vyhodnocení a ve staženém souboru.">
-            <input v-model="groupName" type="text" maxlength="60" placeholder="Např. Obchod Morava" />
-          </UiField>
           <UiSwitch v-if="canUsePhones" v-model="withPhones" label="Hráči odpovídají z telefonů" hint="Připojí se přes QR kód. Bez telefonů se kvíz jen promítá a body se nepočítají." />
           <p v-else class="notice">Telefony se teď nepřipojí. Kvíz můžeš promítat bez nich, body si počítáš sama.</p>
+        </section>
+
+        <section class="section" aria-labelledby="setup-audience">
+          <div class="section__head"><h2 id="setup-audience"><span class="section__num" aria-hidden="true">03</span> Pro koho</h2></div>
+          <AudienceFields v-model:group="groupName" v-model:trainer="trainer" />
+          <p class="hint">Skupinu i lektora najdeš ve výsledcích a ve stažené tabulce.</p>
         </section>
       </div>
 
       <aside class="summary" aria-label="Shrnutí připraveného kvízu">
         <p class="eyebrow">Tvůj kvíz</p>
-        <h2>Na kolik to dáš?</h2>
-        <p class="summary__total" aria-live="polite"><strong>{{ willPlay }}</strong><span>{{ willPlay === 1 ? 'otázka' : willPlay >= 2 && willPlay <= 4 ? 'otázky' : 'otázek' }} ve hře</span></p>
+        <h2>{{ groupName.trim() || 'Bez skupiny' }}</h2>
+        <p class="summary__total" aria-live="polite"><strong>{{ willPlay }}</strong><span>{{ plural(willPlay, 'otázka', 'otázky', 'otázek') }} ve hře</span></p>
         <dl>
           <dt>Vybrané balíčky</dt><dd>{{ chosen.size }}</dd>
           <dt>Na odpověď</dt><dd>{{ limitSeconds }} s</dd>
@@ -256,14 +277,13 @@ function start(): void {
   box-shadow: var(--shadow-lg);
 }
 .summary .eyebrow { color: var(--c-text); }
-.summary__next { color: var(--c-text-muted); }
-.summary h2 { margin-top: var(--sp-2); font-size: var(--fs-xl); }
+.summary h2 { margin-top: var(--sp-2); font-size: var(--fs-xl); overflow-wrap: anywhere; }
 .summary__total { display: grid; margin-block: var(--sp-5); }
 .summary__total strong { font-size: var(--fs-work-number); font-weight: 900; line-height: var(--lh-tight); font-variant-numeric: tabular-nums; }
 .summary__total span { font-size: var(--fs-sm); margin-top: var(--sp-2); }
 .summary dl { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--sp-3); margin-block: var(--sp-5); font-size: var(--fs-sm); }
 .summary dd { margin: 0; font-weight: 700; text-align: right; }
-.summary__next { font-size: var(--fs-sm); margin-top: var(--sp-3); }
+.summary__next { font-size: var(--fs-sm); margin-top: var(--sp-3); color: var(--c-text-muted); }
 @media (max-width: 960px) { .setup__grid { gap: var(--sp-5); grid-template-columns: minmax(0, 1fr) minmax(0, .65fr); } .rules { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 720px) { .setup__grid { grid-template-columns: minmax(0, 1fr); } .summary { position: static; } .section__head h2 { font-size: var(--fs-lg); } }
 </style>

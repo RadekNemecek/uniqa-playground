@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue'
 import AppHeader from '@/components/AppHeader.vue'
 import HostReport from '@/games/kviz/components/HostReport.vue'
+import UiButton from '@/components/ui/UiButton.vue'
 import UiEmpty from '@/components/ui/UiEmpty.vue'
 import UiMenu from '@/components/ui/UiMenu.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
@@ -22,8 +23,14 @@ import type { QuizReport, QuizReportSummary } from '@/games/kviz/types'
  * Jsou v nich přezdívky účastníků, proto je čte jen člen týmu.
  */
 const loaded = ref(false)
+/** Načtení selhalo. Jiný stav než prázdný seznam: „zatím tu nic není"
+ *  by po výpadku sítě tvrdilo, že výsledky zmizely. */
+const failed = ref(false)
 const reports = ref<QuizReportSummary[]>([])
 const openReport = ref<QuizReport | null>(null)
+/** Které vyhodnocení se zrovna stahuje. Je to celá matice odpovědí,
+ *  na pomalé síti to chvíli trvá a klik bez odezvy se opakuje. */
+const opening = ref('')
 
 /**
  * Vyhodnocení leží jen ve sdílené databázi, protože bez telefonů žádné
@@ -35,20 +42,31 @@ async function loadReports(): Promise<void> {
     loaded.value = true
     return
   }
+  failed.value = false
   try {
     reports.value = await conn.listReports()
   } catch (e) {
     console.error('Čtení vyhodnocení selhalo:', e)
+    failed.value = true
   } finally {
     loaded.value = true
   }
 }
 
 async function showReport(reportId: string): Promise<void> {
+  if (opening.value) return
   const conn = await sessionDb()
   if (!conn) return
-  openReport.value = await conn.loadReport(reportId)
-  if (!openReport.value) toast('Vyhodnocení se nepodařilo načíst.', 'bad')
+  opening.value = reportId
+  try {
+    openReport.value = await conn.loadReport(reportId)
+    if (!openReport.value) toast('Vyhodnocení se nepodařilo najít. Možná ho mezitím někdo smazal.', 'bad')
+  } catch (e) {
+    console.error('Čtení vyhodnocení selhalo:', e)
+    toast('Vyhodnocení se nepodařilo načíst. Zkontroluj připojení.', 'bad')
+  } finally {
+    opening.value = ''
+  }
 }
 
 async function removeReport(row: QuizReportSummary): Promise<void> {
@@ -61,9 +79,14 @@ async function removeReport(row: QuizReportSummary): Promise<void> {
   if (!ok) return
   const conn = await sessionDb()
   if (!conn) return
-  await conn.deleteReport(row.id)
-  reports.value = reports.value.filter((r) => r.id !== row.id)
-  toast('Vyhodnocení smazáno.', 'ok')
+  try {
+    await conn.deleteReport(row.id)
+    reports.value = reports.value.filter((r) => r.id !== row.id)
+    toast('Vyhodnocení smazáno.', 'ok')
+  } catch (e) {
+    console.error('Smazání vyhodnocení selhalo:', e)
+    toast('Smazat se nepovedlo. Zkontroluj připojení.', 'bad')
+  }
 }
 
 function reportDate(at: number): string {
@@ -104,6 +127,15 @@ onMounted(() => {
         <UiSkeleton v-if="!loaded" :lines="4" />
 
         <UiEmpty
+          v-else-if="failed"
+          icon="warning"
+          title="Výsledky se nepodařilo načíst"
+          text="Zkontroluj připojení a zkus to znovu."
+        >
+          <UiButton variant="brand" @click="loaded = false; loadReports()">Zkusit znovu</UiButton>
+        </UiEmpty>
+
+        <UiEmpty
           v-else-if="reports.length === 0"
           icon="info"
           title="Zatím tu nic není"
@@ -113,10 +145,11 @@ onMounted(() => {
         <ul v-else class="items">
           <li v-for="(r, i) in reports" :key="r.id" class="card">
             <span class="card__index" aria-hidden="true">{{ String(i + 1).padStart(2, '0') }}</span>
-            <button type="button" class="card__main" @click="showReport(r.id)">
+            <button type="button" class="card__main" :aria-busy="opening === r.id" @click="showReport(r.id)">
               <span class="card__name">{{ r.groupName || 'Bez názvu skupiny' }}</span>
-              <span class="card__when">{{ reportDate(r.finishedAt) }}</span>
+              <span class="card__when">{{ opening === r.id ? 'Načítám…' : reportDate(r.finishedAt) }}</span>
               <span class="card__meta">
+                <template v-if="r.trainer">{{ r.trainer }} · </template>
                 {{ count(r.questionCount, 'otázka', 'otázky', 'otázek') }} ·
                 {{ count(r.playerCount, 'hráč', 'hráči', 'hráčů') }} ·
                 {{ r.packNames.join(', ') }}

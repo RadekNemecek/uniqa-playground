@@ -141,6 +141,7 @@ export function startGame(pack: Pack, setup: GameSetup): GameState {
     wager: null,
     startedAt: Date.now(),
     groupName: setup.groupName ?? '',
+    trainer: setup.trainer ?? '',
     history: [],
   }
 

@@ -61,7 +61,7 @@ function rate(run: PojistujRun): number {
         >
           <span class="run__when">{{ whenAgo(run.finishedAt) }}</span>
           <span v-fit-text class="run__name">{{ run.groupName || 'Bez názvu skupiny' }}</span>
-          <span v-fit-text class="run__pack">{{ run.packName }}</span>
+          <span v-fit-text class="run__pack">{{ run.trainer ? `${run.packName} · ${run.trainer}` : run.packName }}</span>
           <span class="run__rate">{{ rate(run) }} % uhodnuto</span>
         </button>
 

@@ -29,6 +29,9 @@ export type Role = 'admin' | 'editor'
 interface AccountState {
   status: AccountStatus
   email: string
+  /** Jméno, jak ho člen zadal při přijetí pozvánky nebo v Týmu.
+   *  Prázdné, dokud ho nikdo nevyplnil. */
+  name: string
   spaceId: string
   spaceName: string
   role: Role | ''
@@ -37,6 +40,7 @@ interface AccountState {
 const state = reactive<AccountState>({
   status: 'loading',
   email: '',
+  name: '',
   spaceId: '',
   spaceName: '',
   role: '',
@@ -49,9 +53,20 @@ export function setAccount(next: Partial<AccountState> & { status: AccountStatus
   state.status = next.status
   state.email = next.email ?? (next.status === 'local' ? '' : state.email)
   const inSpace = next.status === 'member'
+  state.name = inSpace ? (next.name ?? state.name) : ''
   state.spaceId = inSpace ? (next.spaceId ?? state.spaceId) : ''
   state.spaceName = inSpace ? (next.spaceName ?? state.spaceName) : ''
   state.role = inSpace ? (next.role ?? state.role) : ''
+}
+
+/**
+ * Křestní jméno do hlavičky. Celé jméno ani adresa tam nepatří: příprava
+ * často běží na promítnutém plátně. Bez jména se ukáže začátek adresy.
+ */
+export function shortName(): string {
+  const first = state.name.trim().split(/\s+/)[0]
+  if (first) return first
+  return state.email.split('@')[0] ?? ''
 }
 
 /** Smí do přípravy, správy otázek, Výslechu a výsledků. */
@@ -86,6 +101,7 @@ const KEY_MEMBERSHIP = 'mucirna.membership.v1'
 
 export interface Membership {
   email: string
+  name?: string
   spaceId: string
   spaceName: string
   role: Role

@@ -20,6 +20,7 @@ import {
   connectFirestoreEmulator,
   collectionGroup,
   deleteDoc,
+  deleteField,
   doc,
   getDoc,
   getDocs,
@@ -51,6 +52,7 @@ import {
   type Role,
 } from '@/stores/account'
 import { degraded } from '@/stores/ui'
+import { forgetPersonal } from '@/lib/recent'
 
 const delay = (ms: number): Promise<void> => new Promise((r) => window.setTimeout(r, ms))
 
@@ -356,6 +358,7 @@ async function lookUpMembership(email: string): Promise<void> {
   const chosen = docs.find((d) => d.ref.parent.parent?.id === preferred) ?? docs[0]
   const spaceId = chosen.ref.parent.parent!.id
   const role: Role = chosen.data().role === 'admin' ? 'admin' : 'editor'
+  const name = String(chosen.data().name ?? '')
   let spaceName = ''
   try {
     const space = await getDoc(doc(conn.db, 'spaces', spaceId))
@@ -364,7 +367,7 @@ async function lookUpMembership(email: string): Promise<void> {
     // Název je jen popisek, bez něj se dá pracovat.
   }
 
-  const membership = { email, spaceId, spaceName, role }
+  const membership = { email, name, spaceId, spaceName, role }
   rememberMembership(membership)
   publish({ status: 'member', ...membership })
 
@@ -428,7 +431,7 @@ export function isInviteLink(href: string): boolean {
  * Když už je přihlášená stejná adresa (heslo napoprvé neprošlo a zkouší
  * to znovu), odkaz se nepoužije podruhé, nastaví se jen heslo.
  */
-export async function acceptInvite(email: string, password: string, href: string): Promise<void> {
+export async function acceptInvite(email: string, password: string, href: string, name: string): Promise<void> {
   const auth = requireAuth()
   const clean = email.trim().toLowerCase()
   let user = auth.currentUser
@@ -437,6 +440,14 @@ export async function acceptInvite(email: string, password: string, href: string
   }
   await updatePassword(user, password)
   rememberMembership(null)
+  // Jméno se zapíše hned, ať ho hlavička a příprava mají od prvního
+  // načtení. Nepovede-li se, dá se doplnit v Týmu, přístup tím nepadá.
+  try {
+    await lookUpMembership(clean)
+    if (name.trim() && account.status === 'member' && name.trim() !== account.name) await updateMyName(name)
+  } catch (e) {
+    console.error('Zápis jména po přijetí pozvánky selhal:', e)
+  }
 }
 
 export async function sendPasswordReset(email: string): Promise<void> {
@@ -458,6 +469,7 @@ export async function sendPasswordReset(email: string): Promise<void> {
 export async function signOutHere(): Promise<void> {
   const auth = requireAuth()
   rememberMembership(null)
+  forgetPersonal()
   await signOut(auth)
   if (conn) {
     try {
@@ -596,6 +608,19 @@ export async function resendInvite(email: string): Promise<void> {
 
 export async function updateMember(email: string, patch: { role?: Role; name?: string }): Promise<void> {
   await withTimeout(updateDoc(memberRef(email), patch), 12000)
+}
+
+/**
+ * Vlastní jméno. Člen ho mění sám, pravidla mu u vlastního záznamu nic
+ * jiného nedovolí. Prázdné jméno pole smaže.
+ */
+export async function updateMyName(name: string): Promise<void> {
+  const clean = name.trim().replace(/\s+/g, ' ')
+  await withTimeout(updateDoc(memberRef(account.email), { name: clean ? clean : deleteField() }), 12000)
+  const next = { status: 'member' as const, name: clean }
+  publish(next)
+  const known = recallMembership(account.email)
+  if (known) rememberMembership({ ...known, name: clean })
 }
 
 export async function removeMember(email: string): Promise<void> {

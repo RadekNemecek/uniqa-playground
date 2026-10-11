@@ -120,6 +120,8 @@ export interface GameState {
   startedAt: number
   /** Koho školíme. Zamrazí se do hry, aby ji archiv uměl pojmenovat. */
   groupName: string
+  /** Kdo školí. Hry uložené dřív ho nemají. */
+  trainer?: string
   history: HistoryEntry[]
 }
 
@@ -132,6 +134,8 @@ export interface GameSetup {
   rules: GameRules
   /** Koho školíme. Nepovinné, drží se v archivu odehraných her. */
   groupName: string
+  /** Kdo školí. Předvyplní se jménem přihlášeného. */
+  trainer: string
 }
 
 /** Klíč políčka v mřížce. */

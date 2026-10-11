@@ -5,7 +5,9 @@ import UiButton from '@/components/ui/UiButton.vue'
 import UiEmpty from '@/components/ui/UiEmpty.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
-import { count } from '@/lib/format'
+import AudienceFields from '@/components/AudienceFields.vue'
+import { rememberGroup } from '@/lib/recent'
+import { count, plural } from '@/lib/format'
 import { createDefaultForm, readyCount, reloadVyslechForms, vyslechForms } from '@/stores/vyslechForms'
 import { minutesFor, freezeQuestions } from '../questions'
 import type { VyslechForm, VyslechRunMeta } from '../types'
@@ -42,14 +44,7 @@ watch(chosenId, (v) => {
  */
 const title = ref('')
 const group = ref('')
-const trainer = ref(localStorage.getItem('playground.vyslech.trainer.v1') ?? '')
-watch(trainer, (v) => {
-  try {
-    localStorage.setItem('playground.vyslech.trainer.v1', v)
-  } catch {
-    /* soukromé okno */
-  }
-})
+const trainer = ref('')
 const tried = ref(false)
 const titleError = computed(() => (tried.value && !title.value.trim() ? 'Bez názvu se výsledky nedají dohledat.' : ''))
 
@@ -71,6 +66,7 @@ async function onCreateDefault(): Promise<void> {
 function start(): void {
   tried.value = true
   if (!canStart.value || !chosen.value) return
+  rememberGroup(group.value)
   emit('start', chosen.value, {
     title: title.value.trim(),
     group: group.value.trim(),
@@ -130,14 +126,7 @@ function start(): void {
           <UiField label="Název školení" required :error="titleError" hint="Uvidí ho lidé nahoře v dotazníku a najdeš podle něj výsledky.">
             <input v-model="title" type="text" maxlength="80" placeholder="Např. Pojištění odpovědnosti pro začínající" />
           </UiField>
-          <div class="pair">
-            <UiField label="Skupina (nepovinné)">
-              <input v-model="group" type="text" maxlength="60" placeholder="Např. Obchod Morava" />
-            </UiField>
-            <UiField label="Lektor/ka (nepovinné)">
-              <input v-model="trainer" type="text" maxlength="60" placeholder="Jméno" />
-            </UiField>
-          </div>
+          <AudienceFields v-model:group="group" v-model:trainer="trainer" />
           <p class="hint">Skupina a lektor se v dotazníku neukážou. Slouží k porovnání ve výsledcích.</p>
         </section>
         <button type="submit" class="vh" tabindex="-1">Vygenerovat QR kód</button>
@@ -148,7 +137,7 @@ function start(): void {
         <h2>{{ title.trim() || 'Bez názvu' }}</h2>
         <p class="summary__total" aria-live="polite">
           <strong>{{ questions.length }}</strong>
-          <span>{{ questions.length === 1 ? 'otázka' : questions.length >= 2 && questions.length <= 4 ? 'otázky' : 'otázek' }} v dotazníku</span>
+          <span>{{ plural(questions.length, 'otázka', 'otázky', 'otázek') }} v dotazníku</span>
         </p>
         <dl>
           <dt>Sada</dt><dd>{{ chosen?.name ?? 'nevybraná' }}</dd>
@@ -219,7 +208,6 @@ function start(): void {
 }
 .preview li::marker { font-weight: 900; color: var(--c-brand); font-variant-numeric: tabular-nums; }
 
-.pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--sp-4); }
 
 .summary {
   position: sticky; top: var(--sp-5); padding: var(--sp-5);
@@ -246,6 +234,6 @@ function start(): void {
   line-height: var(--lh-body);
 }
 
-@media (max-width: 960px) { .setup__grid { gap: var(--sp-5); grid-template-columns: minmax(0, 1fr) minmax(0, .65fr); } .pair { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 960px) { .setup__grid { gap: var(--sp-5); grid-template-columns: minmax(0, 1fr) minmax(0, .65fr); } }
 @media (max-width: 720px) { .setup__grid { grid-template-columns: minmax(0, 1fr); } .summary { position: static; } .section__head h2 { font-size: var(--fs-lg); } }
 </style>

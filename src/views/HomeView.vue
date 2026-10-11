@@ -11,8 +11,13 @@ import UiButton from '@/components/ui/UiButton.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import HeroMark from '@/components/HeroMark.vue'
 import AppMenu from '@/components/AppMenu.vue'
+import { account } from '@/stores/account'
 
 const router = useRouter()
+
+/** Nepřihlášený. Hry i nástroje jsou za přihlášením, takže rozcestník
+ *  to má říct dřív, než na kartě klikne a ocitne se na formuláři. */
+const signedOut = computed(() => account.status === 'signedOut')
 
 interface GameCard {
   entry: GameEntry
@@ -174,11 +179,19 @@ async function discard(entry: GameEntry): Promise<void> {
           ><i></i></span>
         </div>
 
-        <p class="hero__eyebrow">Hry na školení · pro tým UNIQA</p>
-
-        <!-- Nabídka v rohu. Hlavička tu není, a zpětná vazba po školení
-             kartu mezi hrami nemá, chodí se k ní odtud. -->
-        <div class="hero__menu"><AppMenu /></div>
+        <!-- Horní řádka: nadhoz vlevo, účet a nabídka vpravo. Hlavička tu
+             není, a zpětná vazba po školení kartu mezi hrami nemá, chodí
+             se k ní z nabídky. Obojí sdílí jeden řádek, aby nadhoz na
+             telefonu nevlezl pod tlačítka. -->
+        <div class="hero__top">
+          <p class="hero__eyebrow">Hry na školení · pro tým UNIQA</p>
+          <div class="hero__menu">
+            <UiButton v-if="signedOut" class="hero__signin" size="sm" variant="ghost" icon="sign-in" @click="router.push('/prihlaseni')">
+              Přihlásit se
+            </UiButton>
+            <AppMenu />
+          </div>
+        </div>
 
         <div class="hero__copy">
           <h1 id="home-title" class="hero__title"><HeroMark /></h1>
@@ -186,6 +199,12 @@ async function discard(entry: GameEntry): Promise<void> {
           <div class="hero__actions">
             <UiButton variant="brand" size="lg" icon-after="arrow-down" @click="toGames">
               Vybrat hru
+            </UiButton>
+            <!-- Pro účastníky, kteří QR nenačtou: odlesk projektoru,
+                 zadní řada, starší telefon. Kód z plátna opíšou ručně
+                 a stejná cesta vede do kvízu i do dotazníku. -->
+            <UiButton size="lg" icon="phone" @click="router.push('/k')">
+              Připojit se kódem
             </UiButton>
           </div>
         </div>
@@ -265,6 +284,10 @@ async function discard(entry: GameEntry): Promise<void> {
                 <UiButton class="game-card__play" variant="brand" icon-after="arrow-right" @click.stop="open(card.entry)">
                   {{ card.resume ? 'Pokračovat' : 'Připravit hru' }}
                 </UiButton>
+                <span v-if="signedOut" class="game-card__lock">
+                  <UiIcon name="lock" size="xs" />
+                  Pro členy týmu, přihlásíš se v dalším kroku
+                </span>
               </div>
 
               <!-- Rozehráno s datem a s cestou ven. Bez data se nedalo
@@ -316,22 +339,27 @@ async function discard(entry: GameEntry): Promise<void> {
   overflow: clip;
 }
 
-.hero__eyebrow {
+.hero__top {
   position: absolute;
-  top: var(--sp-5);
+  top: var(--sp-4);
   left: var(--sp-6);
+  right: var(--sp-5);
+  z-index: var(--z-header);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+}
+
+.hero__eyebrow {
+  min-width: 0;
   font-size: var(--fs-sm);
   font-weight: 900;
   letter-spacing: var(--tracking-wide);
   text-transform: uppercase;
 }
 
-.hero__menu {
-  position: absolute;
-  top: var(--sp-4);
-  right: var(--sp-5);
-  z-index: var(--z-header);
-}
+.hero__menu { display: flex; flex: none; align-items: center; gap: var(--sp-2); }
 
 .hero__copy {
   position: relative;
@@ -642,7 +670,8 @@ async function discard(entry: GameEntry): Promise<void> {
 }
 .offline svg { flex: none; }
 
-.game-card__actions { margin-top: var(--sp-2); }
+.game-card__actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-4); margin-top: var(--sp-2); }
+.game-card__lock { display: inline-flex; align-items: center; gap: var(--sp-1); color: var(--c-text-ink); font-size: var(--fs-sm); font-weight: 700; }
 
 /* Hlavní tlačítko karty je inkoustové, ne modré: na barevné kartě by
    modrá UNIQA soupeřila s plochou. */
@@ -756,13 +785,18 @@ async function discard(entry: GameEntry): Promise<void> {
 
 @media (max-width: 720px) {
   .home { --home-peek: 4rem; }
-  .hero__eyebrow { left: var(--sp-4); right: var(--sp-4); text-align: center; }
-  /* Na telefonu by dlaždice vlezly do nápisu. Zůstanou jen ty v rozích. */
-  .hero__tile:nth-child(3n + 2) { display: none; }
+  .hero__top { left: var(--sp-4); right: var(--sp-4); }
+  /* Na telefonu by dlaždice vlezly do nápisu. Zůstanou jen ty v rozích:
+     levandulová leží v půlce výšky a zajela by pod nálepku. */
+  .hero__tile:nth-child(3n + 2),
+  .hero__tile:nth-child(6) { display: none; }
 }
 
 @media (max-width: 560px) {
   .hero__actions { flex-direction: column; align-items: stretch; width: 100%; }
+  /* Na telefonu je tu skoro vždycky účastník s kódem, ne lektor.
+     Přihlášení zůstává v nabídce. */
+  .hero__signin { display: none; }
   .game-card { padding: var(--sp-5); rotate: -0.75deg; }
   .game-card:nth-child(even) { rotate: 0.75deg; }
 }

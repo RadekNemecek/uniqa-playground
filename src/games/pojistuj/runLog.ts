@@ -35,6 +35,8 @@ export interface PojistujRun {
   id: string
   /** Koho se to týkalo. Prázdné, když se skupina nepojmenovala. */
   groupName: string
+  /** Kdo školil. Starší záznamy ho nemají. */
+  trainer?: string
   packName: string
   startedAt: number
   finishedAt: number
@@ -86,6 +88,7 @@ export function buildRun(game: GameState, groupName: string): PojistujRun {
     schema: 1,
     id: game.id,
     groupName,
+    trainer: game.trainer ?? '',
     packName: game.packName,
     startedAt: game.startedAt,
     finishedAt: Date.now(),

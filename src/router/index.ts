@@ -66,7 +66,8 @@ export const router = createRouter({
       path: '/k',
       name: 'kviz-kod',
       component: () => import('@/views/KvizJoinView.vue'),
-      meta: { title: 'Na kolik to dáš?' },
+      // Kód z plátna vede do kvízu i do dotazníku Výslechu.
+      meta: { title: 'Připojit se kódem' },
     },
     {
       path: '/vyslech',

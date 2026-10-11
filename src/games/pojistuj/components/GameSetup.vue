@@ -2,12 +2,14 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import type { GameRules, GameSetup, Pack } from '@/types'
-import { packs, packProgress, playableCategories } from '@/stores/packs'
+import { createDemoPack, packs, packProgress, playableCategories } from '@/stores/packs'
+import { toast } from '@/stores/ui'
 import { settings } from '@/stores/settings'
 import { TEAM_COLORS, teamBadge, teamColor } from '@/lib/teams'
-import { count } from '@/lib/format'
+import { count, plural } from '@/lib/format'
+import { rememberGroup } from '@/lib/recent'
+import AudienceFields from '@/components/AudienceFields.vue'
 import UiButton from '@/components/ui/UiButton.vue'
-import UiField from '@/components/ui/UiField.vue'
 import UiSegmented from '@/components/ui/UiSegmented.vue'
 import UiSwitch from '@/components/ui/UiSwitch.vue'
 import type { Segment } from '@/components/ui/segmented'
@@ -35,8 +37,9 @@ function nameForColor(color: number, index: number): string {
   return TEAM_NAMES[color % TEAM_NAMES.length] ?? `Tým ${teamBadge(index)}`
 }
 
+/** Co si příprava pamatuje z minula. Skupina ani lektor sem nepatří,
+ *  viz `AudienceFields`. Starší záznamy skupinu nesou, čte se přes ně. */
 interface SavedSetup {
-  groupName?: string
   packId: string
   categoryIds: string[]
   teams: Array<{ name: string; color: number }>
@@ -89,11 +92,12 @@ const rules = ref<GameRules>({
 const wagerPicked = ref(saved?.wagerPicked ?? false)
 
 /**
- * Koho školíme. Nepovinné, ale bez toho je archiv odehraných her jen
- * seznam dat: „hra z 12. 3." nikomu nepoví, které skupiny se týkala.
- * Pamatuje se stejně jako zbytek přípravy.
+ * Koho školíme a kdo školí. Nepovinné, ale bez toho je archiv odehraných
+ * her jen seznam dat: „hra z 12. 3." nikomu nepoví, které skupiny se
+ * týkala. Na rozdíl od zbytku přípravy se z minula nepamatuje.
  */
-const groupName = ref(saved?.groupName ?? '')
+const groupName = ref('')
+const trainer = ref('')
 
 const TIMER_OPTIONS: Segment<number>[] = [0, 15, 30, 45, 60].map((s) => ({
   value: s,
@@ -283,15 +287,30 @@ watch(
       teams: teams.value.map((t) => ({ name: t.name, color: t.color })),
       rules: { ...rules.value },
       wagerPicked: wagerPicked.value,
-      groupName: groupName.value,
     }
     localStorage.setItem(SETUP_KEY, JSON.stringify(payload))
   },
   { deep: true },
 )
 
+/** Prázdná příprava nabídne ukázku rovnou, viz příprava kvízu. */
+const creatingDemo = ref(false)
+async function onCreateDemo(): Promise<void> {
+  if (creatingDemo.value) return
+  creatingDemo.value = true
+  try {
+    const created = await createDemoPack()
+    packId.value = created.id
+  } catch {
+    toast('Ukázkový balíček se nepodařilo založit. Zkus to znovu.', 'bad')
+  } finally {
+    creatingDemo.value = false
+  }
+}
+
 function start() {
   if (!pack.value || !ready.value) return
+  rememberGroup(groupName.value)
   emit('start', pack.value, {
     packId: pack.value.id,
     // Pořadí kategorií na desce drží pořadí z balíčku.
@@ -299,6 +318,7 @@ function start() {
     teams: teams.value.map((t) => ({ name: t.name.trim() || nameForColor(t.color, 0), color: t.color })),
     rules: { ...rules.value, sound: settings.sound },
     groupName: groupName.value.trim(),
+    trainer: trainer.value.trim(),
   })
 }
 </script>
@@ -330,10 +350,11 @@ function start() {
 
           <UiEmpty
             v-else-if="packs.packs.length === 0"
-            title="Připrav první otázky"
-            text="Deska potřebuje aspoň jednu kategorii s vyplněnými otázkami."
+            title="Zatím tu nejsou žádné otázky"
+            text="Ukázkový balíček má pět kategorií z pojištění a dá se hrát hned. Vlastní otázky připravíš v Balíčcích."
           >
-            <RouterLink to="/admin">Přejít k otázkám</RouterLink>
+            <UiButton variant="brand" :loading="creatingDemo" @click="onCreateDemo">Založit ukázkový balíček</UiButton>
+            <UiButton variant="ghost" @click="$router.push('/admin')">Přejít k balíčkům</UiButton>
           </UiEmpty>
 
           <ul v-else class="packs">
@@ -387,9 +408,6 @@ function start() {
             <h2 id="setup-teams"><span class="section__num" aria-hidden="true">02</span> Kdo hraje</h2>
           </div>
 
-          <UiField label="Skupina (nepovinné)" hint="Název najdeš v přehledu odehraných her.">
-            <input v-model="groupName" type="text" maxlength="60" placeholder="Např. Obchod Morava" />
-          </UiField>
           <p class="hint">Jeden až šest týmů. Barvu změníš kliknutím na písmeno.</p>
 
           <ul class="teams">
@@ -488,16 +506,25 @@ function start() {
             hint="Při odečtu bodů tým nesmí klesnout pod nulu."
           />
         </section>
+
+        <!-- 04 Pro koho ------------------------------------------------- -->
+        <section class="section" aria-labelledby="setup-audience">
+          <div class="section__head">
+            <h2 id="setup-audience"><span class="section__num" aria-hidden="true">04</span> Pro koho</h2>
+          </div>
+          <AudienceFields v-model:group="groupName" v-model:trainer="trainer" />
+          <p class="hint">Skupinu i lektora najdeš v přehledu odehraných her.</p>
+        </section>
       </div>
 
       <!-- Shrnutí ---------------------------------------------------------- -->
       <aside class="summary" aria-label="Shrnutí připravené hry">
         <p class="eyebrow">Tvoje hra</p>
-        <h2>Pojišťuj!</h2>
+        <h2>{{ groupName.trim() || 'Bez skupiny' }}</h2>
 
         <p class="summary__total" aria-live="polite">
           <strong>{{ boardPreview.cells }}</strong>
-          <span>{{ boardPreview.cells === 1 ? 'otázka' : boardPreview.cells >= 2 && boardPreview.cells <= 4 ? 'otázky' : 'otázek' }} na desce</span>
+          <span>{{ plural(boardPreview.cells, 'otázka', 'otázky', 'otázek') }} na desce</span>
         </p>
 
         <div class="summary__preview" aria-hidden="true">
@@ -687,7 +714,7 @@ function start() {
 }
 .summary .eyebrow { color: var(--c-text); }
 .summary__next { color: var(--c-text-muted); }
-.summary h2 { margin-top: var(--sp-2); font-size: var(--fs-xl); }
+.summary h2 { margin-top: var(--sp-2); font-size: var(--fs-xl); overflow-wrap: anywhere; }
 .summary__total { display: grid; margin-block: var(--sp-5) var(--sp-4); }
 .summary__total strong { font-size: var(--fs-work-number); font-weight: 900; line-height: var(--lh-tight); font-variant-numeric: tabular-nums; }
 .summary__total span { font-size: var(--fs-sm); margin-top: var(--sp-2); color: var(--c-text-muted); }

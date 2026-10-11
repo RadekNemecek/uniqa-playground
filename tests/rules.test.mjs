@@ -15,6 +15,7 @@ import {
   collection,
   collectionGroup,
   deleteDoc,
+  deleteField,
   doc,
   getDoc,
   getDocs,
@@ -154,6 +155,12 @@ describe('data prostoru', () => {
     await assertSucceeds(setDoc(doc(editor(), 'spaces/uniqa/quizReports/r2'), report('u-editor', EDITOR)))
     await assertFails(setDoc(doc(editor(), 'spaces/uniqa/quizReports/r3'), report('u-editor', ADMIN)))
     await assertFails(setDoc(doc(editor(), 'spaces/uniqa/quizReports/r4'), report('u-admin', EDITOR)))
+    await assertSucceeds(
+      setDoc(doc(editor(), 'spaces/uniqa/quizReports/r5'), { ...report('u-editor', EDITOR), trainer: 'Jana Nováková' }),
+    )
+    await assertFails(
+      setDoc(doc(editor(), 'spaces/uniqa/quizReports/r6'), { ...report('u-editor', EDITOR), trainer: 'x'.repeat(81) }),
+    )
     await assertFails(updateDoc(doc(admin(), 'spaces/uniqa/quizReports/r1'), { groupName: 'Jiná' }))
     await assertSucceeds(deleteDoc(doc(editor(), 'spaces/uniqa/quizReports/r1')))
   })
@@ -250,6 +257,25 @@ describe('prostor a členové', () => {
     )
     await assertSucceeds(updateDoc(doc(editor(), `spaces/uniqa/members/${EDITOR}`), { joinedAt: serverTimestamp() }))
     await assertFails(updateDoc(doc(editor(), `spaces/uniqa/members/${EDITOR}`), { joinedAt: serverTimestamp() }))
+  })
+
+  it('člen si mění jen svoje jméno', async () => {
+    const mine = doc(editor(), `spaces/uniqa/members/${EDITOR}`)
+    await assertSucceeds(updateDoc(mine, { name: 'Jana Nováková' }))
+    await assertSucceeds(updateDoc(mine, { name: deleteField() }))
+    await assertFails(updateDoc(mine, { name: 'x'.repeat(81) }))
+    await assertFails(updateDoc(mine, { name: 42 }))
+    await assertFails(updateDoc(mine, { name: 'Jana', role: 'admin' }))
+    await assertFails(updateDoc(doc(editor(), `spaces/uniqa/members/${ADMIN}`), { name: 'Šéf' }))
+    // Admin si svoje jméno mění stejně jako kdokoli jiný.
+    await assertSucceeds(updateDoc(doc(admin(), `spaces/uniqa/members/${ADMIN}`), { name: 'Radek' }))
+  })
+
+  it('jméno a přijetí pozvánky jdou zapsat naráz, přijetí jen jednou', async () => {
+    const mine = doc(editor(), `spaces/uniqa/members/${EDITOR}`)
+    await assertSucceeds(updateDoc(mine, { name: 'Jana', joinedAt: serverTimestamp() }))
+    await assertFails(updateDoc(mine, { name: 'Jana N.', joinedAt: serverTimestamp() }))
+    await assertSucceeds(updateDoc(mine, { name: 'Jana N.' }))
   })
 
   it('editorka si roli nezvýší', async () => {

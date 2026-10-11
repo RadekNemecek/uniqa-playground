@@ -124,6 +124,7 @@ onBeforeUnmount(() => document.removeEventListener('fullscreenchange', syncFulls
            jen chystá a čte, promítá se až z pásu nad sběrem. -->
       <UiIconButton
         v-if="!isTool && tools === 'all'"
+        class="tools__fullscreen"
         :icon="isFullscreen ? 'fullscreen-exit' : 'fullscreen'"
         :label="isFullscreen ? 'Opustit celou obrazovku' : 'Celá obrazovka'"
         :pressed="isFullscreen"
@@ -206,7 +207,9 @@ onBeforeUnmount(() => document.removeEventListener('fullscreenchange', syncFulls
 .nav__item--active,
 .nav__item--active:hover { background: var(--c-ink); color: var(--c-on-ink); }
 
-.tools { display: flex; justify-self: end; align-items: center; gap: var(--sp-2); }
+/* Vždy v posledním sloupci. Bez záložek (Tým) by jinak spadly do
+   prostředního a nabídka stála uprostřed hlavičky. */
+.tools { grid-column: -2; display: flex; justify-self: end; align-items: center; gap: var(--sp-2); }
 .local {
   display: inline-flex;
   align-items: center;
@@ -220,8 +223,11 @@ onBeforeUnmount(() => document.removeEventListener('fullscreenchange', syncFulls
   font-weight: 900;
   white-space: nowrap;
 }
+/* Na telefonu se nepromítá a celá obrazovka by jen ubrala místo názvu
+   hry, který se pak zkracoval na „Na kolik t…". */
 @media (max-width: 720px) {
-  .local { display: none; }
+  .local,
+  .tools__fullscreen { display: none; }
 }
 
 @media (max-width: 720px) {

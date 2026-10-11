@@ -73,8 +73,8 @@ service cloud.firestore {
                       && request.resource.data.addedAt == request.time;
 
         // Admin mění roli a jméno a znovu posílá pozvánku. Člen si sám
-        // zapíše jen to, že pozvánku přijal, a jen jednou: podle toho
-        // správa pozná, komu pozvánka propadla.
+        // mění jen svoje jméno a jednou zapíše, že pozvánku přijal:
+        // podle toho správa pozná, komu pozvánka propadla.
         allow update: if (isAdmin(space)
                           && email != me()
                           && request.resource.data.diff(resource.data).affectedKeys()
@@ -86,9 +86,11 @@ service cloud.firestore {
                               || request.resource.data.invitedAt == request.time))
                       || (isMember(space)
                           && email == me()
-                          && !('joinedAt' in resource.data)
-                          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['joinedAt'])
-                          && request.resource.data.joinedAt == request.time);
+                          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['joinedAt', 'name'])
+                          && validName(request.resource.data)
+                          && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['joinedAt'])
+                              || (!('joinedAt' in resource.data)
+                                  && request.resource.data.joinedAt == request.time)));
 
         allow delete: if isAdmin(space) && email != me();
       }
@@ -128,6 +130,9 @@ service cloud.firestore {
                            'packNames', 'startedAt', 'finishedAt', 'questions', 'players', 'matrix'])
                       && request.resource.data.groupName is string
                       && request.resource.data.groupName.size() <= 120
+                      && (!('trainer' in request.resource.data)
+                          || (request.resource.data.trainer is string
+                              && request.resource.data.trainer.size() <= 80))
                       && request.resource.data.questions is list
                       && request.resource.data.questions.size() <= 200
                       && request.resource.data.players is list

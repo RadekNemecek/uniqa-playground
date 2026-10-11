@@ -129,7 +129,7 @@ async function onExport(id: string): Promise<void> {
   const pack = quizPacks.packs.find((p) => p.id === id)
   if (!pack) return
   await downloadQuizPack(pack)
-  toast('Balíček stažen jako JSON.', 'ok')
+  toast('Balíček je stažený. Do jiné Mučírny ho nahraješ přes Importovat.', 'ok')
 }
 
 function triggerImport(): void {
@@ -195,7 +195,7 @@ function badge(id: string): { text: string; tone: 'ok' | 'warn' | 'muted' } {
       <section v-if="!current" class="library">
         <header class="library__head">
           <div>
-            <p class="eyebrow">Tvoje knihovna</p>
+            <p class="eyebrow">Knihovna týmu</p>
             <h1 class="library__title">Otázky do hry.</h1>
             <p class="library__lead">
               Balíčky pro kvíz Na kolik to dáš? Vyber balíček a uprav jeho otázky.
@@ -238,7 +238,7 @@ function badge(id: string): { text: string; tone: 'ok' | 'warn' | 'muted' } {
           v-else-if="quizPacks.packs.length === 0"
           icon="info"
           title="Zatím tu není žádný balíček"
-          text="Založ prázdný tlačítkem Nový balíček, naimportuj JSON, nebo si napřed prohlédni některý hotový."
+          text="Založ prázdný tlačítkem Nový balíček, nahraj stažený balíček přes Importovat, nebo si napřed prohlédni některý hotový."
         >
           <UiButton size="sm" variant="ghost" @click="onCreateDemo">
             Vytvořit ukázkový kvíz
@@ -270,7 +270,7 @@ function badge(id: string): { text: string; tone: 'ok' | 'warn' | 'muted' } {
             <UiMenu :label="`Akce balíčku ${p.name}`" v-slot="{ close }">
               <button type="button" role="menuitem" @click="openPack(p.id); close()">Otevřít</button>
               <button type="button" role="menuitem" @click="onDuplicate(p.id); close()">Duplikovat</button>
-              <button type="button" role="menuitem" @click="void onExport(p.id); close()">Exportovat JSON</button>
+              <button type="button" role="menuitem" @click="void onExport(p.id); close()">Stáhnout balíček</button>
               <hr />
               <button type="button" role="menuitem" class="danger" @click="onRemove(p.id); close()">Smazat</button>
             </UiMenu>

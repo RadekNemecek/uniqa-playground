@@ -22,6 +22,9 @@ import { account, canUseSpace } from '@/stores/account'
  */
 const state = ref<'checking' | 'form' | 'notLink'>('checking')
 const email = ref(new URLSearchParams(window.location.search).get('email') ?? '')
+/** Jméno předvyplní lektora v přípravě a ukáže se v hlavičce a v Týmu.
+ *  Bez něj by tam stála jen adresa. */
+const name = ref('')
 const password = ref('')
 const repeat = ref('')
 const error = ref('')
@@ -48,6 +51,10 @@ async function accept(): Promise<void> {
     error.value = 'Vyplň e-mail, na který ti pozvánka přišla.'
     return
   }
+  if (!name.value.trim()) {
+    error.value = 'Vyplň jméno, ať tě tým pozná.'
+    return
+  }
   if (password.value.length < MIN_PASSWORD) {
     error.value = `Heslo musí mít aspoň ${MIN_PASSWORD} znaků.`
     return
@@ -60,7 +67,7 @@ async function accept(): Promise<void> {
   busy.value = true
   const fb = await firebase()
   try {
-    await fb.acceptInvite(email.value, password.value, window.location.href)
+    await fb.acceptInvite(email.value, password.value, window.location.href, name.value)
     // Načíst znovu bez odkazu v adrese. Jednorázový kód by jinak zůstal
     // v historii a Firestore se rozjede načisto s ověřeným členstvím.
     window.location.replace('/')
@@ -107,6 +114,9 @@ async function accept(): Promise<void> {
       >
         <UiField label="E-mail" hint="Ten, na který ti pozvánka přišla.">
           <input v-model="email" type="email" autocomplete="username" inputmode="email" required />
+        </UiField>
+        <UiField label="Jméno a příjmení" hint="Uvidí ho tým a předvyplní se, když povedeš školení.">
+          <input v-model="name" type="text" autocomplete="name" maxlength="80" required />
         </UiField>
         <UiField label="Heslo" :hint="`Aspoň ${MIN_PASSWORD} znaků.`">
           <input v-model="password" type="password" autocomplete="new-password" required />

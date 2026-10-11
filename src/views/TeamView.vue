@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import AppHeader from '@/components/AppHeader.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiEmpty from '@/components/ui/UiEmpty.vue'
@@ -79,6 +80,69 @@ onMounted(async () => {
   )
 })
 onBeforeUnmount(() => stop?.())
+
+/* --- Jméno -------------------------------------------------------------
+ * Vlastní jméno si mění každý sám, cizí jen admin. Z jména se v přípravě
+ * předvyplňuje lektor, takže na něm záleží víc než na popisku v seznamu.
+ * Odkaz s `?jmeno=1` vede z nabídky rovnou sem, s otevřeným oknem. */
+const route = useRoute()
+const router = useRouter()
+const renaming = ref<TeamMember | null>(null)
+const renameValue = ref('')
+const renameError = ref('')
+const renameBusy = ref(false)
+
+function openRename(m: TeamMember): void {
+  renaming.value = m
+  renameValue.value = m.name
+  renameError.value = ''
+}
+
+watch(
+  [loaded, () => route.query.jmeno],
+  ([ready, wanted]) => {
+    if (!ready || !wanted) return
+    const me = members.value.find((m) => m.email === account.email)
+    if (me) openRename(me)
+    void router.replace({ query: {} })
+  },
+  { immediate: true },
+)
+
+async function saveName(): Promise<void> {
+  const m = renaming.value
+  if (!m) return
+  const next = renameValue.value.trim()
+  if (m.email === account.email && !next) {
+    renameError.value = 'Bez jména se lektor v přípravě nepředvyplní. Vyplň aspoň křestní.'
+    return
+  }
+  renameBusy.value = true
+  const fb = await firebase()
+  try {
+    if (m.email === account.email) await fb.updateMyName(next)
+    else await fb.updateMember(m.email, { name: next })
+    renaming.value = null
+    toast('Jméno je uložené.', 'ok')
+  } catch (e) {
+    console.error('Změna jména selhala:', e)
+    renameError.value = 'Jméno se nepodařilo uložit. Zkontroluj připojení.'
+  } finally {
+    renameBusy.value = false
+  }
+}
+
+/** Heslo se mění stejně jako zapomenuté: odkazem do pošty. Aplikace tak
+ *  nemusí znát staré heslo a člověk si ho nastaví u Firebase. */
+async function resetMyPassword(): Promise<void> {
+  const fb = await firebase()
+  try {
+    await fb.sendPasswordReset(account.email)
+    toast(`Odkaz na nové heslo odešel na ${account.email}.`, 'ok', 5000)
+  } catch (e) {
+    toast(`Odkaz neodešel. ${fb.authErrorMessage(e)}`, 'bad')
+  }
+}
 
 /* --- Pozvání ------------------------------------------------------------ */
 
@@ -215,7 +279,10 @@ async function remove(m: TeamMember): Promise<void> {
           <li v-for="(m, i) in sorted" :key="m.email" class="row">
             <span class="row__index" aria-hidden="true">{{ String(i + 1).padStart(2, '0') }}</span>
             <div class="row__main">
-              <span class="row__name">{{ label(m) }}</span>
+              <span class="row__name">
+                {{ label(m) }}
+                <span v-if="m.email === account.email" class="row__self">To jsi ty</span>
+              </span>
               <span class="row__badge" :class="{ 'row__badge--admin': m.role === 'admin' }">
                 {{ ROLE_LABEL[m.role] }}
               </span>
@@ -224,8 +291,16 @@ async function remove(m: TeamMember): Promise<void> {
               </span>
             </div>
 
-            <span v-if="m.email === account.email" class="row__self">To jsi ty</span>
+            <UiMenu v-if="m.email === account.email" label="Můj účet" v-slot="{ close }">
+              <button type="button" role="menuitem" @click="openRename(m); close()">
+                {{ m.name ? 'Upravit jméno' : 'Doplnit jméno' }}
+              </button>
+              <button type="button" role="menuitem" @click="resetMyPassword(); close()">Poslat odkaz na nové heslo</button>
+            </UiMenu>
             <UiMenu v-else-if="admin" :label="`Akce člena ${label(m)}`" v-slot="{ close }">
+              <button type="button" role="menuitem" @click="openRename(m); close()">
+                {{ m.name ? 'Upravit jméno' : 'Doplnit jméno' }}
+              </button>
               <button v-if="!m.joinedAt" type="button" role="menuitem" @click="resend(m); close()">
                 Poslat pozvánku znovu
               </button>
@@ -277,6 +352,32 @@ async function remove(m: TeamMember): Promise<void> {
         <UiButton size="sm" variant="brand" :loading="inviting" @click="invite">Poslat pozvánku</UiButton>
       </template>
     </UiModal>
+
+    <UiModal
+      :open="renaming !== null"
+      :title="renaming?.email === account.email ? 'Tvoje jméno' : 'Jméno člena'"
+      size="sm"
+      @close="renaming = null"
+    >
+      <form class="invite" novalidate @submit.prevent="saveName">
+        <UiField
+          label="Jméno a příjmení"
+          :error="renameError"
+          :hint="renaming?.email === account.email
+            ? 'Předvyplní se jako lektor, když povedeš školení. V hlavičce se ukáže jen křestní.'
+            : renaming?.email"
+        >
+          <template #default="{ describedBy }">
+            <input v-model="renameValue" type="text" maxlength="80" autocomplete="name" :aria-describedby="describedBy" />
+          </template>
+        </UiField>
+        <button type="submit" hidden></button>
+      </form>
+      <template #footer>
+        <UiButton size="sm" variant="ghost" @click="renaming = null">Zrušit</UiButton>
+        <UiButton size="sm" variant="brand" :loading="renameBusy" @click="saveName">Uložit</UiButton>
+      </template>
+    </UiModal>
   </div>
 </template>
 
@@ -300,7 +401,7 @@ async function remove(m: TeamMember): Promise<void> {
 .row__meta { grid-column: 1 / -1; font-size: var(--fs-sm); color: var(--c-text-muted); overflow-wrap: anywhere; }
 .row__badge { font-size: var(--fs-sm); font-weight: 700; color: var(--c-text-muted); }
 .row__badge--admin { color: var(--c-brand); }
-.row__self { font-size: var(--fs-sm); color: var(--c-text-faint); }
+.row__self { margin-left: var(--sp-2); font-size: var(--fs-sm); font-weight: 400; color: var(--c-text-faint); white-space: nowrap; }
 
 .invite { display: grid; gap: var(--sp-4); }
 .invite__role { display: grid; gap: var(--sp-2); }

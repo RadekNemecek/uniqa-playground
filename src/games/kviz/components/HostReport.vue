@@ -65,6 +65,8 @@ function isTrap(q: QuizReportQuestion, at: number): boolean {
         <p class="eyebrow">Vyhodnocení</p>
         <h1 class="rep__title">Jak to dopadlo</h1>
         <p class="rep__meta">
+          <template v-if="report.groupName">{{ report.groupName }} · </template>
+          <template v-if="report.trainer">{{ report.trainer }} · </template>
           {{ count(report.questions.length, 'otázka', 'otázky', 'otázek') }} ·
           {{ count(report.players.length, 'hráč', 'hráči', 'hráčů') }} ·
           {{ report.packNames.join(', ') }}

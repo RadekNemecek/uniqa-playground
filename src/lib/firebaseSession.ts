@@ -261,6 +261,9 @@ class FirestoreSessionDb implements QuizSessionDb {
           id: d.id,
           // Starší vyhodnocení skupinu nenesou, chybějící je prázdný řetězec.
           groupName: String(data.groupName ?? ''),
+          // Než se lektor vyplňoval, nesla vyhodnocení jen adresu toho,
+          // kdo hru vedl. Je to totéž, jen hůř čitelné.
+          trainer: String('trainer' in data ? data.trainer : (data.hostEmail ?? '')),
           finishedAt: Number(data.finishedAt ?? 0),
           round: Number(data.round ?? 1),
           packNames: (data.packNames ?? []) as string[],

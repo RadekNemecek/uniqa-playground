@@ -24,11 +24,13 @@ import {
 import { isFirebaseConfigured } from '@/lib/firebase.config'
 import { markLocalOnly, toast } from '@/stores/ui'
 import { setAccount } from '@/stores/account'
+import { dropLegacyKeys } from '@/lib/recent'
 
 applySettings()
 restoreGame()
 restoreQuizHost()
 restoreVyslechHost()
+dropLegacyKeys()
 
 /**
  * Jak dlouho se čeká na Firestore, než se hra pustí bez něj.
