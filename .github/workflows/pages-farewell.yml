@@ -1,9 +1,10 @@
 name: Rozlučka s GitHub Pages
 
-# Spouští se ručně jednou, až kamucirna.cz pojede. Na starou adresu nasadí
+# Jednorázový úklid staré adresy, aplikace se nasazuje `firebase deploy`.
+# Spouští se ručně, až kamucirna.cz pojede. Na starou adresu nasadí
 # přesměrování a service workera, který starou aplikaci z prohlížečů
-# uklidí. GitHub Pages pak necháme zapnuté, aby staré odkazy dál vedly
-# na novou adresu.
+# uklidí. Po pár týdnech se Pages vypnou a workflow i složka
+# `pages-farewell/` se smažou, viz DEPLOY.md.
 
 on:
   workflow_dispatch:

@@ -44,14 +44,14 @@ Ověření: v seznamu poskytovatelů má být u *Anonymous* stav **Enabled**.
 3. **Publish**. Nahoře se musí objevit potvrzení, že jsou pravidla nasazená.
 
 Pravidla se občas změní spolu s aplikací. Ručně se vkládají jen
-napoprvé, potom je nasazuje workflow při každém pushi do `main`, a to
-dřív než aplikaci (viz kapitola 2). Ruční publikování se totiž dvakrát
-zapomnělo a server pak nový zápis odmítal. Naposledy s **Výslechem**, zpětnou vazbou po školení:
+napoprvé, potom je nasadí `firebase deploy` spolu s aplikací (viz
+kapitola 2). Ruční publikování se totiž dvakrát zapomnělo a server pak
+nový zápis odmítal. Naposledy s **Výslechem**, zpětnou vazbou po školení:
 přibyly kolekce `vyslechForms`, `vyslech` (s podkolekcí `responses`)
 a `vyslechReports`. Bez publikovaných pravidel se sběr neotevře a příprava
 napíše, že je potřeba pravidla publikovat. Předtím to byly obrázky
-k otázkám kvízu v kolekci `quizImages`. Kdyby workflow pravidla nasadit
-nemohl, vlož je ručně podle kroků výš.
+k otázkám kvízu v kolekci `quizImages`. Samotná pravidla bez aplikace
+nasadí `firebase deploy --only firestore:rules`.
 
 Co pravidla dělají:
 
@@ -237,36 +237,36 @@ je to lepší než chybová hláška.
 
 ## 2. Firebase Hosting a doména
 
-Nasazuje GitHub Actions. Push do `main` spustí
-[`deploy.yml`](.github/workflows/deploy.yml): sestaví aplikaci, nasadí
-pravidla Firestore a teprve potom aplikaci. Každý pull request dostane
-náhled z [`preview.yml`](.github/workflows/preview.yml) na vlastní adrese
-na `web.app`, odkaz akce napíše do komentáře v PR. Náhled platí týden
-a **jede nad ostrou databází a ostrými pravidly**: co v něm uložíš,
-uvidí i kolegyně, a pravidla z PR se nenasazují, dokud se nesloučí.
-
-### 2.1 Účet pro nasazování
-
-Dělá se jednou. GitHub potřebuje klíč, kterým se u Firebase prokáže.
-
-1. V adresáři projektu spusť:
+Nasazuje se ručně z adresáře projektu. GitHub slouží jen jako repozitář.
 
 ```bash
-firebase init hosting:github
+firebase deploy
 ```
 
-2. Repozitář je `RadekNemecek/uniqa-playground`. Na sestavení před
-   nasazením i na nasazení po sloučení PR odpověz **ne**, obojí už dělají
-   workflow v repozitáři. Kdyby se ptal na veřejnou složku, je to `dist`,
-   a `index.html` **nepřepisuj**.
-3. Příkaz založí service account a jeho klíč uloží do GitHubu jako
-   tajemství `FIREBASE_SERVICE_ACCOUNT_UNIQA_PLAYGROUND`. Workflow, které
-   při tom vygeneruje (`.github/workflows/firebase-hosting-*.yml`), smaž,
-   dělaly by totéž podruhé.
-4. Service account smí nasazovat aplikaci, ale ne pravidla. V Google Cloud
-   konzoli otevři **IAM**, najdi účet `github-action-…@uniqa-playground.iam.gserviceaccount.com`
-   a přidej mu roli **Firebase Rules Admin**. Když krok s pravidly v CI
-   přesto spadne na oprávnění, v logu je napsané, které chybí.
+Příkaz napřed spustí `npm run build` (je to `predeploy` ve
+[`firebase.json`](firebase.json)), takže se nikdy nenasadí stará složka
+`dist`. Pak nasadí **pravidla Firestore i aplikaci najednou**. Když
+spadne kontrola typů, nenasadí se nic.
+
+Jen aplikace, nebo jen pravidla:
+
+```bash
+firebase deploy --only hosting
+firebase deploy --only firestore:rules
+```
+
+### 2.1 Náhled před nasazením
+
+Větev se dá vyzkoušet na vlastní adrese, aniž by se dotkla
+`kamucirna.cz`. Příkaz vypíše adresu na `web.app`, platí týden.
+
+```bash
+npm run build
+firebase hosting:channel:deploy nahled --expires 7d
+```
+
+Náhled **jede nad ostrou databází a ostrými pravidly**: co v něm uložíš,
+uvidí i kolegyně, a pravidla se s náhledem nenasazují.
 
 ### 2.2 Doména
 
@@ -310,8 +310,10 @@ a service workera, který starou aplikaci z prohlížečů smaže. Bez něj by
 se každý, kdo ji měl otevřenou, dál díval na starou verzi z mezipaměti
 a o přesměrování by se nedozvěděl.
 
-GitHub Pages pak **nech zapnuté**, aby staré odkazy a záložky dál vedly
-na novou adresu.
+Je to poslední věc, kterou GitHub nasazuje. Nech ji běžet pár týdnů,
+dokud všichni nepřejdou na novou adresu. Pak v repozitáři **Settings →
+Pages** stránky vypni a smaž `pages-farewell.yml` i složku
+`pages-farewell/`.
 
 Co se nepřenese: všechno, co je uložené v prohlížeči, patří k adrese.
 Na nové doméně proto bude prázdný archiv odehraných her desky Pojišťuj!,
