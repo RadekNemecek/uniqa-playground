@@ -408,9 +408,14 @@ export async function signInWithPassword(email: string, password: string): Promi
 }
 
 /** Pošle pozvánku. Volá admin po zápisu do týmu, nebo znovu, když
- *  pozvánka propadla. Nikoho tím nepřihlašuje. */
+ *  pozvánka propadla. Nikoho tím nepřihlašuje.
+ *
+ *  Adresa jde i do odkazu, aby ji stránka pozvánky měla předvyplněnou.
+ *  Odkaz otevírá skoro vždycky jiný prohlížeč, než ze kterého admin
+ *  zval, takže jinak by ji kolegyně musela psát znovu. */
 export async function sendInvite(email: string): Promise<void> {
-  await sendSignInLinkToEmail(requireAuth(), email.trim().toLowerCase(), linkTo('/pozvanka', true))
+  const clean = email.trim().toLowerCase()
+  await sendSignInLinkToEmail(requireAuth(), clean, linkTo(`/pozvanka?email=${encodeURIComponent(clean)}`, true))
 }
 
 export function isInviteLink(href: string): boolean {

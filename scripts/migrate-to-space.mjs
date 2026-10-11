@@ -184,7 +184,7 @@ async function invite() {
     body: JSON.stringify({
       requestType: 'EMAIL_SIGNIN',
       email: opt.admin.trim().toLowerCase(),
-      continueUrl: `${opt.url}/pozvanka`,
+      continueUrl: `${opt.url}/pozvanka?email=${encodeURIComponent(opt.admin.trim().toLowerCase())}`,
       canHandleCodeInApp: true,
     }),
   })

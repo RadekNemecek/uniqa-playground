@@ -183,7 +183,7 @@ async function remove(m: TeamMember): Promise<void> {
 
 <template>
   <div class="page-wrap">
-    <AppHeader prep />
+    <AppHeader prep tools="menu" />
 
     <main id="obsah" class="body page">
       <section class="team">

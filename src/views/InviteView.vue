@@ -14,12 +14,14 @@ import { account, canUseSpace } from '@/stores/account'
  * dokázal, že adresa je jeho, a tady si nastaví heslo. Dál se přihlašuje
  * heslem, odkaz už nepotřebuje.
  *
- * E-mail se zadává znovu, protože odkaz skoro vždycky otevírá jiný
- * prohlížeč, než ze kterého ho admin poslal. Do odkazu ho nedáváme:
- * zůstával by v historii prohlížeče.
+ * E-mail je předvyplněný z odkazu, odkaz skoro vždycky otevírá jiný
+ * prohlížeč, než ze kterého admin zval. Bezpečnost tím neklesá: doklad
+ * je odkaz sám, kdo ho má, přihlásí se i bez předvyplnění. Proto se
+ * pozvánka nepřeposílá. Po nastavení hesla se stránka načte znovu bez
+ * odkazu, takže v historii prohlížeče nezůstane.
  */
 const state = ref<'checking' | 'form' | 'notLink'>('checking')
-const email = ref('')
+const email = ref(new URLSearchParams(window.location.search).get('email') ?? '')
 const password = ref('')
 const repeat = ref('')
 const error = ref('')
@@ -75,7 +77,7 @@ async function accept(): Promise<void> {
 
 <template>
   <div class="page-wrap">
-    <AppHeader prep />
+    <AppHeader prep tools="none" />
 
     <main id="obsah" class="body">
       <div v-if="state === 'checking'" class="wait">

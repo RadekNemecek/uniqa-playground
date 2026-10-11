@@ -35,6 +35,14 @@ const busy = ref(false)
 
 const firebase = () => import('@/lib/firebase')
 
+/** Bez sítě je to věc připojení. Se sítí odmítl ověření server a radit
+ *  „zkontroluj připojení" by poslalo člověka hledat chybu u sebe. */
+const unknownLead = computed(() =>
+  navigator.onLine
+    ? 'Server teď ověření neodpověděl. Zkus to za chvíli znovu, a když to nepomůže, napiš správci.'
+    : 'Jsi bez připojení a tenhle počítač si tě ještě nepamatuje. Připoj se a zkus to znovu.',
+)
+
 // Kdo už dovnitř smí, tady nemá co dělat.
 watchEffect(() => {
   if (canUseSpace()) void router.replace(next.value)
@@ -108,7 +116,7 @@ function switchMode(to: 'signIn' | 'reset'): void {
 
 <template>
   <div class="page-wrap">
-    <AppHeader prep />
+    <AppHeader prep tools="none" />
 
     <main id="obsah" class="body">
       <div v-if="account.status === 'loading' || canUseSpace()" class="wait">
@@ -133,7 +141,7 @@ function switchMode(to: 'signIn' | 'reset'): void {
         v-else-if="account.status === 'unknown'"
         icon="warning"
         title="Přístup se nepodařilo ověřit"
-        lead="Nepodařilo se spojit se serverem a tenhle počítač si tě ještě nepamatuje. Zkontroluj připojení."
+        :lead="unknownLead"
       >
         <UiButton variant="brand" size="lg" block :loading="busy" @click="retry">Zkusit znovu</UiButton>
         <div class="auth__links">

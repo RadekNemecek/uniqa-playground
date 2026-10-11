@@ -19,8 +19,14 @@ const props = withDefaults(
     prep?: boolean
     game?: string
     section?: 'play' | 'questions' | 'reports'
+    /**
+     * Co je vpravo. Celá obrazovka a písmo patří k hrám; na správě týmu
+     * zůstane jen nabídka a na přihlášení a pozvánce nic, tam se nemá
+     * kam odbočit.
+     */
+    tools?: 'all' | 'menu' | 'none'
   }>(),
-  { compact: false, prep: false, game: '', section: undefined },
+  { compact: false, prep: false, game: '', section: undefined, tools: 'all' },
 )
 
 const currentGame = computed(() => [...GAMES, ...TOOLS].find((entry) => entry.slug === props.game) ?? null)
@@ -106,7 +112,7 @@ onBeforeUnmount(() => document.removeEventListener('fullscreenchange', syncFulls
       </RouterLink>
     </nav>
 
-    <div class="tools">
+    <div v-if="tools !== 'none'" class="tools">
       <!-- Degradovaný režim musí zůstat vidět. Oznámení, které zmizí,
            nestačí: chybí balíčky kolegů a telefony se nemají kam
            připojit, a přijde se na to až před místností. -->
@@ -117,13 +123,13 @@ onBeforeUnmount(() => document.removeEventListener('fullscreenchange', syncFulls
       <!-- Celá obrazovka a písmo patří k hrám. Výslech se v hlavičce
            jen chystá a čte, promítá se až z pásu nad sběrem. -->
       <UiIconButton
-        v-if="!isTool"
+        v-if="!isTool && tools === 'all'"
         :icon="isFullscreen ? 'fullscreen-exit' : 'fullscreen'"
         :label="isFullscreen ? 'Opustit celou obrazovku' : 'Celá obrazovka'"
         :pressed="isFullscreen"
         @click="toggleFullscreen"
       />
-      <UiIconButton v-if="!isTool" icon="settings" label="Nastavení" @click="settingsOpen = true" />
+      <UiIconButton v-if="!isTool && tools === 'all'" icon="settings" label="Nastavení" @click="settingsOpen = true" />
       <slot name="tools" />
       <AppMenu />
     </div>
