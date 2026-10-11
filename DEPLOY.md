@@ -169,42 +169,35 @@ podkolekce `players` a `answers`. Tlačítko **Ukončit a uklidit** na konci
 hry je všechny smaže. Výslech totéž: sběr založí dokument v `vyslech`
 s podkolekcí `responses` a ukončení sběru je po uložení výsledků smaže.
 
-> **Stav projektu:** TTL politiky **zatím nejsou nastavené.** TTL ve
-> Firestore vyžaduje tarif **Blaze**, a na ten projekt přechází kvůli
-> pozvánkám (krok 1.2). Pak jdou nastavit pěti příkazy níž. Do té doby
-> platí ruční úklid.
->
-> Co to znamená v praxi: úklid obstará ukončení hry nebo sběru. Zůstanou
-> jen data z her a sběrů, které nikdo neukončil (zavřený notebook, spadlý
-> prohlížeč). Ta jednou za čas smaž ručně v konzoli: **Firestore Database
-> → Data**, kolekce `quiz` a `vyslech`, dokumenty se starým `expiresAt`,
-> každý **i s podkolekcemi** (konzole nabídne smazání celé větve). Kódy
-> to neblokuje, pravidla po osmi hodinách dovolí starou session přepsat.
->
-> Kdyby projekt někdy přešel na Blaze, politiky nastaví pět příkazů:
->
-> ```bash
-> for g in quiz players answers vyslech responses; do
->   gcloud firestore fields ttls update expiresAt --collection-group=$g \
->     --enable-ttl --project=uniqa-playground --async
-> done
-> ```
-
 Pojistka pro případ, že školitelka jen zavřela notebook, je **TTL
-politika**. Ve Firestore ji najdeš pod **Firestore Database → Time-to-live
-(TTL)** a nastavuje se pro každou skupinu kolekcí zvlášť:
+politika**: Firestore sám smaže dokument, jehož `expiresAt` je v minulosti.
+Session žije osm hodin, takže zapomenutá hra zmizí nejpozději druhý den.
+Platí pro pět skupin kolekcí, všechny nad polem `expiresAt`:
 
-| skupina kolekcí | pole |
+| skupina kolekcí | co v ní je |
 |---|---|
-| `quiz` | `expiresAt` |
-| `players` | `expiresAt` |
-| `answers` | `expiresAt` |
-| `vyslech` | `expiresAt` |
-| `responses` | `expiresAt` |
+| `quiz` | běžící hra kvízu |
+| `players` | hráči pod ní |
+| `answers` | odpovědi pod ní |
+| `vyslech` | běžící sběr Výslechu |
+| `responses` | dotazníky pod ním |
 
-Nastav všech pět. **Smazání dokumentu ve Firestore nemaže jeho
+Všech pět je potřeba. **Smazání dokumentu ve Firestore nemaže jeho
 podkolekce**, takže bez politiky nad `players` a `answers` by po hrách
 zůstávaly osiřelé dokumenty, které se v konzoli ani neukážou.
+
+Politiky jsou zapsané ve [`firestore.indexes.json`](firestore.indexes.json)
+(`"ttl": true`) a nasazuje je `firebase deploy`. Ruční nastavení v konzoli
+by příští nasazení nevidělo. Stav ukazuje **Firestore Database →
+Time-to-live (TTL)**, nebo:
+
+```bash
+gcloud firestore fields ttls list --project=uniqa-playground
+```
+
+Po nasazení jsou chvíli ve stavu `CREATING`, pak `ACTIVE`. TTL vyžaduje
+tarif Blaze, zapnuté jsou od října 2026. Mazání neběží na vteřinu přesně,
+Google uvádí obvykle do 24 hodin po vypršení.
 
 #### Jak dlouho držet vyhodnocení
 
@@ -222,7 +215,7 @@ Dvě cesty, jak to dodržet:
 1. **Ručně.** Seznam vyhodnocení je na `/kviz/vysledky`, tedy pod
    záložkou *Výsledky* vedle *Hrát* a *Otázky*, a u každého je
    tlačítko na smazání.
-2. **Automaticky.** Jen na tarifu Blaze, viz výš. Přidej TTL politiku
+2. **Automaticky.** Přidej do `firestore.indexes.json` TTL politiku
    i nad `quizReports` nad polem `expiresAt` a do ukládaného dokumentu
    to pole doplň. Firestore pak záznam smaže sám a nikdo na to nemusí
    myslet.
