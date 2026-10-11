@@ -8,3 +8,6 @@ dist-ssr
 # Zdrojové podklady k otázkám. Jsou to interní materiály klienta
 # a repozitář je veřejný. Otázky patří do balíčků ve Firestore.
 questions/
+
+# Mezipaměť firebase deploy, co už bylo nahrané.
+.firebase/
