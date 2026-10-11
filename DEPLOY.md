@@ -297,8 +297,9 @@ npm run build
 firebase emulators:start --only hosting
 ```
 
-Emulátor ale posílá rozbitou kompresi brotli, takže se v něm nezaregistruje
-service worker. Je to chyba emulátoru, ostrý hosting komprimuje sám.
+V emulátoru se ale nezaregistroval service worker, i když se `sw.js`
+dal stáhnout. Proč, zjištěno není. Na `uniqa-playground.web.app` se
+registruje a aplikaci si uloží, takže offline režim se ověřuje tam.
 
 ### 2.4 Stará adresa na GitHub Pages
 
