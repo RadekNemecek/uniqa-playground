@@ -142,8 +142,8 @@ Výslech není hra, na rozcestníku proto nemá kartu. Otevírá se z nabídky
    *Po školení* má sedm otázek: celkový dojem, využitelnost, tempo,
    srozumitelnost, doporučení 0 až 10 a dvě volné odpovědi. Založí se
    jedním tlačítkem a dá se upravit.
-2. **Příprava**: vybereš sadu, napíšeš název školení, případně skupinu
-   a lektora, a dáš *Vygenerovat QR kód*.
+2. **Příprava**: vybereš sadu, napíšeš název školení, případně skupinu,
+   a dáš *Vygenerovat QR kód*. Lektor se doplní z přihlášení.
 3. Na plátně je QR kód a počítadlo. Lidé v sále načtou kód a na telefonu
    vyplní **celý dotazník najednou**, pod sebou, a odešlou. Každý
    odevzdaný dotazník přidá na plátně dlaždici. Výsledky se v sále

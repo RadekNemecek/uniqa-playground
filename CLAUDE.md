@@ -322,9 +322,9 @@ rozcestníku **nemá kartu**: chodí se k němu z nabídky aplikace
 (`AppMenu`, tři čáry v hlavičce a v rohu rozcestníku). Celý je jen pro
 členy týmu, i příprava, protože jsou v něm hodnocení lektorů. Kdo sběr
 spustil, se ve výsledcích schválně neukládá: obvykle je to lektor,
-kterého se hodnocení týká. Pole Lektor/ka se sice předvyplní jménem
-přihlášeného, ale je vidět a dá se smazat; `hostEmail` jako kvíz
-Výslech nikdy nedostane.
+kterého se hodnocení týká. Lektor se bere ze jména přihlášeného a pole
+na něj není, aby se hodnocení nedalo připsat někomu jinému; `hostEmail`
+jako kvíz Výslech nikdy nedostane.
 
 - **Telefon dostane celou sadu najednou** a odešle ji jedním tlačítkem.
   Na plátně otázky neběží, každý vyplňuje svým tempem. Rozepsané odpovědi
@@ -363,10 +363,9 @@ se smí přepsat: z výsledků se jde zpátky na desku a dohrát. Obojí nese
 Skupina se z minula **nepředvyplňuje**, stará hodnota v poli se
 přehlédla a zanášela archiv chybou. Naposledy použité skupiny se jen
 nabízejí v `datalist` (`src/lib/recent.ts`, společné pro hry i Výslech).
-Lektor se ve hrách **nezobrazuje**, bere se ze jména přihlášeného: hru
-spouští ten, kdo školí, a lektorky pole navíc jen zdržovalo. Výslech
-pole ukazuje (`show-trainer`), protože hodnotí konkrétního lektora a sběr
-za něj někdy spouští kolegyně. Odhlášení naposledy použité skupiny
+Lektor **pole nemá**, ve hrách ani ve Výslechu, bere se ze jména
+přihlášeného: hru spouští ten, kdo školí, a lektorky pole navíc jen
+zdržovalo. Ve Výslechu by se navíc dalo hodnocení připsat někomu jinému. Odhlášení naposledy použité skupiny
 z počítače smaže. Starší vyhodnocení kvízu lektora nemají, seznam pak
 ukáže `hostEmail`.
 
