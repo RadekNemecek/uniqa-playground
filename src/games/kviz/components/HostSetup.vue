@@ -144,7 +144,7 @@ function start(): void {
     <header class="setup__head">
       <p class="eyebrow">Na kolik to dáš?</p>
       <h1 class="setup__title">Připrav kvíz.</h1>
-      <p class="lead">Vyber otázky a nastav průběh.</p>
+      <p class="lead">Nastav průběh a vyber otázky.</p>
     </header>
 
     <UiSkeleton v-if="!quizPacks.loaded" :lines="5" />
@@ -162,9 +162,40 @@ function start(): void {
 
     <div v-else class="setup__grid">
       <div class="setup__form">
+        <!-- Krátké nastavení s pevnou výškou jde první, dlouhý seznam
+             balíčků až za ním. Obráceně se nastavení při desítce
+             balíčků ztratilo pod okrajem: kdo zaškrtl horní balíček
+             a šel rovnou na tlačítko vpravo, o čase ani skupině nevěděl. -->
+        <section class="section" aria-labelledby="setup-rules">
+          <div class="section__head"><h2 id="setup-rules"><span class="section__num" aria-hidden="true">01</span> Jak bude kvíz probíhat</h2></div>
+          <div class="rules">
+            <div class="rule">
+              <p class="rule__label">Počet otázek</p>
+              <UiSegmented v-model="wantCount" :options="countOptions" aria-label="Počet otázek" />
+            </div>
+            <div class="rule">
+              <p class="rule__label">Čas na odpověď</p>
+              <UiSegmented v-model="limitSeconds" :options="LIMITS.map(s => ({ value: s, label: `${s} s` }))" aria-label="Čas na odpověď" />
+            </div>
+          </div>
+          <p class="hint">
+            <template v-if="wantCount === 0">Zahrají se všechny otázky z balíčků vybraných níž. Pořadí otázek i možností se zamíchá.</template>
+            <template v-else-if="perPack > 0">Vylosuje se {{ count(willPlay, 'otázka', 'otázky', 'otázek') }}, z každého balíčku zhruba {{ perPack }}. Pořadí se zamíchá.</template>
+            <template v-else>Vylosuje se {{ count(willPlay, 'otázka', 'otázky', 'otázek') }}. Pořadí se zamíchá.</template>
+          </p>
+          <UiSwitch v-if="canUsePhones" v-model="withPhones" label="Hráči odpovídají z telefonů" hint="Připojí se přes QR kód. Bez telefonů se kvíz jen promítá a body se nepočítají." />
+          <p v-else class="notice">Telefony se teď nepřipojí. Kvíz můžeš promítat bez nich, body si počítáš sama.</p>
+        </section>
+
+        <section class="section" aria-labelledby="setup-audience">
+          <div class="section__head"><h2 id="setup-audience"><span class="section__num" aria-hidden="true">02</span> Pro koho</h2></div>
+          <AudienceFields v-model:group="groupName" v-model:trainer="trainer" />
+          <p class="hint">Skupinu i lektora najdeš ve výsledcích a ve stažené tabulce.</p>
+        </section>
+
         <section class="section" aria-labelledby="setup-packs">
           <div class="section__head">
-            <h2 id="setup-packs"><span class="section__num" aria-hidden="true">01</span> Z čeho se bude hrát</h2>
+            <h2 id="setup-packs"><span class="section__num" aria-hidden="true">03</span> Z čeho se bude hrát</h2>
             <RouterLink to="/kviz/otazky" class="edit-link">Upravit otázky</RouterLink>
           </div>
           <p class="hint">Vyber jeden nebo více balíčků.</p>
@@ -182,33 +213,6 @@ function start(): void {
             </li>
           </ul>
         </section>
-
-        <section class="section" aria-labelledby="setup-rules">
-          <div class="section__head"><h2 id="setup-rules"><span class="section__num" aria-hidden="true">02</span> Jak bude kvíz probíhat</h2></div>
-          <div class="rules">
-            <div class="rule">
-              <p class="rule__label">Počet otázek</p>
-              <UiSegmented v-model="wantCount" :options="countOptions" aria-label="Počet otázek" />
-            </div>
-            <div class="rule">
-              <p class="rule__label">Čas na odpověď</p>
-              <UiSegmented v-model="limitSeconds" :options="LIMITS.map(s => ({ value: s, label: `${s} s` }))" aria-label="Čas na odpověď" />
-            </div>
-          </div>
-          <p class="hint">
-            <template v-if="wantCount === 0">Zahrají se všechny vybrané otázky. Pořadí otázek i možností se zamíchá.</template>
-            <template v-else-if="perPack > 0">Vylosuje se {{ count(willPlay, 'otázka', 'otázky', 'otázek') }}, z každého balíčku zhruba {{ perPack }}. Pořadí se zamíchá.</template>
-            <template v-else>Vylosuje se {{ count(willPlay, 'otázka', 'otázky', 'otázek') }}. Pořadí se zamíchá.</template>
-          </p>
-          <UiSwitch v-if="canUsePhones" v-model="withPhones" label="Hráči odpovídají z telefonů" hint="Připojí se přes QR kód. Bez telefonů se kvíz jen promítá a body se nepočítají." />
-          <p v-else class="notice">Telefony se teď nepřipojí. Kvíz můžeš promítat bez nich, body si počítáš sama.</p>
-        </section>
-
-        <section class="section" aria-labelledby="setup-audience">
-          <div class="section__head"><h2 id="setup-audience"><span class="section__num" aria-hidden="true">03</span> Pro koho</h2></div>
-          <AudienceFields v-model:group="groupName" v-model:trainer="trainer" />
-          <p class="hint">Skupinu i lektora najdeš ve výsledcích a ve stažené tabulce.</p>
-        </section>
       </div>
 
       <aside class="summary" aria-label="Shrnutí připraveného kvízu">
@@ -219,6 +223,7 @@ function start(): void {
           <dt>Vybrané balíčky</dt><dd>{{ chosen.size }}</dd>
           <dt>Na odpověď</dt><dd>{{ limitSeconds }} s</dd>
           <dt>Odpovídání</dt><dd>{{ setup.withPhones ? 'Z telefonů' : 'Jen promítání' }}</dd>
+          <dt>Lektor/ka</dt><dd>{{ trainer.trim() || 'Neuvedeno' }}</dd>
         </dl>
         <UiButton variant="brand" block :disabled="!canStart" :loading="busy" @click="start">{{ setup.withPhones ? 'Otevřít čekárnu' : 'Spustit promítání' }}</UiButton>
         <p class="summary__next">{{ !canStart ? 'Vyber alespoň jeden balíček.' : setup.withPhones ? 'Hru spustíš, až se hráči připojí.' : 'Bez telefonů se body nepočítají.' }}</p>
@@ -282,7 +287,7 @@ function start(): void {
 .summary__total strong { font-size: var(--fs-work-number); font-weight: 900; line-height: var(--lh-tight); font-variant-numeric: tabular-nums; }
 .summary__total span { font-size: var(--fs-sm); margin-top: var(--sp-2); }
 .summary dl { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--sp-3); margin-block: var(--sp-5); font-size: var(--fs-sm); }
-.summary dd { margin: 0; font-weight: 700; text-align: right; }
+.summary dd { margin: 0; font-weight: 700; text-align: right; overflow-wrap: anywhere; }
 .summary__next { font-size: var(--fs-sm); margin-top: var(--sp-3); color: var(--c-text-muted); }
 @media (max-width: 960px) { .setup__grid { gap: var(--sp-5); grid-template-columns: minmax(0, 1fr) minmax(0, .65fr); } .rules { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 720px) { .setup__grid { grid-template-columns: minmax(0, 1fr); } .summary { position: static; } .section__head h2 { font-size: var(--fs-lg); } }

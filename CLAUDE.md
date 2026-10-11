@@ -376,7 +376,11 @@ jednořádkový lead v sazbě `--content-reading`), tentýž linkovaný seznam
 s pořadovým číslem a nabídkou akcí na řádku a tutéž hlavičku. Příprava
 obou her má navíc týž tvar: číslované sekce `01`, `02`, `03` v jednom
 sloupci a vpravo lepivé shrnutí s jediným hlavním tlačítkem a řádkou
-„co bude dál". Hlavičku přepíná `prep`, který z pilulek udělá řádku
+„co bude dál". Sekce s dlouhým seznamem jde poslední: v kvízu je napřed
+průběh a Pro koho, balíčky až za nimi. Obráceně se nastavení při
+desítce balíčků ztratilo pod okrajem a kdo zaškrtl horní balíček a šel
+rovnou na tlačítko, o čase ani skupině nevěděl. Shrnutí vedle tlačítka
+ukazuje všechno nastavené, i lektora. Hlavičku přepíná `prep`, který z pilulek udělá řádku
 záložek a z „Hrát" „Přípravu".
 
 Výsledky kvízu mají **vlastní záložku** vedle Přípravy a Balíčků
