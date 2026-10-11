@@ -208,7 +208,7 @@ const saveLabel = computed(() => {
     </UiField>
     <p class="hint">
       {{ count(ready, 'otázka je hotová', 'otázky jsou hotové', 'otázek je hotových') }} z {{ draft.questions.length }}.
-      Rozepsané se do dotazníku nedostanou. Celkovou známku ve výsledcích nese první škála.
+      Rozepsané se do dotazníku nedostanou. Celkové hodnocení ve výsledcích se počítá z první škály.
     </p>
 
     <ol class="questions">

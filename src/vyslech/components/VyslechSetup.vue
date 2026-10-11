@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import UiButton from '@/components/ui/UiButton.vue'
+import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiEmpty from '@/components/ui/UiEmpty.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
@@ -49,6 +50,19 @@ const tried = ref(false)
 const titleError = computed(() => (tried.value && !title.value.trim() ? 'Bez názvu se výsledky nedají dohledat.' : ''))
 
 const questions = computed(() => (chosen.value ? freezeQuestions(chosen.value) : []))
+
+/**
+ * Otázky sady se ukazují na rozbalení u její řádky. Dřív visely pod
+ * seznamem otázky vybrané sady a při několika sadách stály stranou od
+ * té, ke které patřily.
+ */
+const openForms = ref<Set<string>>(new Set())
+function toggleForm(formId: string): void {
+  const next = new Set(openForms.value)
+  if (next.has(formId)) next.delete(formId)
+  else next.add(formId)
+  openForms.value = next
+}
 const minutes = computed(() => minutesFor(questions.value))
 const canStart = computed(() => chosen.value !== null && title.value.trim().length > 0)
 
@@ -105,18 +119,29 @@ function start(): void {
           </div>
           <ul class="forms" role="radiogroup" aria-labelledby="vs-form">
             <li v-for="f in usable" :key="f.id">
-              <label class="pick" :class="{ 'pick--on': f.id === chosenId }">
-                <input v-model="chosenId" type="radio" name="vyslech-form" :value="f.id" />
-                <span class="pick__text">
-                  <strong>{{ f.name }}</strong>
-                  <span class="hint">{{ count(readyCount(f), 'otázka', 'otázky', 'otázek') }}</span>
-                </span>
-              </label>
+              <div class="form-row">
+                <label class="pick" :class="{ 'pick--on': f.id === chosenId }">
+                  <input v-model="chosenId" type="radio" name="vyslech-form" :value="f.id" />
+                  <span class="pick__text">
+                    <strong>{{ f.name }}</strong>
+                    <span class="hint">{{ count(readyCount(f), 'otázka', 'otázky', 'otázek') }}</span>
+                  </span>
+                </label>
+                <UiIconButton
+                  class="form-row__toggle"
+                  :icon="openForms.has(f.id) ? 'chevron-up' : 'chevron-down'"
+                  size="sm"
+                  :label="`Otázky sady ${f.name}`"
+                  :aria-expanded="openForms.has(f.id)"
+                  :aria-controls="`vyslech-preview-${f.id}`"
+                  @click="toggleForm(f.id)"
+                />
+              </div>
+              <ol v-if="openForms.has(f.id)" :id="`vyslech-preview-${f.id}`" class="preview">
+                <li v-for="q in freezeQuestions(f)" :key="q.id">{{ q.prompt }}</li>
+              </ol>
             </li>
           </ul>
-          <ol v-if="questions.length" class="preview">
-            <li v-for="q in questions" :key="q.id">{{ q.prompt }}</li>
-          </ol>
         </section>
 
         <section class="section" aria-labelledby="vs-meta">
@@ -190,18 +215,25 @@ function start(): void {
   box-shadow: var(--shadow-sm);
   overflow: hidden;
 }
-.forms li + li { border-top: var(--border-w) solid var(--c-border-soft); }
+.forms > li + li { border-top: var(--border-w) solid var(--c-border-soft); }
 .pick { display: flex; align-items: center; gap: var(--sp-3); min-height: var(--control-touch); padding: var(--sp-4); cursor: pointer; }
 .pick input { flex: none; width: var(--control-check); height: var(--control-check); margin: 0; accent-color: var(--c-brand); }
 .pick:hover { background: var(--c-brand-wash); }
 .pick__text { display: grid; gap: var(--sp-1); overflow-wrap: anywhere; }
 
-/* Otázky vybrané sady, aby bylo vidět, na co se sál bude ptát. */
+/* Šipka u řádky rozbalí otázky sady. Stojí mimo popisek, jinak by
+   rozbalení zároveň sadu vybralo. */
+.form-row { display: flex; align-items: center; }
+.form-row .pick { flex: 1; min-width: 0; }
+.form-row__toggle { flex: none; margin-right: var(--sp-3); }
+
+/* Otázky sady, aby bylo vidět, na co se sál bude ptát. Odsazené pod
+   název sady, ať je jasné, ke které patří. */
 .preview {
   display: grid;
   gap: var(--sp-2);
   margin: 0;
-  padding-left: var(--sp-6);
+  padding: 0 var(--sp-5) var(--sp-4) calc(var(--sp-4) + var(--control-check) + var(--sp-3) + var(--sp-4));
   font-size: var(--fs-sm);
   color: var(--c-text-muted);
   line-height: var(--lh-snug);

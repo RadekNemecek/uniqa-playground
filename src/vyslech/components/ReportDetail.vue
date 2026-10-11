@@ -96,7 +96,7 @@ function print(): void {
         <dd>{{ report.responses.length }}</dd>
       </div>
       <div v-if="overall" class="kpi">
-        <dt>Celková známka</dt>
+        <dt>Celkové hodnocení</dt>
         <dd>{{ formatMean(headMean) }}<small> z 5</small></dd>
       </div>
       <div v-if="report.questions.some((q) => q.kind === 'nps')" class="kpi">
@@ -106,8 +106,8 @@ function print(): void {
     </dl>
 
     <div v-if="overall && report.responses.length > 1" class="filter">
-      <p class="filter__label">Podle celkové známky</p>
-      <UiSegmented v-model="mood" :options="moodOptions" aria-label="Filtr podle celkové známky" />
+      <p class="filter__label">Podle celkového hodnocení</p>
+      <UiSegmented v-model="mood" :options="moodOptions" aria-label="Filtr podle celkového hodnocení" />
       <p class="hint">Filtr platí na celou stránku. Spokojení dali 4 nebo 5, nespokojení 1 nebo 2.</p>
     </div>
 
@@ -280,5 +280,13 @@ function print(): void {
   .report__bar,
   .filter { display: none; }
   .kpi { box-shadow: var(--shadow-none); }
+  /* Pruhy nese barva pozadí a tu prohlížeč při tisku ve výchozím stavu
+     zahodí, takže škály vyšly prázdné. Tady pozadí nese údaj. */
+  .bar__fill,
+  .split__part,
+  .legend__swatch {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
 }
 </style>

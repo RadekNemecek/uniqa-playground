@@ -75,7 +75,7 @@ export function textsFor(q: VyslechQuestion, responses: VyslechAnswers[]): strin
 }
 
 /**
- * Celková známka. Je to první škála sady: výchozí sada se ptá na celkový
+ * Celkové hodnocení. Je to první škála sady: výchozí sada se ptá na celkový
  * dojem hned na začátku a výsledky podle ní třídí volné odpovědi.
  */
 export function overallQuestion(questions: VyslechQuestion[]): VyslechQuestion | null {
@@ -89,7 +89,7 @@ export function headline(report: VyslechReport): number | null {
 
 export type Mood = 'all' | 'happy' | 'mid' | 'unhappy'
 
-/** Filtr odpovědí podle celkové známky. */
+/** Filtr odpovědí podle celkového hodnocení. */
 export function byMood(report: VyslechReport, mood: Mood): VyslechAnswers[] {
   if (mood === 'all') return report.responses
   const q = overallQuestion(report.questions)
