@@ -64,7 +64,11 @@ function open(e: MouseEvent) {
 /* Dlaždice desky: plná modrá UNIQA, inkoustová hrana a tvrdý stín.
    Hmotu jí dává stín, ne přechod ani lesk. Odehrané políčko se do
    stínu zamáčkne a vezme si barvu týmu, takže je z dálky vidět, co je
-   pryč a komu to patří. */
+   pryč a komu to patří.
+
+   Stín je malý, ne střední: dlaždic je na desce pětadvacet a se středním
+   stínem u každé působila deska hutně. Hrany zůstávají tlusté, ty dlaždice
+   oddělují na projektoru. Zamáčknutí jde o celý stín, tedy taky o malý. */
 .cell {
   --i: 0;
   position: relative;
@@ -78,7 +82,7 @@ function open(e: MouseEvent) {
   background: var(--c-tile-top);
   color: var(--c-value);
   overflow: hidden;
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-sm);
   transition:
     translate var(--dur-press) var(--ease-out),
     box-shadow var(--dur-press) var(--ease-out),
@@ -98,11 +102,11 @@ function open(e: MouseEvent) {
   z-index: 1;
   translate: calc(var(--shadow-x-sm) * -1) calc(var(--shadow-x-sm) * -1);
   background: var(--c-brand-deep);
-  box-shadow: var(--shadow-x-md) var(--shadow-x-md) 0 var(--c-ink), var(--shadow-x-lg) var(--shadow-x-lg) 0 var(--c-ink);
+  box-shadow: var(--shadow-x-sm) var(--shadow-x-sm) 0 var(--c-ink), var(--shadow-x-md) var(--shadow-x-md) 0 var(--c-ink);
 }
 
 .cell--open:active {
-  translate: var(--shadow-x-md) var(--shadow-x-md);
+  translate: var(--shadow-x-sm) var(--shadow-x-sm);
   box-shadow: var(--shadow-none);
 }
 
@@ -117,7 +121,7 @@ function open(e: MouseEvent) {
 .cell--won,
 .cell--lost {
   cursor: default;
-  translate: var(--shadow-x-md) var(--shadow-x-md);
+  translate: var(--shadow-x-sm) var(--shadow-x-sm);
   box-shadow: var(--shadow-none);
   animation: settle var(--dur-slow) var(--ease-out) both;
 }

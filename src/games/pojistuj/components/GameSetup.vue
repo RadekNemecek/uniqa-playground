@@ -245,11 +245,11 @@ const wagerOptions = computed<Segment<number>[]>(() =>
 watch(
   maxWagerCells,
   (max) => {
-    // Výchozí je jedno pole, ne maximum. Dřív se při pěti kategoriích
-    // zapnula rovnou čtyři, aniž by je kdokoli zvolil, a moderátorku
-    // čtyřikrát za hru přerušil dialog, který nečekala a neuměla ho
-    // v místnosti ohlásit dopředu.
-    if (!wagerPicked.value) rules.value.wagerCells = Math.min(1, max)
+    // Výchozí je maximum, které deska unese: pole Riziko! jsou nejživější
+    // okamžik hry. Chvíli bylo výchozí jedno pole, protože čtyři dialogy
+    // za hru moderátorku zaskočily; kdo jich chce méně, zvolí si to
+    // a volba se pak pamatuje.
+    if (!wagerPicked.value) rules.value.wagerCells = max
     else if (rules.value.wagerCells > max) rules.value.wagerCells = max
   },
   { immediate: true },
@@ -325,7 +325,7 @@ function start() {
 </script>
 
 <template>
-  <main id="obsah" class="setup page">
+  <main id="obsah" class="setup page page-sheet">
     <header class="setup__head">
       <p class="eyebrow">Pojišťuj!</p>
       <h1 class="setup__title">Připrav hru.</h1>
@@ -572,7 +572,7 @@ function start() {
 /* Týž tvar jako příprava kvízu: číslované sekce v jednom sloupci
    a vpravo shrnutí, které drží jediné hlavní tlačítko. Obě hry se
    chystají stejně, takže se to nemá lišit. */
-.setup { max-width: var(--content-reading); padding-block: var(--sp-6) var(--sp-8); }
+.setup { padding-block: var(--sp-6) var(--sp-8); }
 .setup__head { margin-bottom: var(--sp-6); }
 .setup__title { font-size: var(--fs-work-title); letter-spacing: -0.045em; margin-top: var(--sp-2); }
 .lead { color: var(--c-text-muted); margin-top: var(--sp-3); font-size: var(--fs-md); }

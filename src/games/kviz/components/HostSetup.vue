@@ -140,7 +140,7 @@ function start(): void {
 </script>
 
 <template>
-  <main id="obsah" class="setup page">
+  <main id="obsah" class="setup page page-sheet">
     <header class="setup__head">
       <p class="eyebrow">Na kolik to dáš?</p>
       <h1 class="setup__title">Připrav kvíz.</h1>
@@ -232,7 +232,7 @@ function start(): void {
 </template>
 
 <style scoped>
-.setup { max-width: var(--content-reading); padding-block: var(--sp-6) var(--sp-8); }
+.setup { padding-block: var(--sp-6) var(--sp-8); }
 .setup__head { margin-bottom: var(--sp-6); }
 .setup__title { font-size: var(--fs-work-title); letter-spacing: -0.045em; margin-top: var(--sp-2); }
 .lead { color: var(--c-text-muted); margin-top: var(--sp-3); font-size: var(--fs-md); }

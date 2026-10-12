@@ -61,7 +61,7 @@ onMounted(() => {
   <div class="page-wrap">
     <AppHeader game="pojistuj" section="reports" prep />
 
-    <main id="obsah" class="body page">
+    <main id="obsah" class="body page page-sheet">
       <section class="list">
         <header class="list__head">
           <p class="eyebrow">Pojišťuj!</p>

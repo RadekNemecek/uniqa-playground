@@ -36,6 +36,11 @@
   --c-surface:      #FFFFFF;  /* karty, panely */
   --c-surface-2:    #F5F7FC;  /* hover */
   --c-surface-3:    #D5DEEE;  /* aktivní stav */
+  /* Stůl pod listem pracovních obrazovek, druhá změřená plocha UNIQA.
+     Na stole sedí jen hlavička: inkoust 12,7:1, --c-text-muted 6,5:1,
+     --c-text-faint i --c-brand 5,0:1. --c-bad na stole neprojde (4,46:1),
+     stavový text patří na list. */
+  --c-desk:         #D5DEEE;
   --c-line:         #1B1B1B;  /* obrysy a silná dělítka jsou inkoust */
   --c-line-soft:    #C5D0E4;  /* jemná dělítka uvnitř karty */
   /* Zapadlá plocha: políčko formuláře, prázdná buňka v editoru, dráha
@@ -51,8 +56,8 @@
 
   /* --- Text -------------------------------------------------------------- */
   --c-text:         #1B1B1B;  /* 15,4:1 na --c-base, 12,7:1 i na --c-surface-3 */
-  --c-text-muted:   #454B59;  /* 7,8:1 na --c-base, 6,6:1 na zrnu */
-  --c-text-faint:   #545B6B;  /* 5,0:1 i na nejtmavší ploše --c-surface-3, 5,2:1 na zrnu */
+  --c-text-muted:   #454B59;  /* 7,8:1 na --c-base */
+  --c-text-faint:   #545B6B;  /* 5,0:1 i na nejtmavší ploše --c-surface-3 */
   --c-text-ink:     #1B1B1B;  /* text na barevné ploše, třeba na týmu */
   --c-on-accent:    #FFFFFF;  /* text na modré UNIQA: 6,8:1 */
   --c-on-ink:       #FFFFFF;  /* text na inkoustu */
@@ -68,30 +73,16 @@
   --c-bg-field:     var(--c-sunken);
   --c-bg-field-focus: var(--c-sunken-focus);
 
-  /* Papírové zrno. Plocha stránky není holá barva, ale papír: drobné zrno
-     do tmavší i světlejší strany, nic víc. Měkké obláčky pod ním byly
-     a na plátně i na monitoru se četly jako tmavší skvrny. Leží pod
-     každou stránkou, i pod deskou na projektoru a ve správě; bílé karty
-     zůstávají hladké, zrno je papír, ne povrch všeho. Tečky v rastru ani
-     písek ne, viz CLAUDE.md.
-
-     Síla je vybraná pohledem (ukázka „A, 2×") a kontrast se k ní dopočítal.
-     Stropy průhlednosti drží `feFuncA` přímo ve filtru, takže nejtmavší
-     místo je známé. Měří se z vykreslených pixelů jako nejtmavší průměr
-     přes plošku 2×2 px, tedy přes tah písmene: jednotlivý pixel zrna oko
-     pod tahem nevidí, zprůměruje ho. To místo je #DEE1E8, nejtmavší
-     samotný pixel #D5D9DF.
-     Poměry „na zrnu" u barev textu jsou vůči tomuhle místu. Kdo zrno
-     zesílí, přeměří ho a přepočítá je. */
-  --tex-paper: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='480' height='480'%3E%3Cfilter id='d' x='0' y='0' width='100%' height='100%'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' seed='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .106 0 0 0 0 .106 0 0 0 0 .106 4 0 0 0 -2.2'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='table' tableValues='0 .17'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Cfilter id='l' x='0' y='0' width='100%' height='100%'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' seed='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 -3 0 0 0 1.8'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='table' tableValues='0 .2'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%' height='100%' filter='url(%23d)'/%3E%3Crect width='100%' height='100%' filter='url(%23l)'/%3E%3C/svg%3E");
-  --tex-paper-size: 480px;
-  --bg-paper: var(--tex-paper) 0 0 / var(--tex-paper-size) repeat, var(--c-base);
+  /* Papír je hladký. Zrno tu bylo: na projektoru zmizelo nebo se četlo
+     jako šedý závoj, při sdílení obrazovky ho komprese rozkostičkovala
+     a stálo kontrast. Papírový pocit nese obrys, stín a list na stole. */
+  --bg-paper: var(--c-base);
 
 
   /* --- Značka ------------------------------------------------------------ */
   /* Modrá UNIQA je na papíře sama akcentem, nemusí se zesvětlovat.
      Nese primární tlačítko, odkazy, focus a vybraný stav. */
-  --c-brand:        #005CA9;  /* 6,0:1 na --c-base, 5,1:1 na zrnu, bílý text na ní 6,8:1 */
+  --c-brand:        #005CA9;  /* 6,0:1 na --c-base, bílý text na ní 6,8:1 */
   --c-brand-deep:   #00498A;  /* 8,1:1 na --c-base */
   --c-brand-soft:   #7CC0F0;  /* jen plocha, tmavý text na ní 8,7:1 */
   --c-brand-wash:   #DCEAF8;  /* tlumená plocha pod modrou */
@@ -102,12 +93,13 @@
   --button-danger-text: var(--c-on-accent);
 
   /* --- Stavy ------------------------------------------------------------- */
-  --c-ok:           #026E46;  /* zelená UNIQA, 5,6:1 na --c-base, 4,8:1 na zrnu */
+  --c-ok:           #026E46;  /* zelená UNIQA, 5,6:1 na --c-base */
   --c-ok-deep:      #01573A;
   --c-ok-fill:      #3FCF8E;  /* plocha pod tmavým textem, 8,6:1 */
-  /* O stupeň tmavší než původní #B4325A: na papírovém zrnu ta měla
-     4,48:1. Okem rozdíl nepoznáš, není to barva změřená z uniqa.cz. */
-  --c-bad:          #B23159;  /* 5,4:1 na --c-base, 4,6:1 na zrnu, chladnější než jiskra */
+  /* O stupeň tmavší než původní #B4325A, ztmavená kvůli zrnu, které už
+     tu není. Zůstává, rezerva v kontrastu neškodí. Není to barva
+     změřená z uniqa.cz. */
+  --c-bad:          #B23159;  /* 5,4:1 na --c-base, chladnější než jiskra */
   --c-bad-deep:     #8E1F42;  /* bílý text na ní 8,9:1 */
   --c-bad-fill:     #E89BAD;  /* plocha pod tmavým textem, 8,0:1 */
   --c-dead:         #D5DEEE;  /* políčko Nepojištěno (nikdo neuhodl) */
@@ -132,6 +124,10 @@
   --shadow-md:   var(--shadow-x-md) var(--shadow-x-md) 0 var(--c-ink);
   --shadow-lg:   var(--shadow-x-lg) var(--shadow-x-lg) 0 var(--c-ink);
   --shadow-none: 0 0 0 var(--c-ink);
+  /* List na stole. Má vlastní token, protože na pracovních obrazovkách
+     jsou --shadow-md i --shadow-lg ztišené na malý stín a list jako
+     největší plocha potřebuje o stupeň víc. */
+  --shadow-sheet: var(--shadow-x-md) var(--shadow-x-md) 0 var(--c-ink);
   --shadow-glow: 0 0 0 var(--border-w-strong) var(--c-brand);
   --c-scrim:     rgba(27, 27, 27, 0.55);
   /* Lesk a vnitřní stín z tmavého tématu. Na papíře se nekreslí, tokeny
@@ -153,7 +149,7 @@
   --c-spark:      #FF8B70;  /* plocha, tmavý text na ní 7,5:1 */
   --c-spark-mid:  #EE7154;  /* tmavý text na ní 5,8:1 */
   --c-spark-deep: #D71C4F;  /* UNIQA */
-  --c-spark-ink:  #B4321F;  /* jiskra jako text na papíře, 5,5:1, na zrnu 4,7:1 */
+  --c-spark-ink:  #B4321F;  /* jiskra jako text na papíře, 5,5:1 */
   --c-spark-glow: rgba(255, 139, 112, 0.35);
 
   /* --- Dlaždice desky ---------------------------------------------------- */
@@ -429,6 +425,29 @@
   --fs-note:   calc(clamp(1.35rem, 0.8rem + 1.1vw + 1.2vh, 3.25rem) * var(--scale));
   --fs-hero:   calc(clamp(2.5rem, 1.5rem + 4.5vw, 6rem) * var(--scale));
   --fs-countdown: calc(clamp(8rem, 3rem + 14vw, 18rem) * var(--scale));
+}
+
+/* ---------------------------------------------------------------------------
+   Pracovní obrazovky
+
+   Příprava, správa a výsledky mluví tišeji než hra: tenčí obrys a nejmenší
+   stín. Jazyk je týž, jen hlasitost jiná, takže je při spuštění hry
+   vidět přechod z práce na jeviště.
+
+   Platí na celý dokument, kdykoli je na obrazovce list (`.page-sheet`)
+   nebo hlavička přípravy, tedy i přihlášení. Okna, oznámení a úprava
+   otázky se vykreslují do <body> mimo list a musí mluvit stejně tiše
+   jako obrazovka, nad kterou se otevřou. Ve hře ani na rozcestníku nic
+   z toho na stránce není, takže tam dialogy zůstanou v plné síle.
+   Stíny se musí přepsat celé, ze stejného důvodu jako písmo na herní
+   ploše: var() se dosazuje tam, kde je property deklarovaná.
+--------------------------------------------------------------------------- */
+body:has(.page-sheet),
+body:has(.head--prep) {
+  --border-w-strong: var(--border-w);
+  --border-w-heavy:  var(--border-w);
+  --shadow-md:       var(--shadow-sm);
+  --shadow-lg:       var(--shadow-sm);
 }
 
 /* Uživatel, který nechce pohyb, ho nedostane. Trvání jdou na nulu, takže

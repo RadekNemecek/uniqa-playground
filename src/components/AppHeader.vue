@@ -237,9 +237,8 @@ onBeforeUnmount(() => document.removeEventListener('fullscreenchange', syncFulls
 }
 
 /* V přípravě je z pilulek řádka záložek: bez rámu, aktivní záložka je
-   inkoustový štítek. Hlavička sedí na papíře a od obsahu ji dělí
-   inkoustová linka. */
-.head--prep { border-bottom: var(--border-w-strong) solid var(--c-border); }
+   inkoustový štítek. Hlavička sedí na stole a od obsahu ji dělí hrana
+   listu, linka pod ní by byla druhá. Ztišené obrysy jsou v tokens.css. */
 .head--prep .nav { border: 0; background: transparent; box-shadow: none; gap: var(--sp-2); }
 .head--prep .nav__item { border-radius: var(--r-md); }
 

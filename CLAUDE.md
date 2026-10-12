@@ -18,8 +18,8 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
 - **Kontrast textu nejméně 4,5:1, spočítaný.** Neodhaduj ho. Každá dvojice
   text/plocha v `tokens.css` má poměr uvedený v komentáři.
   Barvy týmů drží aspoň 7:1 vůči `--c-text-ink`, aby na nich mohl být tmavý
-  text. Text na papíře se počítá i vůči zrnu `--bg-paper`, na nejtmavším
-  průměru přes plošku 2×2 px (tah písmene). Postup je v komentáři u zrna.
+  text. Na stole `--c-desk` sedí jen hlavička, stavový text tam
+  neprojde a patří na list.
 - **Tým se nikdy nerozlišuje jen barvou.** Vždy je vedle ní i písmeno.
 - **Slovo se nikdy nedělí na konci řádku.** Ani podle slovníku.
   „ODPOVĚDNOSTNÍ" rozseknuté na dva řádky se z posledního stolu přečte
@@ -51,14 +51,29 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
   tvrdé, posunuté a bez rozmazání (`--shadow-sm/md/lg`). Hloubku nedělá
   světlo, lesk ani přechod, ale stín, do kterého se klikatelný prvek
   při stisku zamáčkne. Platí na všechno: hru, rozcestník, přípravu,
-  správu otázek i výsledky. Papír má zrno (`--bg-paper`) pod každou
-  stránkou, i pod deskou na projektoru; karty zůstávají hladké bílé.
-  Jen zrno, ne vlákna, skvrnky ani mřížka sešitu: všechno to bylo
-  v ukázkách a vyhrálo to nejtišší. Obláčky pod zrnem byly taky
-  a na ploše se četly jako tmavé fleky, nevracet je. Síla je vybraná pohledem, kontrast
-  se k ní dopočítal a kvůli ní je `--c-bad` o stupeň tmavší. Tmavě modré téma tu bylo dřív a působilo
+  správu otázek i výsledky. Papír je hladký, bez textury. Zrno tu bylo
+  a na projektoru zmizelo nebo se četlo jako šedý závoj, při sdílení
+  obrazovky ho komprese rozkostičkovala a stálo kontrast. Před ním
+  prohrála vlákna, skvrnky, mřížka sešitu, rastrové tečky i obláčky.
+  Žádnou texturu nevracet. Tmavě modré téma tu bylo dřív a působilo
   jako studentská práce: všechno mělo jeden odstín, takže oko nemělo
   co vést. Nevracet ho bez pádnějšího důvodu.
+- **Pracovní obrazovky jsou list na stole a mluví tišeji.** Příprava,
+  správa i výsledky leží na listu (`.page-sheet` v `base.css`): papír s
+  tenkou inkoustovou hranou na stole `--c-desk`, hlavička sedí na stole.
+  List je stejně široký jako hlavička, sahá aspoň ke spodnímu okraji okna
+  a nikdy neskončí v půlce obrazovky; to bylo retro, dokument z roku 2012.
+  Je uzavřený i dole: bez spodní hrany měl vypadat, že pokračuje pod okno,
+  ale četl se jako chyba. Na hladkém papíře příprava plavala v prostoru,
+  list ji drží pohromadě. Kdykoli je na obrazovce list nebo hlavička
+  přípravy, jsou obrysy tenčí a stíny na nejmenším stupni v celém
+  dokumentu (blok v `tokens.css`), tedy i v oknech, potvrzeních a
+  oznámeních, která se vykreslují mimo list. Jazyk je týž, jen tišší.
+  Aplikaci ukazuje vedení pojišťovny a pracovní část nesmí působit jako
+  hračka. Hra a rozcestník zůstávají v plné síle a bez listu, takže
+  spuštění hry je vidět jako přechod z práce na jeviště. Pod 560 px list
+  zmizí. Zkoušely se i rám přes celou šířku, rám se záložkami, pruh pod
+  hlavičkou a editoriální styl bez stínů.
 - **Žádná zlatá ani žlutá.** UNIQA je nemá. Akcent je `--c-brand`, hodnoty
   na dlaždicích nese `--c-value`. Žlutá chybí i mezi barvami týmů, jinak by
   se zlatá vrátila zadními dveřmi.
@@ -103,7 +118,7 @@ Kontext, proč projekt vznikl, je v `README.md`, nasazení v `DEPLOY.md`.
   velkém monitoru rostou s ním; v pevné velikosti tam zbyly drobné
   a úvod působil prázdně. Za myší se nehýbou: posun proti kurzoru tu
   byl a víc rušil, než přidal hloubku. Pod nimi je
-  papír se zrnem: rastrové tečky tu byly a neosvědčily se. Na telefonu
+  hladký papír. Na telefonu
   zůstanou jen dlaždice v rozích. Žádná fotka ani generovaná grafika. Zpod úvodu vykoukne
   nadpis výběru her (`--home-peek`), aby bylo vidět, že se roluje.
   Hry jsou až na druhé obrazovce: dvě barevné karty, mírně natočené

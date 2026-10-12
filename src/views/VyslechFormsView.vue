@@ -104,7 +104,7 @@ async function onRemove(id?: string): Promise<void> {
   <div class="page-wrap">
     <AppHeader game="vyslech" section="questions" prep />
 
-    <main id="obsah" class="body page">
+    <main id="obsah" class="body page page-sheet">
       <section v-if="!current" class="list">
         <header class="list__head">
           <div>

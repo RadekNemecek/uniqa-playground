@@ -136,7 +136,7 @@ function badge(id: string): { text: string; tone: 'ok' | 'warn' | 'muted' } {
   <div class="admin">
     <AppHeader game="kviz" section="questions" prep />
 
-    <main id="obsah" class="admin__body page">
+    <main id="obsah" class="admin__body page page-sheet">
       <!-- Knihovna -------------------------------------------------------- -->
       <section v-if="!current" class="library">
         <header class="library__head">

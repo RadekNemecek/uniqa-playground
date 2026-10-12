@@ -28,7 +28,9 @@ body {
 }
 
 /* Papír. Žádné světlo ani zrno: hloubku v tomhle vzhledu nese obrys
-   a tvrdý stín, ne atmosféra. Tečky jsou jen na rozcestníku. */
+   a tvrdý stín, ne atmosféra. Pod pracovní obrazovkou je stůl a na něm
+   list (`.page-sheet`), hra a rozcestník leží na papíře přes celou plochu. */
+body:has(.page-sheet) { background: var(--c-desk); }
 
 img, svg, video { display: block; max-width: 100%; }
 
@@ -101,4 +103,41 @@ a {
 .page {
   width: min(100% - var(--sp-6), var(--page-max));
   margin-inline: auto;
+}
+
+/* List na stole. Příprava, správa i výsledky leží na papíře s inkoustovou
+   hranou, takže nepůsobí, že plavou v prostoru. List je vždycky stejně
+   široký jako hlavička a sahá aspoň ke spodnímu okraji okna: když končil
+   s obsahem v půlce obrazovky, vypadal jako dokument z roku 2012.
+   Je uzavřený, dole má hranu i mezeru jako nahoře. List bez spodní hrany
+   měl vypadat, že pokračuje pod okno, ale četl se jako chyba.
+   Obsah v něm drží čtecí šířku, okraj ji dopočítá (procenta v paddingu
+   se berou ze šířky rodiče, ne listu). */
+.page-sheet {
+  min-height: calc(100dvh - var(--header-h) - 2 * var(--sp-3));
+  margin-block: var(--sp-3);
+  padding:
+    var(--sp-6)
+    max(
+      var(--sp-7),
+      calc((min(100% - var(--sp-6), var(--page-max)) - 2 * var(--border-w) - var(--content-reading)) / 2)
+    )
+    var(--sp-8);
+  border: var(--border-w) solid var(--c-border);
+  border-radius: var(--r-xl);
+  background: var(--c-base);
+  box-shadow: var(--shadow-sheet);
+}
+
+/* Na telefonu by okraje stolu ubraly šířku, která chybí. */
+@media (max-width: 560px) {
+  body:has(.page-sheet) { background: var(--c-base); }
+  .page-sheet {
+    width: auto;
+    margin-block: 0;
+    padding: var(--sp-4) var(--sp-4) var(--sp-7);
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
 }

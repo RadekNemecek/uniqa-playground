@@ -96,7 +96,7 @@ onMounted(() => {
   <div class="page-wrap">
     <AppHeader game="vyslech" section="reports" prep />
 
-    <main id="obsah" class="body page">
+    <main id="obsah" class="body page page-sheet">
       <ReportDetail
         v-if="open"
         :report="open"

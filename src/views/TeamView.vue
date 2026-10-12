@@ -257,7 +257,7 @@ async function remove(m: TeamMember): Promise<void> {
   <div class="page-wrap">
     <AppHeader prep tools="menu" />
 
-    <main id="obsah" class="body page">
+    <main id="obsah" class="body page page-sheet">
       <section class="team">
         <header class="team__head">
           <div>

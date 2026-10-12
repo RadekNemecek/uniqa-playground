@@ -102,7 +102,7 @@ onMounted(() => {
   <div class="page-wrap">
     <AppHeader game="kviz" section="reports" prep />
 
-    <main id="obsah" class="body page">
+    <main id="obsah" class="body page page-sheet">
       <!-- Otevřené vyhodnocení -------------------------------------------- -->
       <div v-if="openReport" class="viewer">
         <HostReport

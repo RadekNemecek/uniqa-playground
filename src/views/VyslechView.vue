@@ -138,8 +138,8 @@ onBeforeUnmount(() => {
     <template v-if="!hasRun || !run">
       <AppHeader game="vyslech" section="play" prep />
 
-      <main v-if="!ready" id="obsah" class="page wait"><UiSkeleton :lines="5" /></main>
-      <main v-else-if="vyslechForms.unavailable" id="obsah" class="page wait">
+      <main v-if="!ready" id="obsah" class="page page-sheet wait"><UiSkeleton :lines="5" /></main>
+      <main v-else-if="vyslechForms.unavailable" id="obsah" class="page page-sheet wait">
         <UiEmpty
           icon="warning"
           title="Výslech teď nepojede"
@@ -189,7 +189,7 @@ onBeforeUnmount(() => {
 .vyslech--live { height: 100dvh; overflow: hidden; }
 .surface { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 .surface > * { flex: 1; min-height: 0; }
-.wait { max-width: var(--content-reading); padding-block: var(--sp-6) var(--sp-8); }
+.wait { padding-block: var(--sp-6) var(--sp-8); }
 
 @media (max-height: 560px), (max-width: 560px) {
   .vyslech--live { height: auto; overflow: visible; }
